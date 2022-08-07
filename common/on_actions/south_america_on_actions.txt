@@ -1,0 +1,340 @@
+on_actions = {
+	on_annex = {
+		effect = {
+			if = {
+				limit = { has_global_flag = MEX_MEC_CIVIL_WAR }
+				MEX = { country_event = { id = mexico.12 } }
+				MEC = { country_event = { id = mexico.20 } }
+			}
+			if = {
+				limit = { 
+					FROM = { TAG = BUE } 
+					BUE = { OR = { exists = no  is_subject_of = ARG } }
+					NOT = { has_global_flag = BUE_won_arg_civwar }
+					NOT = { has_global_flag = ARG_won_arg_civwar }
+				}
+				ARG = { country_event = { id = arg.1 } }
+			}
+			if = {
+				limit = { 
+					FROM = { TAG = ARG } 
+					ARG = { OR = { exists = no  is_subject_of = BUE } }
+					NOT = { has_global_flag = BUE_won_arg_civwar }
+					NOT = { has_global_flag = ARG_won_arg_civwar }
+				}
+				BUE = { country_event = { id = arg.2 } }
+			}
+		}
+	}
+	on_subject_annexed = {
+		effect = {
+			if = {
+				limit = { 
+					FROM = { TAG = BUE } 
+					BUE = { OR = { exists = no  is_subject_of = ARG } }
+					NOT = { has_global_flag = BUE_won_arg_civwar }
+					NOT = { has_global_flag = ARG_won_arg_civwar }
+				}
+				ARG = { country_event = { id = arg.1 } }
+			}
+			if = {
+				limit = { 
+					FROM = { TAG = ARG } 
+					ARG = { OR = { exists = no  is_subject_of = BUE } }
+					NOT = { has_global_flag = BUE_won_arg_civwar }
+					NOT = { has_global_flag = ARG_won_arg_civwar }
+				}
+				BUE = { country_event = { id = arg.2 } }
+			}
+		}
+	}
+	on_state_control_changed = {
+		effect = {
+			if = {
+				limit = {
+					FROM.FROM = { STATE = 509 }
+					ROOT = { TAG = ARG }
+					ARG = { 509 = { is_capital = no } }
+				}
+				ARG = { country_event = { id = arg.3 days = 5 } }
+			}
+		}
+	}
+	on_civil_war_end = {
+		effect = {
+			COL = { country_event = { id = colombia.4 } }
+			ROOT = { 
+				if = { 
+					limit = {
+						TAG = DOM
+						has_global_flag = DOM_1857_tobacco_coup_flag
+					}
+					clr_global_flag = DOM_1857_tobacco_coup_flag
+					if = {
+						limit = { ROOT = { has_country_leader = { name = "Jose Desiderio Valverde" ruling_only = yes } } }
+						ROOT = { country_event = { id = DOM_1857_tobacco_coup.7 days = 3 } }
+					}
+				}
+			}
+			
+			DOM = {
+				if = { 
+					limit = {
+						has_global_flag = DOM_1858_santana_coup_flag_2
+					}
+					clr_global_flag = DOM_1858_santana_coup_flag_2
+					if = {
+						limit = { ROOT = { has_country_leader = { name = "Jose Desiderio Valverde" ruling_only = yes } } }
+						ROOT = { country_event = { id = DOM_1858_santana_coup.7 days = 6 } }
+					}
+				}
+			}
+		}
+	}
+	on_civil_war_end_before_annexation = {
+		effect = {
+			if = {
+				limit = { FROM = { TAG = DOM } }
+				DOM = {
+					if = {
+						limit = { 
+							has_global_flag = DOM_1858_santana_coup_flag
+						}
+						clr_global_flag = DOM_1858_santana_coup_flag
+						if = {
+							limit = { ROOT = { has_country_leader = { name = "Pedro Santana" ruling_only = yes } }  }
+							ROOT = { white_peace = FROM }
+							FROM = {
+								country_event = { id = DOM_1858_santana_won_coup.1 hours = 2 }
+								annex_country = {
+									target = ROOT
+									transfer_troops = yes
+								}
+							}
+						}
+						else = {
+							set_global_flag = DOM_1858_santana_coup_flag_2
+						}
+					}
+				}
+			}
+			if = {
+				limit = { ROOT = { TAG = HAI } }
+				HAI = {
+					FROM = {
+						if = { 
+							limit = { has_country_flag = HAI_coup_is_original_tag }
+							if = {
+								limit = { is_ai = no }
+								ROOT = { change_tag_from = PREV }
+							}
+						}
+					}
+				}
+			}
+			if = {
+				limit = { FROM = { TAG = BOL } }
+				if = {
+					limit = { FROM = { has_country_flag = BOL_coup_is_original_tag } }
+					ROOT = { white_peace = FROM }
+					#if = {
+					#	limit = { FROM = { is_ai = no } }
+					#	FROM = { ROOT = { change_tag_from = PREV } }
+					#}
+					FROM = {
+						country_event = { id = bolivia_civil_war.2 hours = 2} 
+						annex_country = {
+							target = ROOT
+							transfer_troops = yes
+						}
+					}
+				}
+				else = { ROOT = { clr_country_flag = BOL_coup_is_original_tag } }
+			}
+			if = {
+				limit = { FROM = { TAG = PRU } }
+				if = {
+					limit = { FROM = { has_country_flag = PRU_coup_is_original_tag } }
+					ROOT = { white_peace = FROM }
+					#if = {
+					#	limit = { FROM = { is_ai = no } }
+					#	FROM = { ROOT = { change_tag_from = PREV } }
+					#}
+					FROM = {
+						country_event = { id = bolivia_civil_war.2 hours = 2} 
+						annex_country = {
+							target = ROOT
+							transfer_troops = yes
+						}
+					}
+				}
+				else = { ROOT = { clr_country_flag = PRU_coup_is_original_tag } }
+			}
+		}
+	}
+	on_capitulation = {
+		effect = {
+			if = {
+				limit = { 
+					ROOT = { TAG = MEC }
+					has_global_flag = MEX_MEC_CIVIL_WAR 
+					MEC = { has_country_flag = autonomy_hispanic_crown_union_flag }
+				}
+				SPR = { country_event = { id = mexico_civil_war.36 days = 1 } }
+			}
+			ROOT = {
+				if = {
+					limit = { 
+						ROOT = {
+							TAG = MOR
+							has_country_flag = MOR_morocco_intervention_flag
+							has_war_with = SPR
+						}
+						FROM = { has_country_flag = SPR_morocco_intervention_flag }
+					}
+					MOR = { 
+						white_peace = SPR
+						set_country_flag = SPR_morocco_expedition_MOR_capitulated
+					}
+				}
+				if = {
+					limit = { 
+						ROOT = { TAG = MEX }
+						has_country_flag = MXE_empire_civil_war
+						has_war_with = MXE
+					}
+					MEX = { white_peace = MXE }
+					MXE = {
+						annex_country = {
+							target = MEX
+							transfer_troops = yes
+						}
+					}
+				}
+				#if = {
+				#	limit = { 
+				#		ROOT = { TAG = MXE }
+				#		has_country_flag = MXE_empire_civil_war
+				#		has_war_with = MEX
+				#	}
+				#	MXE = { white_peace = MEX }
+				#	MEX = {
+				#		annex_country = {
+				#			target = MXE
+				#			transfer_troops = yes
+				#		}
+				#	}
+				#}
+				if = {
+					limit = { 
+						ROOT = { TAG = DOM }
+						has_country_flag = HAI_spain_war
+						has_war_with = HAI
+					}
+					every_country = {
+						limit = { 
+							has_war_with = HAI 
+							NOT = { TAG = HAI }
+						}
+						white_peace = HAI
+					}
+					DOM = { set_country_flag = HAI_spain_war_decision_lost_flag }
+				}
+				if = {
+					limit = { 
+						ROOT = { TAG = HAI }
+						has_country_flag = HAI_spain_war
+						has_war_with = DOM
+					}
+					every_country = {
+						limit = { 
+							has_war_with = HAI 
+							NOT = { TAG = HAI }
+						}
+						white_peace = HAI
+					}
+					HAI = { set_country_flag = HAI_spain_war_decision_lost_flag }
+				}
+			}
+		}
+	}
+	on_peaceconference_ended = {
+		effect = {
+			PAR = { country_event = { id = par.14 } }
+		}
+	}
+	on_monthly_PAR = {
+		effect = {
+			country_event = { id = par.4 }
+			country_event = { id = par.5 }
+		}
+	}
+	on_startup = {
+		effect = {
+			if = {
+				limit = {
+					has_start_date < 1858.1.1
+				}
+				PRU = {
+					start_civil_war = {
+						ruling_party = centrism
+						ideology = traditional_conservatism
+						#size = 0
+						#only_own_territory = yes
+						capital = 492
+						states = { 
+							492 923 1131 1085
+						}
+						keep_political_leader = yes
+						keep_political_party_members = yes
+					}
+					country_event = { id = peru_civil_war.3 }
+					set_popularities = {
+						anarchism = 0
+						vanguard_communism = 0
+						collectivist_socialism = 0
+						social_egalitarianism = 0
+						centrism = 80
+						traditional_conservatism = 18
+						radical_democracy = 0
+						chauvinist_populism = 2
+						autocracy = 0
+						fundamentalism = 0
+					}
+				}
+				492 = { state_event = { id = peru_civil_war.1 trigger_for = controller } }
+				SPR = { add_to_variable = { var = SPR_debt_repayment_profits value = 0.85 } }
+				DOM = { country_event = { id = DOM_1857_tobacco_coup.1 days = 10 } }
+				DOM = { country_event = { id = hispaniola_debt.1 days = 5 } }
+				
+				MEX = { country_event = { id = mexico_debt.2 days = 6 } }
+				483 = { OWNER = { country_event = { id = yaqui_wars_sonora.1 days = 55 } } }
+				YAQ = { country_event = { id = yaqui_wars_sonora.1 days = 55 } }
+				483 = { OWNER = { country_event = { id = yaqui_wars_sonora.2 days = 327 } } }
+				
+				CHL = {
+					every_other_country = {
+						limit = { original_tag = CHL }
+						country_event = { id = chile.8 days = 2285 }
+					}
+				}
+				HAI = { country_event = { id = haiti_coup.1 days = 5 } }
+				
+				MEX = { country_event = { id =  mexico_civil_war.1 days = 200 } }
+				
+				VEN = { country_event = { id = venezuela.1 days = 279 } }
+				
+				BOL = { country_event = { id = bolivia.1 days = 129 } }
+				
+				CHL = { country_event = { id = chile.1 days = 125 } }
+				CHL = { country_event = { id = chile.2 days = 229 } }
+				CHL = { country_event = { id = chile.3 days = 279 } }
+
+				BRA = { country_event = { id = brazil.62 days = 20 } }
+				
+				#ENG = { country_event = { id = jamaica.3 days = 3185 } }
+
+			}
+        }        
+    }
+}
