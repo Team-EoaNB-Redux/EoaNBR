@@ -1,0 +1,226 @@
+Paraguayan_War_Decision_Category = {
+	Paraguayan_War_Peace_Treaty_Mission = {
+		#ai_will_do = { factor = 1 }
+		allowed = {
+			always = no
+		}
+		icon = generic_political_actions
+		is_good = no
+		days_mission_timeout = 1000
+		activation = {
+			always = no
+		}
+		available = {
+			#Condition to trigger peace treaty
+			OR = {
+				if = {
+					limit = {
+						BRA = { has_completed_focus = BRA_direct_intervention }
+						CSA = { exists = no}
+					}
+					custom_trigger_tooltip = {
+						tooltip = Paraguayan_War_Mission_BRA_VICTORY_NORMAL_tt
+						tag = BRA
+						PAR = { surrender_progress > 0.9 }
+					}
+				}
+				else_if = {
+					limit = {
+						BRA = { has_completed_focus = BRA_direct_intervention }
+						CSA = { exists = yes } 
+					}
+					custom_trigger_tooltip = {
+						tooltip = Paraguayan_War_Mission_BRA_VICTORY_NORMAL_ACW_tt
+						tag = BRA
+						PAR = { surrender_progress > 0.9 }
+					}
+				}
+				else_if = {
+					limit = {
+						BRA = { has_completed_focus = BRA_the_second_cisplatine_war }
+						CSA = { exists = no }
+					}
+					custom_trigger_tooltip = {
+						tooltip = Paraguayan_War_Mission_BRA_VICTORY_ALTERNATE_tt
+						tag = BRA
+						PAR = { surrender_progress > 0.9 }
+					}
+				}
+				else_if = {
+					limit = {
+						BRA = { has_completed_focus = BRA_the_second_cisplatine_war }
+						CSA = { exists = yes } 
+					}
+					custom_trigger_tooltip = {
+						tooltip = Paraguayan_War_Mission_BRA_VICTORY_ALTERNATE_ACW_tt
+						tag = BRA
+						PAR = { surrender_progress > 0.9 }
+					}
+				}
+				if = {
+					limit = { CSA = { exists = no } }
+					custom_trigger_tooltip = {
+						tooltip = Paraguayan_War_Mission_PAR_VICTORY_tt
+						tag = PAR
+						BRA = { surrender_progress > 0.8 }
+					}
+				}
+				else_if = { 
+					limit = { CSA = { exists = yes } }
+					custom_trigger_tooltip = {
+						tooltip = Paraguayan_War_Mission_PAR_VICTORY_ACW_tt
+						tag = PAR
+						BRA = { surrender_progress > 0.8 }
+					}
+				}
+				#if = {
+				#	limit = {
+				#		BRA = { has_completed_focus = BRA_the_second_cisplatine_war }
+				#		CSA = { exists = no }
+				#		ARG = {
+				#			has_war_with = BRA
+				#			has_war_with = PAR
+				#		}
+				#	}
+				#	custom_trigger_tooltip = {
+				#		tooltip = Paraguayan_War_Mission_ARG_VICTORY_NORMAL_tt
+				#		tag = ARG
+				#		PAR = { surrender_progress > 0.9 }
+				#		BRA = { surrender_progress > 0.8 }
+				#	}
+				#}
+				#else_if = {
+				#	limit = {
+				#		BRA = { has_completed_focus = BRA_the_second_cisplatine_war }
+				#		CSA = { exists = yes }
+				#		ARG = {
+				#			has_war_with = BRA
+				#			has_war_with = PAR
+				#		}
+				#	}
+				#	custom_trigger_tooltip = {
+				#		tooltip = Paraguayan_War_Mission_ARG_VICTORY_ALTERNATIVE_ACW_tt
+				#		tag = ARG
+				#		PAR = { surrender_progress > 0.9 }
+				#		BRA = { surrender_progress > 0.8 }
+				#	}
+				#}
+					
+				# other victory....
+
+				#custom_trigger_tooltip = {
+				#	tooltip = Paraguayan_War_Mission_ARG_VICTORY_tt
+				#	# Victory Condition for Argentina
+				#	tag = ARG
+				#	ARG = {
+				#		if = {
+				#			limit = {
+				#				has_war_with = BRA
+				#				has_war_with = PAR
+				#			}
+				#			PAR = {
+				#				has_capitulated = yes
+				#			}
+				#			BRA = {
+				#				has_capitulated = yes
+				#			}
+				#		}
+				#	}
+				#}
+			}
+		}
+		
+		complete_effect = {
+			if = {
+				limit = {
+					tag = BRA
+					has_completed_focus = BRA_direct_intervention
+					PAR = { surrender_progress > 0.9 }
+					CSA = { exists = no }
+				}
+				PAR = {
+					hidden_effect = {
+						country_event = { id = par.15 }
+					}
+				}
+			}
+			else_if = {
+				limit = {
+					tag = BRA
+					has_completed_focus = BRA_direct_intervention
+					PAR = { surrender_progress > 0.9 }
+					CSA = { exists = yes }
+				}
+				PAR = {
+					hidden_effect = {
+						country_event = { id = par.15 }
+					}
+				}
+			}
+			else_if = {
+				limit = {
+					tag = BRA
+					has_completed_focus = BRA_the_second_cisplatine_war
+					PAR = { surrender_progress > 0.9 }
+					CSA = { exists = yes }
+				}
+				PAR = {
+					hidden_effect = {
+						country_event = { id = par.15 }
+					}
+				}
+			}
+
+			else_if = {
+				limit = {
+					tag = PAR
+					BRA = { surrender_progress > 8 }
+					CSA = { exists = no }
+				}
+				hidden_effect = {
+					country_event = { id = par.16 }
+				}
+			}
+			
+			else_if = {
+				limit = {
+					tag = PAR
+					BRA = { surrender_progress > 8 }
+					CSA = { exists = yes }
+				}
+				hidden_effect = {
+					country_event = { id = par.16 }
+				}
+			}
+			
+			#else = {
+			#	custom_trigger_tooltip = {
+			#		tooltip = Paraguayan_War_Peace_Treaty_Mission_tt
+			#	}
+			#}
+		}
+		timeout_effect = {
+			if = {
+				limit={
+					OR = {
+						AND = {
+							tag = BRA
+							has_war_with = PAR
+						}
+						AND = {
+							tag = PAR
+							has_war_with = BRA
+						}
+					}
+					date < 1875.1.1
+				}
+				activate_mission = Paraguayan_War_Peace_Treaty_Mission
+			}
+			else_if = {
+				limit = { date > 1.1.1875 }
+				white_peace = BRA
+				white_peace = PAR
+			}
+		}
+	}
+}
