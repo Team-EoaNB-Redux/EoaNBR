@@ -42,9 +42,9 @@ NDefines = {
 		BASE_PEACE_TAKE_UNCONTROLLED_STATE_FACTOR = 10.0, -- Base factor for taking state you do not control
 		BASE_PEACE_TAKE_FACTION_CONTROLLED_STATE_FACTOR = 0.5, -- Base factor for taking state you do not control, but someone in faction does
 		BASE_PEACE_FORCE_GOVERNMENT_COST = 100, 		-- Base cost for forcing a country to change government.
-		BASE_IMPROVE_RELATION_COST = 25,                -- Political power cost to initiate relation improvement
-		BASE_IMPROVE_RELATION_SAME_IDEOLOGY_GROUP_MAINTAIN_COST = 0.2, -- Political power cost each update when boosting relations with nation of same ideology
-		BASE_IMPROVE_RELATION_DIFFERENT_IDEOLOGY_GROUP_MAINTAIN_COST = 0.4,    -- Political power cost each update when boosting relations with nation of different ideology
+		BASE_IMPROVE_RELATION_COST = 15,                -- Political power cost to initiate relation improvement
+		BASE_IMPROVE_RELATION_SAME_IDEOLOGY_GROUP_MAINTAIN_COST = 0.15, -- Political power cost each update when boosting relations with nation of same ideology
+		BASE_IMPROVE_RELATION_DIFFERENT_IDEOLOGY_GROUP_MAINTAIN_COST = 0.3,    -- Political power cost each update when boosting relations with nation of different ideology
 		BASE_SEND_ATTACHE_COST = 100,					-- Political power cost to send attache
 		BASE_SEND_ATTACHE_CP_COST = 50.0,				-- Command Power sent attache usage cost
 		BASE_GENERATE_WARGOAL_DAILY_PP = 0.4,	-- Daily pp cost for generation of wargoals
@@ -603,7 +603,7 @@ NDefines = {
 		WAR_SCORE_AIR_MONTHLY_FALLOFF = 10,			-- how much the warscore we got from the strategic bombing falls off every month.
 		
 		CORPS_COMMANDER_DIVISIONS_CAP = 24,			-- how many divisions a corps commander is limited to. 0 = inf, < 0 = blocked
-		DIVISION_SIZE_FOR_XP = 8,                   -- how many battalions should a division have to count as a full divisions when calculating XP stuff
+		DIVISION_SIZE_FOR_XP = 4,                   -- how many battalions should a division have to count as a full divisions when calculating XP stuff
 		CORPS_COMMANDER_ARMIES_CAP = -1,			-- how many armies a corps commander is limited to. 0 = inf, < 0 = blocked
 		FIELD_MARSHAL_DIVISIONS_CAP = 24,			-- how many divisions a field marshall is limited to. 0 = inf, < 0 = blocked
 		FIELD_MARSHAL_ARMIES_CAP = 5,				-- how many armies a field marshall is limited to. 0 = inf, < 0 = blocked
@@ -1881,7 +1881,7 @@ NDefines = {
 		DAYS_BETWEEN_CHECK_BEST_TEMPLATE = 7;       -- Recalculate desired best template to upgrade with this many days inbetween.
 		DAYS_BETWEEN_CHECK_BEST_EQUIPMENT = 7;      -- Recalculate desired best equipment to upgrade with this many days inbetween.
 
-	FOCUS_TREE_CONTINUE_FACTOR = 1.5,			-- Factor for score of how likely the AI is to keep going down a focus tree rather than starting a new path.
+		FOCUS_TREE_CONTINUE_FACTOR = 1.5,			-- Factor for score of how likely the AI is to keep going down a focus tree rather than starting a new path.
 		PLAN_VALUE_TO_EXECUTE = -0.5,				-- AI will typically avoid carrying out a plan it below this value (0.0 is considered balanced).
 		DECLARE_WAR_NOT_NEIGHBOR_FACTOR = 0.25,		-- Multiplier applied before force factor if country is not neighbor with the one it is considering going to war
 		CALL_ALLY_BASE_DESIRE = 20,					-- exactly what it says
@@ -3397,6 +3397,7 @@ NDefines = {
 		
 		-- ~intel ledger defines
 	},
+
 	NCharacter = {
 		OFFICER_CORP_ADVISOR_ENTRIES_IN_MENU = { "high_command", "theorist", "army_chief", "air_chief", "navy_chief" },
 		OFFICER_CORP_HIGH_COMMAND_SLOTS_IN_MENU = 3, --For Alert manager to count the number of High Command Slots in the UI
@@ -3575,6 +3576,7 @@ NDefines = {
 		AVAILABLE_MANPOWER_STATE_SUPPLY = 0.18,						--Factor for state supply from max manpower (population)
 		STORED_SUPPLY_CONSUMPTION_RATE_FACTOR = 0.75,				--Multiplies consumption rate of stored supply (more/less easement)
 	},
+
 	NAITheatre = {
 		AI_THEATRE_GENERATION_HOME_THEATRE_DEPTH_RESTRICTION = 2,			-- The home theatre is generated based off a initial depth restriction
 		AI_THEATRE_GENERATION_BORDER_SIZE_RESTRICTION = 7,					-- Theatres are generated based off borders, Higher value means larger theatres
