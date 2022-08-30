@@ -94,7 +94,7 @@ If you wish to contribute to the development of the mod, supprt us on Patreon or
 - Additional rules in the **Developer Bible**
 
 ### Meet the Lead-Developers
-*aka Centurions*
+*aka Senatores*
 <table>
 <tr>
 <td align="center">
