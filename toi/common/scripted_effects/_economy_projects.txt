@@ -1,0 +1,608 @@
+
+# FILE FOR ECONOMIC PROJECTS
+
+# Projects have a goods requirement and a build speed. 
+# Every month, they attempt to acquire as many goods as they can up to the build speed, adding to the "construction" progress with what they get.
+# When a project finishes, it fires the proj_done scripted effect and will execute the respective code
+
+#################################
+# ADDING A PROJECT TO A COUNTRY #
+#################################
+
+# If you want to add a new project to your country during the game, follow these steps:
+#
+# 1. Find the ID of the project you want to use. They are all listed in proj_setup below
+#
+# 2. In your effect (on country scope), add the following code:
+#   
+#   set_temp_variable = { id_temp = ID }
+#   proj_create = yes
+#   
+#   where ID is the ID of the project you are using. This will add the project to your country to complete. If a project with the same ID is already in progress, this effect will do nothing.
+#
+#   For those who love changing scope: Make sure to include both of these TOGETHER in the same scope. Changing scopes and refering to a temporary variable in a previous scope does not work.
+#
+#   If you have trouble with getting this to work, just contact me (Strat) and I'll help :D
+
+
+##########################
+# CREATING A NEW PROJECT #
+##########################
+
+# If you want to create a new project, follow these steps:
+#
+# 1. Find a unique ID for the project. This will be used in the code for when it is finished & its localization. 
+#    The ID can be any number between 2.2 mil and 0.001. It can be a decimal. As long as it's a positive number.
+#
+# 4. Add the project & its base costs to the list in the proj_setup in THIS file, along with comments detailing what the project is.
+#
+# 2. Add the localization for the project to the projects_l_english.yml & _projects_scripted_loc.txt files 
+#    in /localisation/english & /common/scripted_localisation respectively, following the guidlines in those files
+#
+# 4. Add the finishing effect in THIS file in the proj_done scripted effect using an else_if statement with the trigger
+#       check_variable = { id_temp = ID }
+#    where ID is the unique ID you chose for your project.
+#
+# When adding a project, you can copy & paste from others and change what you need.
+# PLEASE for the love of the coding-god change the comments if you do this.
+#
+# And if you break something, I will personally come and snap your neck. Either that or summon the Nuremburg Trials.
+# ~ Strat
+
+proj_setup = {
+    # This fires at the start of the game.
+    # The purpose of it is to provide a centralized location for all the projects. While some projects may be custom and only used once, 
+    # some may be referenced over several countries or points in time, so having a central location to store this data means changing values and/or balancing is much much easier 
+
+    # There is no need to keep it in order of creation, though keeping it in order of ID would be preferable.
+
+    #Example Code
+    #NOTE: Include ALL of these add_to_array effects for your project. The code uses the index to associate these values together, so the arrays need to line up properly.
+    add_to_array = { global.proj_id = 0 }
+    add_to_array = { global.proj_life_goods_base_need = 0 } #The total cost of the project. Can be affected by project cost country modifiers
+    add_to_array = { global.proj_life_goods_base_build_speed = 0 } #How many goods per month can this project get. Can be affected by build speed & project build speed modifiers
+    add_to_array = { global.proj_everyday_goods_base_need = 0 }
+    add_to_array = { global.proj_everyday_goods_base_build_speed = 0 }
+    add_to_array = { global.proj_luxury_goods_base_need = 0 }
+    add_to_array = { global.proj_luxury_goods_base_build_speed = 0 }
+    add_to_array = { global.proj_services_base_need = 0 }
+    add_to_array = { global.proj_services_base_build_speed = 0 }
+    add_to_array = { global.proj_raw_goods_base_need = 0 }
+    add_to_array = { global.proj_raw_goods_base_build_speed = 0 }
+    add_to_array = { global.proj_industrial_goods_base_need = 0 }
+    add_to_array = { global.proj_industrial_goods_base_build_speed = 0 }
+    add_to_array = { global.proj_repeatable = 0 } # 0: This project, when finished, can be started again. (Ex. Work Programs) 
+                                                  # 1: This project, when finished, can never be started again for ANY country. (Ex. Statue of Liberty)
+                                                  # 2: This project, when finished, can never be started again only for THIS country. (Ex. National Library)
+    add_to_array = { global.proj_relative = 0 } #0: The values for need & speed are absolute
+                                                #1: The values for need & speed are based off of population (every 100K pops)
+                                                #2: the values for need & speed are based off of yearly GDP (every $100)
+                                                #3: the values for need & speed are based off of a temporary variable (relative_temp)
+                                                #   which acts as a modifier (where 100 = 1.0x). Useage is just like id_temp with proj_create:
+                                                #
+                                                #   set_temp_variable = { id_temp = ID }
+                                                #   set_temp_variable = { relative_temp = NUM }
+                                                #   proj_create = yes
+    ################################
+    # Generics: 0.001 <--> 999.999 #
+    ################################
+
+    # ID 1: Work Programs
+    #   A repeatable project fired usually by decision. Work programs are relief programs designed to get people back to work. 
+    #   In-game, upon completion, it grants some stability & consumer confidence.
+    add_to_array = { global.proj_id = 1 }
+    add_to_array = { global.proj_life_goods_base_need = 0.24 }
+    add_to_array = { global.proj_life_goods_base_build_speed = 0.02 }
+    add_to_array = { global.proj_everyday_goods_base_need = 0.24 }
+    add_to_array = { global.proj_everyday_goods_base_build_speed = 0.02 }
+    add_to_array = { global.proj_luxury_goods_base_need = 0.12 }
+    add_to_array = { global.proj_luxury_goods_base_build_speed = 0.01 }
+    add_to_array = { global.proj_services_base_need = 0.12 }
+    add_to_array = { global.proj_services_base_build_speed = 0.01 }
+    add_to_array = { global.proj_raw_goods_base_need = 0 }
+    add_to_array = { global.proj_raw_goods_base_build_speed = 0 }
+    add_to_array = { global.proj_industrial_goods_base_need = 0.6 }
+    add_to_array = { global.proj_industrial_goods_base_build_speed = 0.05 }
+    add_to_array = { global.proj_repeatable = 0 } #Repeatable
+    add_to_array = { global.proj_relative = 2 } #Based on GDP
+
+    ###############################
+    # Country Specific: 1000.000+ #
+    ###############################
+}
+
+proj_done = {
+    # This fires when a project finishes
+    # The monthly eco tick sets the temporary variable id_temp to the ID of the project that just completed, then fires this effect
+    # Then, the effects of this are calculated. This happens at the END of the calculations, so the effects are first applied on the NEXT month
+
+    if = {
+        limit = {
+            check_variable = { id_temp = 0 }
+        }
+        #First one is 0 so to exit effect quickly
+    }
+    else_if = { # Work Programs
+        limit = {
+            check_variable = { id_temp = 1 }
+        }
+
+        #Give an event to player to let them know that it's done with effects.
+        country_event = projects.1
+    }
+
+
+    # Remove project from your project list & add to local/global completed projects (if necessary)
+    remove_from_array = { array = proj_id index = proj_index_temp }
+    remove_from_array = { array = proj_relative index = proj_index_temp }
+    remove_from_array = { array = proj_estimated_cost index = proj_index_temp }
+    remove_from_array = { array = proj_estimated_monthly_cost index = proj_index_temp }
+    remove_from_array = { array = proj_estimated_complete_time index = proj_index_temp }
+    remove_from_array = { array = proj_time_elapsed index = proj_index_temp }
+    remove_from_array = { array = proj_life_goods_need index = proj_index_temp }
+    remove_from_array = { array = proj_life_goods_fulfilled index = proj_index_temp }
+    remove_from_array = { array = proj_life_goods_demand index = proj_index_temp }
+    remove_from_array = { array = proj_life_goods_build_speed index = proj_index_temp }
+    remove_from_array = { array = proj_everyday_goods_need index = proj_index_temp }
+    remove_from_array = { array = proj_everyday_goods_fulfilled index = proj_index_temp }
+    remove_from_array = { array = proj_everyday_goods_demand index = proj_index_temp }
+    remove_from_array = { array = proj_everyday_goods_build_speed index = proj_index_temp }
+    remove_from_array = { array = proj_luxury_goods_need index = proj_index_temp }
+    remove_from_array = { array = proj_luxury_goods_fulfilled index = proj_index_temp }
+    remove_from_array = { array = proj_luxury_goods_demand index = proj_index_temp }
+    remove_from_array = { array = proj_luxury_goods_build_speed index = proj_index_temp }
+    remove_from_array = { array = proj_services_need index = proj_index_temp }
+    remove_from_array = { array = proj_services_fulfilled index = proj_index_temp }
+    remove_from_array = { array = proj_services_demand index = proj_index_temp }
+    remove_from_array = { array = proj_services_build_speed index = proj_index_temp }
+    remove_from_array = { array = proj_raw_goods_need index = proj_index_temp }
+    remove_from_array = { array = proj_raw_goods_fulfilled index = proj_index_temp }
+    remove_from_array = { array = proj_raw_goods_demand index = proj_index_temp }
+    remove_from_array = { array = proj_raw_goods_build_speed index = proj_index_temp }
+    remove_from_array = { array = proj_industrial_goods_need index = proj_index_temp }
+    remove_from_array = { array = proj_industrial_goods_fulfilled index = proj_index_temp }
+    remove_from_array = { array = proj_industrial_goods_demand index = proj_index_temp }
+    remove_from_array = { array = proj_industrial_goods_build_speed index = proj_index_temp }
+    subtract_from_temp_variable = { proj_index_temp = 1 }
+
+    for_each_loop = {
+        array = global.proj_id
+        value = p5
+        index = i5
+        break = b5
+
+        
+        if = {
+            limit = {
+                check_variable = { id_temp = p5 }
+            }
+
+            if = {
+                limit = {
+                    check_variable = { global.proj_repeatable^i5 = 1 }
+                }
+                #Can never be done again by any country
+                add_to_array = { global.proj_completed = id_temp }
+            }
+            else_if = {
+                limit = {
+                    check_variable = { global.proj_repeatable^i5 = 2 }
+                }
+                #Can never be done again by only your country
+                add_to_array = { proj_completed = id_temp }
+            }
+
+            set_temp_variable = { b5 = 1 }
+        }
+    }
+}
+
+proj_create = {
+    # Use this to create a project for current scope (Country Scope)
+    # This takes in the temporary variable id_temp and uses that to set up the project for you
+    
+    # Useage:
+    # set_temp_variable = { id_temp = ID }
+    # proj_create = yes
+
+    if = {
+        limit = {
+            check_variable = { id_temp > 0 } # always assume users are idiots. Yes I'm talking about you, random coder.
+
+            NOT = { is_in_array = { proj_id = id_temp } } #Make sure you don't create duplicate projects. 
+                                                            #Technically, it's possible for the code to handle that, but this is just for safekeeping.
+            
+            NOT = { is_in_array = { proj_completed = id_temp } } #Make sure projects that have been completed can't be done again (those set to the right conditions)
+            NOT = { is_in_array = { global.proj_completed = id_temp } }
+        }
+
+        for_each_loop = {
+            array = global.proj_id
+            value = p9
+            index = i9
+            break = b9
+
+            if = {
+                limit = {
+                    check_variable = { id_temp = p9 }
+                }
+                set_temp_variable = { i8 = proj_id^num }
+
+                add_to_array = { proj_id = id_temp }
+                add_to_array = { proj_relative = 1 }
+                add_to_array = { proj_estimated_cost = 0 }
+                add_to_array = { proj_estimated_monthly_cost = 0 }
+                add_to_array = { proj_estimated_complete_time = 0 }
+                add_to_array = { proj_time_elapsed = 0 }
+                add_to_array = { proj_life_goods_need = 0 }
+                add_to_array = { proj_life_goods_fulfilled = 0 }
+                add_to_array = { proj_life_goods_demand = 0 }
+                add_to_array = { proj_life_goods_build_speed = 0 }
+                add_to_array = { proj_everyday_goods_need = 0 }
+                add_to_array = { proj_everyday_goods_fulfilled = 0 }
+                add_to_array = { proj_everyday_goods_demand = 0 }
+                add_to_array = { proj_everyday_goods_build_speed = 0 }
+                add_to_array = { proj_luxury_goods_need = 0 }
+                add_to_array = { proj_luxury_goods_fulfilled = 0 }
+                add_to_array = { proj_luxury_goods_demand = 0 }
+                add_to_array = { proj_luxury_goods_build_speed = 0 }
+                add_to_array = { proj_services_need = 0 }
+                add_to_array = { proj_services_fulfilled = 0 }
+                add_to_array = { proj_services_demand = 0 }
+                add_to_array = { proj_services_build_speed = 0 }
+                add_to_array = { proj_raw_goods_need = 0 }
+                add_to_array = { proj_raw_goods_fulfilled = 0 }
+                add_to_array = { proj_raw_goods_demand = 0 }
+                add_to_array = { proj_raw_goods_build_speed = 0 }
+                add_to_array = { proj_industrial_goods_need = 0 }
+                add_to_array = { proj_industrial_goods_fulfilled = 0 }
+                add_to_array = { proj_industrial_goods_demand = 0 }
+                add_to_array = { proj_industrial_goods_build_speed = 0 }
+
+                #Relative
+                if = {
+                    limit = {
+                        check_variable = { global.proj_relative^i9 = 1 }
+                    }
+                    set_variable = { proj_relative^i8 = max_manpower_k }
+                    divide_variable = { proj_relative^i8 = 100 }
+                }
+                else_if = {
+                    limit = {
+                        check_variable = { global.proj_relative^i9 = 2 }
+                    }
+                    set_variable = { proj_relative^i8 = annual_gdp_amount }
+                    divide_variable = { proj_relative^i8 = 100 }
+                }
+                else_if = {
+                    limit = {
+                        check_variable = { global.proj_relative^i9 = 3 }
+                    }
+                    set_variable = { proj_relative^i8 = relative_temp }
+                    divide_variable = { proj_relative^i8 = 100 }
+                }
+                
+                #Build Cost
+                    set_temp_variable = { modifier_temp = proj_build_cost_effect }
+                    add_to_temp_variable = { modifier_temp = 1 }
+                    multiply_temp_variable = { modifier_temp = proj_relative^i8 }
+
+                    set_variable = { proj_life_goods_need^i8 = global.proj_life_goods_base_need^i9 }
+                    multiply_variable = { proj_life_goods_need^i8 = modifier_temp }
+                    
+                    set_variable = { proj_everyday_goods_need^i8 = global.proj_everyday_goods_base_need^i9 }
+                    multiply_variable = { proj_everyday_goods_need^i8 = modifier_temp }
+                    
+                    set_variable = { proj_luxury_goods_need^i8 = global.proj_luxury_goods_base_need^i9 }
+                    multiply_variable = { proj_luxury_goods_need^i8 = modifier_temp }
+                    
+                    set_variable = { proj_services_need^i8 = global.proj_services_base_need^i9 }
+                    multiply_variable = { proj_services_need^i8 = modifier_temp }
+                    
+                    set_variable = { proj_raw_goods_need^i8 = global.proj_raw_goods_base_need^i9 }
+                    multiply_variable = { proj_raw_goods_need^i8 = modifier_temp }
+                    
+                    set_variable = { proj_industrial_goods_need^i8 = global.proj_industrial_goods_base_need^i9 }
+                    multiply_variable = { proj_industrial_goods_need^i8 = modifier_temp }
+                #
+                
+                proj_update = yes
+                
+                set_temp_variable = { b9 = 1 }
+            }
+        }
+
+
+    }
+}
+
+proj_update = {
+    # Updates the project list.
+    # You don't need to use this.
+
+    for_each_loop = {
+        array = proj_id
+        value = p2
+        index = i2
+        break = b2
+
+        
+        for_each_loop = {
+            array = global.proj_id
+            value = p3
+            index = i3
+            break = b3
+
+            
+            if = {
+                limit = {
+                    check_variable = { p2 = p3 }
+                }
+
+
+                #Build Speed
+                    set_temp_variable = { modifier_temp = proj_build_speed_effect }
+                    add_to_temp_variable = { modifier_temp = 1 }
+                    multiply_temp_variable = { modifier_temp = proj_relative^i2 }
+
+                    set_variable = { proj_life_goods_build_speed^i2 = global.proj_life_goods_base_build_speed^i3 }
+                    multiply_variable = { proj_life_goods_build_speed^i2 = modifier_temp }
+                    
+                    set_variable = { proj_everyday_goods_build_speed^i2 = global.proj_everyday_goods_base_build_speed^i3 }
+                    multiply_variable = { proj_everyday_goods_build_speed^i2 = modifier_temp }
+                    
+                    set_variable = { proj_luxury_goods_build_speed^i2 = global.proj_luxury_goods_base_build_speed^i3 }
+                    multiply_variable = { proj_luxury_goods_build_speed^i2 = modifier_temp }
+                    
+                    set_variable = { proj_services_build_speed^i2 = global.proj_services_base_build_speed^i3 }
+                    multiply_variable = { proj_services_build_speed^i2 = modifier_temp }
+                    
+                    set_variable = { proj_raw_goods_build_speed^i2 = global.proj_raw_goods_base_build_speed^i3 }
+                    multiply_variable = { proj_raw_goods_build_speed^i2 = modifier_temp }
+                    
+                    set_variable = { proj_industrial_goods_build_speed^i2 = global.proj_industrial_goods_base_build_speed^i3 }
+                    multiply_variable = { proj_industrial_goods_build_speed^i2 = modifier_temp }
+                #
+
+                #Demand
+                    set_temp_variable = { modifier_temp = construction_spending_percentage }
+                    divide_temp_variable = { modifier_temp = 100 }
+
+                    if = {
+                        limit = {
+                            check_variable = { proj_life_goods_need^i2 > proj_life_goods_fulfilled^i2 }
+                        }
+                        set_variable = { proj_life_goods_demand^i2 = proj_life_goods_build_speed^i2 }
+                        multiply_variable = { proj_life_goods_demand^i2 = modifier_temp }
+                    }
+                    else = {
+                        set_variable = { proj_life_goods_demand^i2 = 0 }
+                    }
+                    
+                    if = {
+                        limit = {
+                            check_variable = { proj_everyday_goods_need^i2 > proj_everyday_goods_fulfilled^i2 }
+                        }
+                        set_variable = { proj_everyday_goods_demand^i2 = proj_everyday_goods_build_speed^i2 }
+                        multiply_variable = { proj_everyday_goods_demand^i2 = modifier_temp }
+                    }
+                    else = {
+                        set_variable = { proj_everyday_goods_demand^i2 = 0 }
+                    }
+                    
+                    if = {
+                        limit = {
+                            check_variable = { proj_luxury_goods_need^i2 > proj_luxury_goods_fulfilled^i2 }
+                        }
+                        set_variable = { proj_luxury_goods_demand^i2 = proj_luxury_goods_build_speed^i2 }
+                        multiply_variable = { proj_luxury_goods_demand^i2 = modifier_temp }
+                    }
+                    else = {
+                        set_variable = { proj_luxury_goods_demand^i2 = 0 }
+                    }
+                    
+                    if = {
+                        limit = {
+                            check_variable = { proj_services_need^i2 > proj_services_fulfilled^i2 }
+                        }
+                        set_variable = { proj_services_demand^i2 = proj_services_build_speed^i2 }
+                        multiply_variable = { proj_services_demand^i2 = modifier_temp }
+                    }
+                    else = {
+                        set_variable = { proj_services_demand^i2 = 0 }
+                    }
+                    
+                    if = {
+                        limit = {
+                            check_variable = { proj_raw_goods_need^i2 > proj_raw_goods_fulfilled^i2 }
+                        }
+                        set_variable = { proj_raw_goods_demand^i2 = proj_raw_goods_build_speed^i2 }
+                        multiply_variable = { proj_raw_goods_demand^i2 = modifier_temp }
+                    }
+                    else = {
+                        set_variable = { proj_raw_goods_demand^i2 = 0 }
+                    }
+                    
+                    if = {
+                        limit = {
+                            check_variable = { proj_industrial_goods_need^i2 > proj_industrial_goods_fulfilled^i2 }
+                        }
+                        set_variable = { proj_industrial_goods_demand^i2 = proj_industrial_goods_build_speed^i2 }
+                        multiply_variable = { proj_industrial_goods_demand^i2 = modifier_temp }
+                    }
+                    else = {
+                        set_variable = { proj_industrial_goods_demand^i2 = 0 }
+                    }
+                #
+
+                #Estimated Monthly Cost
+
+                    set_variable = { proj_estimated_monthly_cost^i2 = 0 }
+
+                    set_temp_variable = { cost_temp = proj_life_goods_demand^i2 }
+                    multiply_temp_variable = { cost_temp = life_goods_price }
+                    add_to_variable = { proj_estimated_monthly_cost^i2 = cost_temp }
+
+                    set_temp_variable = { cost_temp = proj_everyday_goods_demand^i2 }
+                    multiply_temp_variable = { cost_temp = everyday_goods_price }
+                    add_to_variable = { proj_estimated_monthly_cost^i2 = cost_temp }
+
+                    set_temp_variable = { cost_temp = proj_luxury_goods_demand^i2 }
+                    multiply_temp_variable = { cost_temp = luxury_goods_price }
+                    add_to_variable = { proj_estimated_monthly_cost^i2 = cost_temp }
+
+                    set_temp_variable = { cost_temp = proj_services_demand^i2 }
+                    multiply_temp_variable = { cost_temp = services_price }
+                    add_to_variable = { proj_estimated_monthly_cost^i2 = cost_temp }
+
+                    set_temp_variable = { cost_temp = proj_raw_goods_demand^i2 }
+                    multiply_temp_variable = { cost_temp = raw_goods_price }
+                    add_to_variable = { proj_estimated_monthly_cost^i2 = cost_temp }
+
+                    set_temp_variable = { cost_temp = proj_industrial_goods_demand^i2 }
+                    multiply_temp_variable = { cost_temp = industrial_goods_price }
+                    add_to_variable = { proj_estimated_monthly_cost^i2 = cost_temp }
+                #
+
+                #Estimated Total Cost
+                    set_variable = { proj_estimated_cost^i2 = 0 }
+
+                    set_temp_variable = { cost_temp = proj_life_goods_need^i2 }
+                    subtract_from_temp_variable = { cost_temp = proj_life_goods_fulfilled^i2 }
+                    multiply_temp_variable = { cost_temp = life_goods_price }
+                    add_to_variable = { proj_estimated_cost^i2 = cost_temp }
+
+                    set_temp_variable = { cost_temp = proj_everyday_goods_need^i2 }
+                    subtract_from_temp_variable = { cost_temp = proj_everyday_goods_fulfilled^i2 }
+                    multiply_temp_variable = { cost_temp = everyday_goods_price }
+                    add_to_variable = { proj_estimated_cost^i2 = cost_temp }
+
+                    set_temp_variable = { cost_temp = proj_luxury_goods_need^i2 }
+                    subtract_from_temp_variable = { cost_temp = proj_luxury_goods_fulfilled^i2 }
+                    multiply_temp_variable = { cost_temp = luxury_goods_price }
+                    add_to_variable = { proj_estimated_cost^i2 = cost_temp }
+
+                    set_temp_variable = { cost_temp = proj_services_need^i2 }
+                    subtract_from_temp_variable = { cost_temp = proj_services_fulfilled^i2 }
+                    multiply_temp_variable = { cost_temp = services_price }
+                    add_to_variable = { proj_estimated_cost^i2 = cost_temp }
+
+                    set_temp_variable = { cost_temp = proj_raw_goods_need^i2 }
+                    subtract_from_temp_variable = { cost_temp = proj_raw_goods_fulfilled^i2 }
+                    multiply_temp_variable = { cost_temp = raw_goods_price }
+                    add_to_variable = { proj_estimated_cost^i2 = cost_temp }
+
+                    set_temp_variable = { cost_temp = proj_industrial_goods_need^i2 }
+                    subtract_from_temp_variable = { cost_temp = proj_industrial_goods_fulfilled^i2 }
+                    multiply_temp_variable = { cost_temp = industrial_goods_price }
+                    add_to_variable = { proj_estimated_cost^i2 = cost_temp }
+                #
+
+                #Estimated Completion Time
+                    set_variable = { proj_estimated_complete_time^i2 = 0 }
+                    
+                    set_temp_variable = { months_temp = proj_life_goods_need^i2 }
+                    subtract_from_temp_variable = { months_temp = proj_life_goods_fulfilled^i2 }
+                    if = {
+                        limit = {
+                            check_variable = { months_temp > 0 }
+                            check_variable = { proj_life_goods_demand^i2 > 0 }
+                        }
+                        divide_temp_variable = { months_temp = proj_life_goods_demand^i2 }
+                        if = {
+                            limit = {
+                                check_variable = { months_temp > proj_estimated_complete_time^i2 }
+                            }
+                            set_variable = { proj_estimated_complete_time^i2 = months_temp }
+                        }
+                    }
+                    
+                    set_temp_variable = { months_temp = proj_everyday_goods_need^i2 }
+                    subtract_from_temp_variable = { months_temp = proj_everyday_goods_fulfilled^i2 }
+                    if = {
+                        limit = {
+                            check_variable = { months_temp > 0 }
+                            check_variable = { proj_everyday_goods_demand^i2 > 0 }
+                        }
+                        divide_temp_variable = { months_temp = proj_everyday_goods_demand^i2 }
+                        if = {
+                            limit = {
+                                check_variable = { months_temp > proj_estimated_complete_time^i2 }
+                            }
+                            set_variable = { proj_estimated_complete_time^i2 = months_temp }
+                        }
+                    }
+                    
+                    set_temp_variable = { months_temp = proj_luxury_goods_need^i2 }
+                    subtract_from_temp_variable = { months_temp = proj_luxury_goods_fulfilled^i2 }
+                    if = {
+                        limit = {
+                            check_variable = { months_temp > 0 }
+                            check_variable = { proj_luxury_goods_demand^i2 > 0 }
+                        }
+                        divide_temp_variable = { months_temp = proj_luxury_goods_demand^i2 }
+                        if = {
+                            limit = {
+                                check_variable = { months_temp > proj_estimated_complete_time^i2 }
+                            }
+                            set_variable = { proj_estimated_complete_time^i2 = months_temp }
+                        }
+                    }
+                    
+                    set_temp_variable = { months_temp = proj_services_need^i2 }
+                    subtract_from_temp_variable = { months_temp = proj_services_fulfilled^i2 }
+                    if = {
+                        limit = {
+                            check_variable = { months_temp > 0 }
+                            check_variable = { proj_services_demand^i2 > 0 }
+                        }
+                        divide_temp_variable = { months_temp = proj_services_demand^i2 }
+                        if = {
+                            limit = {
+                                check_variable = { months_temp > proj_estimated_complete_time^i2 }
+                            }
+                            set_variable = { proj_estimated_complete_time^i2 = months_temp }
+                        }
+                    }
+                    
+                    set_temp_variable = { months_temp = proj_raw_goods_need^i2 }
+                    subtract_from_temp_variable = { months_temp = proj_raw_goods_fulfilled^i2 }
+                    if = {
+                        limit = {
+                            check_variable = { months_temp > 0 }
+                            check_variable = { proj_raw_goods_demand^i2 > 0 }
+                        }
+                        divide_temp_variable = { months_temp = proj_raw_goods_demand^i2 }
+                        if = {
+                            limit = {
+                                check_variable = { months_temp > proj_estimated_complete_time^i2 }
+                            }
+                            set_variable = { proj_estimated_complete_time^i2 = months_temp }
+                        }
+                    }
+                    
+                    set_temp_variable = { months_temp = proj_industrial_goods_need^i2 }
+                    subtract_from_temp_variable = { months_temp = proj_industrial_goods_fulfilled^i2 }
+                    if = {
+                        limit = {
+                            check_variable = { months_temp > 0 }
+                            check_variable = { proj_industrial_goods_demand^i2 > 0 }
+                        }
+                        divide_temp_variable = { months_temp = proj_industrial_goods_demand^i2 }
+                        if = {
+                            limit = {
+                                check_variable = { months_temp > proj_estimated_complete_time^i2 }
+                            }
+                            set_variable = { proj_estimated_complete_time^i2 = months_temp }
+                        }
+                    }
+
+                    round_variable = proj_estimated_complete_time^i2
+                #
+
+                
+                set_temp_variable = { b3 = 1 }
+            }
+        }
+    }
+}
