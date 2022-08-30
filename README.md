@@ -98,36 +98,16 @@ If you wish to contribute to the development of the mod, supprt us on Patreon or
 <table>
 <tr>
 <td align="center">
-  <a href = "https://github.com/ChrisSGD"><strong>ChrisSGD</strong></a>
-  <img src="https://cdn.discordapp.com/attachments/469238221436354580/960730075039432724/chris.png" width="80px;" alt="ChrisSGD"/>
-</td>
-<td align="center">
-  <a href = "https://github.com/Coggernaut"><strong>Coggernaut</strong></a>
-  <img src="https://cdn.discordapp.com/attachments/469238221436354580/960730075349782628/cogg.png" width="80px;" alt="Coggernaut"/>
-</td>
-<td align="center">
   <a href = "https://github.com/Energywelder"><strong>Energywelder</strong></a>
   <img src="https://cdn.discordapp.com/attachments/469238221436354580/960730076553576498/energy.png" width="80px;" alt="Energywelder"/>
-</td>
-<td align="center">
-  <a href = "https://github.com/FloridaMayhem"><strong>EnzoC9083</strong></a>
-  <img src="https://cdn.discordapp.com/attachments/469238221436354580/960730076272533544/enzo.png" width="80px;" alt="EnzoC9083"/>
-</td>
-<td align="center">
-  <a href = "https://github.com/Garion132"><strong>Garion132</strong></a>
-  <img src="https://cdn.discordapp.com/attachments/469238221436354580/960730075609825340/garion.png" width="80px;" alt="Garion132"/>
-</td>
-<td align="center">
-  <a href = "https://github.com/Polskastronkkurwa"><strong>Kuba</strong></a>
-  <img src="https://cdn.discordapp.com/attachments/469238221436354580/960730075802775562/kuba.png" width="80px;" alt="Kuba"/>
 </td>
 <td align="center">
   <a href = "https://github.com/condor93"><strong>Lancer2201</strong></a>
   <img src="https://cdn.discordapp.com/attachments/469238221436354580/960730076826193940/lancer.png" width="80px;" alt="Lancer2201"/>
 </td>
 <td align="center">
-  <a href = "https://github.com/TPS-Geronam"><strong>TPS-Geronam</strong></a>
-  <img src="https://cdn.discordapp.com/attachments/469238221436354580/960730076054442034/tps.png" width="80px;" alt="TPS-Geronam"/>
+  <a href = "https://github.com/Vanadium-GITHUB"><strong>Vanadium</strong></a>
+  <img src="https://cdn.discordapp.com/attachments/1005965262908035182/1014302027100205127/IMG_20220830_153358.jpg" width="80px;" alt="Vanadium"/>
 </td>
 </tr>
 </table>
