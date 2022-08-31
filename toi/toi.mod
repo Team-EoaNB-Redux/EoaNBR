@@ -1,5 +1,5 @@
-name="End of a New Beginning Redux - GitHub Edition"
-version="0.3.0 Ars Bellica"
+name="End of a New Beginning Redux - Official Edition"
+version="0.2.9 Ver Tersus"
 tags={
 	"Alternative History"
 	"Events"
