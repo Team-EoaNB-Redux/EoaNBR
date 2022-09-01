@@ -19,7 +19,7 @@
 [discord-badge]: https://img.shields.io/static/v1?label=Discord&message=Chat&color=blue&logo=discord&style=for-the-badge
 [discord-link]: https://discord.gg/QG6vp5PbMW
 
-[reddit-badge]: https://img.shields.io/static/v1?label=Reddit&message=Discusscolor=orange&logo=reddit&style=for-the-badge
+[reddit-badge]: https://img.shields.io/static/v1?label=Reddit&message=Discuss&color=orange&logo=reddit&style=for-the-badge
 [reddit-link]: https://www.reddit.com/r/eoanb_redux/
 
 [github-size]: https://img.shields.io/github/repo-size/team-EoaNB-Redux/EoaNB?label=MOD%20SIZE&style=for-the-badge
