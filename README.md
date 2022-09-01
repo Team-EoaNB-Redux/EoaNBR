@@ -54,7 +54,7 @@ This site is the official respository (cloud) for sharing and cooperating in the
 Get easy access to our open-source development, with just a few quick steps!
 Here's a useful installation video by one of our lead developers: 
 
-<a href="https://youtu.be/Qr6l2DEneNY">Video Link: https://youtu.be/Qr6l2DEneNY</a>
+**Video Link:** https://www.youtube.com/watch?v=gEEKq-Rwn84</a>
 
 ### Links from the Video 
 * **Github Desktop App:** https://desktop.github.com/</a>
