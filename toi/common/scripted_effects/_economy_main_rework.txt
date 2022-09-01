@@ -18,6 +18,10 @@
                     set_variable = { global.pops_other_death_base_rate = 0.005 } #Per year rate
 
                     set_variable = { global.pops_maximum_starvation_death_rate = 25.0 } #Per year rate
+
+                    set_variable = { global.pops_unemployment_bleed = 0.2 } #What % of unemployed pops become laborers each month
+                    set_variable = { global.pops_underpaid_start = 0.5 } #What % of a pop's SoL expenditure will they start to be less inclined to be employed
+                    set_variable = { global.pops_underpaid_min = 0.3 } #Minimum % of pops willing to be employed
                 #
                 
                 #Spending Patterns
@@ -65,6 +69,10 @@
             #
 
             #Buildings
+		        set_variable = { global.industry_money_limit = 1 } #Money limit for an industry for its output times the base price of the outputted resource
+                set_variable = { global.minimum_base_wage = 0.01 } #Minimum base wage (not average) for an industry
+                set_variable = { global.industries_economy_of_scale_factor = 0.01 } #What bonus gets added to throughput for each size industry in a state
+
                 #Define Buildings
                 define_consumer_goods_factory = yes
                 define_luxury_goods_factory = yes
@@ -82,6 +90,24 @@
                 define_coal_mine = yes
                 define_oil_well = yes
                 define_valuables_extractor = yes
+                
+                clear_array = global.building_token_array
+                add_to_array = { global.building_token_array = token:building_consumer_goods_factory }
+                add_to_array = { global.building_token_array = token:building_luxury_goods_factory }
+                add_to_array = { global.building_token_array = token:building_industrial_goods_factory }
+                add_to_array = { global.building_token_array = token:building_services_building }
+                add_to_array = { global.building_token_array = token:building_power_plant }
+                
+                add_to_array = { global.building_token_array = token:building_subsistence_farm }
+                add_to_array = { global.building_token_array = token:building_commercial_farm }
+                add_to_array = { global.building_token_array = token:building_food_plantation }
+                add_to_array = { global.building_token_array = token:building_material_plantation }
+                add_to_array = { global.building_token_array = token:building_luxuries_plantation }
+                add_to_array = { global.building_token_array = token:building_lumber_mill }
+                add_to_array = { global.building_token_array = token:building_metals_mine }
+                add_to_array = { global.building_token_array = token:building_coal_mine }
+                add_to_array = { global.building_token_array = token:building_oil_well }
+                add_to_array = { global.building_token_array = token:building_valuable_goods_extractor }
             #
 
             #Resources
@@ -94,8 +120,251 @@
                 set_variable = { global.base_price@token:resource_services = 5 }
                 set_variable = { global.base_price@token:resource_electricity = 2 }
                 set_variable = { global.base_price@token:resource_valuable_materials = 10 }
+
+                clear_array = global.resource_token_array
+                add_to_array = { global.resource_token_array = token:resource_food }
+                add_to_array = { global.resource_token_array = token:resource_raw_materials }
+                add_to_array = { global.resource_token_array = token:resource_energy_materials }
+                add_to_array = { global.resource_token_array = token:resource_consumer_goods }
+                add_to_array = { global.resource_token_array = token:resource_luxury_goods }
+                add_to_array = { global.resource_token_array = token:resource_industrial_goods }
+                add_to_array = { global.resource_token_array = token:resource_services }
+                add_to_array = { global.resource_token_array = token:resource_electricity }
+                add_to_array = { global.resource_token_array = token:resource_valuable_materials }
+                
+                clear_array = global.non_tradeable_resources
+                add_to_array = { global.non_tradeable_resources = token:resource_services }
+                add_to_array = { global.non_tradeable_resources = token:resource_electricity }
+                add_to_array = { global.non_tradeable_resources = token:resource_valuable_materials }
+            #
+
+			#Government
+				#Military
+					#Army
+					set_variable = { global.infantry_base_food_need = 0.2 } #Per Battalion
+					set_variable = { global.infantry_base_consumer_goods_need = 0.08 }
+					set_variable = { global.infantry_base_luxury_goods_need = 0.02 }
+					set_variable = { global.infantry_base_industrial_goods_need = 0 }
+					
+					set_variable = { global.militia_base_food_need = 0.1 }
+					set_variable = { global.militia_base_consumer_goods_need = 0.02 }
+					set_variable = { global.militia_base_luxury_goods_need = 0 }
+					set_variable = { global.militia_base_industrial_goods_need = 0 }
+					
+					set_variable = { global.artillery_base_food_need = 0.12 }
+					set_variable = { global.artillery_base_consumer_goods_need = 0.08 }
+					set_variable = { global.artillery_base_luxury_goods_need = 0.02 }
+					set_variable = { global.artillery_base_industrial_goods_need = 0.04 }
+					
+					set_variable = { global.cavalry_base_food_need = 0.2 }
+					set_variable = { global.cavalry_base_consumer_goods_need = 0.12 }
+					set_variable = { global.cavalry_base_luxury_goods_need = 0.04 }
+					set_variable = { global.cavalry_base_industrial_goods_need = 0 }
+					
+					set_variable = { global.mobile_base_food_need = 0.2 }
+					set_variable = { global.mobile_base_consumer_goods_need = 0.12 }
+					set_variable = { global.mobile_base_luxury_goods_need = 0.04 }
+					set_variable = { global.mobile_base_industrial_goods_need = 0.06 }
+					
+					set_variable = { global.armor_base_food_need = 0.2 }
+					set_variable = { global.armor_base_consumer_goods_need = 0.12 }
+					set_variable = { global.armor_base_luxury_goods_need = 0.04 }
+					set_variable = { global.armor_base_industrial_goods_need = 0.4 }
+					
+					set_variable = { global.robotic_base_food_need = 0.04 }
+					set_variable = { global.robotic_base_consumer_goods_need = 0.16 }
+					set_variable = { global.robotic_base_luxury_goods_need = 0.08 }
+					set_variable = { global.robotic_base_industrial_goods_need = 1.0 }
+					
+					set_variable = { global.support_base_food_need = 0.06 } #Per Support Company
+					set_variable = { global.support_base_consumer_goods_need = 0.03 }
+					set_variable = { global.support_base_luxury_goods_need = 0 }
+					set_variable = { global.support_base_industrial_goods_need = 0 }
+					
+					#Navy
+					set_variable = { global.screen_base_food_need = 0.06 } #Per Ship
+					set_variable = { global.screen_base_consumer_goods_need = 0.015 }
+					set_variable = { global.screen_base_luxury_goods_need = 0.006 }
+					set_variable = { global.screen_base_industrial_goods_need = 0.006 }
+					
+					set_variable = { global.capital_base_food_need = 0.24 }
+					set_variable = { global.capital_base_consumer_goods_need = 0.06 }
+					set_variable = { global.capital_base_luxury_goods_need = 0.015 }
+					set_variable = { global.capital_base_industrial_goods_need = 0.003 }
+					
+					set_variable = { global.submarine_base_food_need = 0.05 }
+					set_variable = { global.submarine_base_consumer_goods_need = 0.015 }
+					set_variable = { global.submarine_base_luxury_goods_need = 0.003 }
+					set_variable = { global.submarine_base_industrial_goods_need = 0.03 }
+					
+					#Airforce
+					set_variable = { global.deployed_planes_base_food_need = 0.005 } #Per Deployed Plane
+					set_variable = { global.deployed_planes_base_consumer_goods_need = 0.005 }
+					set_variable = { global.deployed_planes_base_luxury_goods_need = 0.001 }
+					set_variable = { global.deployed_planes_base_industrial_goods_need = 0.003 }
+
+					#Other
+					set_variable = { global.conscripted_base_food_need = 3 } #Per 100K
+					set_variable = { global.conscripted_base_consumer_goods_need = 1 }
+					set_variable = { global.conscripted_base_luxury_goods_need = 0.1 }
+					set_variable = { global.conscripted_payroll_multiplier = 2 } #The multiple of the above expense that goes directly to pops
+
+					###############################################################
+					# set_variable = { global.infantry_base_food_need = 0.0 } #Per Battalion
+					# set_variable = { global.infantry_base_consumer_goods_need = 0.0 }
+					# set_variable = { global.infantry_base_luxury_goods_need = 0.0 }
+					# set_variable = { global.infantry_base_industrial_goods_need = 0 }
+					
+					# set_variable = { global.militia_base_food_need = 0.0 }
+					# set_variable = { global.militia_base_consumer_goods_need = 0.0 }
+					# set_variable = { global.militia_base_luxury_goods_need = 0 }
+					# set_variable = { global.militia_base_industrial_goods_need = 0 }
+					
+					# set_variable = { global.artillery_base_food_need = 0.0 }
+					# set_variable = { global.artillery_base_consumer_goods_need = 0.0 }
+					# set_variable = { global.artillery_base_luxury_goods_need = 0.0 }
+					# set_variable = { global.artillery_base_industrial_goods_need = 0.0 }
+					
+					# set_variable = { global.cavalry_base_food_need = 0.0 }
+					# set_variable = { global.cavalry_base_consumer_goods_need = 0.0 }
+					# set_variable = { global.cavalry_base_luxury_goods_need = 0.0 }
+					# set_variable = { global.cavalry_base_industrial_goods_need = 0 }
+					
+					# set_variable = { global.mobile_base_food_need = 0.0 }
+					# set_variable = { global.mobile_base_consumer_goods_need = 0.0 }
+					# set_variable = { global.mobile_base_luxury_goods_need = 0.0 }
+					# set_variable = { global.mobile_base_industrial_goods_need = 0.0 }
+					
+					# set_variable = { global.armor_base_food_need = 0.0 }
+					# set_variable = { global.armor_base_consumer_goods_need = 0.0 }
+					# set_variable = { global.armor_base_luxury_goods_need = 0.0 }
+					# set_variable = { global.armor_base_industrial_goods_need = 0.0 }
+					
+					# set_variable = { global.robotic_base_food_need = 0.0 }
+					# set_variable = { global.robotic_base_consumer_goods_need = 0.0 }
+					# set_variable = { global.robotic_base_luxury_goods_need = 0.0 }
+					# set_variable = { global.robotic_base_industrial_goods_need = 0.0 }
+					
+					# set_variable = { global.support_base_food_need = 0.0 } #Per Support Company
+					# set_variable = { global.support_base_consumer_goods_need = 0.0 }
+					# set_variable = { global.support_base_luxury_goods_need = 0 }
+					# set_variable = { global.support_base_industrial_goods_need = 0 }
+					
+					# #Navy
+					# set_variable = { global.screen_base_food_need = 0.0 } #Per Ship
+					# set_variable = { global.screen_base_consumer_goods_need = 0.0 }
+					# set_variable = { global.screen_base_luxury_goods_need = 0.0 }
+					# set_variable = { global.screen_base_industrial_goods_need = 0.0 }
+					
+					# set_variable = { global.capital_base_food_need = 0.0 }
+					# set_variable = { global.capital_base_consumer_goods_need = 0.0 }
+					# set_variable = { global.capital_base_luxury_goods_need = 0.0 }
+					# set_variable = { global.capital_base_industrial_goods_need = 0.0 }
+					
+					# set_variable = { global.submarine_base_food_need = 0.0 }
+					# set_variable = { global.submarine_base_consumer_goods_need = 0.0 }
+					# set_variable = { global.submarine_base_luxury_goods_need = 0.0 }
+					# set_variable = { global.submarine_base_industrial_goods_need = 0.0 }
+					
+					# #Airforce
+					# set_variable = { global.deployed_planes_base_food_need = 0.0 } #Per Deployed Plane
+					# set_variable = { global.deployed_planes_base_consumer_goods_need = 0.0 }
+					# set_variable = { global.deployed_planes_base_luxury_goods_need = 0.0}
+					# set_variable = { global.deployed_planes_base_industrial_goods_need = 0.0 }
+
+					# #Other
+					# set_variable = { global.conscripted_base_food_need = 0 } #Per 100K
+					# set_variable = { global.conscripted_base_consumer_goods_need = 0 }
+					# set_variable = { global.conscripted_base_luxury_goods_need = 0.0 }
+					# set_variable = { global.conscripted_payroll_multiplier = 0 } #The multiple of the above expense that goes directly to pops
+				#
+				#Projects
+					clear_array = proj_id
+					clear_array = proj_relative
+					clear_array = proj_estimated_cost
+					clear_array = proj_estimated_monthly_cost
+					clear_array = proj_estimated_complete_time
+					clear_array = proj_time_elapsed
+					clear_array = proj_life_goods_need
+					clear_array = proj_life_goods_fulfilled
+					clear_array = proj_life_goods_demand
+					clear_array = proj_life_goods_build_speed
+					clear_array = proj_everyday_goods_need
+					clear_array = proj_everyday_goods_fulfilled
+					clear_array = proj_everyday_goods_demand
+					clear_array = proj_everyday_goods_build_speed
+					clear_array = proj_luxury_goods_need
+					clear_array = proj_luxury_goods_fulfilled
+					clear_array = proj_luxury_goods_demand
+					clear_array = proj_luxury_goods_build_speed
+					clear_array = proj_services_need
+					clear_array = proj_services_fulfilled
+					clear_array = proj_services_demand
+					clear_array = proj_services_build_speed
+					clear_array = proj_raw_goods_need
+					clear_array = proj_raw_goods_fulfilled
+					clear_array = proj_raw_goods_demand
+					clear_array = proj_raw_goods_build_speed
+					clear_array = proj_industrial_goods_need
+					clear_array = proj_industrial_goods_fulfilled
+					clear_array = proj_industrial_goods_demand
+					clear_array = proj_industrial_goods_build_speed
+				#
+
+				#set_variable = { global.administration_base_expense = 0.5 } #Percentage (from 0.0 to 100.0) of pop earnings that are needed for basic administration
+				set_variable = { global.administration_population_expense = 100 } #Below this population amount (in thousands), administration becomes more expensive. Should not be 0
+				set_variable = { global.administration_population_expense_modifier = 2 } #Maximum modifier of admin costs when population is 0
+
+				set_variable = { global.default_interest_rate = 3.0 } #Percent per year - Default national bank interest rate for loans to pops/corporations
+				set_variable = { global.loan_scarcity_rate = 5.0 } #Percent per year - How much interest should be added when you use up all loans you can get
+				set_variable = { global.base_international_interest_rate = 1.0 } #The additional rate that entities pay on getting loans from a foreign national bank
+				set_variable = { global.loan_scarcity_increase_willingness = 0.25 } #When doing the autoborrow, how much scarcity increase is willing to be tolerated?
+
+				#Credit Ratings & Interest Rates for Each
+					#NOTE - Credit Rating is determined by the system.
+					#	  - Actual interest rate can be higher b/c of lack of available funds
+					#AAA - An obligor has EXTREMELY STRONG capacity to meet its financial commitments.
+					set_variable = { global.credit_rating_AAA_base_interest_rate = 1.75 }
+					#AA - An obligor has VERY STRONG capacity to meet its financial commitments. It differs from the highest-rated obligors only to a small degree.
+					set_variable = { global.credit_rating_AA_base_interest_rate = 2.0 }
+					#A - An obligor has STRONG capacity to meet its financial commitments 
+					set_variable = { global.credit_rating_A_base_interest_rate = 2.25 }
+					#BBB - An obligor has ADEQUATE capacity to meet its financial commitments
+					set_variable = { global.credit_rating_BBB_base_interest_rate = 2.5 }
+					#BB - An obligor is LESS VULNERABLE in the near term than other lower-rated obligors
+					set_variable = { global.credit_rating_BB_base_interest_rate = 2.75 }
+					#B - An obligor is MORE VULNERABLE than the obligors rated 'BB', but the obligor currently has the capacity to meet its financial commitments.
+					set_variable = { global.credit_rating_B_base_interest_rate = 3.0 }
+					#CCC - An obligor is CURRENTLY VULNERABLE, and is dependent upon favourable business, financial, and economic conditions to meet its financial commitments.
+					set_variable = { global.credit_rating_CCC_base_interest_rate = 3.25 }
+					#CC - An obligor is CURRENTLY HIGHLY-VULNERABLE.
+					set_variable = { global.credit_rating_CC_base_interest_rate = 3.5 }
+					#SD - An obligor has failed to pay one or more of its financial obligations (rated or unrated) when it became due. Sovereign Default / Bankruptcy
+					set_variable = { global.credit_rating_SD_base_interest_rate = 10.0 }
+                #
             #
         #
+
+		#Setup Projects
+			clear_array = global.proj_id
+			clear_array = global.proj_life_goods_base_need
+			clear_array = global.proj_life_goods_base_build_speed
+			clear_array = global.proj_everyday_goods_base_need
+			clear_array = global.proj_everyday_goods_base_build_speed
+			clear_array = global.proj_luxury_goods_base_need
+			clear_array = global.proj_luxury_goods_base_build_speed
+			clear_array = global.proj_services_base_need
+			clear_array = global.proj_services_base_build_speed
+			clear_array = global.proj_raw_goods_base_need
+			clear_array = global.proj_raw_goods_base_build_speed
+			clear_array = global.proj_industrial_goods_base_need
+			clear_array = global.proj_industrial_goods_base_build_speed
+			clear_array = global.proj_repeatable
+			clear_array = global.proj_relative
+			proj_setup = yes
+		#
+
+		clear_array = global.econ_order_array
     }
 
 #Building Definitions
