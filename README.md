@@ -57,8 +57,8 @@ Here's a useful installation video by one of our lead developers:
 <a href="https://youtu.be/Qr6l2DEneNY">Video Link: https://youtu.be/Qr6l2DEneNY</a>
 
 ### Links from the Video 
-* <a href="https://desktop.github.com/">Github Desktop App: https://desktop.github.com/</a>
-* <a href="https://github.com/team-eoanb/EoaNB">Github Repo URL: https://github.com/team-eoanb/EoaNB</a>
+* **Github Desktop App:** https://desktop.github.com/</a>
+* **Github Repo URL:** https://github.com/team-EoaNB-Redux/EoaNB</a>
 
 <hr>
 
