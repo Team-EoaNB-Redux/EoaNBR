@@ -13,13 +13,13 @@
 [steam-badge]: https://img.shields.io/static/v1?label=Steam&message=Download&color=lightgrey&logo=steam&style=for-the-badge
 [steam-link]: https://steamcommunity.com/sharedfiles/filedetails/?id=2114093692
 
-[youtube-badge]: https://img.shields.io/static/v1?label=Youtube&message=Videos&color=red&logo=youtube&style=for-the-badge
+[youtube-badge]: https://img.shields.io/static/v1?label=Youtube&message=Watch&color=red&logo=youtube&style=for-the-badge
 [youtube-link]: https://www.youtube.com/channel/UCR6n-pjZ4ain9hhUESuhZNw
 
 [discord-badge]: https://img.shields.io/static/v1?label=Discord&message=Chat&color=blue&logo=discord&style=for-the-badge
 [discord-link]: https://discord.gg/QG6vp5PbMW
 
-[reddit-badge]: https://img.shields.io/static/v1?label=Reddit&message=Forum&color=orange&logo=reddit&style=for-the-badge
+[reddit-badge]: https://img.shields.io/static/v1?label=Reddit&message=Discusscolor=orange&logo=reddit&style=for-the-badge
 [reddit-link]: https://www.reddit.com/r/eoanb_redux/
 
 [github-size]: https://img.shields.io/github/repo-size/team-EoaNB-Redux/EoaNB?label=MOD%20SIZE&style=for-the-badge
