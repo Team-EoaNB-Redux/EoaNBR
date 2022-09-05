@@ -1,6 +1,6 @@
 <hr>
 
-# Official Repository of the End of a New Beginning Redux Mod
+# Official Repository of the End of a New Beginning Redux Mod Toolpack Extension
 ### Media
 [![Steam][steam-badge]][steam-link]   [![Discord][discord-badge]][discord-link]   [![Patreon][patreon-badge]][patreon-link]   [![Youtube][youtube-badge]][youtube-link]   [![Reddit][reddit-badge]][reddit-link]
 
@@ -43,7 +43,7 @@
 
 ## What is this?
 
-This site is the official respository (cloud) for sharing and cooperating in the development of the Hearts of Iron IV mod, **End of a New Beginning Redux**. Here, you can learn how to join our community, install our mod, and join/support the development team.
+This site is the official respository (cloud) for sharing and cooperating in the development of the Hearts of Iron IV mod, **End of a New Beginning Redux Toolpack**. Here, you can learn how to join our community, install our mod, and join/support the development team.
 
 <img src="https://github.com/team-eoanb/EoaNB-Wallpapers/blob/main/banner_vertersus.png?raw=true" width="720px;" align="middle" alt="End of a New Beginning — Pax Orientalis Banner"/>
 
@@ -58,7 +58,7 @@ Here's a useful installation video by one of our lead developers:
 
 ### Links from the Video 
 * **Github Desktop App:** https://desktop.github.com/</a>
-* **Github Repo URL:** https://github.com/team-EoaNB-Redux/EoaNBR</a>
+* **Github Repo URL:** https://github.com/team-EoaNB-Redux/EoaNBR-Toolpack</a>
 
 <hr>
 
