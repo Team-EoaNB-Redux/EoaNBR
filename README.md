@@ -58,7 +58,7 @@ Here's a useful installation video by one of our lead developers:
 
 ### Links from the Video 
 * **Github Desktop App:** https://desktop.github.com/</a>
-* **Github Repo URL:** https://github.com/team-EoaNB-Redux/EoaNB</a>
+* **Github Repo URL:** https://github.com/team-EoaNB-Redux/EoaNBR</a>
 
 <hr>
 
