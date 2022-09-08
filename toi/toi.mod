@@ -1,4 +1,4 @@
-name="End of a New Beginning Redux - Official Edition"
+name="End of a New Beginning Redux - GitHub Edition"
 version="0.2.9 Ver Tersus"
 tags={
 	"Alternative History"
@@ -17,7 +17,6 @@ replace_path="common/aces"
 replace_path="common/ai_areas"
 replace_path="common/ai_equipment"
 replace_path="common/ai_focuses"
-replace_path="common/ai_peace"
 replace_path="common/ai_strategy"
 replace_path="common/ai_strategy_plans"
 replace_path="common/ai_templates"
