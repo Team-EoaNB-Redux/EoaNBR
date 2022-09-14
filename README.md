@@ -1,6 +1,6 @@
 <hr>
 
-# Official Repository of the End of a New Beginning Redux Mod Toolpack Extension
+# Official Repository of the End of a New Beginning Redux Mod
 ### Media
 [![Steam][steam-badge]][steam-link]   [![Discord][discord-badge]][discord-link]   [![Patreon][patreon-badge]][patreon-link]   [![Youtube][youtube-badge]][youtube-link]   [![Reddit][reddit-badge]][reddit-link]
 
