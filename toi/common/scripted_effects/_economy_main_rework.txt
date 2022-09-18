@@ -69,9 +69,9 @@
             #
 
             #Buildings
-		        set_variable = { global.industry_money_limit = 1 } #Money limit for an industry for its output times the base price of the outputted resource
-                set_variable = { global.minimum_base_wage = 0.01 } #Minimum base wage (not average) for an industry
-                set_variable = { global.industries_economy_of_scale_factor = 0.01 } #What bonus gets added to throughput for each size industry in a state
+		        set_variable = { global.building_money_limit = 1 } #Money limit for an building for its output times the base price of the outputted resource
+                set_variable = { global.minimum_base_wage = 0.01 } #Minimum base wage (not average) for an building
+                set_variable = { global.industries_economy_of_scale_factor = 0.01 } #What bonus gets added to throughput for each size building in a state
 
                 #Define Buildings
                 define_infrastructure = yes
@@ -411,187 +411,200 @@
 
         set_historical_state_deposits = yes
         set_historical_state_buildings = yes
-        every_state = {
-            #Rural Buildings
-                if = {
-                    limit = {
-                        check_variable = { building_infrastructure_size > 0 }
+        every_country = {
+            
+            every_controlled_state = {
+                #Rural Buildings
+                    if = {
+                        limit = {
+                            check_variable = { building_infrastructure_size > 0 }
+                        }
+                        set_variable = { size@token:building_infrastructure = building_infrastructure_size }
+                        set_variable = { production_method@token:building_infrastructure = building_infrastructure_pm }
                     }
-                    set_variable = { size@token:building_infrastructure = building_infrastructure_size }
-                    set_variable = { production_method@token:building_infrastructure = building_infrastructure_pm }
-                }
-                if = {
-                    limit = {
-                        check_variable = { building_railway_size > 0 }
+                    if = {
+                        limit = {
+                            check_variable = { building_railway_size > 0 }
+                        }
+                        set_variable = { size@token:building_railway = building_railway_size }
+                        set_variable = { production_method@token:building_railway = building_railway_pm }
                     }
-                    set_variable = { size@token:building_railway = building_railway_size }
-                    set_variable = { production_method@token:building_railway = building_railway_pm }
+
+                    set_temp_variable = { sub_farm_size_temp = arable_land }
+
+                    if = {
+                        limit = {
+                            check_variable = { building_commercial_farm_size > 0 }
+                        }
+                        subtract_from_temp_variable = { sub_farm_size_temp = building_commercial_farm_size }
+
+                        set_variable = { size@token:building_commercial_farm = building_commercial_farm_size }
+                        set_variable = { production_method@token:building_commercial_farm = building_commercial_farm_pm }
+                    }
+                    if = {
+                        limit = {
+                            check_variable = { building_food_plantation_size > 0 }
+                        }
+                        subtract_from_temp_variable = { sub_farm_size_temp = building_food_plantation_size }
+
+                        set_variable = { size@token:building_food_plantation = building_food_plantation_size }
+                        set_variable = { production_method@token:building_food_plantation = building_food_plantation_pm }
+                    }
+                    if = {
+                        limit = {
+                            check_variable = { building_material_plantation_size > 0 }
+                        }
+                        subtract_from_temp_variable = { sub_farm_size_temp = building_material_plantation_size }
+
+                        set_variable = { size@token:building_material_plantation = building_material_plantation_size }
+                        set_variable = { production_method@token:building_material_plantation = building_material_plantation_pm }
+                    }
+                    if = {
+                        limit = {
+                            check_variable = { building_luxuries_plantation_size > 0 }
+                        }
+                        subtract_from_temp_variable = { sub_farm_size_temp = building_luxuries_plantation_size }
+
+                        set_variable = { size@token:building_luxuries_plantation = building_luxuries_plantation_size }
+                        set_variable = { production_method@token:building_luxuries_plantation = building_luxuries_plantation_pm }
+                    }
+
+                    if = {
+                        limit = {
+                            check_variable = { sub_farm_size_temp > 0 }
+                        }
+                        if = {
+                            limit = {
+                                has_state_flag = uses_rice_paddies
+                            }
+                            set_variable = { size@token:building_rice_paddy = sub_farm_size_temp }
+                        }
+                        else = {
+                            set_variable = { size@token:building_subsistence_farm = sub_farm_size_temp }
+                        }
+                    }
+
+                    
+                    if = {
+                        limit = {
+                            check_variable = { building_lumber_mill_size > 0 }
+                        }
+                        set_variable = { size@token:building_lumber_mill = building_lumber_mill_size }
+                        set_variable = { production_method@token:building_lumber_mill = building_lumber_mill_pm }
+                    }
+                    if = {
+                        limit = {
+                            check_variable = { building_metals_mine_size > 0 }
+                        }
+                        set_variable = { size@token:building_metals_mine = building_metals_mine_size }
+                        set_variable = { production_method@token:building_metals_mine = building_metals_mine_pm }
+                    }
+                    if = {
+                        limit = {
+                            check_variable = { building_coal_mine_size > 0 }
+                        }
+                        set_variable = { size@token:building_coal_mine = building_coal_mine_size }
+                        set_variable = { production_method@token:building_coal_mine = building_coal_mine_pm }
+                    }
+                    if = {
+                        limit = {
+                            check_variable = { building_oil_well_size > 0 }
+                        }
+                        set_variable = { size@token:building_oil_well = building_oil_well_size }
+                        set_variable = { production_method@token:building_oil_well = building_oil_well_pm }
+                    }
+                    if = {
+                        limit = {
+                            check_variable = { building_valuables_extractor_size > 0 }
+                        }
+                        set_variable = { size@token:building_valuables_extractor = building_valuables_extractor_size }
+                        set_variable = { production_method@token:building_valuables_extractor = building_valuables_extractor_pm }
+                    }
+                #
+
+                #Urban Buildings
+                    if = {
+                        limit = {
+                            check_variable = { building_port_size > 0 }
+                        }
+                        set_variable = { size@token:building_port = building_port_size }
+                        set_variable = { production_method@token:building_port = building_port_pm }
+                    }
+                    if = {
+                        limit = {
+                            check_variable = { building_airport_size > 0 }
+                        }
+                        set_variable = { size@token:building_airport = building_airport_size }
+                        set_variable = { production_method@token:building_airport = building_airport_pm }
+                    }
+                    
+                    if = {
+                        limit = {
+                            check_variable = { arms_factory_level > 0 }
+                        }
+                        set_variable = { size@token:building_military_industry = arms_factory_level }
+                    }
+                    if = {
+                        limit = {
+                            check_variable = { industrial_complex_level > 0 }
+                        }
+                        set_variable = { size@token:building_civilian_industry = industrial_complex_level }
+                    }
+                    if = {
+                        limit = {
+                            check_variable = { building_level@dockyard > 0 }
+                        }
+                        set_variable = { size@token:building_naval_industry = building_level@dockyard }
+                    }
+
+                    if = {
+                        limit = {
+                            check_variable = { building_consumer_goods_factory_size > 0 }
+                        }
+                        set_variable = { size@token:building_consumer_goods_factory = building_consumer_goods_factory_size }
+                        set_variable = { production_method@token:building_consumer_goods_factory = building_consumer_goods_factory_pm }
+                    }
+                    if = {
+                        limit = {
+                            check_variable = { building_luxury_goods_factory_size > 0 }
+                        }
+                        set_variable = { size@token:building_luxury_goods_factory = building_luxury_goods_factory_size }
+                        set_variable = { production_method@token:building_luxury_goods_factory = building_luxury_goods_factory_pm }
+                    }
+                    if = {
+                        limit = {
+                            check_variable = { building_industrial_goods_factory_size > 0 }
+                        }
+                        set_variable = { size@token:building_industrial_goods_factory = building_industrial_goods_factory_size }
+                        set_variable = { production_method@token:building_industrial_goods_factory = building_industrial_goods_factory_pm }
+                    }
+                    if = {
+                        limit = {
+                            check_variable = { building_services_building_size > 0 }
+                        }
+                        set_variable = { size@token:building_services_building = building_services_building_size }
+                        set_variable = { production_method@token:building_services_building = building_services_building_pm }
+                    }
+                    if = {
+                        limit = {
+                            check_variable = { building_power_plant_size > 0 }
+                        }
+                        set_variable = { size@token:building_power_plant = building_power_plant_size }
+                        set_variable = { production_method@token:building_power_plant = building_power_plant_pm }
+                    }
+                #
+
+                reload_building_array = yes
+
+
+                for_each_loop = {
+                    array = global.resource_token_array
+                    value = r_token
+
+                    set_variable = { price@var:r_token = global.base_price@var:r_token }
                 }
 
-                set_temp_variable = { sub_farm_size_temp = arable_land }
-
-                if = {
-                    limit = {
-                        check_variable = { building_commercial_farm_size > 0 }
-                    }
-                    subtract_from_temp_variable = { sub_farm_size_temp = building_commercial_farm_size }
-
-                    set_variable = { size@token:building_commercial_farm = building_commercial_farm_size }
-                    set_variable = { production_method@token:building_commercial_farm = building_commercial_farm_pm }
-                }
-                if = {
-                    limit = {
-                        check_variable = { building_food_plantation_size > 0 }
-                    }
-                    subtract_from_temp_variable = { sub_farm_size_temp = building_food_plantation_size }
-
-                    set_variable = { size@token:building_food_plantation = building_food_plantation_size }
-                    set_variable = { production_method@token:building_food_plantation = building_food_plantation_pm }
-                }
-                if = {
-                    limit = {
-                        check_variable = { building_material_plantation_size > 0 }
-                    }
-                    subtract_from_temp_variable = { sub_farm_size_temp = building_material_plantation_size }
-
-                    set_variable = { size@token:building_material_plantation = building_material_plantation_size }
-                    set_variable = { production_method@token:building_material_plantation = building_material_plantation_pm }
-                }
-                if = {
-                    limit = {
-                        check_variable = { building_luxuries_plantation_size > 0 }
-                    }
-                    subtract_from_temp_variable = { sub_farm_size_temp = building_luxuries_plantation_size }
-
-                    set_variable = { size@token:building_luxuries_plantation = building_luxuries_plantation_size }
-                    set_variable = { production_method@token:building_luxuries_plantation = building_luxuries_plantation_pm }
-                }
-
-                if = {
-                    limit = {
-                        check_variable = { sub_farm_size_temp > 0 }
-                    }
-                    set_variable = { size@token:building_subsistence_farm = sub_farm_size_temp }
-                }
-
-                
-                if = {
-                    limit = {
-                        check_variable = { building_lumber_mill_size > 0 }
-                    }
-                    set_variable = { size@token:building_lumber_mill = building_lumber_mill_size }
-                    set_variable = { production_method@token:building_lumber_mill = building_lumber_mill_pm }
-                }
-                if = {
-                    limit = {
-                        check_variable = { building_metals_mine_size > 0 }
-                    }
-                    set_variable = { size@token:building_metals_mine = building_metals_mine_size }
-                    set_variable = { production_method@token:building_metals_mine = building_metals_mine_pm }
-                }
-                if = {
-                    limit = {
-                        check_variable = { building_coal_mine_size > 0 }
-                    }
-                    set_variable = { size@token:building_coal_mine = building_coal_mine_size }
-                    set_variable = { production_method@token:building_coal_mine = building_coal_mine_pm }
-                }
-                if = {
-                    limit = {
-                        check_variable = { building_oil_well_size > 0 }
-                    }
-                    set_variable = { size@token:building_oil_well = building_oil_well_size }
-                    set_variable = { production_method@token:building_oil_well = building_oil_well_pm }
-                }
-                if = {
-                    limit = {
-                        check_variable = { building_valuables_extractor_size > 0 }
-                    }
-                    set_variable = { size@token:building_valuables_extractor = building_valuables_extractor_size }
-                    set_variable = { production_method@token:building_valuables_extractor = building_valuables_extractor_pm }
-                }
-            #
-
-            #Urban Buildings
-                if = {
-                    limit = {
-                        check_variable = { building_port_size > 0 }
-                    }
-                    set_variable = { size@token:building_port = building_port_size }
-                    set_variable = { production_method@token:building_port = building_port_pm }
-                }
-                if = {
-                    limit = {
-                        check_variable = { building_airport_size > 0 }
-                    }
-                    set_variable = { size@token:building_airport = building_airport_size }
-                    set_variable = { production_method@token:building_airport = building_airport_pm }
-                }
-                
-                if = {
-                    limit = {
-                        check_variable = { arms_factory_level > 0 }
-                    }
-                    set_variable = { size@token:building_military_industry = arms_factory_level }
-                }
-                if = {
-                    limit = {
-                        check_variable = { industrial_complex_level > 0 }
-                    }
-                    set_variable = { size@token:building_civilian_industry = industrial_complex_level }
-                }
-                if = {
-                    limit = {
-                        check_variable = { building_level@dockyard > 0 }
-                    }
-                    set_variable = { size@token:building_naval_industry = building_level@dockyard }
-                }
-
-                if = {
-                    limit = {
-                        check_variable = { building_consumer_goods_factory_size > 0 }
-                    }
-                    set_variable = { size@token:building_consumer_goods_factory = building_consumer_goods_factory_size }
-                    set_variable = { production_method@token:building_consumer_goods_factory = building_consumer_goods_factory_pm }
-                }
-                if = {
-                    limit = {
-                        check_variable = { building_luxury_goods_factory_size > 0 }
-                    }
-                    set_variable = { size@token:building_luxury_goods_factory = building_luxury_goods_factory_size }
-                    set_variable = { production_method@token:building_luxury_goods_factory = building_luxury_goods_factory_pm }
-                }
-                if = {
-                    limit = {
-                        check_variable = { building_industrial_goods_factory_size > 0 }
-                    }
-                    set_variable = { size@token:building_industrial_goods_factory = building_industrial_goods_factory_size }
-                    set_variable = { production_method@token:building_industrial_goods_factory = building_industrial_goods_factory_pm }
-                }
-                if = {
-                    limit = {
-                        check_variable = { building_services_building_size > 0 }
-                    }
-                    set_variable = { size@token:building_services_building = building_services_building_size }
-                    set_variable = { production_method@token:building_services_building = building_services_building_pm }
-                }
-                if = {
-                    limit = {
-                        check_variable = { building_power_plant_size > 0 }
-                    }
-                    set_variable = { size@token:building_power_plant = building_power_plant_size }
-                    set_variable = { production_method@token:building_power_plant = building_power_plant_pm }
-                }
-            #
-
-            reload_building_array = yes
-
-
-            for_each_loop = {
-                array = global.resource_token_array
-                value = r_token
-
-                set_variable = { price@var:r_token = global.base_price@var:r_token }
+			    buildings_update = yes
             }
         }
 
@@ -621,6 +634,860 @@
                 add_to_array = { rural_buildings = bld_token }
             }
         }
+    }
+
+    buildings_update = {
+
+		set_variable = { jobs_buildings = 0 }
+		set_variable = { employed_buildings = 0 }
+
+		for_each_loop = {
+			array = urban_buildings
+			value = bu_token
+			index = ind
+			break = ind_break
+
+			building_update = yes
+
+			add_to_variable = { jobs_buildings = jobs@var:bu_token }
+			add_to_variable = { employed_buildings = employed@var:bu_token }
+		}
+		for_each_loop = {
+			array = rural_buildings
+			value = bu_token
+			index = ind
+			break = ind_break
+
+			building_update = yes
+
+			add_to_variable = { jobs_buildings = jobs@var:bu_token }
+			add_to_variable = { employed_buildings = employed@var:bu_token }
+		}
+    }
+    building_update = {
+        #bu_token
+
+        building_update_workforce = yes
+        building_update_production = yes
+        building_update_finances = yes
+    }
+    building_update_workforce = {
+        #bu_token
+
+
+		#Jobs Amount
+			if = { #Basic
+				limit = {
+					check_variable = { production_method@var:bu_token = 0 }
+				}
+				set_variable = { peasants_jobs@var:bu_token = global.building_basic_peasants_employment@var:bu_token }
+				set_variable = { laborers_jobs@var:bu_token = global.building_basic_laborers_employment@var:bu_token }
+				set_variable = { workers_jobs@var:bu_token = global.building_basic_workers_employment@var:bu_token }
+				set_variable = { professionals_jobs@var:bu_token = global.building_basic_professionals_employment@var:bu_token }
+				set_variable = { specialists_jobs@var:bu_token = global.building_basic_specialists_employment@var:bu_token }
+				set_variable = { aristocrats_jobs@var:bu_token = global.building_basic_aristocrats_employment@var:bu_token }
+				set_variable = { capitalists_jobs@var:bu_token = global.building_basic_capitalists_employment@var:bu_token }
+			}
+			else_if = { #Advanced
+				limit = {
+					check_variable = { production_method@var:bu_token = 1 }
+				}
+				set_variable = { peasants_jobs@var:bu_token = global.building_advanced_peasants_employment@var:bu_token }
+				set_variable = { laborers_jobs@var:bu_token = global.building_advanced_laborers_employment@var:bu_token }
+				set_variable = { workers_jobs@var:bu_token = global.building_advanced_workers_employment@var:bu_token }
+				set_variable = { professionals_jobs@var:bu_token = global.building_advanced_professionals_employment@var:bu_token }
+				set_variable = { specialists_jobs@var:bu_token = global.building_advanced_specialists_employment@var:bu_token }
+				set_variable = { aristocrats_jobs@var:bu_token = global.building_advanced_aristocrats_employment@var:bu_token }
+				set_variable = { capitalists_jobs@var:bu_token = global.building_advanced_capitalists_employment@var:bu_token }
+			}
+			else_if = { #Industrialized
+				limit = {
+					check_variable = { production_method@var:bu_token = 2 }
+				}
+				set_variable = { peasants_jobs@var:bu_token = global.building_industrialized_peasants_employment@var:bu_token }
+				set_variable = { laborers_jobs@var:bu_token = global.building_industrialized_laborers_employment@var:bu_token }
+				set_variable = { workers_jobs@var:bu_token = global.building_industrialized_workers_employment@var:bu_token }
+				set_variable = { professionals_jobs@var:bu_token = global.building_industrialized_professionals_employment@var:bu_token }
+				set_variable = { specialists_jobs@var:bu_token = global.building_industrialized_specialists_employment@var:bu_token }
+				set_variable = { aristocrats_jobs@var:bu_token = global.building_industrialized_aristocrats_employment@var:bu_token }
+				set_variable = { capitalists_jobs@var:bu_token = global.building_industrialized_capitalists_employment@var:bu_token }
+			}
+			else_if = { #Mechanized
+				limit = {
+					check_variable = { production_method@var:bu_token = 3 }
+				}
+				set_variable = { peasants_jobs@var:bu_token = global.building_mechanized_peasants_employment@var:bu_token }
+				set_variable = { laborers_jobs@var:bu_token = global.building_mechanized_laborers_employment@var:bu_token }
+				set_variable = { workers_jobs@var:bu_token = global.building_mechanized_workers_employment@var:bu_token }
+				set_variable = { professionals_jobs@var:bu_token = global.building_mechanized_professionals_employment@var:bu_token }
+				set_variable = { specialists_jobs@var:bu_token = global.building_mechanized_specialists_employment@var:bu_token }
+				set_variable = { aristocrats_jobs@var:bu_token = global.building_mechanized_aristocrats_employment@var:bu_token }
+				set_variable = { capitalists_jobs@var:bu_token = global.building_mechanized_capitalists_employment@var:bu_token }
+			}
+			else_if = { #Electrified
+				limit = {
+					check_variable = { production_method@var:bu_token = 4 }
+				}
+				set_variable = { peasants_jobs@var:bu_token = global.building_electrified_peasants_employment@var:bu_token }
+				set_variable = { laborers_jobs@var:bu_token = global.building_electrified_laborers_employment@var:bu_token }
+				set_variable = { workers_jobs@var:bu_token = global.building_electrified_workers_employment@var:bu_token }
+				set_variable = { professionals_jobs@var:bu_token = global.building_electrified_professionals_employment@var:bu_token }
+				set_variable = { specialists_jobs@var:bu_token = global.building_electrified_specialists_employment@var:bu_token }
+				set_variable = { aristocrats_jobs@var:bu_token = global.building_electrified_aristocrats_employment@var:bu_token }
+				set_variable = { capitalists_jobs@var:bu_token = global.building_electrified_capitalists_employment@var:bu_token }
+			}
+			else_if = { #Motorized
+				limit = {
+					check_variable = { production_method@var:bu_token = 5 }
+				}
+				set_variable = { peasants_jobs@var:bu_token = global.building_motorized_peasants_employment@var:bu_token }
+				set_variable = { laborers_jobs@var:bu_token = global.building_motorized_laborers_employment@var:bu_token }
+				set_variable = { workers_jobs@var:bu_token = global.building_motorized_workers_employment@var:bu_token }
+				set_variable = { professionals_jobs@var:bu_token = global.building_motorized_professionals_employment@var:bu_token }
+				set_variable = { specialists_jobs@var:bu_token = global.building_motorized_specialists_employment@var:bu_token }
+				set_variable = { aristocrats_jobs@var:bu_token = global.building_motorized_aristocrats_employment@var:bu_token }
+				set_variable = { capitalists_jobs@var:bu_token = global.building_motorized_capitalists_employment@var:bu_token }
+			}
+			else_if = { #Modernized
+				limit = {
+					check_variable = { production_method@var:bu_token = 6 }
+				}
+				set_variable = { peasants_jobs@var:bu_token = global.building_modernized_peasants_employment@var:bu_token }
+				set_variable = { laborers_jobs@var:bu_token = global.building_modernized_laborers_employment@var:bu_token }
+				set_variable = { workers_jobs@var:bu_token = global.building_modernized_workers_employment@var:bu_token }
+				set_variable = { professionals_jobs@var:bu_token = global.building_modernized_professionals_employment@var:bu_token }
+				set_variable = { specialists_jobs@var:bu_token = global.building_modernized_specialists_employment@var:bu_token }
+				set_variable = { aristocrats_jobs@var:bu_token = global.building_modernized_aristocrats_employment@var:bu_token }
+				set_variable = { capitalists_jobs@var:bu_token = global.building_modernized_capitalists_employment@var:bu_token }
+			}
+			else_if = { #Roboticized
+				limit = {
+					check_variable = { production_method@var:bu_token = 7 }
+				}
+				set_variable = { peasants_jobs@var:bu_token = global.building_roboticized_peasants_employment@var:bu_token }
+				set_variable = { laborers_jobs@var:bu_token = global.building_roboticized_laborers_employment@var:bu_token }
+				set_variable = { workers_jobs@var:bu_token = global.building_roboticized_workers_employment@var:bu_token }
+				set_variable = { professionals_jobs@var:bu_token = global.building_roboticized_professionals_employment@var:bu_token }
+				set_variable = { specialists_jobs@var:bu_token = global.building_roboticized_specialists_employment@var:bu_token }
+				set_variable = { aristocrats_jobs@var:bu_token = global.building_roboticized_aristocrats_employment@var:bu_token }
+				set_variable = { capitalists_jobs@var:bu_token = global.building_roboticized_capitalists_employment@var:bu_token }
+			}
+			else_if = { #Computerized
+				limit = {
+					check_variable = { production_method@var:bu_token = 8 }
+				}
+				set_variable = { peasants_jobs@var:bu_token = global.building_computerized_peasants_employment@var:bu_token }
+				set_variable = { laborers_jobs@var:bu_token = global.building_computerized_laborers_employment@var:bu_token }
+				set_variable = { workers_jobs@var:bu_token = global.building_computerized_workers_employment@var:bu_token }
+				set_variable = { professionals_jobs@var:bu_token = global.building_computerized_professionals_employment@var:bu_token }
+				set_variable = { specialists_jobs@var:bu_token = global.building_computerized_specialists_employment@var:bu_token }
+				set_variable = { aristocrats_jobs@var:bu_token = global.building_computerized_aristocrats_employment@var:bu_token }
+				set_variable = { capitalists_jobs@var:bu_token = global.building_computerized_capitalists_employment@var:bu_token }
+			}
+			else_if = { #Digitalized
+				limit = {
+					check_variable = { production_method@var:bu_token = 9 }
+				}
+				set_variable = { peasants_jobs@var:bu_token = global.building_digitalized_peasants_employment@var:bu_token }
+				set_variable = { laborers_jobs@var:bu_token = global.building_digitalized_laborers_employment@var:bu_token }
+				set_variable = { workers_jobs@var:bu_token = global.building_digitalized_workers_employment@var:bu_token }
+				set_variable = { professionals_jobs@var:bu_token = global.building_digitalized_professionals_employment@var:bu_token }
+				set_variable = { specialists_jobs@var:bu_token = global.building_digitalized_specialists_employment@var:bu_token }
+				set_variable = { aristocrats_jobs@var:bu_token = global.building_digitalized_aristocrats_employment@var:bu_token }
+				set_variable = { capitalists_jobs@var:bu_token = global.building_digitalized_capitalists_employment@var:bu_token }
+			}
+			else_if = { #Automatized
+				limit = {
+					check_variable = { production_method@var:bu_token = 10 }
+				}
+				set_variable = { peasants_jobs@var:bu_token = global.building_automatized_peasants_employment@var:bu_token }
+				set_variable = { laborers_jobs@var:bu_token = global.building_automatized_laborers_employment@var:bu_token }
+				set_variable = { workers_jobs@var:bu_token = global.building_automatized_workers_employment@var:bu_token }
+				set_variable = { professionals_jobs@var:bu_token = global.building_automatized_professionals_employment@var:bu_token }
+				set_variable = { specialists_jobs@var:bu_token = global.building_automatized_specialists_employment@var:bu_token }
+				set_variable = { aristocrats_jobs@var:bu_token = global.building_automatized_aristocrats_employment@var:bu_token }
+				set_variable = { capitalists_jobs@var:bu_token = global.building_automatized_capitalists_employment@var:bu_token }
+			}
+			else_if = { #Futurized
+				limit = {
+					check_variable = { production_method@var:bu_token = 11 }
+				}
+				set_variable = { peasants_jobs@var:bu_token = global.building_futurized_peasants_employment@var:bu_token }
+				set_variable = { laborers_jobs@var:bu_token = global.building_futurized_laborers_employment@var:bu_token }
+				set_variable = { workers_jobs@var:bu_token = global.building_futurized_workers_employment@var:bu_token }
+				set_variable = { professionals_jobs@var:bu_token = global.building_futurized_professionals_employment@var:bu_token }
+				set_variable = { specialists_jobs@var:bu_token = global.building_futurized_specialists_employment@var:bu_token }
+				set_variable = { aristocrats_jobs@var:bu_token = global.building_futurized_aristocrats_employment@var:bu_token }
+				set_variable = { capitalists_jobs@var:bu_token = global.building_futurized_capitalists_employment@var:bu_token }
+			}
+			multiply_variable = { peasants_jobs@var:bu_token = size@var:bu_token }
+			multiply_variable = { laborers_jobs@var:bu_token = size@var:bu_token }
+			multiply_variable = { workers_jobs@var:bu_token =  size@var:bu_token }
+			multiply_variable = { professionals_jobs@var:bu_token = size@var:bu_token }
+			multiply_variable = { specialists_jobs@var:bu_token =  size@var:bu_token }
+			multiply_variable = { aristocrats_jobs@var:bu_token =  size@var:bu_token }
+			multiply_variable = { capitalists_jobs@var:bu_token =  size@var:bu_token }
+
+
+			set_variable = { jobs@var:bu_token = peasants_jobs@var:bu_token }
+			add_to_variable = { jobs@var:bu_token = laborers_jobs@var:bu_token }
+			add_to_variable = { jobs@var:bu_token = workers_jobs@var:bu_token }
+			add_to_variable = { jobs@var:bu_token = professionals_jobs@var:bu_token }
+			add_to_variable = { jobs@var:bu_token = specialists_jobs@var:bu_token }
+			add_to_variable = { jobs@var:bu_token = aristocrats_jobs@var:bu_token }
+			add_to_variable = { jobs@var:bu_token = capitalists_jobs@var:bu_token }
+		#
+		#Employees Amount
+			set_variable = { employed@var:bu_token = peasants_employed@var:bu_token }
+			add_to_variable = { employed@var:bu_token = laborers_employed@var:bu_token }
+			add_to_variable = { employed@var:bu_token = workers_employed@var:bu_token }
+			add_to_variable = { employed@var:bu_token = professionals_employed@var:bu_token }
+			add_to_variable = { employed@var:bu_token = specialists_employed@var:bu_token }
+			add_to_variable = { employed@var:bu_token = aristocrats_employed@var:bu_token }
+			add_to_variable = { employed@var:bu_token = capitalists_employed@var:bu_token }
+		#
+		
+		#Employment Percentage
+			set_variable = { employment_percentage@var:bu_token = employed@var:bu_token }
+			divide_variable = { employment_percentage@var:bu_token = jobs@var:bu_token }
+		#
+    }
+    building_update_production = {
+		#bu_token
+
+		#Production Percentage
+			set_variable = { production_percentage@var:bu_token = employment_percentage@var:bu_token }
+		#
+
+		#Production Modifiers
+			set_temp_variable = { output_modifier_temp = output_factor@var:bu_token }
+			add_to_temp_variable = { output_modifier_temp = 1 }
+
+			set_temp_variable = { throughput_modifier_temp = throughput_factor@var:bu_token }
+			add_to_temp_variable = { throughput_modifier_temp = 1 }
+
+			set_temp_variable = { input_modifier_temp = input_factor@var:bu_token }
+			add_to_temp_variable = { input_modifier_temp = 1 }
+
+			set_temp_variable = { maintenance_modifier_temp = maintenance_factor@var:bu_token }
+			add_to_temp_variable = { maintenance_modifier_temp = 1 }
+		#
+
+		#Max Production
+			set_variable = { max_production_1@var:bu_token = size@var:bu_token }
+			set_variable = { max_production_2@var:bu_token = size@var:bu_token }
+			set_variable = { max_production_3@var:bu_token = size@var:bu_token }
+			set_variable = { max_production_4@var:bu_token = size@var:bu_token }
+			set_variable = { max_production_5@var:bu_token = size@var:bu_token }
+			if = { #Basic
+				limit = {
+					check_variable = { production_method@var:bu_token = 0 }
+				}
+				set_temp_variable = { max_production_1_temp = global.building_basic_output_1@var:bu_token }
+				set_temp_variable = { max_production_2_temp = global.building_basic_output_2@var:bu_token }
+				set_temp_variable = { max_production_3_temp = global.building_basic_output_3@var:bu_token }
+				set_temp_variable = { max_production_4_temp = global.building_basic_output_4@var:bu_token }
+				set_temp_variable = { max_production_5_temp = global.building_basic_output_5@var:bu_token }
+			}
+			else_if = { #Advanced
+				limit = {
+					check_variable = { production_method@var:bu_token = 1 }
+				}
+				set_temp_variable = { max_production_1_temp = global.building_advanced_output_1@var:bu_token }
+				set_temp_variable = { max_production_2_temp = global.building_advanced_output_1@var:bu_token }
+				set_temp_variable = { max_production_3_temp = global.building_advanced_output_1@var:bu_token }
+				set_temp_variable = { max_production_4_temp = global.building_advanced_output_1@var:bu_token }
+				set_temp_variable = { max_production_5_temp = global.building_advanced_output_1@var:bu_token }
+			}
+			else_if = { #Industrialized
+				limit = {
+					check_variable = { production_method@var:bu_token = 2 }
+				}
+				set_temp_variable = { max_production_1_temp = global.building_industrialized_output_1@var:bu_token }
+				set_temp_variable = { max_production_2_temp = global.building_industrialized_output_1@var:bu_token }
+				set_temp_variable = { max_production_3_temp = global.building_industrialized_output_1@var:bu_token }
+				set_temp_variable = { max_production_4_temp = global.building_industrialized_output_1@var:bu_token }
+				set_temp_variable = { max_production_5_temp = global.building_industrialized_output_1@var:bu_token }
+			}
+			else_if = { #Mechanized
+				limit = {
+					check_variable = { production_method@var:bu_token = 3 }
+				}
+				set_temp_variable = { max_production_1_temp = global.building_mechanized_output_1@var:bu_token }
+				set_temp_variable = { max_production_2_temp = global.building_mechanized_output_1@var:bu_token }
+				set_temp_variable = { max_production_3_temp = global.building_mechanized_output_1@var:bu_token }
+				set_temp_variable = { max_production_4_temp = global.building_mechanized_output_1@var:bu_token }
+				set_temp_variable = { max_production_5_temp = global.building_mechanized_output_1@var:bu_token }
+			}
+			else_if = { #Electrified
+				limit = {
+					check_variable = { production_method@var:bu_token = 4 }
+				}
+				set_temp_variable = { max_production_1_temp = global.building_electrified_output_1@var:bu_token }
+				set_temp_variable = { max_production_2_temp = global.building_electrified_output_1@var:bu_token }
+				set_temp_variable = { max_production_3_temp = global.building_electrified_output_1@var:bu_token }
+				set_temp_variable = { max_production_4_temp = global.building_electrified_output_1@var:bu_token }
+				set_temp_variable = { max_production_5_temp = global.building_electrified_output_1@var:bu_token }
+			}
+			else_if = { #Motorized
+				limit = {
+					check_variable = { production_method@var:bu_token = 5 }
+				}
+				set_temp_variable = { max_production_1_temp = global.building_motorized_output_1@var:bu_token }
+				set_temp_variable = { max_production_2_temp = global.building_motorized_output_1@var:bu_token }
+				set_temp_variable = { max_production_3_temp = global.building_motorized_output_1@var:bu_token }
+				set_temp_variable = { max_production_4_temp = global.building_motorized_output_1@var:bu_token }
+				set_temp_variable = { max_production_5_temp = global.building_motorized_output_1@var:bu_token }
+			}
+			else_if = { #Modernized
+				limit = {
+					check_variable = { production_method@var:bu_token = 6 }
+				}
+				set_temp_variable = { max_production_1_temp = global.building_modernized_output_1@var:bu_token }
+				set_temp_variable = { max_production_2_temp = global.building_modernized_output_1@var:bu_token }
+				set_temp_variable = { max_production_3_temp = global.building_modernized_output_1@var:bu_token }
+				set_temp_variable = { max_production_4_temp = global.building_modernized_output_1@var:bu_token }
+				set_temp_variable = { max_production_5_temp = global.building_modernized_output_1@var:bu_token }
+			}
+			else_if = { #Roboticized
+				limit = {
+					check_variable = { production_method@var:bu_token = 7 }
+				}
+				set_temp_variable = { max_production_1_temp = global.building_roboticized_output_1@var:bu_token }
+				set_temp_variable = { max_production_2_temp = global.building_roboticized_output_1@var:bu_token }
+				set_temp_variable = { max_production_3_temp = global.building_roboticized_output_1@var:bu_token }
+				set_temp_variable = { max_production_4_temp = global.building_roboticized_output_1@var:bu_token }
+				set_temp_variable = { max_production_5_temp = global.building_roboticized_output_1@var:bu_token }
+			}
+			else_if = { #Computerized
+				limit = {
+					check_variable = { production_method@var:bu_token = 8 }
+				}
+				set_temp_variable = { max_production_1_temp = global.building_computerized_output_1@var:bu_token }
+				set_temp_variable = { max_production_2_temp = global.building_computerized_output_1@var:bu_token }
+				set_temp_variable = { max_production_3_temp = global.building_computerized_output_1@var:bu_token }
+				set_temp_variable = { max_production_4_temp = global.building_computerized_output_1@var:bu_token }
+				set_temp_variable = { max_production_5_temp = global.building_computerized_output_1@var:bu_token }
+			}
+			else_if = { #Digitalized
+				limit = {
+					check_variable = { production_method@var:bu_token = 9 }
+				}
+				set_temp_variable = { max_production_1_temp = global.building_digitalized_output_1@var:bu_token }
+				set_temp_variable = { max_production_2_temp = global.building_digitalized_output_1@var:bu_token }
+				set_temp_variable = { max_production_3_temp = global.building_digitalized_output_1@var:bu_token }
+				set_temp_variable = { max_production_4_temp = global.building_digitalized_output_1@var:bu_token }
+				set_temp_variable = { max_production_5_temp = global.building_digitalized_output_1@var:bu_token }
+			}
+			else_if = { #Automatized
+				limit = {
+					check_variable = { production_method@var:bu_token = 10 }
+				}
+				set_temp_variable = { max_production_1_temp = global.building_automatized_output_1@var:bu_token }
+				set_temp_variable = { max_production_2_temp = global.building_automatized_output_1@var:bu_token }
+				set_temp_variable = { max_production_3_temp = global.building_automatized_output_1@var:bu_token }
+				set_temp_variable = { max_production_4_temp = global.building_automatized_output_1@var:bu_token }
+				set_temp_variable = { max_production_5_temp = global.building_automatized_output_1@var:bu_token }
+			}
+			else_if = { #Futurized
+				limit = {
+					check_variable = { production_method@var:bu_token = 11 }
+				}
+				set_temp_variable = { max_production_1_temp = global.building_futurized_output_1@var:bu_token }
+				set_temp_variable = { max_production_2_temp = global.building_futurized_output_1@var:bu_token }
+				set_temp_variable = { max_production_3_temp = global.building_futurized_output_1@var:bu_token }
+				set_temp_variable = { max_production_4_temp = global.building_futurized_output_1@var:bu_token }
+				set_temp_variable = { max_production_5_temp = global.building_futurized_output_1@var:bu_token }
+			}
+
+			#Modifiers
+			multiply_temp_variable = { max_production_1_temp = output_modifier_temp }
+			multiply_temp_variable = { max_production_1_temp = throughput_modifier_temp }
+			multiply_temp_variable = { max_production_2_temp = output_modifier_temp }
+			multiply_temp_variable = { max_production_2_temp = throughput_modifier_temp }
+			multiply_temp_variable = { max_production_3_temp = output_modifier_temp }
+			multiply_temp_variable = { max_production_3_temp = throughput_modifier_temp }
+			multiply_temp_variable = { max_production_4_temp = output_modifier_temp }
+			multiply_temp_variable = { max_production_4_temp = throughput_modifier_temp }
+			multiply_temp_variable = { max_production_5_temp = output_modifier_temp }
+			multiply_temp_variable = { max_production_5_temp = throughput_modifier_temp }
+
+			multiply_variable = { max_production_1@var:bu_token = max_production_1_temp }
+			multiply_variable = { max_production_2@var:bu_token = max_production_2_temp }
+			multiply_variable = { max_production_3@var:bu_token = max_production_3_temp }
+			multiply_variable = { max_production_4@var:bu_token = max_production_4_temp }
+			multiply_variable = { max_production_5@var:bu_token = max_production_5_temp }
+		#
+
+		#Input
+            if = { #Basic
+                limit = {
+                    check_variable = { production_method@var:bu_token = 0 }
+                }
+                set_temp_variable = { input_r_1 = global.building_basic_input_resource_1@var:bu_token }
+                set_variable = { input_1_amount@var:bu_token = global.building_basic_input_amount_1@var:bu_token }
+                
+                set_temp_variable = { input_r_2 = global.building_basic_input_resource_2@var:bu_token }
+                set_variable = { input_2_amount@var:bu_token = global.building_basic_input_amount_2@var:bu_token }
+                
+                set_temp_variable = { input_r_3 = global.building_basic_input_resource_3@var:bu_token }
+                set_variable = { input_3_amount@var:bu_token = global.building_basic_input_amount_3@var:bu_token }
+                
+                set_temp_variable = { input_r_4 = global.building_basic_input_resource_4@var:bu_token }
+                set_variable = { input_4_amount@var:bu_token = global.building_basic_input_amount_4@var:bu_token }
+                
+                set_temp_variable = { input_r_5 = global.building_basic_input_resource_5@var:bu_token }
+                set_variable = { input_5_amount@var:bu_token = global.building_basic_input_amount_5@var:bu_token }
+            }
+            else_if = { #Advanced
+                limit = {
+                    check_variable = { production_method@var:bu_token = 1 }
+                }
+                set_temp_variable = { input_r_1 = global.building_advanced_input_resource_1@var:bu_token }
+                set_variable = { input_1_amount@var:bu_token = global.building_advanced_input_amount_1@var:bu_token }
+                
+                set_temp_variable = { input_r_2 = global.building_advanced_input_resource_2@var:bu_token }
+                set_variable = { input_2_amount@var:bu_token = global.building_advanced_input_amount_2@var:bu_token }
+                
+                set_temp_variable = { input_r_3 = global.building_advanced_input_resource_3@var:bu_token }
+                set_variable = { input_3_amount@var:bu_token = global.building_advanced_input_amount_3@var:bu_token }
+                
+                set_temp_variable = { input_r_4 = global.building_advanced_input_resource_4@var:bu_token }
+                set_variable = { input_4_amount@var:bu_token = global.building_advanced_input_amount_4@var:bu_token }
+                
+                set_temp_variable = { input_r_5 = global.building_advanced_input_resource_5@var:bu_token }
+                set_variable = { input_5_amount@var:bu_token = global.building_advanced_input_amount_5@var:bu_token }
+            }
+            else_if = { #Industrialized
+                limit = {
+                    check_variable = { production_method@var:bu_token = 2 }
+                }
+                set_temp_variable = { input_r_1 = global.building_industrialized_input_resource_1@var:bu_token }
+                set_variable = { input_1_amount@var:bu_token = global.building_industrialized_input_amount_1@var:bu_token }
+                
+                set_temp_variable = { input_r_2 = global.building_industrialized_input_resource_2@var:bu_token }
+                set_variable = { input_2_amount@var:bu_token = global.building_industrialized_input_amount_2@var:bu_token }
+                
+                set_temp_variable = { input_r_3 = global.building_industrialized_input_resource_3@var:bu_token }
+                set_variable = { input_3_amount@var:bu_token = global.building_industrialized_input_amount_3@var:bu_token }
+                
+                set_temp_variable = { input_r_4 = global.building_industrialized_input_resource_4@var:bu_token }
+                set_variable = { input_4_amount@var:bu_token = global.building_industrialized_input_amount_4@var:bu_token }
+                
+                set_temp_variable = { input_r_5 = global.building_industrialized_input_resource_5@var:bu_token }
+                set_variable = { input_5_amount@var:bu_token = global.building_industrialized_input_amount_5@var:bu_token }
+            }
+            else_if = { #Mechanized
+                limit = {
+                    check_variable = { production_method@var:bu_token = 3 }
+                }
+                set_temp_variable = { input_r_1 = global.building_mechanized_input_resource_1@var:bu_token }
+                set_variable = { input_1_amount@var:bu_token = global.building_mechanized_input_amount_1@var:bu_token }
+                
+                set_temp_variable = { input_r_2 = global.building_mechanized_input_resource_2@var:bu_token }
+                set_variable = { input_2_amount@var:bu_token = global.building_mechanized_input_amount_2@var:bu_token }
+                
+                set_temp_variable = { input_r_3 = global.building_mechanized_input_resource_3@var:bu_token }
+                set_variable = { input_3_amount@var:bu_token = global.building_mechanized_input_amount_3@var:bu_token }
+                
+                set_temp_variable = { input_r_4 = global.building_mechanized_input_resource_4@var:bu_token }
+                set_variable = { input_4_amount@var:bu_token = global.building_mechanized_input_amount_4@var:bu_token }
+                
+                set_temp_variable = { input_r_5 = global.building_mechanized_input_resource_5@var:bu_token }
+                set_variable = { input_5_amount@var:bu_token = global.building_mechanized_input_amount_5@var:bu_token }
+            }
+            else_if = { #Electrified
+                limit = {
+                    check_variable = { production_method@var:bu_token = 4 }
+                }
+                set_temp_variable = { input_r_1 = global.building_electrified_input_resource_1@var:bu_token }
+                set_variable = { input_1_amount@var:bu_token = global.building_electrified_input_amount_1@var:bu_token }
+                
+                set_temp_variable = { input_r_2 = global.building_electrified_input_resource_2@var:bu_token }
+                set_variable = { input_2_amount@var:bu_token = global.building_electrified_input_amount_2@var:bu_token }
+                
+                set_temp_variable = { input_r_3 = global.building_electrified_input_resource_3@var:bu_token }
+                set_variable = { input_3_amount@var:bu_token = global.building_electrified_input_amount_3@var:bu_token }
+                
+                set_temp_variable = { input_r_4 = global.building_electrified_input_resource_4@var:bu_token }
+                set_variable = { input_4_amount@var:bu_token = global.building_electrified_input_amount_4@var:bu_token }
+                
+                set_temp_variable = { input_r_5 = global.building_electrified_input_resource_5@var:bu_token }
+                set_variable = { input_5_amount@var:bu_token = global.building_electrified_input_amount_5@var:bu_token }
+            }
+            else_if = { #Motorized
+                limit = {
+                    check_variable = { production_method@var:bu_token = 5 }
+                }
+                set_temp_variable = { input_r_1 = global.building_motorized_input_resource_1@var:bu_token }
+                set_variable = { input_1_amount@var:bu_token = global.building_motorized_input_amount_1@var:bu_token }
+                
+                set_temp_variable = { input_r_2 = global.building_motorized_input_resource_2@var:bu_token }
+                set_variable = { input_2_amount@var:bu_token = global.building_motorized_input_amount_2@var:bu_token }
+                
+                set_temp_variable = { input_r_3 = global.building_motorized_input_resource_3@var:bu_token }
+                set_variable = { input_3_amount@var:bu_token = global.building_motorized_input_amount_3@var:bu_token }
+                
+                set_temp_variable = { input_r_4 = global.building_motorized_input_resource_4@var:bu_token }
+                set_variable = { input_4_amount@var:bu_token = global.building_motorized_input_amount_4@var:bu_token }
+                
+                set_temp_variable = { input_r_5 = global.building_motorized_input_resource_5@var:bu_token }
+                set_variable = { input_5_amount@var:bu_token = global.building_motorized_input_amount_5@var:bu_token }
+            }
+            else_if = { #Modernized
+                limit = {
+                    check_variable = { production_method@var:bu_token = 6 }
+                }
+                set_temp_variable = { input_r_1 = global.building_modernized_input_resource_1@var:bu_token }
+                set_variable = { input_1_amount@var:bu_token = global.building_modernized_input_amount_1@var:bu_token }
+                
+                set_temp_variable = { input_r_2 = global.building_modernized_input_resource_2@var:bu_token }
+                set_variable = { input_2_amount@var:bu_token = global.building_modernized_input_amount_2@var:bu_token }
+                
+                set_temp_variable = { input_r_3 = global.building_modernized_input_resource_3@var:bu_token }
+                set_variable = { input_3_amount@var:bu_token = global.building_modernized_input_amount_3@var:bu_token }
+                
+                set_temp_variable = { input_r_4 = global.building_modernized_input_resource_4@var:bu_token }
+                set_variable = { input_4_amount@var:bu_token = global.building_modernized_input_amount_4@var:bu_token }
+                
+                set_temp_variable = { input_r_5 = global.building_modernized_input_resource_5@var:bu_token }
+                set_variable = { input_5_amount@var:bu_token = global.building_modernized_input_amount_5@var:bu_token }
+            }
+            else_if = { #Roboticized
+                limit = {
+                    check_variable = { production_method@var:bu_token = 7 }
+                }
+                set_temp_variable = { input_r_1 = global.building_roboticized_input_resource_1@var:bu_token }
+                set_variable = { input_1_amount@var:bu_token = global.building_roboticized_input_amount_1@var:bu_token }
+                
+                set_temp_variable = { input_r_2 = global.building_roboticized_input_resource_2@var:bu_token }
+                set_variable = { input_2_amount@var:bu_token = global.building_roboticized_input_amount_2@var:bu_token }
+                
+                set_temp_variable = { input_r_3 = global.building_roboticized_input_resource_3@var:bu_token }
+                set_variable = { input_3_amount@var:bu_token = global.building_roboticized_input_amount_3@var:bu_token }
+                
+                set_temp_variable = { input_r_4 = global.building_roboticized_input_resource_4@var:bu_token }
+                set_variable = { input_4_amount@var:bu_token = global.building_roboticized_input_amount_4@var:bu_token }
+                
+                set_temp_variable = { input_r_5 = global.building_roboticized_input_resource_5@var:bu_token }
+                set_variable = { input_5_amount@var:bu_token = global.building_roboticized_input_amount_5@var:bu_token }
+            }
+            else_if = { #Computerized
+                limit = {
+                    check_variable = { production_method@var:bu_token = 8 }
+                }
+                set_temp_variable = { input_r_1 = global.building_computerized_input_resource_1@var:bu_token }
+                set_variable = { input_1_amount@var:bu_token = global.building_computerized_input_amount_1@var:bu_token }
+                
+                set_temp_variable = { input_r_2 = global.building_computerized_input_resource_2@var:bu_token }
+                set_variable = { input_2_amount@var:bu_token = global.building_computerized_input_amount_2@var:bu_token }
+                
+                set_temp_variable = { input_r_3 = global.building_computerized_input_resource_3@var:bu_token }
+                set_variable = { input_3_amount@var:bu_token = global.building_computerized_input_amount_3@var:bu_token }
+                
+                set_temp_variable = { input_r_4 = global.building_computerized_input_resource_4@var:bu_token }
+                set_variable = { input_4_amount@var:bu_token = global.building_computerized_input_amount_4@var:bu_token }
+                
+                set_temp_variable = { input_r_5 = global.building_computerized_input_resource_5@var:bu_token }
+                set_variable = { input_5_amount@var:bu_token = global.building_computerized_input_amount_5@var:bu_token }
+            }
+            else_if = { #Digitalized
+                limit = {
+                    check_variable = { production_method@var:bu_token = 9 }
+                }
+                set_temp_variable = { input_r_1 = global.building_digitalized_input_resource_1@var:bu_token }
+                set_variable = { input_1_amount@var:bu_token = global.building_digitalized_input_amount_1@var:bu_token }
+                
+                set_temp_variable = { input_r_2 = global.building_digitalized_input_resource_2@var:bu_token }
+                set_variable = { input_2_amount@var:bu_token = global.building_digitalized_input_amount_2@var:bu_token }
+                
+                set_temp_variable = { input_r_3 = global.building_digitalized_input_resource_3@var:bu_token }
+                set_variable = { input_3_amount@var:bu_token = global.building_digitalized_input_amount_3@var:bu_token }
+                
+                set_temp_variable = { input_r_4 = global.building_digitalized_input_resource_4@var:bu_token }
+                set_variable = { input_4_amount@var:bu_token = global.building_digitalized_input_amount_4@var:bu_token }
+                
+                set_temp_variable = { input_r_5 = global.building_digitalized_input_resource_5@var:bu_token }
+                set_variable = { input_5_amount@var:bu_token = global.building_digitalized_input_amount_5@var:bu_token }
+            }
+            else_if = { #Automatized
+                limit = {
+                    check_variable = { production_method@var:bu_token = 10 }
+                }
+                set_temp_variable = { input_r_1 = global.building_automatized_input_resource_1@var:bu_token }
+                set_variable = { input_1_amount@var:bu_token = global.building_automatized_input_amount_1@var:bu_token }
+                
+                set_temp_variable = { input_r_2 = global.building_automatized_input_resource_2@var:bu_token }
+                set_variable = { input_2_amount@var:bu_token = global.building_automatized_input_amount_2@var:bu_token }
+                
+                set_temp_variable = { input_r_3 = global.building_automatized_input_resource_3@var:bu_token }
+                set_variable = { input_3_amount@var:bu_token = global.building_automatized_input_amount_3@var:bu_token }
+                
+                set_temp_variable = { input_r_4 = global.building_automatized_input_resource_4@var:bu_token }
+                set_variable = { input_4_amount@var:bu_token = global.building_automatized_input_amount_4@var:bu_token }
+                
+                set_temp_variable = { input_r_5 = global.building_automatized_input_resource_5@var:bu_token }
+                set_variable = { input_5_amount@var:bu_token = global.building_automatized_input_amount_5@var:bu_token }
+            }
+            else_if = { #Futurized
+                limit = {
+                    check_variable = { production_method@var:bu_token = 11 }
+                }
+                set_temp_variable = { input_r_1 = global.building_futurized_input_resource_1@var:bu_token }
+                set_variable = { input_1_amount@var:bu_token = global.building_futurized_input_amount_1@var:bu_token }
+                
+                set_temp_variable = { input_r_2 = global.building_futurized_input_resource_2@var:bu_token }
+                set_variable = { input_2_amount@var:bu_token = global.building_futurized_input_amount_2@var:bu_token }
+                
+                set_temp_variable = { input_r_3 = global.building_futurized_input_resource_3@var:bu_token }
+                set_variable = { input_3_amount@var:bu_token = global.building_futurized_input_amount_3@var:bu_token }
+                
+                set_temp_variable = { input_r_4 = global.building_futurized_input_resource_4@var:bu_token }
+                set_variable = { input_4_amount@var:bu_token = global.building_futurized_input_amount_4@var:bu_token }
+                
+                set_temp_variable = { input_r_5 = global.building_futurized_input_resource_5@var:bu_token }
+                set_variable = { input_5_amount@var:bu_token = global.building_futurized_input_amount_5@var:bu_token }
+            }
+
+            #Amount
+            multiply_variable = { input_1_amount@var:bu_token = size@var:bu_token }
+            multiply_variable = { input_1_amount@var:bu_token = throughput_modifier_temp }
+            multiply_variable = { input_1_amount@var:bu_token = input_modifier_temp }
+            set_variable = { max_input_1_amount@var:bu_token = input_1_amount@var:bu_token }
+            multiply_variable = { input_1_amount@var:bu_token = production_percentage@var:bu_token }
+
+            multiply_variable = { input_2_amount@var:bu_token = size@var:bu_token }
+            multiply_variable = { input_2_amount@var:bu_token = throughput_modifier_temp }
+            multiply_variable = { input_2_amount@var:bu_token = input_modifier_temp }
+            set_variable = { max_input_2_amount@var:bu_token = input_2_amount@var:bu_token }
+            multiply_variable = { input_2_amount@var:bu_token = production_percentage@var:bu_token }
+            
+            multiply_variable = { input_3_amount@var:bu_token = size@var:bu_token }
+            multiply_variable = { input_3_amount@var:bu_token = throughput_modifier_temp }
+            multiply_variable = { input_3_amount@var:bu_token = input_modifier_temp }
+            set_variable = { max_input_3_amount@var:bu_token = input_3_amount@var:bu_token }
+            multiply_variable = { input_3_amount@var:bu_token = production_percentage@var:bu_token }
+
+            multiply_variable = { input_4_amount@var:bu_token = size@var:bu_token }
+            multiply_variable = { input_4_amount@var:bu_token = throughput_modifier_temp }
+            multiply_variable = { input_4_amount@var:bu_token = input_modifier_temp }
+            set_variable = { max_input_4_amount@var:bu_token = input_4_amount@var:bu_token }
+            multiply_variable = { input_4_amount@var:bu_token = production_percentage@var:bu_token }
+            
+            multiply_variable = { input_5_amount@var:bu_token = size@var:bu_token }
+            multiply_variable = { input_5_amount@var:bu_token = throughput_modifier_temp }
+            multiply_variable = { input_5_amount@var:bu_token = input_modifier_temp }
+            set_variable = { max_input_5_amount@var:bu_token = input_5_amount@var:bu_token }
+            multiply_variable = { input_5_amount@var:bu_token = production_percentage@var:bu_token }
+            
+            #Expenses
+            set_variable = { input_1_expenses@var:bu_token = input_1_amount@var:bu_token }
+            multiply_variable = { input_1_expenses@var:bu_token = price@var:input_r_1 }
+            set_variable = { input_2_expenses@var:bu_token = input_2_amount@var:bu_token }
+            multiply_variable = { input_2_expenses@var:bu_token = price@var:input_r_2 }
+            set_variable = { input_3_expenses@var:bu_token = input_3_amount@var:bu_token }
+            multiply_variable = { input_3_expenses@var:bu_token = price@var:input_r_3 }
+            set_variable = { input_4_expenses@var:bu_token = input_4_amount@var:bu_token }
+            multiply_variable = { input_4_expenses@var:bu_token = price@var:input_r_4 }
+            set_variable = { input_5_expenses@var:bu_token = input_5_amount@var:bu_token }
+            multiply_variable = { input_5_expenses@var:bu_token = price@var:input_r_5 }
+            
+            set_variable = { max_input_1_expenses@var:bu_token = max_input_1_amount@var:bu_token }
+            multiply_variable = { max_input_1_expenses@var:bu_token = price@var:input_r_1 }
+            set_variable = { max_input_2_expenses@var:bu_token = max_input_2_amount@var:bu_token }
+            multiply_variable = { max_input_2_expenses@var:bu_token = price@var:input_r_2 }
+            set_variable = { max_input_3_expenses@var:bu_token = max_input_3_amount@var:bu_token }
+            multiply_variable = { max_input_3_expenses@var:bu_token = price@var:input_r_3 }
+            set_variable = { max_input_4_expenses@var:bu_token = max_input_4_amount@var:bu_token }
+            multiply_variable = { max_input_4_expenses@var:bu_token = price@var:input_r_4 }
+            set_variable = { max_input_5_expenses@var:bu_token = max_input_5_amount@var:bu_token }
+            multiply_variable = { max_input_5_expenses@var:bu_token = price@var:input_r_5 }
+		#
+		
+		#Production
+			set_variable = { production_1@var:bu_token = max_production_1@var:bu_token }
+			multiply_variable = { production_1@var:bu_token = production_percentage@var:bu_token }
+            
+			set_variable = { production_2@var:bu_token = max_production_2@var:bu_token }
+			multiply_variable = { production_2@var:bu_token = production_percentage@var:bu_token }
+            
+			set_variable = { production_3@var:bu_token = max_production_3@var:bu_token }
+			multiply_variable = { production_3@var:bu_token = production_percentage@var:bu_token }
+            
+			set_variable = { production_4@var:bu_token = max_production_4@var:bu_token }
+			multiply_variable = { production_4@var:bu_token = production_percentage@var:bu_token }
+            
+			set_variable = { production_5@var:bu_token = max_production_5@var:bu_token }
+			multiply_variable = { production_5@var:bu_token = production_percentage@var:bu_token }
+		#
+    }
+    building_update_finances = {
+        #bu_token
+		set_temp_variable = { bu_resource_1 = global.building_output_resource_1@var:bu_token }
+		set_temp_variable = { bu_resource_2 = global.building_output_resource_2@var:bu_token }
+		set_temp_variable = { bu_resource_3 = global.building_output_resource_3@var:bu_token }
+		set_temp_variable = { bu_resource_4 = global.building_output_resource_4@var:bu_token }
+		set_temp_variable = { bu_resource_5 = global.building_output_resource_5@var:bu_token }
+
+		#Money Limit
+			set_variable = { money_limit@var:bu_token = 0 }
+
+			set_temp_variable = { mlt = global.building_money_limit }
+			multiply_variable = { mlt = global.base_price@var:bu_resource_1 }
+			multiply_variable = { mlt = max_production_1@var:bu_token }
+            add_to_variable = { money_limit@var:bu_token = mlt }
+            
+			set_temp_variable = { mlt = global.building_money_limit }
+			multiply_variable = { mlt = global.base_price@var:bu_resource_2 }
+			multiply_variable = { mlt = max_production_2@var:bu_token }
+            add_to_variable = { money_limit@var:bu_token = mlt }
+            
+			set_temp_variable = { mlt = global.building_money_limit }
+			multiply_variable = { mlt = global.base_price@var:bu_resource_3 }
+			multiply_variable = { mlt = max_production_3@var:bu_token }
+            add_to_variable = { money_limit@var:bu_token = mlt }
+            
+			set_temp_variable = { mlt = global.building_money_limit }
+			multiply_variable = { mlt = global.base_price@var:bu_resource_4 }
+			multiply_variable = { mlt = max_production_4@var:bu_token }
+            add_to_variable = { money_limit@var:bu_token = mlt }
+            
+			set_temp_variable = { mlt = global.building_money_limit }
+			multiply_variable = { mlt = global.base_price@var:bu_resource_5 }
+			multiply_variable = { mlt = max_production_5@var:bu_token }
+            add_to_variable = { money_limit@var:bu_token = mlt }
+		#
+
+		#Wages & Payroll
+			#Wages
+			set_variable = { peasants_wage@var:bu_token = base_wage@var:bu_token }
+			multiply_variable = { peasants_wage@var:bu_token = 1 }
+			set_variable = { peasants_payroll@var:bu_token = peasants_wage@var:bu_token }
+			multiply_variable = { peasants_payroll@var:bu_token = peasants_employed@var:bu_token }
+
+			set_variable = { laborers_wage@var:bu_token = base_wage@var:bu_token }
+			multiply_variable = { laborers_wage@var:bu_token = 2 }
+			set_variable = { laborers_payroll@var:bu_token = laborers_wage@var:bu_token }
+			multiply_variable = { laborers_payroll@var:bu_token = laborers_employed@var:bu_token }
+			
+			set_variable = { workers_wage@var:bu_token = base_wage@var:bu_token }
+			multiply_variable = { workers_wage@var:bu_token = 5 }
+			set_variable = { workers_payroll@var:bu_token = workers_wage@var:bu_token }
+			multiply_variable = { workers_payroll@var:bu_token = workers_employed@var:bu_token }
+			
+			set_variable = { professionals_wage@var:bu_token = base_wage@var:bu_token }
+			multiply_variable = { professionals_wage@var:bu_token = 10 }
+			set_variable = { professionals_payroll@var:bu_token = professionals_wage@var:bu_token }
+			multiply_variable = { professionals_payroll@var:bu_token = professionals_employed@var:bu_token }
+			
+			set_variable = { specialists_wage@var:bu_token = base_wage@var:bu_token }
+			multiply_variable = { specialists_wage@var:bu_token = 20 }
+			set_variable = { specialists_payroll@var:bu_token = specialists_wage@var:bu_token }
+			multiply_variable = { specialists_payroll@var:bu_token = specialists_employed@var:bu_token }
+			
+			set_variable = { aristocrats_wage@var:bu_token = base_wage@var:bu_token }
+			multiply_variable = { aristocrats_wage@var:bu_token = 30 }
+			set_variable = { aristocrats_payroll@var:bu_token = aristocrats_wage@var:bu_token }
+			multiply_variable = { aristocrats_payroll@var:bu_token = aristocrats_employed@var:bu_token }
+			
+			set_variable = { capitalists_wage@var:bu_token = base_wage@var:bu_token }
+			multiply_variable = { capitalists_wage@var:bu_token = 50 }
+			set_variable = { capitalists_payroll@var:bu_token = capitalists_wage@var:bu_token }
+			multiply_variable = { capitalists_payroll@var:bu_token = capitalists_employed@var:bu_token }
+			
+			#Payroll
+			set_variable = { expenses_payroll@var:bu_token = peasants_payroll@var:bu_token }
+			add_to_variable = { expenses_payroll@var:bu_token = laborers_payroll@var:bu_token }
+			add_to_variable = { expenses_payroll@var:bu_token = workers_payroll@var:bu_token }
+			add_to_variable = { expenses_payroll@var:bu_token = professionals_payroll@var:bu_token }
+			add_to_variable = { expenses_payroll@var:bu_token = specialists_payroll@var:bu_token }
+			add_to_variable = { expenses_payroll@var:bu_token = aristocrats_payroll@var:bu_token }
+			add_to_variable = { expenses_payroll@var:bu_token = capitalists_payroll@var:bu_token }
+
+			#Avg Wage
+			set_variable = { average_wage@var:bu_token = expenses_payroll@var:bu_token }
+			divide_variable = { average_wage@var:bu_token = employed@var:bu_token }
+		#
+		
+		#Profit, Profitability, Revenue & Expenses
+
+			#Revenue
+			set_variable = { revenue_goods_1@var:bu_token = production_1@var:bu_token }
+			multiply_variable = { revenue_goods_1@var:bu_token = price@var:bu_resource_1 }
+            
+			set_variable = { revenue_goods_2@var:bu_token = production_2@var:bu_token }
+			multiply_variable = { revenue_goods_2@var:bu_token = price@var:bu_resource_2 }
+            
+			set_variable = { revenue_goods_3@var:bu_token = production_3@var:bu_token }
+			multiply_variable = { revenue_goods_3@var:bu_token = price@var:bu_resource_3 }
+            
+			set_variable = { revenue_goods_4@var:bu_token = production_4@var:bu_token }
+			multiply_variable = { revenue_goods_4@var:bu_token = price@var:bu_resource_4 }
+            
+			set_variable = { revenue_goods_5@var:bu_token = production_5@var:bu_token }
+			multiply_variable = { revenue_goods_5@var:bu_token = price@var:bu_resource_5 }
+
+			set_variable = { revenue_goods@var:bu_token = revenue_goods_1@var:bu_token }
+			add_to_variable = { revenue_goods@var:bu_token = revenue_goods_2@var:bu_token }
+			add_to_variable = { revenue_goods@var:bu_token = revenue_goods_3@var:bu_token }
+			add_to_variable = { revenue_goods@var:bu_token = revenue_goods_4@var:bu_token }
+			add_to_variable = { revenue_goods@var:bu_token = revenue_goods_%@var:bu_token }
+            
+			set_variable = { revenue@var:bu_token = revenue_goods@var:bu_token }
+
+			#Expenses
+			set_variable = { expenses_input@var:bu_token = input_1_expenses@var:bu_token }
+			add_to_variable = { expenses_input@var:bu_token = input_2_expenses@var:bu_token }
+			add_to_variable = { expenses_input@var:bu_token = input_3_expenses@var:bu_token }
+			add_to_variable = { expenses_input@var:bu_token = input_4_expenses@var:bu_token }
+			add_to_variable = { expenses_input@var:bu_token = input_5_expenses@var:bu_token }
+
+			set_variable = { expenses@var:bu_token = expenses_payroll@var:bu_token }
+			add_to_variable = { expenses@var:bu_token = expenses_input@var:bu_token }
+
+			#Profit
+			set_variable = { profit@var:bu_token = revenue@var:bu_token }
+			subtract_from_variable = { profit@var:bu_token = expenses@var:bu_token }
+
+			#Subsidies - TODO
+			set_variable = { revenue_subsidies@var:bu_token = 0 }
+			add_to_variable = { revenue@var:bu_token = revenue_subsidies@var:bu_token }
+			add_to_variable = { profit@var:bu_token = revenue_subsidies@var:bu_token }
+
+			#Profitability
+			set_variable = { profitability@var:bu_token = profit@var:bu_token }
+			divide_variable = { profitability@var:bu_token = revenue@var:bu_token }
+		#
+
+		#Productivity
+            set_temp_variable = { revenue_temp = 0 }
+            set_temp_variable = { rev_g_temp = max_production_1@var:bu_token }
+            multiply_temp_variable = { rev_g_temp = price@var:bu_resource_1 }
+            add_to_temp_variable = { revenue_temp = rev_g_temp }
+            set_temp_variable = { rev_g_temp = max_production_2@var:bu_token }
+            multiply_temp_variable = { rev_g_temp = price@var:bu_resource_2 }
+            add_to_temp_variable = { revenue_temp = rev_g_temp }
+            set_temp_variable = { rev_g_temp = max_production_3@var:bu_token }
+            multiply_temp_variable = { rev_g_temp = price@var:bu_resource_3 }
+            add_to_temp_variable = { revenue_temp = rev_g_temp }
+            set_temp_variable = { rev_g_temp = max_production_4@var:bu_token }
+            multiply_temp_variable = { rev_g_temp = price@var:bu_resource_4 }
+            add_to_temp_variable = { revenue_temp = rev_g_temp }
+            set_temp_variable = { rev_g_temp = max_production_5@var:bu_token }
+            multiply_temp_variable = { rev_g_temp = price@var:bu_resource_5 }
+            add_to_temp_variable = { revenue_temp = rev_g_temp }
+            
+            set_temp_variable = { expenses_temp = 0 }
+            add_to_temp_variable = { expenses_temp = max_input_1_expenses@var:bu_token }
+            add_to_temp_variable = { expenses_temp = max_input_2_expenses@var:bu_token }
+            add_to_temp_variable = { expenses_temp = max_input_3_expenses@var:bu_token }
+            add_to_temp_variable = { expenses_temp = max_input_4_expenses@var:bu_token }
+            add_to_temp_variable = { expenses_temp = max_input_5_expenses@var:bu_token }
+
+			set_variable = { productivity@var:bu_token = revenue_temp }
+			subtract_from_variable = { productivity@var:bu_token = expenses_temp }
+			divide_variable = { productivity@var:bu_token = jobs@var:bu_token }
+		#
     }
 #
 
@@ -684,8 +1551,8 @@
                 set_variable = { global.building_advanced_upgrade_amount@token:building_infrastructure = 9 }
                 set_variable = { global.building_advanced_upgrade_speed@token:building_infrastructure = 1.5 }
 
-                set_variable = { global.building_basic_input_resource_1@token:building_infrastructure = token:resource_raw_materials }
-                set_variable = { global.building_basic_input_amount_1@token:building_infrastructure = 3.0 }
+                set_variable = { global.building_advanced_input_resource_1@token:building_infrastructure = token:resource_raw_materials }
+                set_variable = { global.building_advanced_input_amount_1@token:building_infrastructure = 3.0 }
                 
                 set_variable = { global.building_advanced_peasants_employment@token:building_infrastructure = 0.0 } #1x
                 set_variable = { global.building_advanced_laborers_employment@token:building_infrastructure = 4.45 } #2x
@@ -1363,8 +2230,8 @@
                 set_variable = { global.building_advanced_upgrade_amount@token:building_port = 9 }
                 set_variable = { global.building_advanced_upgrade_speed@token:building_port = 1.5 }
 
-                set_variable = { global.building_basic_input_resource_1@token:building_port = token:resource_industrial_goods }
-                set_variable = { global.building_basic_input_amount_1@token:building_port = 0.5 }
+                set_variable = { global.building_advanced_input_resource_1@token:building_port = token:resource_industrial_goods }
+                set_variable = { global.building_advanced_input_amount_1@token:building_port = 0.5 }
                 
                 set_variable = { global.building_advanced_peasants_employment@token:building_port = 0.0 } #1x
                 set_variable = { global.building_advanced_laborers_employment@token:building_port = 4.45 } #2x
@@ -3603,16 +4470,36 @@
     #
 
     #Extractors
+        define_rice_paddy = {
+            set_variable = { global.building_output_resource_1@token:building_rice_paddy = token:resource_food }
+            set_variable = { global.building_output_resource_2@token:building_rice_paddy = token:resource_consumer_goods }
+            set_variable = { global.building_output_resource_3@token:building_rice_paddy = token:resource_energy_materials }
+            
+            #set_variable = { global.building_uses_arable_land@token:building_rice_paddy = 1 } #Is in the absense of used arable land
+
+            #Basic
+                #Productivity: $1.28 /K
+                set_variable = { global.building_basic_output_1@token:building_rice_paddy = 20 } #0.5 per K
+                set_variable = { global.building_basic_output_2@token:building_rice_paddy = 2 } #0.05 per K
+                set_variable = { global.building_basic_output_3@token:building_rice_paddy = 1.6 } #0.04 per K
+                
+                set_variable = { global.building_basic_peasants_employment@token:building_rice_paddy = 39.5 } #1x
+                set_variable = { global.building_basic_laborers_employment@token:building_rice_paddy = 0 } #2x
+                set_variable = { global.building_basic_workers_employment@token:building_rice_paddy = 0 } #5x
+                set_variable = { global.building_basic_professionals_employment@token:building_rice_paddy = 0 } #10x
+                set_variable = { global.building_basic_specialists_employment@token:building_rice_paddy = 0 } #20x
+                set_variable = { global.building_basic_aristocrats_employment@token:building_rice_paddy = 0.5 } #30x
+                set_variable = { global.building_basic_capitalists_employment@token:building_rice_paddy = 0 } #50x
+            #
+        }
         define_subsistence_farm = {
             set_variable = { global.building_output_resource_1@token:building_subsistence_farm = token:resource_food }
             set_variable = { global.building_output_resource_2@token:building_subsistence_farm = token:resource_consumer_goods }
             set_variable = { global.building_output_resource_3@token:building_subsistence_farm = token:resource_energy_materials }
             
-            set_variable = { global.building_uses_arable_land@token:building_subsistence_farm = 1 }
+            #set_variable = { global.building_uses_arable_land@token:building_subsistence_farm = 1 }  #Is in the absense of used arable land
 
             #Basic
-                set_variable = { global.building_basic_tech_unlock@token:building_subsistence_farm = 1 }
-
                 #Productivity: $1.28 /K
                 set_variable = { global.building_basic_output_1@token:building_subsistence_farm = 10 } #0.5 per K
                 set_variable = { global.building_basic_output_2@token:building_subsistence_farm = 1 } #0.05 per K
