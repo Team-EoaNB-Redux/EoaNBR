@@ -74,6 +74,11 @@
                 set_variable = { global.industries_economy_of_scale_factor = 0.01 } #What bonus gets added to throughput for each size industry in a state
 
                 #Define Buildings
+                define_infrastructure = yes
+                define_railway = yes
+                define_port = yes
+                define_airport = yes
+
                 define_consumer_goods_factory = yes
                 define_luxury_goods_factory = yes
                 define_industrial_goods_factory = yes
@@ -92,6 +97,11 @@
                 define_valuables_extractor = yes
                 
                 clear_array = global.building_token_array
+                add_to_array = { global.building_token_array = token:building_infrastructure }
+                add_to_array = { global.building_token_array = token:building_railway }
+                add_to_array = { global.building_token_array = token:building_port }
+                add_to_array = { global.building_token_array = token:building_airport }
+
                 add_to_array = { global.building_token_array = token:building_military_industry }
                 add_to_array = { global.building_token_array = token:building_civilian_industry }
                 add_to_array = { global.building_token_array = token:building_naval_industry }
@@ -114,6 +124,9 @@
                 add_to_array = { global.building_token_array = token:building_valuables_extractor }
                 
                 clear_array = global.urban_building_token_array
+                add_to_array = { global.urban_building_token_array = token:building_port }
+                add_to_array = { global.urban_building_token_array = token:building_airport }
+
                 add_to_array = { global.urban_building_token_array = token:building_military_industry }
                 add_to_array = { global.urban_building_token_array = token:building_civilian_industry }
                 add_to_array = { global.urban_building_token_array = token:building_naval_industry }
@@ -125,6 +138,9 @@
                 add_to_array = { global.urban_building_token_array = token:building_power_plant }
 
                 clear_array = global.rural_building_token_array
+                add_to_array = { global.rural_building_token_array = token:building_infrastructure }
+                add_to_array = { global.rural_building_token_array = token:building_railway }
+
                 add_to_array = { global.rural_building_token_array = token:building_subsistence_farm }
                 add_to_array = { global.rural_building_token_array = token:building_commercial_farm }
                 add_to_array = { global.rural_building_token_array = token:building_food_plantation }
@@ -397,6 +413,21 @@
         set_historical_state_buildings = yes
         every_state = {
             #Rural Buildings
+                if = {
+                    limit = {
+                        check_variable = { building_infrastructure_size > 0 }
+                    }
+                    set_variable = { size@token:building_infrastructure = building_infrastructure_size }
+                    set_variable = { production_method@token:building_infrastructure = building_infrastructure_pm }
+                }
+                if = {
+                    limit = {
+                        check_variable = { building_railway_size > 0 }
+                    }
+                    set_variable = { size@token:building_railway = building_railway_size }
+                    set_variable = { production_method@token:building_railway = building_railway_pm }
+                }
+
                 set_temp_variable = { sub_farm_size_temp = arable_land }
 
                 if = {
@@ -482,6 +513,21 @@
             #
 
             #Urban Buildings
+                if = {
+                    limit = {
+                        check_variable = { building_port_size > 0 }
+                    }
+                    set_variable = { size@token:building_port = building_port_size }
+                    set_variable = { production_method@token:building_port = building_port_pm }
+                }
+                if = {
+                    limit = {
+                        check_variable = { building_airport_size > 0 }
+                    }
+                    set_variable = { size@token:building_airport = building_airport_size }
+                    set_variable = { production_method@token:building_airport = building_airport_pm }
+                }
+                
                 if = {
                     limit = {
                         check_variable = { arms_factory_level > 0 }
@@ -594,6 +640,1239 @@
 
     # Tech Unlocks:
     # 1 is always unlocked, 0 is never unlocked, token:technology for which tech it is unlocked at
+
+    #Infrastructure
+        define_infrastructure = {
+            set_variable = { global.building_output_resource_1@token:building_infrastructure = token:resource_services }
+
+            #Basic
+                set_variable = { global.building_basic_tech_unlock@token:building_infrastructure = 1 }
+                
+                set_variable = { global.building_basic_construction_amount@token:building_infrastructure = 20 }
+                set_variable = { global.building_basic_construction_speed@token:building_infrastructure = 2 }
+                
+                set_variable = { global.building_basic_upgrade_amount@token:building_infrastructure = 6 }
+                set_variable = { global.building_basic_upgrade_speed@token:building_infrastructure = 1 }
+
+                #Productivity: $1.2 /K
+                set_variable = { global.building_basic_output_1@token:building_infrastructure = 2.0 }
+                set_variable = { global.building_basic_output_industrial_capacity@token:building_infrastructure = 2 }
+                set_variable = { global.building_basic_output_shipping_capacity@token:building_infrastructure = 1 }
+
+                set_variable = { global.building_basic_input_resource_1@token:building_infrastructure = token:resource_raw_materials }
+                set_variable = { global.building_basic_input_amount_1@token:building_infrastructure = 2.0 }
+                
+                set_variable = { global.building_basic_peasants_employment@token:building_infrastructure = 0.0 } #1x
+                set_variable = { global.building_basic_laborers_employment@token:building_infrastructure = 4.95 } #2x
+                set_variable = { global.building_basic_workers_employment@token:building_infrastructure = 0 } #5x
+                set_variable = { global.building_basic_professionals_employment@token:building_infrastructure = 0 } #10x
+                set_variable = { global.building_basic_specialists_employment@token:building_infrastructure = 0 } #20x
+                set_variable = { global.building_basic_aristocrats_employment@token:building_infrastructure = 0.05 } #30x
+                set_variable = { global.building_basic_capitalists_employment@token:building_infrastructure = 0.0 } #50x
+            #
+            #Advanced
+                set_variable = { global.building_advanced_tech_unlock@token:building_infrastructure = token:mass_transit_early }
+
+                #Productivity: $1.8 /K
+                set_variable = { global.building_advanced_output_1@token:building_infrastructure = 3.0 }
+                set_variable = { global.building_advanced_output_industrial_capacity@token:building_infrastructure = 2.5 }
+                set_variable = { global.building_advanced_output_shipping_capacity@token:building_infrastructure = 1.25 }
+                
+                set_variable = { global.building_advanced_construction_amount@token:building_infrastructure = 24 }
+                set_variable = { global.building_advanced_construction_speed@token:building_infrastructure = 2 }
+                
+                set_variable = { global.building_advanced_upgrade_amount@token:building_infrastructure = 9 }
+                set_variable = { global.building_advanced_upgrade_speed@token:building_infrastructure = 1.5 }
+
+                set_variable = { global.building_basic_input_resource_1@token:building_infrastructure = token:resource_raw_materials }
+                set_variable = { global.building_basic_input_amount_1@token:building_infrastructure = 3.0 }
+                
+                set_variable = { global.building_advanced_peasants_employment@token:building_infrastructure = 0.0 } #1x
+                set_variable = { global.building_advanced_laborers_employment@token:building_infrastructure = 4.45 } #2x
+                set_variable = { global.building_advanced_workers_employment@token:building_infrastructure = 0.5 } #5x
+                set_variable = { global.building_advanced_professionals_employment@token:building_infrastructure = 0 } #10x
+                set_variable = { global.building_advanced_specialists_employment@token:building_infrastructure = 0 } #20x
+                set_variable = { global.building_advanced_aristocrats_employment@token:building_infrastructure = 0.05 } #30x
+                set_variable = { global.building_advanced_capitalists_employment@token:building_infrastructure = 0.0 } #50x
+            #
+            #Industrialized
+                set_variable = { global.building_industrialized_tech_unlock@token:building_infrastructure = token:tech_humanities_roadworks }
+
+                #Productivity: $2.44 /K
+                set_variable = { global.building_industrialized_output_1@token:building_infrastructure = 4.0 }
+                set_variable = { global.building_industrialized_output_industrial_capacity@token:building_infrastructure = 3.0 }
+                set_variable = { global.building_industrialized_output_shipping_capacity@token:building_infrastructure = 1.5 }
+                
+                set_variable = { global.building_industrialized_construction_amount@token:building_infrastructure = 36 }
+                set_variable = { global.building_industrialized_construction_speed@token:building_infrastructure = 3 }
+                
+                set_variable = { global.building_industrialized_upgrade_amount@token:building_infrastructure = 12 }
+                set_variable = { global.building_industrialized_upgrade_speed@token:building_infrastructure = 2 }
+
+                set_variable = { global.building_industrialized_input_resource_1@token:building_infrastructure = token:resource_raw_materials }
+                set_variable = { global.building_industrialized_input_amount_1@token:building_infrastructure = 4.0 }
+                
+                set_variable = { global.building_industrialized_input_resource_2@token:building_infrastructure = token:resource_energy_materials }
+                set_variable = { global.building_industrialized_input_amount_2@token:building_infrastructure = 0.5 }
+                
+                set_variable = { global.building_industrialized_peasants_employment@token:building_infrastructure = 0.0 } #1x
+                set_variable = { global.building_industrialized_laborers_employment@token:building_infrastructure = 3.45 } #2x
+                set_variable = { global.building_industrialized_workers_employment@token:building_infrastructure = 1.0 } #5x
+                set_variable = { global.building_industrialized_professionals_employment@token:building_infrastructure = 0 } #10x
+                set_variable = { global.building_industrialized_specialists_employment@token:building_infrastructure = 0 } #20x
+                set_variable = { global.building_industrialized_aristocrats_employment@token:building_infrastructure = 0.05 } #30x
+                set_variable = { global.building_industrialized_capitalists_employment@token:building_infrastructure = 0.0 } #50x
+            #
+            #Mechanized
+                set_variable = { global.building_mechanized_tech_unlock@token:building_infrastructure = token:tech_humanities_asphalt_roads }
+
+                #Productivity: $3.25 /K
+                set_variable = { global.building_mechanized_output_1@token:building_infrastructure = 6.0 }
+                set_variable = { global.building_mechanized_output_industrial_capacity@token:building_infrastructure = 4.0 }
+                set_variable = { global.building_mechanized_output_shipping_capacity@token:building_infrastructure = 2.0 }
+                
+                set_variable = { global.building_mechanized_construction_amount@token:building_infrastructure = 50 }
+                set_variable = { global.building_mechanized_construction_speed@token:building_infrastructure = 4 }
+                
+                set_variable = { global.building_mechanized_upgrade_amount@token:building_infrastructure = 15 }
+                set_variable = { global.building_mechanized_upgrade_speed@token:building_infrastructure = 2.5 }
+
+                set_variable = { global.building_mechanized_input_resource_1@token:building_infrastructure = token:resource_raw_materials }
+                set_variable = { global.building_mechanized_input_amount_1@token:building_infrastructure = 8.0 }
+
+                set_variable = { global.building_mechanized_input_resource_2@token:building_infrastructure = token:resource_energy_materials }
+                set_variable = { global.building_mechanized_input_amount_2@token:building_infrastructure = 0.5 }
+                
+                set_variable = { global.building_mechanized_peasants_employment@token:building_infrastructure = 0.0 } #1x
+                set_variable = { global.building_mechanized_laborers_employment@token:building_infrastructure = 2.45 } #2x
+                set_variable = { global.building_mechanized_workers_employment@token:building_infrastructure = 1.5 } #5x
+                set_variable = { global.building_mechanized_professionals_employment@token:building_infrastructure = 0 } #10x
+                set_variable = { global.building_mechanized_specialists_employment@token:building_infrastructure = 0 } #20x
+                set_variable = { global.building_mechanized_aristocrats_employment@token:building_infrastructure = 0.04 } #30x
+                set_variable = { global.building_mechanized_capitalists_employment@token:building_infrastructure = 0.01 } #50x
+            #
+            #Electrified
+                set_variable = { global.building_electrified_tech_unlock@token:building_infrastructure = token:tarmac_roads }
+
+                #Productivity: $4.3 /K
+                set_variable = { global.building_electrified_output_1@token:building_infrastructure = 8 }
+                set_variable = { global.building_electrified_output_industrial_capacity@token:building_infrastructure = 6.0 }
+                set_variable = { global.building_electrified_output_shipping_capacity@token:building_infrastructure = 3.0 }
+                
+                set_variable = { global.building_electrified_construction_amount@token:building_infrastructure = 72 }
+                set_variable = { global.building_electrified_construction_speed@token:building_infrastructure = 6 }
+                
+                set_variable = { global.building_electrified_upgrade_amount@token:building_infrastructure = 18 }
+                set_variable = { global.building_electrified_upgrade_speed@token:building_infrastructure = 3 }
+
+                set_variable = { global.building_electrified_input_resource_1@token:building_infrastructure = token:resource_industrial_goods }
+                set_variable = { global.building_electrified_input_amount_1@token:building_infrastructure = 0.5 }
+                
+                set_variable = { global.building_electrified_input_resource_2@token:building_infrastructure = token:resource_raw_materials }
+                set_variable = { global.building_electrified_input_amount_2@token:building_infrastructure = 10.0 }
+                
+                set_variable = { global.building_electrified_input_resource_3@token:building_infrastructure = token:resource_electricity }
+                set_variable = { global.building_electrified_input_amount_3@token:building_infrastructure = 1.0 }
+                
+                set_variable = { global.building_electrified_peasants_employment@token:building_infrastructure = 0.0 } #1x
+                set_variable = { global.building_electrified_laborers_employment@token:building_infrastructure = 1.45 } #2x
+                set_variable = { global.building_electrified_workers_employment@token:building_infrastructure = 2.0 } #5x
+                set_variable = { global.building_electrified_professionals_employment@token:building_infrastructure = 0.0 } #10x
+                set_variable = { global.building_electrified_specialists_employment@token:building_infrastructure = 0 } #20x
+                set_variable = { global.building_electrified_aristocrats_employment@token:building_infrastructure = 0.02 } #30x
+                set_variable = { global.building_electrified_capitalists_employment@token:building_infrastructure = 0.03 } #50x
+            #
+            #Motorized
+                set_variable = { global.building_motorized_tech_unlock@token:building_infrastructure = token:mass_highspeed_highways }
+
+                #Productivity: $6.3 /K
+                set_variable = { global.building_motorized_output_1@token:building_infrastructure = 12 }
+                set_variable = { global.building_motorized_output_industrial_capacity@token:building_infrastructure = 10.0 }
+                set_variable = { global.building_motorized_output_shipping_capacity@token:building_infrastructure = 5.0 }
+                
+                set_variable = { global.building_motorized_construction_amount@token:building_infrastructure = 96 }
+                set_variable = { global.building_motorized_construction_speed@token:building_infrastructure = 8 }
+                
+                set_variable = { global.building_motorized_upgrade_amount@token:building_infrastructure = 24 }
+                set_variable = { global.building_motorized_upgrade_speed@token:building_infrastructure = 4 }
+
+                set_variable = { global.building_motorized_input_resource_1@token:building_infrastructure = token:resource_industrial_goods }
+                set_variable = { global.building_motorized_input_amount_1@token:building_infrastructure = 1.0 }
+                
+                set_variable = { global.building_motorized_input_resource_2@token:building_infrastructure = token:resource_raw_materials }
+                set_variable = { global.building_motorized_input_amount_2@token:building_infrastructure = 14.0 }
+                
+                set_variable = { global.building_motorized_input_resource_3@token:building_infrastructure = token:resource_electricity }
+                set_variable = { global.building_motorized_input_amount_3@token:building_infrastructure = 2.0 }
+                
+                set_variable = { global.building_motorized_peasants_employment@token:building_infrastructure = 0.0 } #1x
+                set_variable = { global.building_motorized_laborers_employment@token:building_infrastructure = 0.45 } #2x
+                set_variable = { global.building_motorized_workers_employment@token:building_infrastructure = 2.5 } #5x
+                set_variable = { global.building_motorized_professionals_employment@token:building_infrastructure = 0.5 } #10x
+                set_variable = { global.building_motorized_specialists_employment@token:building_infrastructure = 0 } #20x
+                set_variable = { global.building_motorized_aristocrats_employment@token:building_infrastructure = 0.0 } #30x
+                set_variable = { global.building_motorized_capitalists_employment@token:building_infrastructure = 0.05 } #50x
+            #
+            #Modernized
+                set_variable = { global.building_modernized_tech_unlock@token:building_infrastructure = token:modern_roundabouts }
+
+                #Productivity: $8.3 /K
+                set_variable = { global.building_modernized_output_1@token:building_infrastructure = 17 }
+                set_variable = { global.building_modernized_output_industrial_capacity@token:building_infrastructure = 12.0 }
+                set_variable = { global.building_modernized_output_shipping_capacity@token:building_infrastructure = 6.0 }
+                
+                set_variable = { global.building_modernized_construction_amount@token:building_infrastructure = 144 }
+                set_variable = { global.building_modernized_construction_speed@token:building_infrastructure = 12 }
+                
+                set_variable = { global.building_modernized_upgrade_amount@token:building_infrastructure = 36 }
+                set_variable = { global.building_modernized_upgrade_speed@token:building_infrastructure = 6 }
+
+                set_variable = { global.building_modernized_input_resource_1@token:building_infrastructure = token:resource_industrial_goods }
+                set_variable = { global.building_modernized_input_amount_1@token:building_infrastructure = 2.0 }
+                
+                set_variable = { global.building_modernized_input_resource_2@token:building_infrastructure = token:resource_raw_materials }
+                set_variable = { global.building_modernized_input_amount_2@token:building_infrastructure = 20.0 }
+                
+                set_variable = { global.building_modernized_input_resource_3@token:building_infrastructure = token:resource_electricity }
+                set_variable = { global.building_modernized_input_amount_3@token:building_infrastructure = 4.0 }
+                
+                set_variable = { global.building_modernized_peasants_employment@token:building_infrastructure = 0.0 } #1x
+                set_variable = { global.building_modernized_laborers_employment@token:building_infrastructure = 0.0 } #2x
+                set_variable = { global.building_modernized_workers_employment@token:building_infrastructure = 1.95 } #5x
+                set_variable = { global.building_modernized_professionals_employment@token:building_infrastructure = 1.0 } #10x
+                set_variable = { global.building_modernized_specialists_employment@token:building_infrastructure = 0 } #20x
+                set_variable = { global.building_modernized_aristocrats_employment@token:building_infrastructure = 0.0 } #30x
+                set_variable = { global.building_modernized_capitalists_employment@token:building_infrastructure = 0.05 } #50x
+            #
+            #Roboticized
+                set_variable = { global.building_roboticized_tech_unlock@token:building_infrastructure = token:combined_transportation_networks }
+
+                #Productivity: $11.2 /K
+                set_variable = { global.building_roboticized_output_1@token:building_infrastructure = 20 }
+                set_variable = { global.building_roboticized_output_industrial_capacity@token:building_infrastructure = 14.0 }
+                set_variable = { global.building_roboticized_output_shipping_capacity@token:building_infrastructure = 7.0 }
+                
+                set_variable = { global.building_roboticized_construction_amount@token:building_infrastructure = 192 }
+                set_variable = { global.building_roboticized_construction_speed@token:building_infrastructure = 16 }
+                
+                set_variable = { global.building_roboticized_upgrade_amount@token:building_infrastructure = 48 }
+                set_variable = { global.building_roboticized_upgrade_speed@token:building_infrastructure = 8 }
+
+                set_variable = { global.building_roboticized_input_resource_1@token:building_infrastructure = token:resource_industrial_goods }
+                set_variable = { global.building_roboticized_input_amount_1@token:building_infrastructure = 2.0 }
+                
+                set_variable = { global.building_roboticized_input_resource_2@token:building_infrastructure = token:resource_raw_materials }
+                set_variable = { global.building_roboticized_input_amount_2@token:building_infrastructure = 25.0 }
+                
+                set_variable = { global.building_roboticized_input_resource_3@token:building_infrastructure = token:resource_electricity }
+                set_variable = { global.building_roboticized_input_amount_3@token:building_infrastructure = 5.0 }
+                
+                set_variable = { global.building_roboticized_peasants_employment@token:building_infrastructure = 0.0 } #1x
+                set_variable = { global.building_roboticized_laborers_employment@token:building_infrastructure = 0.0 } #2x
+                set_variable = { global.building_roboticized_workers_employment@token:building_infrastructure = 1.45 } #5x
+                set_variable = { global.building_roboticized_professionals_employment@token:building_infrastructure = 1.0 } #10x
+                set_variable = { global.building_roboticized_specialists_employment@token:building_infrastructure = 0.0 } #20x
+                set_variable = { global.building_roboticized_aristocrats_employment@token:building_infrastructure = 0.0 } #30x
+                set_variable = { global.building_roboticized_capitalists_employment@token:building_infrastructure = 0.05 } #50x
+            #
+            #Computerized
+                set_variable = { global.building_computerized_tech_unlock@token:building_infrastructure = token:centralized_traffic_controls }
+
+                #Productivity: $13.0 /K
+                set_variable = { global.building_computerized_output_1@token:building_infrastructure = 22 }
+                set_variable = { global.building_computerized_output_industrial_capacity@token:building_infrastructure = 16.0 }
+                set_variable = { global.building_computerized_output_shipping_capacity@token:building_infrastructure = 8.0 }
+                
+                set_variable = { global.building_computerized_construction_amount@token:building_infrastructure = 240 }
+                set_variable = { global.building_computerized_construction_speed@token:building_infrastructure = 20 }
+                
+                set_variable = { global.building_computerized_upgrade_amount@token:building_infrastructure = 60 }
+                set_variable = { global.building_computerized_upgrade_speed@token:building_infrastructure = 10 }
+
+                set_variable = { global.building_computerized_input_resource_1@token:building_infrastructure = token:resource_industrial_goods }
+                set_variable = { global.building_computerized_input_amount_1@token:building_infrastructure = 3.0 }
+                
+                set_variable = { global.building_computerized_input_resource_2@token:building_infrastructure = token:resource_raw_materials }
+                set_variable = { global.building_computerized_input_amount_2@token:building_infrastructure = 25.0 }
+                
+                set_variable = { global.building_computerized_input_resource_3@token:building_infrastructure = token:resource_electricity }
+                set_variable = { global.building_computerized_input_amount_3@token:building_infrastructure = 8.0 }
+                
+                set_variable = { global.building_computerized_peasants_employment@token:building_infrastructure = 0.0 } #1x
+                set_variable = { global.building_computerized_laborers_employment@token:building_infrastructure = 0.0 } #2x
+                set_variable = { global.building_computerized_workers_employment@token:building_infrastructure = 0.45 } #5x
+                set_variable = { global.building_computerized_professionals_employment@token:building_infrastructure = 1.0 } #10x
+                set_variable = { global.building_computerized_specialists_employment@token:building_infrastructure = 0.5 } #20x
+                set_variable = { global.building_computerized_aristocrats_employment@token:building_infrastructure = 0.0 } #30x
+                set_variable = { global.building_computerized_capitalists_employment@token:building_infrastructure = 0.05 } #50x
+            #
+            #Digitalized
+                set_variable = { global.building_digitalized_tech_unlock@token:building_infrastructure = token:mass_transportation_networks }
+
+                #Productivity: $16.5 /K
+                set_variable = { global.building_digitalized_output_1@token:building_infrastructure = 26 }
+                set_variable = { global.building_digitalized_output_industrial_capacity@token:building_infrastructure = 18.0 }
+                set_variable = { global.building_digitalized_output_shipping_capacity@token:building_infrastructure = 9.0 }
+                
+                set_variable = { global.building_digitalized_construction_amount@token:building_infrastructure = 360 }
+                set_variable = { global.building_digitalized_construction_speed@token:building_infrastructure = 30 }
+                
+                set_variable = { global.building_digitalized_upgrade_amount@token:building_infrastructure = 90 }
+                set_variable = { global.building_digitalized_upgrade_speed@token:building_infrastructure = 15 }
+
+                set_variable = { global.building_digitalized_input_resource_1@token:building_infrastructure = token:resource_industrial_goods }
+                set_variable = { global.building_digitalized_input_amount_1@token:building_infrastructure = 3.5 }
+
+                set_variable = { global.building_digitalized_input_resource_2@token:building_infrastructure = token:resource_raw_materials }
+                set_variable = { global.building_digitalized_input_amount_2@token:building_infrastructure = 28.0 }
+                
+                set_variable = { global.building_digitalized_input_resource_3@token:building_infrastructure = token:resource_electricity }
+                set_variable = { global.building_digitalized_input_amount_3@token:building_infrastructure = 10.0 }
+                
+                set_variable = { global.building_digitalized_peasants_employment@token:building_infrastructure = 0.0 } #1x
+                set_variable = { global.building_digitalized_laborers_employment@token:building_infrastructure = 0.0 } #2x
+                set_variable = { global.building_digitalized_workers_employment@token:building_infrastructure = 0.0 } #5x
+                set_variable = { global.building_digitalized_professionals_employment@token:building_infrastructure = 1.45 } #10x
+                set_variable = { global.building_digitalized_specialists_employment@token:building_infrastructure = 0.5 } #20x
+                set_variable = { global.building_digitalized_aristocrats_employment@token:building_infrastructure = 0.0 } #30x
+                set_variable = { global.building_digitalized_capitalists_employment@token:building_infrastructure = 0.05 } #50x
+            #
+            #Automotized
+                set_variable = { global.building_automotized_tech_unlock@token:building_infrastructure = token:early_automated_transportation }
+
+                #Productivity: $20.0 /K
+                set_variable = { global.building_automotized_output_1@token:building_infrastructure = 30 }
+                set_variable = { global.building_automotized_output_industrial_capacity@token:building_infrastructure = 20.0 }
+                set_variable = { global.building_automotized_output_shipping_capacity@token:building_infrastructure = 10.0 }
+                
+                set_variable = { global.building_automotized_construction_amount@token:building_infrastructure = 480 }
+                set_variable = { global.building_automotized_construction_speed@token:building_infrastructure = 40 }
+                
+                set_variable = { global.building_automotized_upgrade_amount@token:building_infrastructure = 120 }
+                set_variable = { global.building_automotized_upgrade_speed@token:building_infrastructure = 20 }
+
+                set_variable = { global.building_automotized_input_resource_1@token:building_infrastructure = token:resource_industrial_goods }
+                set_variable = { global.building_automotized_input_amount_1@token:building_infrastructure = 5.0 }
+                
+                set_variable = { global.building_automotized_input_resource_2@token:building_infrastructure = token:resource_raw_materials }
+                set_variable = { global.building_automotized_input_amount_2@token:building_infrastructure = 30.0 }
+                
+                set_variable = { global.building_automotized_input_resource_3@token:building_infrastructure = token:resource_electricity }
+                set_variable = { global.building_automotized_input_amount_3@token:building_infrastructure = 15.0 }
+                
+                set_variable = { global.building_automotized_peasants_employment@token:building_infrastructure = 0.0 } #1x
+                set_variable = { global.building_automotized_laborers_employment@token:building_infrastructure = 0.0 } #2x
+                set_variable = { global.building_automotized_workers_employment@token:building_infrastructure = 0.0 } #5x
+                set_variable = { global.building_automotized_professionals_employment@token:building_infrastructure = 0.45 } #10x
+                set_variable = { global.building_automotized_specialists_employment@token:building_infrastructure = 1.0 } #20x
+                set_variable = { global.building_automotized_aristocrats_employment@token:building_infrastructure = 0.0 } #30x
+                set_variable = { global.building_automotized_capitalists_employment@token:building_infrastructure = 0.05 } #50x
+            #
+            #Futurized
+                set_variable = { global.building_futurized_tech_unlock@token:building_infrastructure = token:fully_automated_transportation }
+
+                #Productivity: $27.0 /K
+                set_variable = { global.building_futurized_output_1@token:building_infrastructure = 35 }
+                set_variable = { global.building_futurized_output_industrial_capacity@token:building_infrastructure = 24.0 }
+                set_variable = { global.building_futurized_output_shipping_capacity@token:building_infrastructure = 12.0 }
+                
+                set_variable = { global.building_futurized_construction_amount@token:building_infrastructure = 600 }
+                set_variable = { global.building_futurized_construction_speed@token:building_infrastructure = 50 }
+
+                set_variable = { global.building_futurized_input_resource_1@token:building_infrastructure = token:resource_industrial_goods }
+                set_variable = { global.building_futurized_input_amount_1@token:building_infrastructure = 8.0 }
+                
+                set_variable = { global.building_futurized_input_resource_2@token:building_infrastructure = token:resource_raw_materials }
+                set_variable = { global.building_futurized_input_amount_2@token:building_infrastructure = 30.0 }
+                
+                set_variable = { global.building_futurized_input_resource_3@token:building_infrastructure = token:resource_electricity }
+                set_variable = { global.building_futurized_input_amount_3@token:building_infrastructure = 20.0 }
+                
+                set_variable = { global.building_futurized_peasants_employment@token:building_infrastructure = 0.0 } #1x
+                set_variable = { global.building_futurized_laborers_employment@token:building_infrastructure = 0.0 } #2x
+                set_variable = { global.building_futurized_workers_employment@token:building_infrastructure = 0.0 } #5x
+                set_variable = { global.building_futurized_professionals_employment@token:building_infrastructure = 0.0 } #10x
+                set_variable = { global.building_futurized_specialists_employment@token:building_infrastructure = 0.95 } #20x
+                set_variable = { global.building_futurized_aristocrats_employment@token:building_infrastructure = 0.0 } #30x
+                set_variable = { global.building_futurized_capitalists_employment@token:building_infrastructure = 0.05 } #50x
+            #
+        }
+        define_railway = {
+            set_variable = { global.building_output_resource_1@token:building_railway = token:resource_services }
+
+            #Industrialized
+                set_variable = { global.building_industrialized_tech_unlock@token:building_railway = token:steam_locomotive }
+
+                #Productivity: $2.9 /K
+                set_variable = { global.building_industrialized_output_1@token:building_railway = 5.0 }
+                set_variable = { global.building_industrialized_output_industrial_capacity@token:building_railway = 10.0 }
+                set_variable = { global.building_industrialized_output_shipping_capacity@token:building_railway = 10.0 }
+                
+                set_variable = { global.building_industrialized_construction_amount@token:building_railway = 36 }
+                set_variable = { global.building_industrialized_construction_speed@token:building_railway = 3 }
+                
+                set_variable = { global.building_industrialized_upgrade_amount@token:building_railway = 12 }
+                set_variable = { global.building_industrialized_upgrade_speed@token:building_railway = 2 }
+
+                set_variable = { global.building_industrialized_input_resource_1@token:building_railway = token:resource_industrial_goods }
+                set_variable = { global.building_industrialized_input_amount_1@token:building_railway = 1.0 }
+
+                set_variable = { global.building_industrialized_input_resource_2@token:building_railway = token:resource_raw_materials }
+                set_variable = { global.building_industrialized_input_amount_2@token:building_railway = 2.0 }
+                
+                set_variable = { global.building_industrialized_input_resource_3@token:building_railway = token:resource_energy_materials }
+                set_variable = { global.building_industrialized_input_amount_3@token:building_railway = 1.0 }
+                
+                set_variable = { global.building_industrialized_peasants_employment@token:building_railway = 0.0 } #1x
+                set_variable = { global.building_industrialized_laborers_employment@token:building_railway = 2.95 } #2x
+                set_variable = { global.building_industrialized_workers_employment@token:building_railway = 1.5 } #5x
+                set_variable = { global.building_industrialized_professionals_employment@token:building_railway = 0 } #10x
+                set_variable = { global.building_industrialized_specialists_employment@token:building_railway = 0 } #20x
+                set_variable = { global.building_industrialized_aristocrats_employment@token:building_railway = 0.0 } #30x
+                set_variable = { global.building_industrialized_capitalists_employment@token:building_railway = 0.05 } #50x
+            #
+            #Mechanized
+                set_variable = { global.building_mechanized_tech_unlock@token:building_railway = token:steam_locomotive_3 }
+
+                #Productivity: $3.6 /K
+                set_variable = { global.building_mechanized_output_1@token:building_railway = 6.5 }
+                set_variable = { global.building_mechanized_output_industrial_capacity@token:building_railway = 15.0 }
+                set_variable = { global.building_mechanized_output_shipping_capacity@token:building_railway = 15.0 }
+                
+                set_variable = { global.building_mechanized_construction_amount@token:building_railway = 50 }
+                set_variable = { global.building_mechanized_construction_speed@token:building_railway = 4 }
+                
+                set_variable = { global.building_mechanized_upgrade_amount@token:building_railway = 15 }
+                set_variable = { global.building_mechanized_upgrade_speed@token:building_railway = 2.5 }
+
+                set_variable = { global.building_mechanized_input_resource_1@token:building_railway = token:resource_industrial_goods }
+                set_variable = { global.building_mechanized_input_amount_1@token:building_railway = 1.5 }
+
+                set_variable = { global.building_mechanized_input_resource_2@token:building_railway = token:resource_raw_materials }
+                set_variable = { global.building_mechanized_input_amount_2@token:building_railway = 3.0 }
+
+                set_variable = { global.building_mechanized_input_resource_3@token:building_railway = token:resource_energy_materials }
+                set_variable = { global.building_mechanized_input_amount_3@token:building_railway = 1.5 }
+                
+                set_variable = { global.building_mechanized_peasants_employment@token:building_railway = 0.0 } #1x
+                set_variable = { global.building_mechanized_laborers_employment@token:building_railway = 1.95 } #2x
+                set_variable = { global.building_mechanized_workers_employment@token:building_railway = 2.0 } #5x
+                set_variable = { global.building_mechanized_professionals_employment@token:building_railway = 0 } #10x
+                set_variable = { global.building_mechanized_specialists_employment@token:building_railway = 0 } #20x
+                set_variable = { global.building_mechanized_aristocrats_employment@token:building_railway = 0.0 } #30x
+                set_variable = { global.building_mechanized_capitalists_employment@token:building_railway = 0.05 } #50x
+            #
+            #Electrified
+                set_variable = { global.building_electrified_tech_unlock@token:building_railway = token:diesel_locomotive_1 }
+
+                #Productivity: $4.7 /K
+                set_variable = { global.building_electrified_output_1@token:building_railway = 8.5 }
+                set_variable = { global.building_electrified_output_industrial_capacity@token:building_railway = 20.0 }
+                set_variable = { global.building_electrified_output_shipping_capacity@token:building_railway = 20.0 }
+                
+                set_variable = { global.building_electrified_construction_amount@token:building_railway = 72 }
+                set_variable = { global.building_electrified_construction_speed@token:building_railway = 6 }
+                
+                set_variable = { global.building_electrified_upgrade_amount@token:building_railway = 18 }
+                set_variable = { global.building_electrified_upgrade_speed@token:building_railway = 3 }
+
+                set_variable = { global.building_electrified_input_resource_1@token:building_railway = token:resource_industrial_goods }
+                set_variable = { global.building_electrified_input_amount_1@token:building_railway = 2.0 }
+                
+                set_variable = { global.building_electrified_input_resource_2@token:building_railway = token:resource_raw_materials }
+                set_variable = { global.building_electrified_input_amount_2@token:building_railway = 4.0 }
+                
+                set_variable = { global.building_electrified_input_resource_3@token:building_railway = token:resource_energy_materials }
+                set_variable = { global.building_electrified_input_amount_3@token:building_railway = 3.0 }
+                
+                set_variable = { global.building_electrified_peasants_employment@token:building_railway = 0.0 } #1x
+                set_variable = { global.building_electrified_laborers_employment@token:building_railway = 0.95 } #2x
+                set_variable = { global.building_electrified_workers_employment@token:building_railway = 2.0 } #5x
+                set_variable = { global.building_electrified_professionals_employment@token:building_railway = 0.5 } #10x
+                set_variable = { global.building_electrified_specialists_employment@token:building_railway = 0 } #20x
+                set_variable = { global.building_electrified_aristocrats_employment@token:building_railway = 0.0 } #30x
+                set_variable = { global.building_electrified_capitalists_employment@token:building_railway = 0.05 } #50x
+            #
+            #Motorized
+                set_variable = { global.building_motorized_tech_unlock@token:building_railway = token:diesel_locomotive_4 }
+
+                #Productivity: $7.1 /K
+                set_variable = { global.building_motorized_output_1@token:building_railway = 13 }
+                set_variable = { global.building_motorized_output_industrial_capacity@token:building_railway = 30.0 }
+                set_variable = { global.building_motorized_output_shipping_capacity@token:building_railway = 30.0 }
+                
+                set_variable = { global.building_motorized_construction_amount@token:building_railway = 96 }
+                set_variable = { global.building_motorized_construction_speed@token:building_railway = 8 }
+                
+                set_variable = { global.building_motorized_upgrade_amount@token:building_railway = 24 }
+                set_variable = { global.building_motorized_upgrade_speed@token:building_railway = 4 }
+
+                set_variable = { global.building_motorized_input_resource_1@token:building_railway = token:resource_industrial_goods }
+                set_variable = { global.building_motorized_input_amount_1@token:building_railway = 3.0 }
+                
+                set_variable = { global.building_motorized_input_resource_2@token:building_railway = token:resource_raw_materials }
+                set_variable = { global.building_motorized_input_amount_2@token:building_railway = 6.0 }
+                
+                set_variable = { global.building_motorized_input_resource_3@token:building_railway = token:resource_energy_materials }
+                set_variable = { global.building_motorized_input_amount_3@token:building_railway = 5.0 }
+                
+                set_variable = { global.building_motorized_peasants_employment@token:building_railway = 0.0 } #1x
+                set_variable = { global.building_motorized_laborers_employment@token:building_railway = 0.0 } #2x
+                set_variable = { global.building_motorized_workers_employment@token:building_railway = 2.45 } #5x
+                set_variable = { global.building_motorized_professionals_employment@token:building_railway = 1.0 } #10x
+                set_variable = { global.building_motorized_specialists_employment@token:building_railway = 0 } #20x
+                set_variable = { global.building_motorized_aristocrats_employment@token:building_railway = 0.0 } #30x
+                set_variable = { global.building_motorized_capitalists_employment@token:building_railway = 0.05 } #50x
+            #
+            #Modernized
+                set_variable = { global.building_modernized_tech_unlock@token:building_railway = token:full_electric_locomotives }
+
+                #Productivity: $11.1 /K
+                set_variable = { global.building_modernized_output_1@token:building_railway = 18 }
+                set_variable = { global.building_modernized_output_industrial_capacity@token:building_railway = 40.0 }
+                set_variable = { global.building_modernized_output_shipping_capacity@token:building_railway = 40.0 }
+                
+                set_variable = { global.building_modernized_construction_amount@token:building_railway = 144 }
+                set_variable = { global.building_modernized_construction_speed@token:building_railway = 12 }
+                
+                set_variable = { global.building_modernized_upgrade_amount@token:building_railway = 36 }
+                set_variable = { global.building_modernized_upgrade_speed@token:building_railway = 6 }
+
+                set_variable = { global.building_modernized_input_resource_1@token:building_railway = token:resource_industrial_goods }
+                set_variable = { global.building_modernized_input_amount_1@token:building_railway = 4.0 }
+                
+                set_variable = { global.building_modernized_input_resource_2@token:building_railway = token:resource_raw_materials }
+                set_variable = { global.building_modernized_input_amount_2@token:building_railway = 8.0 }
+                
+                set_variable = { global.building_modernized_input_resource_3@token:building_railway = token:resource_energy_materials }
+                set_variable = { global.building_modernized_input_amount_3@token:building_railway = 5.0 }
+                
+                set_variable = { global.building_modernized_input_resource_4@token:building_railway = token:resource_electricity }
+                set_variable = { global.building_modernized_input_amount_4@token:building_railway = 3.0 }
+                
+                set_variable = { global.building_modernized_peasants_employment@token:building_railway = 0.0 } #1x
+                set_variable = { global.building_modernized_laborers_employment@token:building_railway = 0.0 } #2x
+                set_variable = { global.building_modernized_workers_employment@token:building_railway = 1.45 } #5x
+                set_variable = { global.building_modernized_professionals_employment@token:building_railway = 1.5 } #10x
+                set_variable = { global.building_modernized_specialists_employment@token:building_railway = 0 } #20x
+                set_variable = { global.building_modernized_aristocrats_employment@token:building_railway = 0.0 } #30x
+                set_variable = { global.building_modernized_capitalists_employment@token:building_railway = 0.05 } #50x
+            #
+            #Roboticized
+                set_variable = { global.building_roboticized_tech_unlock@token:building_railway = token:high_speed_rail }
+
+                #Productivity: $14.4 /K
+                set_variable = { global.building_roboticized_output_1@token:building_railway = 24 }
+                set_variable = { global.building_roboticized_output_industrial_capacity@token:building_railway = 44.0 }
+                set_variable = { global.building_roboticized_output_shipping_capacity@token:building_railway = 44.0 }
+                
+                set_variable = { global.building_roboticized_construction_amount@token:building_railway = 192 }
+                set_variable = { global.building_roboticized_construction_speed@token:building_railway = 16 }
+                
+                set_variable = { global.building_roboticized_upgrade_amount@token:building_railway = 48 }
+                set_variable = { global.building_roboticized_upgrade_speed@token:building_railway = 8 }
+
+                set_variable = { global.building_roboticized_input_resource_1@token:building_railway = token:resource_industrial_goods }
+                set_variable = { global.building_roboticized_input_amount_1@token:building_railway = 5.0 }
+                
+                set_variable = { global.building_roboticized_input_resource_2@token:building_railway = token:resource_raw_materials }
+                set_variable = { global.building_roboticized_input_amount_2@token:building_railway = 12.0 }
+                
+                set_variable = { global.building_roboticized_input_resource_3@token:building_railway = token:resource_energy_materials }
+                set_variable = { global.building_roboticized_input_amount_3@token:building_railway = 5.0 }
+                
+                set_variable = { global.building_roboticized_input_resource_4@token:building_railway = token:resource_electricity }
+                set_variable = { global.building_roboticized_input_amount_4@token:building_railway = 10.0 }
+                
+                set_variable = { global.building_roboticized_peasants_employment@token:building_railway = 0.0 } #1x
+                set_variable = { global.building_roboticized_laborers_employment@token:building_railway = 0.0 } #2x
+                set_variable = { global.building_roboticized_workers_employment@token:building_railway = 0.95 } #5x
+                set_variable = { global.building_roboticized_professionals_employment@token:building_railway = 1.5 } #10x
+                set_variable = { global.building_roboticized_specialists_employment@token:building_railway = 0.0 } #20x
+                set_variable = { global.building_roboticized_aristocrats_employment@token:building_railway = 0.0 } #30x
+                set_variable = { global.building_roboticized_capitalists_employment@token:building_railway = 0.05 } #50x
+            #
+            #Computerized
+                set_variable = { global.building_computerized_tech_unlock@token:building_railway = token:centralized_traffic_controls }
+
+                #Productivity: $16.5 /K
+                set_variable = { global.building_computerized_output_1@token:building_railway = 25 }
+                set_variable = { global.building_computerized_output_industrial_capacity@token:building_railway = 48.0 }
+                set_variable = { global.building_computerized_output_shipping_capacity@token:building_railway = 48.0 }
+                
+                set_variable = { global.building_computerized_construction_amount@token:building_railway = 240 }
+                set_variable = { global.building_computerized_construction_speed@token:building_railway = 20 }
+                
+                set_variable = { global.building_computerized_upgrade_amount@token:building_railway = 60 }
+                set_variable = { global.building_computerized_upgrade_speed@token:building_railway = 10 }
+
+                set_variable = { global.building_computerized_input_resource_1@token:building_railway = token:resource_industrial_goods }
+                set_variable = { global.building_computerized_input_amount_1@token:building_railway = 5.0 }
+                
+                set_variable = { global.building_computerized_input_resource_2@token:building_railway = token:resource_raw_materials }
+                set_variable = { global.building_computerized_input_amount_2@token:building_railway = 12.0 }
+                
+                set_variable = { global.building_computerized_input_resource_3@token:building_railway = token:resource_energy_materials }
+                set_variable = { global.building_computerized_input_amount_3@token:building_railway = 5.0 }
+                
+                set_variable = { global.building_computerized_input_resource_4@token:building_railway = token:resource_electricity }
+                set_variable = { global.building_computerized_input_amount_4@token:building_railway = 14.0 }
+                
+                set_variable = { global.building_computerized_peasants_employment@token:building_railway = 0.0 } #1x
+                set_variable = { global.building_computerized_laborers_employment@token:building_railway = 0.0 } #2x
+                set_variable = { global.building_computerized_workers_employment@token:building_railway = 0.0 } #5x
+                set_variable = { global.building_computerized_professionals_employment@token:building_railway = 1.45 } #10x
+                set_variable = { global.building_computerized_specialists_employment@token:building_railway = 0.5 } #20x
+                set_variable = { global.building_computerized_aristocrats_employment@token:building_railway = 0.0 } #30x
+                set_variable = { global.building_computerized_capitalists_employment@token:building_railway = 0.05 } #50x
+            #
+            #Digitalized
+                set_variable = { global.building_digitalized_tech_unlock@token:building_railway = token:mass_transportation_networks }
+
+                #Productivity: $17.0 /K
+                set_variable = { global.building_digitalized_output_1@token:building_railway = 26 }
+                set_variable = { global.building_digitalized_output_industrial_capacity@token:building_railway = 52.0 }
+                set_variable = { global.building_digitalized_output_shipping_capacity@token:building_railway = 52.0 }
+                
+                set_variable = { global.building_digitalized_construction_amount@token:building_railway = 360 }
+                set_variable = { global.building_digitalized_construction_speed@token:building_railway = 30 }
+                
+                set_variable = { global.building_digitalized_upgrade_amount@token:building_railway = 90 }
+                set_variable = { global.building_digitalized_upgrade_speed@token:building_railway = 15 }
+
+                set_variable = { global.building_digitalized_input_resource_1@token:building_railway = token:resource_industrial_goods }
+                set_variable = { global.building_digitalized_input_amount_1@token:building_railway = 5.0 }
+
+                set_variable = { global.building_digitalized_input_resource_2@token:building_railway = token:resource_raw_materials }
+                set_variable = { global.building_digitalized_input_amount_2@token:building_railway = 12.0 }
+                
+                set_variable = { global.building_digitalized_input_resource_3@token:building_railway = token:resource_energy_materials }
+                set_variable = { global.building_digitalized_input_amount_3@token:building_railway = 5.0 }
+                
+                set_variable = { global.building_digitalized_input_resource_4@token:building_railway = token:resource_electricity }
+                set_variable = { global.building_digitalized_input_amount_4@token:building_railway = 16.0 }
+                
+                set_variable = { global.building_digitalized_peasants_employment@token:building_railway = 0.0 } #1x
+                set_variable = { global.building_digitalized_laborers_employment@token:building_railway = 0.0 } #2x
+                set_variable = { global.building_digitalized_workers_employment@token:building_railway = 0.0 } #5x
+                set_variable = { global.building_digitalized_professionals_employment@token:building_railway = 0.95 } #10x
+                set_variable = { global.building_digitalized_specialists_employment@token:building_railway = 1.0 } #20x
+                set_variable = { global.building_digitalized_aristocrats_employment@token:building_railway = 0.0 } #30x
+                set_variable = { global.building_digitalized_capitalists_employment@token:building_railway = 0.05 } #50x
+            #
+            #Automotized
+                set_variable = { global.building_automotized_tech_unlock@token:building_railway = token:early_automated_transportation }
+
+                #Productivity: $20.0 /K
+                set_variable = { global.building_automotized_output_1@token:building_railway = 30 }
+                set_variable = { global.building_automotized_output_industrial_capacity@token:building_railway = 55.0 }
+                set_variable = { global.building_automotized_output_shipping_capacity@token:building_railway = 55.0 }
+                
+                set_variable = { global.building_automotized_construction_amount@token:building_railway = 480 }
+                set_variable = { global.building_automotized_construction_speed@token:building_railway = 40 }
+                
+                set_variable = { global.building_automotized_upgrade_amount@token:building_railway = 120 }
+                set_variable = { global.building_automotized_upgrade_speed@token:building_railway = 20 }
+
+                set_variable = { global.building_automotized_input_resource_1@token:building_railway = token:resource_industrial_goods }
+                set_variable = { global.building_automotized_input_amount_1@token:building_railway = 6.0 }
+                
+                set_variable = { global.building_automotized_input_resource_2@token:building_railway = token:resource_raw_materials }
+                set_variable = { global.building_automotized_input_amount_2@token:building_railway = 14.0 }
+                
+                set_variable = { global.building_automotized_input_resource_3@token:building_railway = token:resource_energy_materials }
+                set_variable = { global.building_automotized_input_amount_3@token:building_railway = 3.0 }
+                
+                set_variable = { global.building_automotized_input_resource_4@token:building_railway = token:resource_electricity }
+                set_variable = { global.building_automotized_input_amount_4@token:building_railway = 25.0 }
+                
+                set_variable = { global.building_automotized_peasants_employment@token:building_railway = 0.0 } #1x
+                set_variable = { global.building_automotized_laborers_employment@token:building_railway = 0.0 } #2x
+                set_variable = { global.building_automotized_workers_employment@token:building_railway = 0.0 } #5x
+                set_variable = { global.building_automotized_professionals_employment@token:building_railway = 0.0 } #10x
+                set_variable = { global.building_automotized_specialists_employment@token:building_railway = 1.45 } #20x
+                set_variable = { global.building_automotized_aristocrats_employment@token:building_railway = 0.0 } #30x
+                set_variable = { global.building_automotized_capitalists_employment@token:building_railway = 0.05 } #50x
+            #
+            #Futurized
+                set_variable = { global.building_futurized_tech_unlock@token:building_railway = token:fully_automated_transportation }
+
+                #Productivity: $27.0 /K
+                set_variable = { global.building_futurized_output_1@token:building_railway = 35 }
+                set_variable = { global.building_futurized_output_industrial_capacity@token:building_railway = 60.0 }
+                set_variable = { global.building_futurized_output_shipping_capacity@token:building_railway = 60.0 }
+                
+                set_variable = { global.building_futurized_construction_amount@token:building_railway = 600 }
+                set_variable = { global.building_futurized_construction_speed@token:building_railway = 50 }
+
+                set_variable = { global.building_futurized_input_resource_1@token:building_railway = token:resource_industrial_goods }
+                set_variable = { global.building_futurized_input_amount_1@token:building_railway = 8.0 }
+                
+                set_variable = { global.building_futurized_input_resource_2@token:building_railway = token:resource_raw_materials }
+                set_variable = { global.building_futurized_input_amount_2@token:building_railway = 15.0 }
+                
+                set_variable = { global.building_futurized_input_resource_3@token:building_railway = token:resource_electricity }
+                set_variable = { global.building_futurized_input_amount_3@token:building_railway = 35.0 }
+                
+                set_variable = { global.building_futurized_peasants_employment@token:building_railway = 0.0 } #1x
+                set_variable = { global.building_futurized_laborers_employment@token:building_railway = 0.0 } #2x
+                set_variable = { global.building_futurized_workers_employment@token:building_railway = 0.0 } #5x
+                set_variable = { global.building_futurized_professionals_employment@token:building_railway = 0.0 } #10x
+                set_variable = { global.building_futurized_specialists_employment@token:building_railway = 0.95 } #20x
+                set_variable = { global.building_futurized_aristocrats_employment@token:building_railway = 0.0 } #30x
+                set_variable = { global.building_futurized_capitalists_employment@token:building_railway = 0.05 } #50x
+            #
+        }
+        define_port = {
+            set_variable = { global.building_output_resource_1@token:building_port = token:resource_services }
+
+            #Basic
+                set_variable = { global.building_basic_tech_unlock@token:building_port = 1 }
+                
+                set_variable = { global.building_basic_construction_amount@token:building_port = 20 }
+                set_variable = { global.building_basic_construction_speed@token:building_port = 2 }
+                
+                set_variable = { global.building_basic_upgrade_amount@token:building_port = 6 }
+                set_variable = { global.building_basic_upgrade_speed@token:building_port = 1 }
+
+                #Productivity: $1.2 /K
+                set_variable = { global.building_basic_output_1@token:building_port = 2.0 }
+                set_variable = { global.building_basic_output_shipping_capacity@token:building_port = 50 }
+
+                set_variable = { global.building_basic_input_resource_1@token:building_port = token:resource_industrial_goods }
+                set_variable = { global.building_basic_input_amount_1@token:building_port = 0.33 }
+                
+                set_variable = { global.building_basic_peasants_employment@token:building_port = 0.0 } #1x
+                set_variable = { global.building_basic_laborers_employment@token:building_port = 4.95 } #2x
+                set_variable = { global.building_basic_workers_employment@token:building_port = 0 } #5x
+                set_variable = { global.building_basic_professionals_employment@token:building_port = 0 } #10x
+                set_variable = { global.building_basic_specialists_employment@token:building_port = 0 } #20x
+                set_variable = { global.building_basic_aristocrats_employment@token:building_port = 0.05 } #30x
+                set_variable = { global.building_basic_capitalists_employment@token:building_port = 0.0 } #50x
+            #
+            #Advanced
+                set_variable = { global.building_advanced_tech_unlock@token:building_port = token:mass_transit_early }
+
+                #Productivity: $1.8 /K
+                set_variable = { global.building_advanced_output_1@token:building_port = 3.0 }
+                set_variable = { global.building_advanced_output_shipping_capacity@token:building_port = 60 }
+                
+                set_variable = { global.building_advanced_construction_amount@token:building_port = 24 }
+                set_variable = { global.building_advanced_construction_speed@token:building_port = 2 }
+                
+                set_variable = { global.building_advanced_upgrade_amount@token:building_port = 9 }
+                set_variable = { global.building_advanced_upgrade_speed@token:building_port = 1.5 }
+
+                set_variable = { global.building_basic_input_resource_1@token:building_port = token:resource_industrial_goods }
+                set_variable = { global.building_basic_input_amount_1@token:building_port = 0.5 }
+                
+                set_variable = { global.building_advanced_peasants_employment@token:building_port = 0.0 } #1x
+                set_variable = { global.building_advanced_laborers_employment@token:building_port = 4.45 } #2x
+                set_variable = { global.building_advanced_workers_employment@token:building_port = 0.5 } #5x
+                set_variable = { global.building_advanced_professionals_employment@token:building_port = 0 } #10x
+                set_variable = { global.building_advanced_specialists_employment@token:building_port = 0 } #20x
+                set_variable = { global.building_advanced_aristocrats_employment@token:building_port = 0.05 } #30x
+                set_variable = { global.building_advanced_capitalists_employment@token:building_port = 0.0 } #50x
+            #
+            #Industrialized
+                set_variable = { global.building_industrialized_tech_unlock@token:building_port = token:tech_humanities_roadworks }
+
+                #Productivity: $2.44 /K
+                set_variable = { global.building_industrialized_output_1@token:building_port = 4.0 }
+                set_variable = { global.building_industrialized_output_shipping_capacity@token:building_port = 70 }
+                
+                set_variable = { global.building_industrialized_construction_amount@token:building_port = 36 }
+                set_variable = { global.building_industrialized_construction_speed@token:building_port = 3 }
+                
+                set_variable = { global.building_industrialized_upgrade_amount@token:building_port = 12 }
+                set_variable = { global.building_industrialized_upgrade_speed@token:building_port = 2 }
+
+                set_variable = { global.building_industrialized_input_resource_1@token:building_port = token:resource_industrial_goods }
+                set_variable = { global.building_industrialized_input_amount_1@token:building_port = 0.66 }
+                
+                set_variable = { global.building_industrialized_input_resource_2@token:building_port = token:resource_energy_materials }
+                set_variable = { global.building_industrialized_input_amount_2@token:building_port = 0.5 }
+                
+                set_variable = { global.building_industrialized_peasants_employment@token:building_port = 0.0 } #1x
+                set_variable = { global.building_industrialized_laborers_employment@token:building_port = 3.45 } #2x
+                set_variable = { global.building_industrialized_workers_employment@token:building_port = 1.0 } #5x
+                set_variable = { global.building_industrialized_professionals_employment@token:building_port = 0 } #10x
+                set_variable = { global.building_industrialized_specialists_employment@token:building_port = 0 } #20x
+                set_variable = { global.building_industrialized_aristocrats_employment@token:building_port = 0.05 } #30x
+                set_variable = { global.building_industrialized_capitalists_employment@token:building_port = 0.0 } #50x
+            #
+            #Mechanized
+                set_variable = { global.building_mechanized_tech_unlock@token:building_port = token:tech_humanities_asphalt_roads }
+
+                #Productivity: $3.25 /K
+                set_variable = { global.building_mechanized_output_1@token:building_port = 6.0 }
+                set_variable = { global.building_mechanized_output_shipping_capacity@token:building_port = 80 }
+                
+                set_variable = { global.building_mechanized_construction_amount@token:building_port = 50 }
+                set_variable = { global.building_mechanized_construction_speed@token:building_port = 4 }
+                
+                set_variable = { global.building_mechanized_upgrade_amount@token:building_port = 15 }
+                set_variable = { global.building_mechanized_upgrade_speed@token:building_port = 2.5 }
+
+                set_variable = { global.building_mechanized_input_resource_1@token:building_port = token:resource_industrial_goods }
+                set_variable = { global.building_mechanized_input_amount_1@token:building_port = 0.75 }
+
+                set_variable = { global.building_mechanized_input_resource_2@token:building_port = token:resource_energy_materials }
+                set_variable = { global.building_mechanized_input_amount_2@token:building_port = 0.5 }
+                
+                set_variable = { global.building_mechanized_peasants_employment@token:building_port = 0.0 } #1x
+                set_variable = { global.building_mechanized_laborers_employment@token:building_port = 2.45 } #2x
+                set_variable = { global.building_mechanized_workers_employment@token:building_port = 1.5 } #5x
+                set_variable = { global.building_mechanized_professionals_employment@token:building_port = 0 } #10x
+                set_variable = { global.building_mechanized_specialists_employment@token:building_port = 0 } #20x
+                set_variable = { global.building_mechanized_aristocrats_employment@token:building_port = 0.04 } #30x
+                set_variable = { global.building_mechanized_capitalists_employment@token:building_port = 0.01 } #50x
+            #
+            #Electrified
+                set_variable = { global.building_electrified_tech_unlock@token:building_port = token:tarmac_roads }
+
+                #Productivity: $4.3 /K
+                set_variable = { global.building_electrified_output_1@token:building_port = 8 }
+                set_variable = { global.building_electrified_output_shipping_capacity@token:building_port = 100 }
+                
+                set_variable = { global.building_electrified_construction_amount@token:building_port = 72 }
+                set_variable = { global.building_electrified_construction_speed@token:building_port = 6 }
+                
+                set_variable = { global.building_electrified_upgrade_amount@token:building_port = 18 }
+                set_variable = { global.building_electrified_upgrade_speed@token:building_port = 3 }
+
+                set_variable = { global.building_electrified_input_resource_1@token:building_port = token:resource_industrial_goods }
+                set_variable = { global.building_electrified_input_amount_1@token:building_port = 2.0 }
+                
+                set_variable = { global.building_electrified_input_resource_2@token:building_port = token:resource_electricity }
+                set_variable = { global.building_electrified_input_amount_2@token:building_port = 1.5 }
+                
+                set_variable = { global.building_electrified_peasants_employment@token:building_port = 0.0 } #1x
+                set_variable = { global.building_electrified_laborers_employment@token:building_port = 1.45 } #2x
+                set_variable = { global.building_electrified_workers_employment@token:building_port = 2.0 } #5x
+                set_variable = { global.building_electrified_professionals_employment@token:building_port = 0.0 } #10x
+                set_variable = { global.building_electrified_specialists_employment@token:building_port = 0 } #20x
+                set_variable = { global.building_electrified_aristocrats_employment@token:building_port = 0.02 } #30x
+                set_variable = { global.building_electrified_capitalists_employment@token:building_port = 0.03 } #50x
+            #
+            #Motorized
+                set_variable = { global.building_motorized_tech_unlock@token:building_port = token:mass_highspeed_highways }
+
+                #Productivity: $6.3 /K
+                set_variable = { global.building_motorized_output_1@token:building_port = 12 }
+                set_variable = { global.building_motorized_output_shipping_capacity@token:building_port = 125 }
+                
+                set_variable = { global.building_motorized_construction_amount@token:building_port = 96 }
+                set_variable = { global.building_motorized_construction_speed@token:building_port = 8 }
+                
+                set_variable = { global.building_motorized_upgrade_amount@token:building_port = 24 }
+                set_variable = { global.building_motorized_upgrade_speed@token:building_port = 4 }
+
+                set_variable = { global.building_motorized_input_resource_1@token:building_port = token:resource_industrial_goods }
+                set_variable = { global.building_motorized_input_amount_1@token:building_port = 3.0 }
+                
+                set_variable = { global.building_motorized_input_resource_2@token:building_port = token:resource_electricity }
+                set_variable = { global.building_motorized_input_amount_2@token:building_port = 4.0 }
+                
+                set_variable = { global.building_motorized_peasants_employment@token:building_port = 0.0 } #1x
+                set_variable = { global.building_motorized_laborers_employment@token:building_port = 0.45 } #2x
+                set_variable = { global.building_motorized_workers_employment@token:building_port = 2.5 } #5x
+                set_variable = { global.building_motorized_professionals_employment@token:building_port = 0.5 } #10x
+                set_variable = { global.building_motorized_specialists_employment@token:building_port = 0 } #20x
+                set_variable = { global.building_motorized_aristocrats_employment@token:building_port = 0.0 } #30x
+                set_variable = { global.building_motorized_capitalists_employment@token:building_port = 0.05 } #50x
+            #
+            #Modernized
+                set_variable = { global.building_modernized_tech_unlock@token:building_port = token:modern_roundabouts }
+
+                #Productivity: $8.3 /K
+                set_variable = { global.building_modernized_output_1@token:building_port = 17 }
+                set_variable = { global.building_modernized_output_shipping_capacity@token:building_port = 150 }
+                
+                set_variable = { global.building_modernized_construction_amount@token:building_port = 144 }
+                set_variable = { global.building_modernized_construction_speed@token:building_port = 12 }
+                
+                set_variable = { global.building_modernized_upgrade_amount@token:building_port = 36 }
+                set_variable = { global.building_modernized_upgrade_speed@token:building_port = 6 }
+
+                set_variable = { global.building_modernized_input_resource_1@token:building_port = token:resource_industrial_goods }
+                set_variable = { global.building_modernized_input_amount_1@token:building_port = 5.0 }
+
+                set_variable = { global.building_modernized_input_resource_2@token:building_port = token:resource_electricity }
+                set_variable = { global.building_modernized_input_amount_2@token:building_port = 6.0 }
+                
+                set_variable = { global.building_modernized_peasants_employment@token:building_port = 0.0 } #1x
+                set_variable = { global.building_modernized_laborers_employment@token:building_port = 0.0 } #2x
+                set_variable = { global.building_modernized_workers_employment@token:building_port = 1.95 } #5x
+                set_variable = { global.building_modernized_professionals_employment@token:building_port = 1.0 } #10x
+                set_variable = { global.building_modernized_specialists_employment@token:building_port = 0 } #20x
+                set_variable = { global.building_modernized_aristocrats_employment@token:building_port = 0.0 } #30x
+                set_variable = { global.building_modernized_capitalists_employment@token:building_port = 0.05 } #50x
+            #
+            #Roboticized
+                set_variable = { global.building_roboticized_tech_unlock@token:building_port = token:combined_transportation_networks }
+
+                #Productivity: $11.2 /K
+                set_variable = { global.building_roboticized_output_1@token:building_port = 20 }
+                set_variable = { global.building_roboticized_output_shipping_capacity@token:building_port = 175 }
+                
+                set_variable = { global.building_roboticized_construction_amount@token:building_port = 192 }
+                set_variable = { global.building_roboticized_construction_speed@token:building_port = 16 }
+                
+                set_variable = { global.building_roboticized_upgrade_amount@token:building_port = 48 }
+                set_variable = { global.building_roboticized_upgrade_speed@token:building_port = 8 }
+
+                set_variable = { global.building_roboticized_input_resource_1@token:building_port = token:resource_industrial_goods }
+                set_variable = { global.building_roboticized_input_amount_1@token:building_port = 6.0 }
+                
+                set_variable = { global.building_roboticized_input_resource_2@token:building_port = token:resource_electricity }
+                set_variable = { global.building_roboticized_input_amount_2@token:building_port = 6.0 }
+                
+                set_variable = { global.building_roboticized_peasants_employment@token:building_port = 0.0 } #1x
+                set_variable = { global.building_roboticized_laborers_employment@token:building_port = 0.0 } #2x
+                set_variable = { global.building_roboticized_workers_employment@token:building_port = 1.45 } #5x
+                set_variable = { global.building_roboticized_professionals_employment@token:building_port = 1.0 } #10x
+                set_variable = { global.building_roboticized_specialists_employment@token:building_port = 0.0 } #20x
+                set_variable = { global.building_roboticized_aristocrats_employment@token:building_port = 0.0 } #30x
+                set_variable = { global.building_roboticized_capitalists_employment@token:building_port = 0.05 } #50x
+            #
+            #Computerized
+                set_variable = { global.building_computerized_tech_unlock@token:building_port = token:centralized_traffic_controls }
+
+                #Productivity: $13.0 /K
+                set_variable = { global.building_computerized_output_1@token:building_port = 22 }
+                set_variable = { global.building_computerized_output_shipping_capacity@token:building_port = 200 }
+                
+                set_variable = { global.building_computerized_construction_amount@token:building_port = 240 }
+                set_variable = { global.building_computerized_construction_speed@token:building_port = 20 }
+                
+                set_variable = { global.building_computerized_upgrade_amount@token:building_port = 60 }
+                set_variable = { global.building_computerized_upgrade_speed@token:building_port = 10 }
+
+                set_variable = { global.building_computerized_input_resource_1@token:building_port = token:resource_industrial_goods }
+                set_variable = { global.building_computerized_input_amount_1@token:building_port = 7.0 }
+
+                set_variable = { global.building_computerized_input_resource_2@token:building_port = token:resource_electricity }
+                set_variable = { global.building_computerized_input_amount_2@token:building_port = 9.0 }
+                
+                set_variable = { global.building_computerized_peasants_employment@token:building_port = 0.0 } #1x
+                set_variable = { global.building_computerized_laborers_employment@token:building_port = 0.0 } #2x
+                set_variable = { global.building_computerized_workers_employment@token:building_port = 0.45 } #5x
+                set_variable = { global.building_computerized_professionals_employment@token:building_port = 1.0 } #10x
+                set_variable = { global.building_computerized_specialists_employment@token:building_port = 0.5 } #20x
+                set_variable = { global.building_computerized_aristocrats_employment@token:building_port = 0.0 } #30x
+                set_variable = { global.building_computerized_capitalists_employment@token:building_port = 0.05 } #50x
+            #
+            #Digitalized
+                set_variable = { global.building_digitalized_tech_unlock@token:building_port = token:mass_transportation_networks }
+
+                #Productivity: $16.5 /K
+                set_variable = { global.building_digitalized_output_1@token:building_port = 26 }
+                set_variable = { global.building_digitalized_output_shipping_capacity@token:building_port = 250 }
+                
+                set_variable = { global.building_digitalized_construction_amount@token:building_port = 360 }
+                set_variable = { global.building_digitalized_construction_speed@token:building_port = 30 }
+                
+                set_variable = { global.building_digitalized_upgrade_amount@token:building_port = 90 }
+                set_variable = { global.building_digitalized_upgrade_speed@token:building_port = 15 }
+
+                set_variable = { global.building_digitalized_input_resource_1@token:building_port = token:resource_industrial_goods }
+                set_variable = { global.building_digitalized_input_amount_1@token:building_port = 7.5 }
+                
+                set_variable = { global.building_digitalized_input_resource_2@token:building_port = token:resource_electricity }
+                set_variable = { global.building_digitalized_input_amount_2@token:building_port = 14.0 }
+                
+                set_variable = { global.building_digitalized_peasants_employment@token:building_port = 0.0 } #1x
+                set_variable = { global.building_digitalized_laborers_employment@token:building_port = 0.0 } #2x
+                set_variable = { global.building_digitalized_workers_employment@token:building_port = 0.0 } #5x
+                set_variable = { global.building_digitalized_professionals_employment@token:building_port = 1.45 } #10x
+                set_variable = { global.building_digitalized_specialists_employment@token:building_port = 0.5 } #20x
+                set_variable = { global.building_digitalized_aristocrats_employment@token:building_port = 0.0 } #30x
+                set_variable = { global.building_digitalized_capitalists_employment@token:building_port = 0.05 } #50x
+            #
+            #Automotized
+                set_variable = { global.building_automotized_tech_unlock@token:building_port = token:early_automated_transportation }
+
+                #Productivity: $20.0 /K
+                set_variable = { global.building_automotized_output_1@token:building_port = 30 }
+                set_variable = { global.building_automotized_output_shipping_capacity@token:building_port = 300 }
+                
+                set_variable = { global.building_automotized_construction_amount@token:building_port = 480 }
+                set_variable = { global.building_automotized_construction_speed@token:building_port = 40 }
+                
+                set_variable = { global.building_automotized_upgrade_amount@token:building_port = 120 }
+                set_variable = { global.building_automotized_upgrade_speed@token:building_port = 20 }
+
+                set_variable = { global.building_automotized_input_resource_1@token:building_port = token:resource_industrial_goods }
+                set_variable = { global.building_automotized_input_amount_1@token:building_port = 10.0 }
+                
+                set_variable = { global.building_automotized_input_resource_2@token:building_port = token:resource_electricity }
+                set_variable = { global.building_automotized_input_amount_2@token:building_port = 15.0 }
+                
+                set_variable = { global.building_automotized_peasants_employment@token:building_port = 0.0 } #1x
+                set_variable = { global.building_automotized_laborers_employment@token:building_port = 0.0 } #2x
+                set_variable = { global.building_automotized_workers_employment@token:building_port = 0.0 } #5x
+                set_variable = { global.building_automotized_professionals_employment@token:building_port = 0.45 } #10x
+                set_variable = { global.building_automotized_specialists_employment@token:building_port = 1.0 } #20x
+                set_variable = { global.building_automotized_aristocrats_employment@token:building_port = 0.0 } #30x
+                set_variable = { global.building_automotized_capitalists_employment@token:building_port = 0.05 } #50x
+            #
+            #Futurized
+                set_variable = { global.building_futurized_tech_unlock@token:building_port = token:fully_automated_transportation }
+
+                #Productivity: $27.0 /K
+                set_variable = { global.building_futurized_output_1@token:building_port = 35 }
+                set_variable = { global.building_futurized_output_shipping_capacity@token:building_port = 400 }
+                
+                set_variable = { global.building_futurized_construction_amount@token:building_port = 600 }
+                set_variable = { global.building_futurized_construction_speed@token:building_port = 50 }
+
+                set_variable = { global.building_futurized_input_resource_1@token:building_port = token:resource_industrial_goods }
+                set_variable = { global.building_futurized_input_amount_1@token:building_port = 13.0 }
+                
+                set_variable = { global.building_futurized_input_resource_2@token:building_port = token:resource_electricity }
+                set_variable = { global.building_futurized_input_amount_2@token:building_port = 20.0 }
+                
+                set_variable = { global.building_futurized_peasants_employment@token:building_port = 0.0 } #1x
+                set_variable = { global.building_futurized_laborers_employment@token:building_port = 0.0 } #2x
+                set_variable = { global.building_futurized_workers_employment@token:building_port = 0.0 } #5x
+                set_variable = { global.building_futurized_professionals_employment@token:building_port = 0.0 } #10x
+                set_variable = { global.building_futurized_specialists_employment@token:building_port = 0.95 } #20x
+                set_variable = { global.building_futurized_aristocrats_employment@token:building_port = 0.0 } #30x
+                set_variable = { global.building_futurized_capitalists_employment@token:building_port = 0.05 } #50x
+            #
+        }
+        define_airport = {
+            set_variable = { global.building_output_resource_1@token:building_airport = token:resource_services }
+
+            #Motorized
+                set_variable = { global.building_motorized_tech_unlock@token:building_airport = token:full_metal_construcion }
+
+                #Productivity: $7.1 /K
+                set_variable = { global.building_motorized_output_1@token:building_airport = 15 }
+                set_variable = { global.building_motorized_output_shipping_capacity@token:building_airport = 1.0 }
+                
+                set_variable = { global.building_motorized_construction_amount@token:building_airport = 96 }
+                set_variable = { global.building_motorized_construction_speed@token:building_airport = 8 }
+                
+                set_variable = { global.building_motorized_upgrade_amount@token:building_airport = 24 }
+                set_variable = { global.building_motorized_upgrade_speed@token:building_airport = 4 }
+
+                set_variable = { global.building_motorized_input_resource_1@token:building_airport = token:resource_luxury_goods }
+                set_variable = { global.building_motorized_input_amount_1@token:building_airport = 2.25 }
+                
+                set_variable = { global.building_motorized_input_resource_2@token:building_airport = token:resource_raw_materials }
+                set_variable = { global.building_motorized_input_amount_2@token:building_airport = 6.0 }
+                
+                set_variable = { global.building_motorized_input_resource_3@token:building_airport = token:resource_energy_materials }
+                set_variable = { global.building_motorized_input_amount_3@token:building_airport = 5.0 }
+                
+                set_variable = { global.building_motorized_peasants_employment@token:building_airport = 0.0 } #1x
+                set_variable = { global.building_motorized_laborers_employment@token:building_airport = 0.0 } #2x
+                set_variable = { global.building_motorized_workers_employment@token:building_airport = 1.45 } #5x
+                set_variable = { global.building_motorized_professionals_employment@token:building_airport = 2.0 } #10x
+                set_variable = { global.building_motorized_specialists_employment@token:building_airport = 0 } #20x
+                set_variable = { global.building_motorized_aristocrats_employment@token:building_airport = 0.0 } #30x
+                set_variable = { global.building_motorized_capitalists_employment@token:building_airport = 0.05 } #50x
+            #
+            #Modernized
+                set_variable = { global.building_modernized_tech_unlock@token:building_airport = token:jet_aircraft_prototypes }
+
+                #Productivity: $11.1 /K
+                set_variable = { global.building_modernized_output_1@token:building_airport = 20 }
+                set_variable = { global.building_modernized_output_shipping_capacity@token:building_airport = 2.0 }
+                
+                set_variable = { global.building_modernized_construction_amount@token:building_airport = 144 }
+                set_variable = { global.building_modernized_construction_speed@token:building_airport = 12 }
+                
+                set_variable = { global.building_modernized_upgrade_amount@token:building_airport = 36 }
+                set_variable = { global.building_modernized_upgrade_speed@token:building_airport = 6 }
+
+                set_variable = { global.building_modernized_input_resource_1@token:building_airport = token:resource_luxury_goods }
+                set_variable = { global.building_modernized_input_amount_1@token:building_airport = 3.0 }
+                
+                set_variable = { global.building_modernized_input_resource_2@token:building_airport = token:resource_raw_materials }
+                set_variable = { global.building_modernized_input_amount_2@token:building_airport = 8.0 }
+                
+                set_variable = { global.building_modernized_input_resource_3@token:building_airport = token:resource_energy_materials }
+                set_variable = { global.building_modernized_input_amount_3@token:building_airport = 6.0 }
+                
+                set_variable = { global.building_modernized_input_resource_4@token:building_airport = token:resource_electricity }
+                set_variable = { global.building_modernized_input_amount_4@token:building_airport = 2.0 }
+                
+                set_variable = { global.building_modernized_peasants_employment@token:building_airport = 0.0 } #1x
+                set_variable = { global.building_modernized_laborers_employment@token:building_airport = 0.0 } #2x
+                set_variable = { global.building_modernized_workers_employment@token:building_airport = 0.45 } #5x
+                set_variable = { global.building_modernized_professionals_employment@token:building_airport = 2.5 } #10x
+                set_variable = { global.building_modernized_specialists_employment@token:building_airport = 0 } #20x
+                set_variable = { global.building_modernized_aristocrats_employment@token:building_airport = 0.0 } #30x
+                set_variable = { global.building_modernized_capitalists_employment@token:building_airport = 0.05 } #50x
+            #
+            #Roboticized
+                set_variable = { global.building_roboticized_tech_unlock@token:building_airport = token:high_bypass_jet_engines }
+
+                #Productivity: $14.4 /K
+                set_variable = { global.building_roboticized_output_1@token:building_airport = 27 }
+                set_variable = { global.building_roboticized_output_shipping_capacity@token:building_airport = 3.0 }
+                
+                set_variable = { global.building_roboticized_construction_amount@token:building_airport = 192 }
+                set_variable = { global.building_roboticized_construction_speed@token:building_airport = 16 }
+                
+                set_variable = { global.building_roboticized_upgrade_amount@token:building_airport = 48 }
+                set_variable = { global.building_roboticized_upgrade_speed@token:building_airport = 8 }
+
+                set_variable = { global.building_roboticized_input_resource_1@token:building_airport = token:resource_luxury_goods }
+                set_variable = { global.building_roboticized_input_amount_1@token:building_airport = 3.75 }
+                
+                set_variable = { global.building_roboticized_input_resource_2@token:building_airport = token:resource_raw_materials }
+                set_variable = { global.building_roboticized_input_amount_2@token:building_airport = 12.0 }
+                
+                set_variable = { global.building_roboticized_input_resource_3@token:building_airport = token:resource_energy_materials }
+                set_variable = { global.building_roboticized_input_amount_3@token:building_airport = 10.0 }
+                
+                set_variable = { global.building_roboticized_input_resource_4@token:building_airport = token:resource_electricity }
+                set_variable = { global.building_roboticized_input_amount_4@token:building_airport = 5.0 }
+                
+                set_variable = { global.building_roboticized_peasants_employment@token:building_airport = 0.0 } #1x
+                set_variable = { global.building_roboticized_laborers_employment@token:building_airport = 0.0 } #2x
+                set_variable = { global.building_roboticized_workers_employment@token:building_airport = 0.0 } #5x
+                set_variable = { global.building_roboticized_professionals_employment@token:building_airport = 1.95 } #10x
+                set_variable = { global.building_roboticized_specialists_employment@token:building_airport = 0.5 } #20x
+                set_variable = { global.building_roboticized_aristocrats_employment@token:building_airport = 0.0 } #30x
+                set_variable = { global.building_roboticized_capitalists_employment@token:building_airport = 0.05 } #50x
+            #
+            #Computerized
+                set_variable = { global.building_computerized_tech_unlock@token:building_airport = token:autopilot_integration }
+
+                #Productivity: $16.5 /K
+                set_variable = { global.building_computerized_output_1@token:building_airport = 28 }
+                set_variable = { global.building_computerized_output_shipping_capacity@token:building_airport = 4.0 }
+                
+                set_variable = { global.building_computerized_construction_amount@token:building_airport = 240 }
+                set_variable = { global.building_computerized_construction_speed@token:building_airport = 20 }
+                
+                set_variable = { global.building_computerized_upgrade_amount@token:building_airport = 60 }
+                set_variable = { global.building_computerized_upgrade_speed@token:building_airport = 10 }
+
+                set_variable = { global.building_computerized_input_resource_1@token:building_airport = token:resource_luxury_goods }
+                set_variable = { global.building_computerized_input_amount_1@token:building_airport = 3.75 }
+                
+                set_variable = { global.building_computerized_input_resource_2@token:building_airport = token:resource_raw_materials }
+                set_variable = { global.building_computerized_input_amount_2@token:building_airport = 12.0 }
+                
+                set_variable = { global.building_computerized_input_resource_3@token:building_airport = token:resource_energy_materials }
+                set_variable = { global.building_computerized_input_amount_3@token:building_airport = 12.0 }
+                
+                set_variable = { global.building_computerized_input_resource_4@token:building_airport = token:resource_electricity }
+                set_variable = { global.building_computerized_input_amount_4@token:building_airport = 7.0 }
+                
+                set_variable = { global.building_computerized_peasants_employment@token:building_airport = 0.0 } #1x
+                set_variable = { global.building_computerized_laborers_employment@token:building_airport = 0.0 } #2x
+                set_variable = { global.building_computerized_workers_employment@token:building_airport = 0.0 } #5x
+                set_variable = { global.building_computerized_professionals_employment@token:building_airport = 0.95 } #10x
+                set_variable = { global.building_computerized_specialists_employment@token:building_airport = 1.0 } #20x
+                set_variable = { global.building_computerized_aristocrats_employment@token:building_airport = 0.0 } #30x
+                set_variable = { global.building_computerized_capitalists_employment@token:building_airport = 0.05 } #50x
+            #
+            #Digitalized
+                set_variable = { global.building_digitalized_tech_unlock@token:building_airport = token:smart_skin_fuselage }
+
+                #Productivity: $17.0 /K
+                set_variable = { global.building_digitalized_output_1@token:building_airport = 30 }
+                set_variable = { global.building_digitalized_output_shipping_capacity@token:building_airport = 5.0 }
+                
+                set_variable = { global.building_digitalized_construction_amount@token:building_airport = 360 }
+                set_variable = { global.building_digitalized_construction_speed@token:building_airport = 30 }
+                
+                set_variable = { global.building_digitalized_upgrade_amount@token:building_airport = 90 }
+                set_variable = { global.building_digitalized_upgrade_speed@token:building_airport = 15 }
+
+                set_variable = { global.building_digitalized_input_resource_1@token:building_airport = token:resource_luxury_goods }
+                set_variable = { global.building_digitalized_input_amount_1@token:building_airport = 3.75 }
+
+                set_variable = { global.building_digitalized_input_resource_2@token:building_airport = token:resource_raw_materials }
+                set_variable = { global.building_digitalized_input_amount_2@token:building_airport = 12.0 }
+                
+                set_variable = { global.building_digitalized_input_resource_3@token:building_airport = token:resource_energy_materials }
+                set_variable = { global.building_digitalized_input_amount_3@token:building_airport = 10.0 }
+                
+                set_variable = { global.building_digitalized_input_resource_4@token:building_airport = token:resource_electricity }
+                set_variable = { global.building_digitalized_input_amount_4@token:building_airport = 11.0 }
+                
+                set_variable = { global.building_digitalized_peasants_employment@token:building_airport = 0.0 } #1x
+                set_variable = { global.building_digitalized_laborers_employment@token:building_airport = 0.0 } #2x
+                set_variable = { global.building_digitalized_workers_employment@token:building_airport = 0.0 } #5x
+                set_variable = { global.building_digitalized_professionals_employment@token:building_airport = 0.45 } #10x
+                set_variable = { global.building_digitalized_specialists_employment@token:building_airport = 1.5 } #20x
+                set_variable = { global.building_digitalized_aristocrats_employment@token:building_airport = 0.0 } #30x
+                set_variable = { global.building_digitalized_capitalists_employment@token:building_airport = 0.05 } #50x
+            #
+            #Automotized
+                set_variable = { global.building_automotized_tech_unlock@token:building_airport = token:air_to_space_engines }
+
+                #Productivity: $20.0 /K
+                set_variable = { global.building_automotized_output_1@token:building_airport = 34 }
+                set_variable = { global.building_automotized_output_shipping_capacity@token:building_airport = 10.0 }
+                
+                set_variable = { global.building_automotized_construction_amount@token:building_airport = 480 }
+                set_variable = { global.building_automotized_construction_speed@token:building_airport = 40 }
+                
+                set_variable = { global.building_automotized_upgrade_amount@token:building_airport = 120 }
+                set_variable = { global.building_automotized_upgrade_speed@token:building_airport = 20 }
+
+                set_variable = { global.building_automotized_input_resource_1@token:building_airport = token:resource_luxury_goods }
+                set_variable = { global.building_automotized_input_amount_1@token:building_airport = 4.5 }
+                
+                set_variable = { global.building_automotized_input_resource_2@token:building_airport = token:resource_raw_materials }
+                set_variable = { global.building_automotized_input_amount_2@token:building_airport = 14.0 }
+                
+                set_variable = { global.building_automotized_input_resource_3@token:building_airport = token:resource_energy_materials }
+                set_variable = { global.building_automotized_input_amount_3@token:building_airport = 10.0 }
+                
+                set_variable = { global.building_automotized_input_resource_4@token:building_airport = token:resource_electricity }
+                set_variable = { global.building_automotized_input_amount_4@token:building_airport = 18.0 }
+                
+                set_variable = { global.building_automotized_peasants_employment@token:building_airport = 0.0 } #1x
+                set_variable = { global.building_automotized_laborers_employment@token:building_airport = 0.0 } #2x
+                set_variable = { global.building_automotized_workers_employment@token:building_airport = 0.0 } #5x
+                set_variable = { global.building_automotized_professionals_employment@token:building_airport = 0.0 } #10x
+                set_variable = { global.building_automotized_specialists_employment@token:building_airport = 1.45 } #20x
+                set_variable = { global.building_automotized_aristocrats_employment@token:building_airport = 0.0 } #30x
+                set_variable = { global.building_automotized_capitalists_employment@token:building_airport = 0.05 } #50x
+            #
+            #Futurized
+                set_variable = { global.building_futurized_tech_unlock@token:building_airport = token:plasma_phased_shields }
+
+                #Productivity: $27.0 /K
+                set_variable = { global.building_futurized_output_1@token:building_airport = 40 }
+                set_variable = { global.building_futurized_output_shipping_capacity@token:building_airport = 20.0 }
+                
+                set_variable = { global.building_futurized_construction_amount@token:building_airport = 600 }
+                set_variable = { global.building_futurized_construction_speed@token:building_airport = 50 }
+
+                set_variable = { global.building_futurized_input_resource_1@token:building_airport = token:resource_luxury_goods }
+                set_variable = { global.building_futurized_input_amount_1@token:building_airport = 6.0 }
+                
+                set_variable = { global.building_futurized_input_resource_2@token:building_airport = token:resource_raw_materials }
+                set_variable = { global.building_futurized_input_amount_2@token:building_airport = 15.0 }
+                
+                set_variable = { global.building_futurized_input_resource_3@token:building_airport = token:resource_energy_materials }
+                set_variable = { global.building_futurized_input_amount_3@token:building_airport = 10.0 }
+                
+                set_variable = { global.building_futurized_input_resource_4@token:building_airport = token:resource_electricity }
+                set_variable = { global.building_futurized_input_amount_4@token:building_airport = 25.0 }
+                
+                set_variable = { global.building_futurized_peasants_employment@token:building_airport = 0.0 } #1x
+                set_variable = { global.building_futurized_laborers_employment@token:building_airport = 0.0 } #2x
+                set_variable = { global.building_futurized_workers_employment@token:building_airport = 0.0 } #5x
+                set_variable = { global.building_futurized_professionals_employment@token:building_airport = 0.0 } #10x
+                set_variable = { global.building_futurized_specialists_employment@token:building_airport = 0.95 } #20x
+                set_variable = { global.building_futurized_aristocrats_employment@token:building_airport = 0.0 } #30x
+                set_variable = { global.building_futurized_capitalists_employment@token:building_airport = 0.05 } #50x
+            #
+        }
+
+    #
 
     #Urban Buildings
         define_consumer_goods_factory = {
