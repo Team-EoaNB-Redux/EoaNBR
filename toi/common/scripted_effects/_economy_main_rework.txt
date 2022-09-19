@@ -67,6 +67,20 @@
                     # 80: 1.8 Food, 12.0 Consumer Goods, 2.5 Luxury Goods, 12.0 Energy, 24.0 Services: $217.4 per K
                     # 90: 2.0 Food, 24.0 Consumer Goods, 5.0 Luxury Goods, 24.0 Energy, 48.0 Services: $430.0 per K
                     # 100: 2.2 Food, 48.0 Consumer Goods, 10.0 Luxury Goods, 48.0 Energy, 96.0 Services: $854.6 per K
+                    
+                    clear_array = global.sol_cost
+                    for_loop_effect = {
+                        start = 0
+                        end = 150
+                        add = 1
+                        value = sol_temp
+                        break = b
+
+                        get_pop_needs = yes
+
+                        multiply_temp_variable = { total_cost_temp = global.pops_workforce_participation }
+                        add_to_array = { global.sol_cost = total_cost_temp } #sol_cost^i -> Costs for each level of standard of living (arranged in an array)
+                    }
                 #
             #
 
@@ -697,6 +711,14 @@
                     set_variable = { aristocrats_employed = 0 }
                     set_variable = { capitalists_employed = 0 }
                     
+                    set_variable = { peasants_workforce = 0 }
+                    set_variable = { laborers_workforce = 0 }
+                    set_variable = { workers_workforce = 0 }
+                    set_variable = { professionals_workforce = 0 }
+                    set_variable = { specialists_workforce = 0 }
+                    set_variable = { aristocrats_workforce = 0 }
+                    set_variable = { capitalists_workforce = 0 }
+                    
                     set_temp_variable = { jobs_buildings_temp = jobs_buildings }
                     subtract_from_temp_variable = { jobs_buildings_temp = jobs@token:building_subsistence_farm }
                     subtract_from_temp_variable = { jobs_buildings_temp = jobs@token:building_rice_paddy }
@@ -708,6 +730,7 @@
                         }
                         set_temp_variable = { multiplier_temp = pops_workforce }
                         divide_temp_variable = { multiplier_temp = jobs_buildings_temp }
+
                     }
 
                     set_variable = { laborers_workforce = pops_workforce }
@@ -846,9 +869,20 @@
 
                     if = {
                         limit = {
-                            check_variable = { laborers_workforce < 0 }
+                            check_variable = { laborers_workforce < laborers_employed }
                         }
-                        set_variable = { laborers_workforce = 0 }
+                        set_variable = { laborers_workforce = laborers_employed }
+
+                        set_variable = { pops_workforce = slaves_workforce }
+                        add_to_variable = { pops_workforce = peasants_workforce }
+                        add_to_variable = { pops_workforce = laborers_workforce }
+                        add_to_variable = { pops_workforce = workers_workforce }
+                        add_to_variable = { pops_workforce = professionals_workforce }
+                        add_to_variable = { pops_workforce = specialists_workforce }
+                        add_to_variable = { pops_workforce = aristocrats_workforce }
+                        add_to_variable = { pops_workforce = capitalists_workforce }
+                        add_to_variable = { pops_workforce = bureaucrats_workforce }
+                        add_to_variable = { pops_workforce = soldiers_workforce }
                     }
 
                     buildings_update = yes
@@ -857,6 +891,7 @@
 		            #Lit/Schooling/Education
                     set_temp_variable = { literate_pops_cap = pops_workforce }
                     multiply_temp_variable = { literate_pops_cap = pops_literacy_percentage }
+                    divide_temp_variable = { literate_pops_cap = 100 }
 
                     set_temp_variable = { literate_pops = workers_workforce }
                     add_to_temp_variable = { literate_pops = professionals_workforce }
@@ -867,6 +902,7 @@
                     
                     set_temp_variable = { schooled_pops_cap = pops_workforce }
                     multiply_temp_variable = { schooled_pops_cap = pops_schooling_percentage }
+                    divide_temp_variable = { schooled_pops_cap = 100 }
 
                     set_temp_variable = { schooled_pops = professionals_workforce }
                     add_to_temp_variable = { schooled_pops = aristocrats_workforce }
@@ -875,6 +911,7 @@
                     
                     set_temp_variable = { educated_pops_cap = pops_workforce }
                     multiply_temp_variable = { educated_pops_cap = pops_education_percentage }
+                    divide_temp_variable = { educated_pops_cap = 100 }
 
                     set_temp_variable = { educated_pops = specialists_workforce }
 
@@ -884,6 +921,7 @@
                         }
                         set_variable = { pops_education_percentage = educated_pops }
                         divide_variable = { pops_education_percentage = pops_workforce }
+                        multiply_variable = { pops_education_percentage = 100 }
                     }
                     if = {
                         limit = {
@@ -891,6 +929,7 @@
                         }
                         set_variable = { pops_schooling_percentage = schooled_pops }
                         divide_variable = { pops_schooling_percentage = pops_workforce }
+                        multiply_variable = { pops_schooling_percentage = 100 }
                     }
                     if = {
                         limit = {
@@ -898,12 +937,249 @@
                         }
                         set_variable = { pops_literacy_percentage = literate_pops }
                         divide_variable = { pops_literacy_percentage = pops_workforce }
+                        multiply_variable = { pops_literacy_percentage = 100 }
                     }
                 #
 
                 #Standard of Living Setup
+                    for_each_loop = {
+                        array = urban_buildings
+                        value = bu_token
 
+                        set_temp_variable = { prod_cap = productivity@var:bu_token }
+                        multiply_temp_variable = { prod_cap = 0.95 }
+                        if = {
+                            limit = {
+                                check_variable = { prod_cap > 0 }
+                            }
+                            set_temp_variable = { building_token = bu_token }
+                            set_temp_variable = { wage_change_temp = prod_cap }
+                            subtract_from_temp_variable = { wage_change_temp = average_wage@var:building_token }
+                            change_building_avg_wage = yes
+                        }
+                        building_update_finances = yes
+                    }
+                    for_each_loop = {
+                        array = rural_buildings
+                        value = bu_token
+
+                        set_temp_variable = { prod_cap = productivity@var:bu_token }
+                        multiply_temp_variable = { prod_cap = 0.95 }
+                        if = {
+                            limit = {
+                                check_variable = { prod_cap > 0 }
+                            }
+                            set_temp_variable = { building_token = bu_token }
+                            set_temp_variable = { wage_change_temp = prod_cap }
+                            subtract_from_temp_variable = { wage_change_temp = average_wage@var:building_token }
+                            change_building_avg_wage = yes
+                        }
+                        building_update_finances = yes
+                    }
+                    pops_update = yes
+
+                    #Slaves
+                        set_temp_variable = { earnings_temp = slaves_earnings }
+                        multiply_temp_variable = { earnings_temp = 100 }
+                        divide_temp_variable = { earnings_temp = slaves }
+                        for_each_loop = {
+                            array = global.sol_cost
+                            index = sol_temp
+                            value = col_temp
+                            break = b
+
+                            if = {
+                                limit = {
+                                    check_variable = { earnings_temp < col_temp }
+                                }
+                                set_variable = { slaves_sol = sol_temp }
+                                set_temp_variable = { b = 1 }
+                            }
+                        }
+                    #
+                    #Peasants
+                        set_temp_variable = { earnings_temp = peasants_earnings }
+                        divide_temp_variable = { earnings_temp = peasants }
+                        for_each_loop = {
+                            array = global.sol_cost
+                            index = sol_temp
+                            value = col_temp
+                            break = b
+
+                            if = {
+                                limit = {
+                                    check_variable = { earnings_temp < col_temp }
+                                }
+                                set_variable = { peasants_sol = sol_temp }
+                                set_temp_variable = { b = 1 }
+                            }
+                        }
+                    #
+                    #Laborers
+                        set_temp_variable = { earnings_temp = laborers_earnings }
+                        divide_temp_variable = { earnings_temp = laborers }
+                        for_each_loop = {
+                            array = global.sol_cost
+                            index = sol_temp
+                            value = col_temp
+                            break = b
+
+                            if = {
+                                limit = {
+                                    check_variable = { earnings_temp < col_temp }
+                                }
+                                set_variable = { laborers_sol = sol_temp }
+                                set_temp_variable = { b = 1 }
+                            }
+                        }
+                    #
+                    #Workers
+                        set_temp_variable = { earnings_temp = workers_earnings }
+                        divide_temp_variable = { earnings_temp = workers }
+                        for_each_loop = {
+                            array = global.sol_cost
+                            index = sol_temp
+                            value = col_temp
+                            break = b
+
+                            if = {
+                                limit = {
+                                    check_variable = { earnings_temp < col_temp }
+                                }
+                                set_variable = { workers_sol = sol_temp }
+                                set_temp_variable = { b = 1 }
+                            }
+                        }
+                    #
+                    #Professionals
+                        set_temp_variable = { earnings_temp = professionals_earnings }
+                        divide_temp_variable = { earnings_temp = professionals }
+                        for_each_loop = {
+                            array = global.sol_cost
+                            index = sol_temp
+                            value = col_temp
+                            break = b
+
+                            if = {
+                                limit = {
+                                    check_variable = { earnings_temp < col_temp }
+                                }
+                                set_variable = { professionals_sol = sol_temp }
+                                set_temp_variable = { b = 1 }
+                            }
+                        }
+                    #
+                    #Specialists
+                        set_temp_variable = { earnings_temp = specialists_earnings }
+                        divide_temp_variable = { earnings_temp = specialists }
+                        for_each_loop = {
+                            array = global.sol_cost
+                            index = sol_temp
+                            value = col_temp
+                            break = b
+
+                            if = {
+                                limit = {
+                                    check_variable = { earnings_temp < col_temp }
+                                }
+                                set_variable = { specialists_sol = sol_temp }
+                                set_temp_variable = { b = 1 }
+                            }
+                        }
+                    #
+                    #Aristocrats
+                        set_temp_variable = { earnings_temp = aristocrats_earnings }
+                        divide_temp_variable = { earnings_temp = aristocrats }
+                        for_each_loop = {
+                            array = global.sol_cost
+                            index = sol_temp
+                            value = col_temp
+                            break = b
+
+                            if = {
+                                limit = {
+                                    check_variable = { earnings_temp < col_temp }
+                                }
+                                set_variable = { aristocrats_sol = sol_temp }
+                                set_temp_variable = { b = 1 }
+                            }
+                        }
+                    #
+                    #Capitalists
+                        set_temp_variable = { earnings_temp = capitalists_earnings }
+                        divide_temp_variable = { earnings_temp = capitalists }
+                        for_each_loop = {
+                            array = global.sol_cost
+                            index = sol_temp
+                            value = col_temp
+                            break = b
+
+                            if = {
+                                limit = {
+                                    check_variable = { earnings_temp < col_temp }
+                                }
+                                set_variable = { capitalists_sol = sol_temp }
+                                set_temp_variable = { b = 1 }
+                            }
+                        }
+                    #
+                    #Bureaucrats
+                        set_temp_variable = { earnings_temp = bureaucrats_earnings }
+                        divide_temp_variable = { earnings_temp = bureaucrats }
+                        for_each_loop = {
+                            array = global.sol_cost
+                            index = sol_temp
+                            value = col_temp
+                            break = b
+
+                            if = {
+                                limit = {
+                                    check_variable = { earnings_temp < col_temp }
+                                }
+                                set_variable = { bureaucrats_sol = sol_temp }
+                                set_temp_variable = { b = 1 }
+                            }
+                        }
+                    #
+                    #Soldiers
+                        set_temp_variable = { earnings_temp = soldiers_earnings }
+                        divide_temp_variable = { earnings_temp = soldiers }
+                        for_each_loop = {
+                            array = global.sol_cost
+                            index = sol_temp
+                            value = col_temp
+                            break = b
+
+                            if = {
+                                limit = {
+                                    check_variable = { earnings_temp < col_temp }
+                                }
+                                set_variable = { soldiers_sol = sol_temp }
+                                set_temp_variable = { b = 1 }
+                            }
+                        }
+                    #
                 #
+            }
+            
+            calc_demand = yes
+            calc_supply = yes
+            get_resource_prices = yes
+
+            every_controlled_state = {
+                for_each_loop = {
+                    array = global.resource_token_array
+                    value = r_type
+                    set_variable = { trade_amount@var:r_type = demand@var:r_type }
+                    subtract_from_variable = { trade_amount@var:r_type = production@var:r_type }
+                    
+                    set_variable = { trade_value@var:r_type = trade_amount@var:r_type }
+                    multiply_variable = { trade_value@var:r_type = price@var:r_type }
+                    multiply_variable = { trade_value@var:r_type = -1 }
+                }
+
+                pops_update = yes
+                buildings_update = yes
             }
         }
 
@@ -919,37 +1195,39 @@
 		pops_update_finances = yes
     }
     pops_update_workforce = {
+
+        set_variable = { pops_workforce_participation = global.pops_workforce_participation }
         
 		#Pop Types
 			set_variable = { slaves = slaves_workforce }
-			divide_variable = { slaves = pops_workforce_percentage }
+			divide_variable = { slaves = pops_workforce_participation }
 			
 			set_variable = { peasants = peasants_workforce }
-			divide_variable = { peasants = pops_workforce_percentage }
+			divide_variable = { peasants = pops_workforce_participation }
 			
 			set_variable = { laborers = laborers_workforce }
-			divide_variable = { laborers = pops_workforce_percentage }
+			divide_variable = { laborers = pops_workforce_participation }
 			
 			set_variable = { workers = workers_workforce }
-			divide_variable = { workers = pops_workforce_percentage }
+			divide_variable = { workers = pops_workforce_participation }
 			
 			set_variable = { professionals = professionals_workforce }
-			divide_variable = { professionals = pops_workforce_percentage }
+			divide_variable = { professionals = pops_workforce_participation }
 			
 			set_variable = { specialists = professionals_workforce }
-			divide_variable = { specialists = pops_workforce_percentage }
+			divide_variable = { specialists = pops_workforce_participation }
 			
 			set_variable = { aristocrats = aristocrats_workforce }
-			divide_variable = { aristocrats = pops_workforce_percentage }
+			divide_variable = { aristocrats = pops_workforce_participation }
 			
 			set_variable = { capitalists = capitalists_workforce }
-			divide_variable = { capitalists = pops_workforce_percentage }
+			divide_variable = { capitalists = pops_workforce_participation }
 			
 			set_variable = { bureaucrats = bureaucrats_workforce }
-			divide_variable = { bureaucrats = pops_workforce_percentage }
+			divide_variable = { bureaucrats = pops_workforce_participation }
 			
 			set_variable = { soldiers = soldiers_workforce }
-			divide_variable = { soldiers = pops_workforce_percentage }
+			divide_variable = { soldiers = pops_workforce_participation }
 		#
 		#Employed Amount
 			set_variable = { slaves_employed = 0 }
@@ -1219,6 +1497,7 @@
 				array = urban_buildings
 				value = pops_bld_token
 
+				add_to_variable = { peasants_earnings = peasants_payroll@var:pops_bld_token }
 				add_to_variable = { laborers_earnings = laborers_payroll@var:pops_bld_token }
 				add_to_variable = { workers_earnings = workers_payroll@var:pops_bld_token }
 				add_to_variable = { professionals_earnings = professionals_payroll@var:pops_bld_token }
@@ -1230,6 +1509,7 @@
 				array = rural_buildings
 				value = pops_bld_token
 
+				add_to_variable = { peasants_earnings = peasants_payroll@var:pops_bld_token }
 				add_to_variable = { laborers_earnings = laborers_payroll@var:pops_bld_token }
 				add_to_variable = { workers_earnings = workers_payroll@var:pops_bld_token }
 				add_to_variable = { professionals_earnings = professionals_payroll@var:pops_bld_token }
@@ -1252,6 +1532,9 @@
     }
 
     calculate_pop_needs = {
+        # Calculates Pops Needs & Costs
+        # NOTE: This does need magnitude_temp
+        set_temp_variable = { magnitude_temp = 1 }
 
 		#Slaves
 			if = {
@@ -1282,7 +1565,7 @@
 						check_variable = { slaves_workforce > 100 }
 					}
 					set_temp_variable = { cpn_pa_temp = slaves_workforce }
-					divide_temp_variable = { cpn_pa_temp = 1000 }
+					divide_temp_variable = { cpn_pa_temp = magnitude_temp }
 
 					#Multiply by Pop Amount
 					multiply_variable = { slaves_needs_spending = cpn_pa_temp }
@@ -1317,37 +1600,52 @@
 					multiply_variable = { slaves_electricity_need = slaves_workforce }
 					multiply_variable = { slaves_services_need = slaves_workforce }
 
-                    #Divide by 1000
-					divide_variable = { slaves_needs_spending = 1000 }
-					divide_variable = { slaves_food_cost = 1000 }
-					divide_variable = { slaves_consumer_goods_cost = 1000 }
-					divide_variable = { slaves_luxury_goods_cost = 1000 }
-					divide_variable = { slaves_energy_materials_cost = 1000 }
-					divide_variable = { slaves_electricity_cost = 1000 }
-					divide_variable = { slaves_services_cost = 1000 }
+                    #Divide by magnitude_temp
+					divide_variable = { slaves_needs_spending = magnitude_temp }
+					divide_variable = { slaves_food_cost = magnitude_temp }
+					divide_variable = { slaves_consumer_goods_cost = magnitude_temp }
+					divide_variable = { slaves_luxury_goods_cost = magnitude_temp }
+					divide_variable = { slaves_energy_materials_cost = magnitude_temp }
+					divide_variable = { slaves_electricity_cost = magnitude_temp }
+					divide_variable = { slaves_services_cost = magnitude_temp }
                     
-					divide_variable = { slaves_food_need = 1000 }
-					divide_variable = { slaves_consumer_goods_need = 1000 }
-					divide_variable = { slaves_luxury_goods_need = 1000 }
-					divide_variable = { slaves_energy_materials_need = 1000 }
-					divide_variable = { slaves_electricity_need = 1000 }
-					divide_variable = { slaves_services_need = 1000 }
+					divide_variable = { slaves_food_need = magnitude_temp }
+					divide_variable = { slaves_consumer_goods_need = magnitude_temp }
+					divide_variable = { slaves_luxury_goods_need = magnitude_temp }
+					divide_variable = { slaves_energy_materials_need = magnitude_temp }
+					divide_variable = { slaves_electricity_need = magnitude_temp }
+					divide_variable = { slaves_services_need = magnitude_temp }
 				}
 				#Divide by Workforce %
-                divide_variable = { slaves_needs_spending = global.pops_workforce_participation }
-                divide_variable = { slaves_food_cost = global.pops_workforce_participation }
-                divide_variable = { slaves_consumer_goods_cost = global.pops_workforce_participation }
-                divide_variable = { slaves_luxury_goods_cost = global.pops_workforce_participation }
-                divide_variable = { slaves_energy_materials_cost = global.pops_workforce_participation }
-                divide_variable = { slaves_electricity_cost = global.pops_workforce_participation }
-                divide_variable = { slaves_services_cost = global.pops_workforce_participation }
+                divide_variable = { slaves_needs_spending = pops_workforce_participation }
+                divide_variable = { slaves_food_cost = pops_workforce_participation }
+                divide_variable = { slaves_consumer_goods_cost = pops_workforce_participation }
+                divide_variable = { slaves_luxury_goods_cost = pops_workforce_participation }
+                divide_variable = { slaves_energy_materials_cost = pops_workforce_participation }
+                divide_variable = { slaves_electricity_cost = pops_workforce_participation }
+                divide_variable = { slaves_services_cost = pops_workforce_participation }
                 
-                divide_variable = { slaves_food_need = global.pops_workforce_participation }
-                divide_variable = { slaves_consumer_goods_need = global.pops_workforce_participation }
-                divide_variable = { slaves_luxury_goods_need = global.pops_workforce_participation }
-                divide_variable = { slaves_energy_materials_need = global.pops_workforce_participation }
-                divide_variable = { slaves_electricity_need = global.pops_workforce_participation }
-                divide_variable = { slaves_services_need = global.pops_workforce_participation }
+                divide_variable = { slaves_food_need = pops_workforce_participation }
+                divide_variable = { slaves_consumer_goods_need = pops_workforce_participation }
+                divide_variable = { slaves_luxury_goods_need = pops_workforce_participation }
+                divide_variable = { slaves_energy_materials_need = pops_workforce_participation }
+                divide_variable = { slaves_electricity_need = pops_workforce_participation }
+                divide_variable = { slaves_services_need = pops_workforce_participation }
+
+                multiply_variable = { slaves_needs_spending = global.pops_workforce_participation }
+                multiply_variable = { slaves_food_cost = global.pops_workforce_participation }
+                multiply_variable = { slaves_consumer_goods_cost = global.pops_workforce_participation }
+                multiply_variable = { slaves_luxury_goods_cost = global.pops_workforce_participation }
+                multiply_variable = { slaves_energy_materials_cost = global.pops_workforce_participation }
+                multiply_variable = { slaves_electricity_cost = global.pops_workforce_participation }
+                multiply_variable = { slaves_services_cost = global.pops_workforce_participation }
+                
+                multiply_variable = { slaves_food_need = global.pops_workforce_participation }
+                multiply_variable = { slaves_consumer_goods_need = global.pops_workforce_participation }
+                multiply_variable = { slaves_luxury_goods_need = global.pops_workforce_participation }
+                multiply_variable = { slaves_energy_materials_need = global.pops_workforce_participation }
+                multiply_variable = { slaves_electricity_need = global.pops_workforce_participation }
+                multiply_variable = { slaves_services_need = global.pops_workforce_participation }
 			}
 			else = {
 				clear_variable = slaves_needs_spending
@@ -1396,7 +1694,7 @@
 						check_variable = { peasants_workforce > 100 }
 					}
 					set_temp_variable = { cpn_pa_temp = peasants_workforce }
-					divide_temp_variable = { cpn_pa_temp = 1000 }
+					divide_temp_variable = { cpn_pa_temp = magnitude_temp }
 
 					#Multiply by Pop Amount
 					multiply_variable = { peasants_needs_spending = cpn_pa_temp }
@@ -1431,37 +1729,52 @@
 					multiply_variable = { peasants_electricity_need = peasants_workforce }
 					multiply_variable = { peasants_services_need = peasants_workforce }
 
-                    #Divide by 1000
-					divide_variable = { peasants_needs_spending = 1000 }
-					divide_variable = { peasants_food_cost = 1000 }
-					divide_variable = { peasants_consumer_goods_cost = 1000 }
-					divide_variable = { peasants_luxury_goods_cost = 1000 }
-					divide_variable = { peasants_energy_materials_cost = 1000 }
-					divide_variable = { peasants_electricity_cost = 1000 }
-					divide_variable = { peasants_services_cost = 1000 }
+                    #Divide by magnitude_temp
+					divide_variable = { peasants_needs_spending = magnitude_temp }
+					divide_variable = { peasants_food_cost = magnitude_temp }
+					divide_variable = { peasants_consumer_goods_cost = magnitude_temp }
+					divide_variable = { peasants_luxury_goods_cost = magnitude_temp }
+					divide_variable = { peasants_energy_materials_cost = magnitude_temp }
+					divide_variable = { peasants_electricity_cost = magnitude_temp }
+					divide_variable = { peasants_services_cost = magnitude_temp }
                     
-					divide_variable = { peasants_food_need = 1000 }
-					divide_variable = { peasants_consumer_goods_need = 1000 }
-					divide_variable = { peasants_luxury_goods_need = 1000 }
-					divide_variable = { peasants_energy_materials_need = 1000 }
-					divide_variable = { peasants_electricity_need = 1000 }
-					divide_variable = { peasants_services_need = 1000 }
+					divide_variable = { peasants_food_need = magnitude_temp }
+					divide_variable = { peasants_consumer_goods_need = magnitude_temp }
+					divide_variable = { peasants_luxury_goods_need = magnitude_temp }
+					divide_variable = { peasants_energy_materials_need = magnitude_temp }
+					divide_variable = { peasants_electricity_need = magnitude_temp }
+					divide_variable = { peasants_services_need = magnitude_temp }
 				}
 				#Divide by Workforce %
-                divide_variable = { peasants_needs_spending = global.pops_workforce_participation }
-                divide_variable = { peasants_food_cost = global.pops_workforce_participation }
-                divide_variable = { peasants_consumer_goods_cost = global.pops_workforce_participation }
-                divide_variable = { peasants_luxury_goods_cost = global.pops_workforce_participation }
-                divide_variable = { peasants_energy_materials_cost = global.pops_workforce_participation }
-                divide_variable = { peasants_electricity_cost = global.pops_workforce_participation }
-                divide_variable = { peasants_services_cost = global.pops_workforce_participation }
+                divide_variable = { peasants_needs_spending = pops_workforce_participation }
+                divide_variable = { peasants_food_cost = pops_workforce_participation }
+                divide_variable = { peasants_consumer_goods_cost = pops_workforce_participation }
+                divide_variable = { peasants_luxury_goods_cost = pops_workforce_participation }
+                divide_variable = { peasants_energy_materials_cost = pops_workforce_participation }
+                divide_variable = { peasants_electricity_cost = pops_workforce_participation }
+                divide_variable = { peasants_services_cost = pops_workforce_participation }
                 
-                divide_variable = { peasants_food_need = global.pops_workforce_participation }
-                divide_variable = { peasants_consumer_goods_need = global.pops_workforce_participation }
-                divide_variable = { peasants_luxury_goods_need = global.pops_workforce_participation }
-                divide_variable = { peasants_energy_materials_need = global.pops_workforce_participation }
-                divide_variable = { peasants_electricity_need = global.pops_workforce_participation }
-                divide_variable = { peasants_services_need = global.pops_workforce_participation }
+                divide_variable = { peasants_food_need = pops_workforce_participation }
+                divide_variable = { peasants_consumer_goods_need = pops_workforce_participation }
+                divide_variable = { peasants_luxury_goods_need = pops_workforce_participation }
+                divide_variable = { peasants_energy_materials_need = pops_workforce_participation }
+                divide_variable = { peasants_electricity_need = pops_workforce_participation }
+                divide_variable = { peasants_services_need = pops_workforce_participation }
+
+                multiply_variable = { peasants_needs_spending = global.pops_workforce_participation }
+                multiply_variable = { peasants_food_cost = global.pops_workforce_participation }
+                multiply_variable = { peasants_consumer_goods_cost = global.pops_workforce_participation }
+                multiply_variable = { peasants_luxury_goods_cost = global.pops_workforce_participation }
+                multiply_variable = { peasants_energy_materials_cost = global.pops_workforce_participation }
+                multiply_variable = { peasants_electricity_cost = global.pops_workforce_participation }
+                multiply_variable = { peasants_services_cost = global.pops_workforce_participation }
+                
+                multiply_variable = { peasants_food_need = global.pops_workforce_participation }
+                multiply_variable = { peasants_consumer_goods_need = global.pops_workforce_participation }
+                multiply_variable = { peasants_luxury_goods_need = global.pops_workforce_participation }
+                multiply_variable = { peasants_energy_materials_need = global.pops_workforce_participation }
+                multiply_variable = { peasants_electricity_need = global.pops_workforce_participation }
+                multiply_variable = { peasants_services_need = global.pops_workforce_participation }
 			}
 			else = {
 				clear_variable = peasants_needs_spending
@@ -1510,7 +1823,7 @@
 						check_variable = { laborers_workforce > 100 }
 					}
 					set_temp_variable = { cpn_pa_temp = laborers_workforce }
-					divide_temp_variable = { cpn_pa_temp = 1000 }
+					divide_temp_variable = { cpn_pa_temp = magnitude_temp }
 
 					#Multiply by Pop Amount
 					multiply_variable = { laborers_needs_spending = cpn_pa_temp }
@@ -1545,37 +1858,52 @@
 					multiply_variable = { laborers_electricity_need = laborers_workforce }
 					multiply_variable = { laborers_services_need = laborers_workforce }
 
-                    #Divide by 1000
-					divide_variable = { laborers_needs_spending = 1000 }
-					divide_variable = { laborers_food_cost = 1000 }
-					divide_variable = { laborers_consumer_goods_cost = 1000 }
-					divide_variable = { laborers_luxury_goods_cost = 1000 }
-					divide_variable = { laborers_energy_materials_cost = 1000 }
-					divide_variable = { laborers_electricity_cost = 1000 }
-					divide_variable = { laborers_services_cost = 1000 }
+                    #Divide by magnitude_temp
+					divide_variable = { laborers_needs_spending = magnitude_temp }
+					divide_variable = { laborers_food_cost = magnitude_temp }
+					divide_variable = { laborers_consumer_goods_cost = magnitude_temp }
+					divide_variable = { laborers_luxury_goods_cost = magnitude_temp }
+					divide_variable = { laborers_energy_materials_cost = magnitude_temp }
+					divide_variable = { laborers_electricity_cost = magnitude_temp }
+					divide_variable = { laborers_services_cost = magnitude_temp }
                     
-					divide_variable = { laborers_food_need = 1000 }
-					divide_variable = { laborers_consumer_goods_need = 1000 }
-					divide_variable = { laborers_luxury_goods_need = 1000 }
-					divide_variable = { laborers_energy_materials_need = 1000 }
-					divide_variable = { laborers_electricity_need = 1000 }
-					divide_variable = { laborers_services_need = 1000 }
+					divide_variable = { laborers_food_need = magnitude_temp }
+					divide_variable = { laborers_consumer_goods_need = magnitude_temp }
+					divide_variable = { laborers_luxury_goods_need = magnitude_temp }
+					divide_variable = { laborers_energy_materials_need = magnitude_temp }
+					divide_variable = { laborers_electricity_need = magnitude_temp }
+					divide_variable = { laborers_services_need = magnitude_temp }
 				}
 				#Divide by Workforce %
-                divide_variable = { laborers_needs_spending = global.pops_workforce_participation }
-                divide_variable = { laborers_food_cost = global.pops_workforce_participation }
-                divide_variable = { laborers_consumer_goods_cost = global.pops_workforce_participation }
-                divide_variable = { laborers_luxury_goods_cost = global.pops_workforce_participation }
-                divide_variable = { laborers_energy_materials_cost = global.pops_workforce_participation }
-                divide_variable = { laborers_electricity_cost = global.pops_workforce_participation }
-                divide_variable = { laborers_services_cost = global.pops_workforce_participation }
+                divide_variable = { laborers_needs_spending = pops_workforce_participation }
+                divide_variable = { laborers_food_cost = pops_workforce_participation }
+                divide_variable = { laborers_consumer_goods_cost = pops_workforce_participation }
+                divide_variable = { laborers_luxury_goods_cost = pops_workforce_participation }
+                divide_variable = { laborers_energy_materials_cost = pops_workforce_participation }
+                divide_variable = { laborers_electricity_cost = pops_workforce_participation }
+                divide_variable = { laborers_services_cost = pops_workforce_participation }
                 
-                divide_variable = { laborers_food_need = global.pops_workforce_participation }
-                divide_variable = { laborers_consumer_goods_need = global.pops_workforce_participation }
-                divide_variable = { laborers_luxury_goods_need = global.pops_workforce_participation }
-                divide_variable = { laborers_energy_materials_need = global.pops_workforce_participation }
-                divide_variable = { laborers_electricity_need = global.pops_workforce_participation }
-                divide_variable = { laborers_services_need = global.pops_workforce_participation }
+                divide_variable = { laborers_food_need = pops_workforce_participation }
+                divide_variable = { laborers_consumer_goods_need = pops_workforce_participation }
+                divide_variable = { laborers_luxury_goods_need = pops_workforce_participation }
+                divide_variable = { laborers_energy_materials_need = pops_workforce_participation }
+                divide_variable = { laborers_electricity_need = pops_workforce_participation }
+                divide_variable = { laborers_services_need = pops_workforce_participation }
+
+                multiply_variable = { laborers_needs_spending = global.pops_workforce_participation }
+                multiply_variable = { laborers_food_cost = global.pops_workforce_participation }
+                multiply_variable = { laborers_consumer_goods_cost = global.pops_workforce_participation }
+                multiply_variable = { laborers_luxury_goods_cost = global.pops_workforce_participation }
+                multiply_variable = { laborers_energy_materials_cost = global.pops_workforce_participation }
+                multiply_variable = { laborers_electricity_cost = global.pops_workforce_participation }
+                multiply_variable = { laborers_services_cost = global.pops_workforce_participation }
+                
+                multiply_variable = { laborers_food_need = global.pops_workforce_participation }
+                multiply_variable = { laborers_consumer_goods_need = global.pops_workforce_participation }
+                multiply_variable = { laborers_luxury_goods_need = global.pops_workforce_participation }
+                multiply_variable = { laborers_energy_materials_need = global.pops_workforce_participation }
+                multiply_variable = { laborers_electricity_need = global.pops_workforce_participation }
+                multiply_variable = { laborers_services_need = global.pops_workforce_participation }
 			}
 			else = {
 				clear_variable = laborers_needs_spending
@@ -1624,7 +1952,7 @@
 						check_variable = { workers_workforce > 100 }
 					}
 					set_temp_variable = { cpn_pa_temp = workers_workforce }
-					divide_temp_variable = { cpn_pa_temp = 1000 }
+					divide_temp_variable = { cpn_pa_temp = magnitude_temp }
 
 					#Multiply by Pop Amount
 					multiply_variable = { workers_needs_spending = cpn_pa_temp }
@@ -1659,37 +1987,52 @@
 					multiply_variable = { workers_electricity_need = workers_workforce }
 					multiply_variable = { workers_services_need = workers_workforce }
 
-                    #Divide by 1000
-					divide_variable = { workers_needs_spending = 1000 }
-					divide_variable = { workers_food_cost = 1000 }
-					divide_variable = { workers_consumer_goods_cost = 1000 }
-					divide_variable = { workers_luxury_goods_cost = 1000 }
-					divide_variable = { workers_energy_materials_cost = 1000 }
-					divide_variable = { workers_electricity_cost = 1000 }
-					divide_variable = { workers_services_cost = 1000 }
+                    #Divide by magnitude_temp
+					divide_variable = { workers_needs_spending = magnitude_temp }
+					divide_variable = { workers_food_cost = magnitude_temp }
+					divide_variable = { workers_consumer_goods_cost = magnitude_temp }
+					divide_variable = { workers_luxury_goods_cost = magnitude_temp }
+					divide_variable = { workers_energy_materials_cost = magnitude_temp }
+					divide_variable = { workers_electricity_cost = magnitude_temp }
+					divide_variable = { workers_services_cost = magnitude_temp }
                     
-					divide_variable = { workers_food_need = 1000 }
-					divide_variable = { workers_consumer_goods_need = 1000 }
-					divide_variable = { workers_luxury_goods_need = 1000 }
-					divide_variable = { workers_energy_materials_need = 1000 }
-					divide_variable = { workers_electricity_need = 1000 }
-					divide_variable = { workers_services_need = 1000 }
+					divide_variable = { workers_food_need = magnitude_temp }
+					divide_variable = { workers_consumer_goods_need = magnitude_temp }
+					divide_variable = { workers_luxury_goods_need = magnitude_temp }
+					divide_variable = { workers_energy_materials_need = magnitude_temp }
+					divide_variable = { workers_electricity_need = magnitude_temp }
+					divide_variable = { workers_services_need = magnitude_temp }
 				}
 				#Divide by Workforce %
-                divide_variable = { workers_needs_spending = global.pops_workforce_participation }
-                divide_variable = { workers_food_cost = global.pops_workforce_participation }
-                divide_variable = { workers_consumer_goods_cost = global.pops_workforce_participation }
-                divide_variable = { workers_luxury_goods_cost = global.pops_workforce_participation }
-                divide_variable = { workers_energy_materials_cost = global.pops_workforce_participation }
-                divide_variable = { workers_electricity_cost = global.pops_workforce_participation }
-                divide_variable = { workers_services_cost = global.pops_workforce_participation }
+                divide_variable = { workers_needs_spending = pops_workforce_participation }
+                divide_variable = { workers_food_cost = pops_workforce_participation }
+                divide_variable = { workers_consumer_goods_cost = pops_workforce_participation }
+                divide_variable = { workers_luxury_goods_cost = pops_workforce_participation }
+                divide_variable = { workers_energy_materials_cost = pops_workforce_participation }
+                divide_variable = { workers_electricity_cost = pops_workforce_participation }
+                divide_variable = { workers_services_cost = pops_workforce_participation }
                 
-                divide_variable = { workers_food_need = global.pops_workforce_participation }
-                divide_variable = { workers_consumer_goods_need = global.pops_workforce_participation }
-                divide_variable = { workers_luxury_goods_need = global.pops_workforce_participation }
-                divide_variable = { workers_energy_materials_need = global.pops_workforce_participation }
-                divide_variable = { workers_electricity_need = global.pops_workforce_participation }
-                divide_variable = { workers_services_need = global.pops_workforce_participation }
+                divide_variable = { workers_food_need = pops_workforce_participation }
+                divide_variable = { workers_consumer_goods_need = pops_workforce_participation }
+                divide_variable = { workers_luxury_goods_need = pops_workforce_participation }
+                divide_variable = { workers_energy_materials_need = pops_workforce_participation }
+                divide_variable = { workers_electricity_need = pops_workforce_participation }
+                divide_variable = { workers_services_need = pops_workforce_participation }
+
+                multiply_variable = { workers_needs_spending = global.pops_workforce_participation }
+                multiply_variable = { workers_food_cost = global.pops_workforce_participation }
+                multiply_variable = { workers_consumer_goods_cost = global.pops_workforce_participation }
+                multiply_variable = { workers_luxury_goods_cost = global.pops_workforce_participation }
+                multiply_variable = { workers_energy_materials_cost = global.pops_workforce_participation }
+                multiply_variable = { workers_electricity_cost = global.pops_workforce_participation }
+                multiply_variable = { workers_services_cost = global.pops_workforce_participation }
+                
+                multiply_variable = { workers_food_need = global.pops_workforce_participation }
+                multiply_variable = { workers_consumer_goods_need = global.pops_workforce_participation }
+                multiply_variable = { workers_luxury_goods_need = global.pops_workforce_participation }
+                multiply_variable = { workers_energy_materials_need = global.pops_workforce_participation }
+                multiply_variable = { workers_electricity_need = global.pops_workforce_participation }
+                multiply_variable = { workers_services_need = global.pops_workforce_participation }
 			}
 			else = {
 				clear_variable = workers_needs_spending
@@ -1738,7 +2081,7 @@
 						check_variable = { professionals_workforce > 100 }
 					}
 					set_temp_variable = { cpn_pa_temp = professionals_workforce }
-					divide_temp_variable = { cpn_pa_temp = 1000 }
+					divide_temp_variable = { cpn_pa_temp = magnitude_temp }
 
 					#Multiply by Pop Amount
 					multiply_variable = { professionals_needs_spending = cpn_pa_temp }
@@ -1773,37 +2116,52 @@
 					multiply_variable = { professionals_electricity_need = professionals_workforce }
 					multiply_variable = { professionals_services_need = professionals_workforce }
 
-                    #Divide by 1000
-					divide_variable = { professionals_needs_spending = 1000 }
-					divide_variable = { professionals_food_cost = 1000 }
-					divide_variable = { professionals_consumer_goods_cost = 1000 }
-					divide_variable = { professionals_luxury_goods_cost = 1000 }
-					divide_variable = { professionals_energy_materials_cost = 1000 }
-					divide_variable = { professionals_electricity_cost = 1000 }
-					divide_variable = { professionals_services_cost = 1000 }
+                    #Divide by magnitude_temp
+					divide_variable = { professionals_needs_spending = magnitude_temp }
+					divide_variable = { professionals_food_cost = magnitude_temp }
+					divide_variable = { professionals_consumer_goods_cost = magnitude_temp }
+					divide_variable = { professionals_luxury_goods_cost = magnitude_temp }
+					divide_variable = { professionals_energy_materials_cost = magnitude_temp }
+					divide_variable = { professionals_electricity_cost = magnitude_temp }
+					divide_variable = { professionals_services_cost = magnitude_temp }
                     
-					divide_variable = { professionals_food_need = 1000 }
-					divide_variable = { professionals_consumer_goods_need = 1000 }
-					divide_variable = { professionals_luxury_goods_need = 1000 }
-					divide_variable = { professionals_energy_materials_need = 1000 }
-					divide_variable = { professionals_electricity_need = 1000 }
-					divide_variable = { professionals_services_need = 1000 }
+					divide_variable = { professionals_food_need = magnitude_temp }
+					divide_variable = { professionals_consumer_goods_need = magnitude_temp }
+					divide_variable = { professionals_luxury_goods_need = magnitude_temp }
+					divide_variable = { professionals_energy_materials_need = magnitude_temp }
+					divide_variable = { professionals_electricity_need = magnitude_temp }
+					divide_variable = { professionals_services_need = magnitude_temp }
 				}
 				#Divide by Workforce %
-                divide_variable = { professionals_needs_spending = global.pops_workforce_participation }
-                divide_variable = { professionals_food_cost = global.pops_workforce_participation }
-                divide_variable = { professionals_consumer_goods_cost = global.pops_workforce_participation }
-                divide_variable = { professionals_luxury_goods_cost = global.pops_workforce_participation }
-                divide_variable = { professionals_energy_materials_cost = global.pops_workforce_participation }
-                divide_variable = { professionals_electricity_cost = global.pops_workforce_participation }
-                divide_variable = { professionals_services_cost = global.pops_workforce_participation }
+                divide_variable = { professionals_needs_spending = pops_workforce_participation }
+                divide_variable = { professionals_food_cost = pops_workforce_participation }
+                divide_variable = { professionals_consumer_goods_cost = pops_workforce_participation }
+                divide_variable = { professionals_luxury_goods_cost = pops_workforce_participation }
+                divide_variable = { professionals_energy_materials_cost = pops_workforce_participation }
+                divide_variable = { professionals_electricity_cost = pops_workforce_participation }
+                divide_variable = { professionals_services_cost = pops_workforce_participation }
                 
-                divide_variable = { professionals_food_need = global.pops_workforce_participation }
-                divide_variable = { professionals_consumer_goods_need = global.pops_workforce_participation }
-                divide_variable = { professionals_luxury_goods_need = global.pops_workforce_participation }
-                divide_variable = { professionals_energy_materials_need = global.pops_workforce_participation }
-                divide_variable = { professionals_electricity_need = global.pops_workforce_participation }
-                divide_variable = { professionals_services_need = global.pops_workforce_participation }
+                divide_variable = { professionals_food_need = pops_workforce_participation }
+                divide_variable = { professionals_consumer_goods_need = pops_workforce_participation }
+                divide_variable = { professionals_luxury_goods_need = pops_workforce_participation }
+                divide_variable = { professionals_energy_materials_need = pops_workforce_participation }
+                divide_variable = { professionals_electricity_need = pops_workforce_participation }
+                divide_variable = { professionals_services_need = pops_workforce_participation }
+
+                multiply_variable = { professionals_needs_spending = global.pops_workforce_participation }
+                multiply_variable = { professionals_food_cost = global.pops_workforce_participation }
+                multiply_variable = { professionals_consumer_goods_cost = global.pops_workforce_participation }
+                multiply_variable = { professionals_luxury_goods_cost = global.pops_workforce_participation }
+                multiply_variable = { professionals_energy_materials_cost = global.pops_workforce_participation }
+                multiply_variable = { professionals_electricity_cost = global.pops_workforce_participation }
+                multiply_variable = { professionals_services_cost = global.pops_workforce_participation }
+                
+                multiply_variable = { professionals_food_need = global.pops_workforce_participation }
+                multiply_variable = { professionals_consumer_goods_need = global.pops_workforce_participation }
+                multiply_variable = { professionals_luxury_goods_need = global.pops_workforce_participation }
+                multiply_variable = { professionals_energy_materials_need = global.pops_workforce_participation }
+                multiply_variable = { professionals_electricity_need = global.pops_workforce_participation }
+                multiply_variable = { professionals_services_need = global.pops_workforce_participation }
 			}
 			else = {
 				clear_variable = professionals_needs_spending
@@ -1852,7 +2210,7 @@
 						check_variable = { specialists_workforce > 100 }
 					}
 					set_temp_variable = { cpn_pa_temp = specialists_workforce }
-					divide_temp_variable = { cpn_pa_temp = 1000 }
+					divide_temp_variable = { cpn_pa_temp = magnitude_temp }
 
 					#Multiply by Pop Amount
 					multiply_variable = { specialists_needs_spending = cpn_pa_temp }
@@ -1887,37 +2245,52 @@
 					multiply_variable = { specialists_electricity_need = specialists_workforce }
 					multiply_variable = { specialists_services_need = specialists_workforce }
 
-                    #Divide by 1000
-					divide_variable = { specialists_needs_spending = 1000 }
-					divide_variable = { specialists_food_cost = 1000 }
-					divide_variable = { specialists_consumer_goods_cost = 1000 }
-					divide_variable = { specialists_luxury_goods_cost = 1000 }
-					divide_variable = { specialists_energy_materials_cost = 1000 }
-					divide_variable = { specialists_electricity_cost = 1000 }
-					divide_variable = { specialists_services_cost = 1000 }
+                    #Divide by magnitude_temp
+					divide_variable = { specialists_needs_spending = magnitude_temp }
+					divide_variable = { specialists_food_cost = magnitude_temp }
+					divide_variable = { specialists_consumer_goods_cost = magnitude_temp }
+					divide_variable = { specialists_luxury_goods_cost = magnitude_temp }
+					divide_variable = { specialists_energy_materials_cost = magnitude_temp }
+					divide_variable = { specialists_electricity_cost = magnitude_temp }
+					divide_variable = { specialists_services_cost = magnitude_temp }
                     
-					divide_variable = { specialists_food_need = 1000 }
-					divide_variable = { specialists_consumer_goods_need = 1000 }
-					divide_variable = { specialists_luxury_goods_need = 1000 }
-					divide_variable = { specialists_energy_materials_need = 1000 }
-					divide_variable = { specialists_electricity_need = 1000 }
-					divide_variable = { specialists_services_need = 1000 }
+					divide_variable = { specialists_food_need = magnitude_temp }
+					divide_variable = { specialists_consumer_goods_need = magnitude_temp }
+					divide_variable = { specialists_luxury_goods_need = magnitude_temp }
+					divide_variable = { specialists_energy_materials_need = magnitude_temp }
+					divide_variable = { specialists_electricity_need = magnitude_temp }
+					divide_variable = { specialists_services_need = magnitude_temp }
 				}
 				#Divide by Workforce %
-                divide_variable = { specialists_needs_spending = global.pops_workforce_participation }
-                divide_variable = { specialists_food_cost = global.pops_workforce_participation }
-                divide_variable = { specialists_consumer_goods_cost = global.pops_workforce_participation }
-                divide_variable = { specialists_luxury_goods_cost = global.pops_workforce_participation }
-                divide_variable = { specialists_energy_materials_cost = global.pops_workforce_participation }
-                divide_variable = { specialists_electricity_cost = global.pops_workforce_participation }
-                divide_variable = { specialists_services_cost = global.pops_workforce_participation }
+                divide_variable = { specialists_needs_spending = pops_workforce_participation }
+                divide_variable = { specialists_food_cost = pops_workforce_participation }
+                divide_variable = { specialists_consumer_goods_cost = pops_workforce_participation }
+                divide_variable = { specialists_luxury_goods_cost = pops_workforce_participation }
+                divide_variable = { specialists_energy_materials_cost = pops_workforce_participation }
+                divide_variable = { specialists_electricity_cost = pops_workforce_participation }
+                divide_variable = { specialists_services_cost = pops_workforce_participation }
                 
-                divide_variable = { specialists_food_need = global.pops_workforce_participation }
-                divide_variable = { specialists_consumer_goods_need = global.pops_workforce_participation }
-                divide_variable = { specialists_luxury_goods_need = global.pops_workforce_participation }
-                divide_variable = { specialists_energy_materials_need = global.pops_workforce_participation }
-                divide_variable = { specialists_electricity_need = global.pops_workforce_participation }
-                divide_variable = { specialists_services_need = global.pops_workforce_participation }
+                divide_variable = { specialists_food_need = pops_workforce_participation }
+                divide_variable = { specialists_consumer_goods_need = pops_workforce_participation }
+                divide_variable = { specialists_luxury_goods_need = pops_workforce_participation }
+                divide_variable = { specialists_energy_materials_need = pops_workforce_participation }
+                divide_variable = { specialists_electricity_need = pops_workforce_participation }
+                divide_variable = { specialists_services_need = pops_workforce_participation }
+
+                multiply_variable = { specialists_needs_spending = global.pops_workforce_participation }
+                multiply_variable = { specialists_food_cost = global.pops_workforce_participation }
+                multiply_variable = { specialists_consumer_goods_cost = global.pops_workforce_participation }
+                multiply_variable = { specialists_luxury_goods_cost = global.pops_workforce_participation }
+                multiply_variable = { specialists_energy_materials_cost = global.pops_workforce_participation }
+                multiply_variable = { specialists_electricity_cost = global.pops_workforce_participation }
+                multiply_variable = { specialists_services_cost = global.pops_workforce_participation }
+                
+                multiply_variable = { specialists_food_need = global.pops_workforce_participation }
+                multiply_variable = { specialists_consumer_goods_need = global.pops_workforce_participation }
+                multiply_variable = { specialists_luxury_goods_need = global.pops_workforce_participation }
+                multiply_variable = { specialists_energy_materials_need = global.pops_workforce_participation }
+                multiply_variable = { specialists_electricity_need = global.pops_workforce_participation }
+                multiply_variable = { specialists_services_need = global.pops_workforce_participation }
 			}
 			else = {
 				clear_variable = specialists_needs_spending
@@ -1966,7 +2339,7 @@
 						check_variable = { aristocrats_workforce > 100 }
 					}
 					set_temp_variable = { cpn_pa_temp = aristocrats_workforce }
-					divide_temp_variable = { cpn_pa_temp = 1000 }
+					divide_temp_variable = { cpn_pa_temp = magnitude_temp }
 
 					#Multiply by Pop Amount
 					multiply_variable = { aristocrats_needs_spending = cpn_pa_temp }
@@ -2001,37 +2374,52 @@
 					multiply_variable = { aristocrats_electricity_need = aristocrats_workforce }
 					multiply_variable = { aristocrats_services_need = aristocrats_workforce }
 
-                    #Divide by 1000
-					divide_variable = { aristocrats_needs_spending = 1000 }
-					divide_variable = { aristocrats_food_cost = 1000 }
-					divide_variable = { aristocrats_consumer_goods_cost = 1000 }
-					divide_variable = { aristocrats_luxury_goods_cost = 1000 }
-					divide_variable = { aristocrats_energy_materials_cost = 1000 }
-					divide_variable = { aristocrats_electricity_cost = 1000 }
-					divide_variable = { aristocrats_services_cost = 1000 }
+                    #Divide by magnitude_temp
+					divide_variable = { aristocrats_needs_spending = magnitude_temp }
+					divide_variable = { aristocrats_food_cost = magnitude_temp }
+					divide_variable = { aristocrats_consumer_goods_cost = magnitude_temp }
+					divide_variable = { aristocrats_luxury_goods_cost = magnitude_temp }
+					divide_variable = { aristocrats_energy_materials_cost = magnitude_temp }
+					divide_variable = { aristocrats_electricity_cost = magnitude_temp }
+					divide_variable = { aristocrats_services_cost = magnitude_temp }
                     
-					divide_variable = { aristocrats_food_need = 1000 }
-					divide_variable = { aristocrats_consumer_goods_need = 1000 }
-					divide_variable = { aristocrats_luxury_goods_need = 1000 }
-					divide_variable = { aristocrats_energy_materials_need = 1000 }
-					divide_variable = { aristocrats_electricity_need = 1000 }
-					divide_variable = { aristocrats_services_need = 1000 }
+					divide_variable = { aristocrats_food_need = magnitude_temp }
+					divide_variable = { aristocrats_consumer_goods_need = magnitude_temp }
+					divide_variable = { aristocrats_luxury_goods_need = magnitude_temp }
+					divide_variable = { aristocrats_energy_materials_need = magnitude_temp }
+					divide_variable = { aristocrats_electricity_need = magnitude_temp }
+					divide_variable = { aristocrats_services_need = magnitude_temp }
 				}
 				#Divide by Workforce %
-                divide_variable = { aristocrats_needs_spending = global.pops_workforce_participation }
-                divide_variable = { aristocrats_food_cost = global.pops_workforce_participation }
-                divide_variable = { aristocrats_consumer_goods_cost = global.pops_workforce_participation }
-                divide_variable = { aristocrats_luxury_goods_cost = global.pops_workforce_participation }
-                divide_variable = { aristocrats_energy_materials_cost = global.pops_workforce_participation }
-                divide_variable = { aristocrats_electricity_cost = global.pops_workforce_participation }
-                divide_variable = { aristocrats_services_cost = global.pops_workforce_participation }
+                divide_variable = { aristocrats_needs_spending = pops_workforce_participation }
+                divide_variable = { aristocrats_food_cost = pops_workforce_participation }
+                divide_variable = { aristocrats_consumer_goods_cost = pops_workforce_participation }
+                divide_variable = { aristocrats_luxury_goods_cost = pops_workforce_participation }
+                divide_variable = { aristocrats_energy_materials_cost = pops_workforce_participation }
+                divide_variable = { aristocrats_electricity_cost = pops_workforce_participation }
+                divide_variable = { aristocrats_services_cost = pops_workforce_participation }
                 
-                divide_variable = { aristocrats_food_need = global.pops_workforce_participation }
-                divide_variable = { aristocrats_consumer_goods_need = global.pops_workforce_participation }
-                divide_variable = { aristocrats_luxury_goods_need = global.pops_workforce_participation }
-                divide_variable = { aristocrats_energy_materials_need = global.pops_workforce_participation }
-                divide_variable = { aristocrats_electricity_need = global.pops_workforce_participation }
-                divide_variable = { aristocrats_services_need = global.pops_workforce_participation }
+                divide_variable = { aristocrats_food_need = pops_workforce_participation }
+                divide_variable = { aristocrats_consumer_goods_need = pops_workforce_participation }
+                divide_variable = { aristocrats_luxury_goods_need = pops_workforce_participation }
+                divide_variable = { aristocrats_energy_materials_need = pops_workforce_participation }
+                divide_variable = { aristocrats_electricity_need = pops_workforce_participation }
+                divide_variable = { aristocrats_services_need = pops_workforce_participation }
+
+                multiply_variable = { aristocrats_needs_spending = global.pops_workforce_participation }
+                multiply_variable = { aristocrats_food_cost = global.pops_workforce_participation }
+                multiply_variable = { aristocrats_consumer_goods_cost = global.pops_workforce_participation }
+                multiply_variable = { aristocrats_luxury_goods_cost = global.pops_workforce_participation }
+                multiply_variable = { aristocrats_energy_materials_cost = global.pops_workforce_participation }
+                multiply_variable = { aristocrats_electricity_cost = global.pops_workforce_participation }
+                multiply_variable = { aristocrats_services_cost = global.pops_workforce_participation }
+                
+                multiply_variable = { aristocrats_food_need = global.pops_workforce_participation }
+                multiply_variable = { aristocrats_consumer_goods_need = global.pops_workforce_participation }
+                multiply_variable = { aristocrats_luxury_goods_need = global.pops_workforce_participation }
+                multiply_variable = { aristocrats_energy_materials_need = global.pops_workforce_participation }
+                multiply_variable = { aristocrats_electricity_need = global.pops_workforce_participation }
+                multiply_variable = { aristocrats_services_need = global.pops_workforce_participation }
 			}
 			else = {
 				clear_variable = aristocrats_needs_spending
@@ -2080,7 +2468,7 @@
 						check_variable = { capitalists_workforce > 100 }
 					}
 					set_temp_variable = { cpn_pa_temp = capitalists_workforce }
-					divide_temp_variable = { cpn_pa_temp = 1000 }
+					divide_temp_variable = { cpn_pa_temp = magnitude_temp }
 
 					#Multiply by Pop Amount
 					multiply_variable = { capitalists_needs_spending = cpn_pa_temp }
@@ -2115,37 +2503,52 @@
 					multiply_variable = { capitalists_electricity_need = capitalists_workforce }
 					multiply_variable = { capitalists_services_need = capitalists_workforce }
 
-                    #Divide by 1000
-					divide_variable = { capitalists_needs_spending = 1000 }
-					divide_variable = { capitalists_food_cost = 1000 }
-					divide_variable = { capitalists_consumer_goods_cost = 1000 }
-					divide_variable = { capitalists_luxury_goods_cost = 1000 }
-					divide_variable = { capitalists_energy_materials_cost = 1000 }
-					divide_variable = { capitalists_electricity_cost = 1000 }
-					divide_variable = { capitalists_services_cost = 1000 }
+                    #Divide by magnitude_temp
+					divide_variable = { capitalists_needs_spending = magnitude_temp }
+					divide_variable = { capitalists_food_cost = magnitude_temp }
+					divide_variable = { capitalists_consumer_goods_cost = magnitude_temp }
+					divide_variable = { capitalists_luxury_goods_cost = magnitude_temp }
+					divide_variable = { capitalists_energy_materials_cost = magnitude_temp }
+					divide_variable = { capitalists_electricity_cost = magnitude_temp }
+					divide_variable = { capitalists_services_cost = magnitude_temp }
                     
-					divide_variable = { capitalists_food_need = 1000 }
-					divide_variable = { capitalists_consumer_goods_need = 1000 }
-					divide_variable = { capitalists_luxury_goods_need = 1000 }
-					divide_variable = { capitalists_energy_materials_need = 1000 }
-					divide_variable = { capitalists_electricity_need = 1000 }
-					divide_variable = { capitalists_services_need = 1000 }
+					divide_variable = { capitalists_food_need = magnitude_temp }
+					divide_variable = { capitalists_consumer_goods_need = magnitude_temp }
+					divide_variable = { capitalists_luxury_goods_need = magnitude_temp }
+					divide_variable = { capitalists_energy_materials_need = magnitude_temp }
+					divide_variable = { capitalists_electricity_need = magnitude_temp }
+					divide_variable = { capitalists_services_need = magnitude_temp }
 				}
 				#Divide by Workforce %
-                divide_variable = { capitalists_needs_spending = global.pops_workforce_participation }
-                divide_variable = { capitalists_food_cost = global.pops_workforce_participation }
-                divide_variable = { capitalists_consumer_goods_cost = global.pops_workforce_participation }
-                divide_variable = { capitalists_luxury_goods_cost = global.pops_workforce_participation }
-                divide_variable = { capitalists_energy_materials_cost = global.pops_workforce_participation }
-                divide_variable = { capitalists_electricity_cost = global.pops_workforce_participation }
-                divide_variable = { capitalists_services_cost = global.pops_workforce_participation }
+                divide_variable = { capitalists_needs_spending = pops_workforce_participation }
+                divide_variable = { capitalists_food_cost = pops_workforce_participation }
+                divide_variable = { capitalists_consumer_goods_cost = pops_workforce_participation }
+                divide_variable = { capitalists_luxury_goods_cost = pops_workforce_participation }
+                divide_variable = { capitalists_energy_materials_cost = pops_workforce_participation }
+                divide_variable = { capitalists_electricity_cost = pops_workforce_participation }
+                divide_variable = { capitalists_services_cost = pops_workforce_participation }
                 
-                divide_variable = { capitalists_food_need = global.pops_workforce_participation }
-                divide_variable = { capitalists_consumer_goods_need = global.pops_workforce_participation }
-                divide_variable = { capitalists_luxury_goods_need = global.pops_workforce_participation }
-                divide_variable = { capitalists_energy_materials_need = global.pops_workforce_participation }
-                divide_variable = { capitalists_electricity_need = global.pops_workforce_participation }
-                divide_variable = { capitalists_services_need = global.pops_workforce_participation }
+                divide_variable = { capitalists_food_need = pops_workforce_participation }
+                divide_variable = { capitalists_consumer_goods_need = pops_workforce_participation }
+                divide_variable = { capitalists_luxury_goods_need = pops_workforce_participation }
+                divide_variable = { capitalists_energy_materials_need = pops_workforce_participation }
+                divide_variable = { capitalists_electricity_need = pops_workforce_participation }
+                divide_variable = { capitalists_services_need = pops_workforce_participation }
+
+                multiply_variable = { capitalists_needs_spending = global.pops_workforce_participation }
+                multiply_variable = { capitalists_food_cost = global.pops_workforce_participation }
+                multiply_variable = { capitalists_consumer_goods_cost = global.pops_workforce_participation }
+                multiply_variable = { capitalists_luxury_goods_cost = global.pops_workforce_participation }
+                multiply_variable = { capitalists_energy_materials_cost = global.pops_workforce_participation }
+                multiply_variable = { capitalists_electricity_cost = global.pops_workforce_participation }
+                multiply_variable = { capitalists_services_cost = global.pops_workforce_participation }
+                
+                multiply_variable = { capitalists_food_need = global.pops_workforce_participation }
+                multiply_variable = { capitalists_consumer_goods_need = global.pops_workforce_participation }
+                multiply_variable = { capitalists_luxury_goods_need = global.pops_workforce_participation }
+                multiply_variable = { capitalists_energy_materials_need = global.pops_workforce_participation }
+                multiply_variable = { capitalists_electricity_need = global.pops_workforce_participation }
+                multiply_variable = { capitalists_services_need = global.pops_workforce_participation }
 			}
 			else = {
 				clear_variable = capitalists_needs_spending
@@ -2194,7 +2597,7 @@
 						check_variable = { bureaucrats_workforce > 100 }
 					}
 					set_temp_variable = { cpn_pa_temp = bureaucrats_workforce }
-					divide_temp_variable = { cpn_pa_temp = 1000 }
+					divide_temp_variable = { cpn_pa_temp = magnitude_temp }
 
 					#Multiply by Pop Amount
 					multiply_variable = { bureaucrats_needs_spending = cpn_pa_temp }
@@ -2229,37 +2632,52 @@
 					multiply_variable = { bureaucrats_electricity_need = bureaucrats_workforce }
 					multiply_variable = { bureaucrats_services_need = bureaucrats_workforce }
 
-                    #Divide by 1000
-					divide_variable = { bureaucrats_needs_spending = 1000 }
-					divide_variable = { bureaucrats_food_cost = 1000 }
-					divide_variable = { bureaucrats_consumer_goods_cost = 1000 }
-					divide_variable = { bureaucrats_luxury_goods_cost = 1000 }
-					divide_variable = { bureaucrats_energy_materials_cost = 1000 }
-					divide_variable = { bureaucrats_electricity_cost = 1000 }
-					divide_variable = { bureaucrats_services_cost = 1000 }
+                    #Divide by magnitude_temp
+					divide_variable = { bureaucrats_needs_spending = magnitude_temp }
+					divide_variable = { bureaucrats_food_cost = magnitude_temp }
+					divide_variable = { bureaucrats_consumer_goods_cost = magnitude_temp }
+					divide_variable = { bureaucrats_luxury_goods_cost = magnitude_temp }
+					divide_variable = { bureaucrats_energy_materials_cost = magnitude_temp }
+					divide_variable = { bureaucrats_electricity_cost = magnitude_temp }
+					divide_variable = { bureaucrats_services_cost = magnitude_temp }
                     
-					divide_variable = { bureaucrats_food_need = 1000 }
-					divide_variable = { bureaucrats_consumer_goods_need = 1000 }
-					divide_variable = { bureaucrats_luxury_goods_need = 1000 }
-					divide_variable = { bureaucrats_energy_materials_need = 1000 }
-					divide_variable = { bureaucrats_electricity_need = 1000 }
-					divide_variable = { bureaucrats_services_need = 1000 }
+					divide_variable = { bureaucrats_food_need = magnitude_temp }
+					divide_variable = { bureaucrats_consumer_goods_need = magnitude_temp }
+					divide_variable = { bureaucrats_luxury_goods_need = magnitude_temp }
+					divide_variable = { bureaucrats_energy_materials_need = magnitude_temp }
+					divide_variable = { bureaucrats_electricity_need = magnitude_temp }
+					divide_variable = { bureaucrats_services_need = magnitude_temp }
 				}
 				#Divide by Workforce %
-                divide_variable = { bureaucrats_needs_spending = global.pops_workforce_participation }
-                divide_variable = { bureaucrats_food_cost = global.pops_workforce_participation }
-                divide_variable = { bureaucrats_consumer_goods_cost = global.pops_workforce_participation }
-                divide_variable = { bureaucrats_luxury_goods_cost = global.pops_workforce_participation }
-                divide_variable = { bureaucrats_energy_materials_cost = global.pops_workforce_participation }
-                divide_variable = { bureaucrats_electricity_cost = global.pops_workforce_participation }
-                divide_variable = { bureaucrats_services_cost = global.pops_workforce_participation }
+                divide_variable = { bureaucrats_needs_spending = pops_workforce_participation }
+                divide_variable = { bureaucrats_food_cost = pops_workforce_participation }
+                divide_variable = { bureaucrats_consumer_goods_cost = pops_workforce_participation }
+                divide_variable = { bureaucrats_luxury_goods_cost = pops_workforce_participation }
+                divide_variable = { bureaucrats_energy_materials_cost = pops_workforce_participation }
+                divide_variable = { bureaucrats_electricity_cost = pops_workforce_participation }
+                divide_variable = { bureaucrats_services_cost = pops_workforce_participation }
                 
-                divide_variable = { bureaucrats_food_need = global.pops_workforce_participation }
-                divide_variable = { bureaucrats_consumer_goods_need = global.pops_workforce_participation }
-                divide_variable = { bureaucrats_luxury_goods_need = global.pops_workforce_participation }
-                divide_variable = { bureaucrats_energy_materials_need = global.pops_workforce_participation }
-                divide_variable = { bureaucrats_electricity_need = global.pops_workforce_participation }
-                divide_variable = { bureaucrats_services_need = global.pops_workforce_participation }
+                divide_variable = { bureaucrats_food_need = pops_workforce_participation }
+                divide_variable = { bureaucrats_consumer_goods_need = pops_workforce_participation }
+                divide_variable = { bureaucrats_luxury_goods_need = pops_workforce_participation }
+                divide_variable = { bureaucrats_energy_materials_need = pops_workforce_participation }
+                divide_variable = { bureaucrats_electricity_need = pops_workforce_participation }
+                divide_variable = { bureaucrats_services_need = pops_workforce_participation }
+
+                multiply_variable = { bureaucrats_needs_spending = global.pops_workforce_participation }
+                multiply_variable = { bureaucrats_food_cost = global.pops_workforce_participation }
+                multiply_variable = { bureaucrats_consumer_goods_cost = global.pops_workforce_participation }
+                multiply_variable = { bureaucrats_luxury_goods_cost = global.pops_workforce_participation }
+                multiply_variable = { bureaucrats_energy_materials_cost = global.pops_workforce_participation }
+                multiply_variable = { bureaucrats_electricity_cost = global.pops_workforce_participation }
+                multiply_variable = { bureaucrats_services_cost = global.pops_workforce_participation }
+                
+                multiply_variable = { bureaucrats_food_need = global.pops_workforce_participation }
+                multiply_variable = { bureaucrats_consumer_goods_need = global.pops_workforce_participation }
+                multiply_variable = { bureaucrats_luxury_goods_need = global.pops_workforce_participation }
+                multiply_variable = { bureaucrats_energy_materials_need = global.pops_workforce_participation }
+                multiply_variable = { bureaucrats_electricity_need = global.pops_workforce_participation }
+                multiply_variable = { bureaucrats_services_need = global.pops_workforce_participation }
 			}
 			else = {
 				clear_variable = bureaucrats_needs_spending
@@ -2308,7 +2726,7 @@
 						check_variable = { soldiers_workforce > 100 }
 					}
 					set_temp_variable = { cpn_pa_temp = soldiers_workforce }
-					divide_temp_variable = { cpn_pa_temp = 1000 }
+					divide_temp_variable = { cpn_pa_temp = magnitude_temp }
 
 					#Multiply by Pop Amount
 					multiply_variable = { soldiers_needs_spending = cpn_pa_temp }
@@ -2343,37 +2761,52 @@
 					multiply_variable = { soldiers_electricity_need = soldiers_workforce }
 					multiply_variable = { soldiers_services_need = soldiers_workforce }
 
-                    #Divide by 1000
-					divide_variable = { soldiers_needs_spending = 1000 }
-					divide_variable = { soldiers_food_cost = 1000 }
-					divide_variable = { soldiers_consumer_goods_cost = 1000 }
-					divide_variable = { soldiers_luxury_goods_cost = 1000 }
-					divide_variable = { soldiers_energy_materials_cost = 1000 }
-					divide_variable = { soldiers_electricity_cost = 1000 }
-					divide_variable = { soldiers_services_cost = 1000 }
+                    #Divide by magnitude_temp
+					divide_variable = { soldiers_needs_spending = magnitude_temp }
+					divide_variable = { soldiers_food_cost = magnitude_temp }
+					divide_variable = { soldiers_consumer_goods_cost = magnitude_temp }
+					divide_variable = { soldiers_luxury_goods_cost = magnitude_temp }
+					divide_variable = { soldiers_energy_materials_cost = magnitude_temp }
+					divide_variable = { soldiers_electricity_cost = magnitude_temp }
+					divide_variable = { soldiers_services_cost = magnitude_temp }
                     
-					divide_variable = { soldiers_food_need = 1000 }
-					divide_variable = { soldiers_consumer_goods_need = 1000 }
-					divide_variable = { soldiers_luxury_goods_need = 1000 }
-					divide_variable = { soldiers_energy_materials_need = 1000 }
-					divide_variable = { soldiers_electricity_need = 1000 }
-					divide_variable = { soldiers_services_need = 1000 }
+					divide_variable = { soldiers_food_need = magnitude_temp }
+					divide_variable = { soldiers_consumer_goods_need = magnitude_temp }
+					divide_variable = { soldiers_luxury_goods_need = magnitude_temp }
+					divide_variable = { soldiers_energy_materials_need = magnitude_temp }
+					divide_variable = { soldiers_electricity_need = magnitude_temp }
+					divide_variable = { soldiers_services_need = magnitude_temp }
 				}
 				#Divide by Workforce %
-                divide_variable = { soldiers_needs_spending = global.pops_workforce_participation }
-                divide_variable = { soldiers_food_cost = global.pops_workforce_participation }
-                divide_variable = { soldiers_consumer_goods_cost = global.pops_workforce_participation }
-                divide_variable = { soldiers_luxury_goods_cost = global.pops_workforce_participation }
-                divide_variable = { soldiers_energy_materials_cost = global.pops_workforce_participation }
-                divide_variable = { soldiers_electricity_cost = global.pops_workforce_participation }
-                divide_variable = { soldiers_services_cost = global.pops_workforce_participation }
+                divide_variable = { soldiers_needs_spending = pops_workforce_participation }
+                divide_variable = { soldiers_food_cost = pops_workforce_participation }
+                divide_variable = { soldiers_consumer_goods_cost = pops_workforce_participation }
+                divide_variable = { soldiers_luxury_goods_cost = pops_workforce_participation }
+                divide_variable = { soldiers_energy_materials_cost = pops_workforce_participation }
+                divide_variable = { soldiers_electricity_cost = pops_workforce_participation }
+                divide_variable = { soldiers_services_cost = pops_workforce_participation }
                 
-                divide_variable = { soldiers_food_need = global.pops_workforce_participation }
-                divide_variable = { soldiers_consumer_goods_need = global.pops_workforce_participation }
-                divide_variable = { soldiers_luxury_goods_need = global.pops_workforce_participation }
-                divide_variable = { soldiers_energy_materials_need = global.pops_workforce_participation }
-                divide_variable = { soldiers_electricity_need = global.pops_workforce_participation }
-                divide_variable = { soldiers_services_need = global.pops_workforce_participation }
+                divide_variable = { soldiers_food_need = pops_workforce_participation }
+                divide_variable = { soldiers_consumer_goods_need = pops_workforce_participation }
+                divide_variable = { soldiers_luxury_goods_need = pops_workforce_participation }
+                divide_variable = { soldiers_energy_materials_need = pops_workforce_participation }
+                divide_variable = { soldiers_electricity_need = pops_workforce_participation }
+                divide_variable = { soldiers_services_need = pops_workforce_participation }
+
+                multiply_variable = { soldiers_needs_spending = global.pops_workforce_participation }
+                multiply_variable = { soldiers_food_cost = global.pops_workforce_participation }
+                multiply_variable = { soldiers_consumer_goods_cost = global.pops_workforce_participation }
+                multiply_variable = { soldiers_luxury_goods_cost = global.pops_workforce_participation }
+                multiply_variable = { soldiers_energy_materials_cost = global.pops_workforce_participation }
+                multiply_variable = { soldiers_electricity_cost = global.pops_workforce_participation }
+                multiply_variable = { soldiers_services_cost = global.pops_workforce_participation }
+                
+                multiply_variable = { soldiers_food_need = global.pops_workforce_participation }
+                multiply_variable = { soldiers_consumer_goods_need = global.pops_workforce_participation }
+                multiply_variable = { soldiers_luxury_goods_need = global.pops_workforce_participation }
+                multiply_variable = { soldiers_energy_materials_need = global.pops_workforce_participation }
+                multiply_variable = { soldiers_electricity_need = global.pops_workforce_participation }
+                multiply_variable = { soldiers_services_need = global.pops_workforce_participation }
 			}
 			else = {
 				clear_variable = soldiers_needs_spending
@@ -2403,162 +2836,162 @@
             set_variable = { pops_electricity_cost = 0 }
             set_variable = { pops_services_cost = 0 }
             
-            set_variable = { pops_food_need = 0 }
-            set_variable = { pops_consumer_goods_need = 0 }
-            set_variable = { pops_luxury_goods_need = 0 }
-            set_variable = { pops_energy_materials_need = 0 }
-            set_variable = { pops_electricity_need = 0 }
-            set_variable = { pops_services_need = 0 }
+            set_variable = { pops_need@token:resource_food = 0 }
+            set_variable = { pops_need@token:resource_consumer_goods = 0 }
+            set_variable = { pops_need@token:resource_luxury_goods = 0 }
+            set_variable = { pops_need@token:resource_energy_materials = 0 }
+            set_variable = { pops_need@token:resource_electricity = 0 }
+            set_variable = { pops_need@token:resource_services = 0 }
 
             #Slaves
-                set_variable = { pops_needs_spending = slaves_needs_spending }
-                set_variable = { pops_food_cost = slaves_food_cost }
-                set_variable = { pops_consumer_goods_cost = slaves_consumer_goods_cost }
-                set_variable = { pops_luxury_goods_cost = slaves_luxury_goods_cost }
-                set_variable = { pops_energy_materials_cost = slaves_energy_materials_cost }
-                set_variable = { pops_electricity_cost = slaves_electricity_cost }
-                set_variable = { pops_services_cost = slaves_services_cost }
-                set_variable = { pops_food_need = slaves_food_need }
-                set_variable = { pops_consumer_goods_need = slaves_consumer_goods_need }
-                set_variable = { pops_luxury_goods_need = slaves_luxuries_need }
-                set_variable = { pops_energy_materials_need = slaves_energy_materials_need }
-                set_variable = { pops_electricity_need = slaves_electricity_need }
-                set_variable = { pops_services_need = slaves_services_need }
+                add_to_variable = { pops_needs_spending = slaves_needs_spending }
+                add_to_variable = { pops_food_cost = slaves_food_cost }
+                add_to_variable = { pops_consumer_goods_cost = slaves_consumer_goods_cost }
+                add_to_variable = { pops_luxury_goods_cost = slaves_luxury_goods_cost }
+                add_to_variable = { pops_energy_materials_cost = slaves_energy_materials_cost }
+                add_to_variable = { pops_electricity_cost = slaves_electricity_cost }
+                add_to_variable = { pops_services_cost = slaves_services_cost }
+                add_to_variable = { pops_need@token:resource_food = slaves_food_need }
+                add_to_variable = { pops_need@token:resource_consumer_goods = slaves_consumer_goods_need }
+                add_to_variable = { pops_need@token:resource_luxury_goods = slaves_luxuries_need }
+                add_to_variable = { pops_need@token:resource_energy_materials = slaves_energy_materials_need }
+                add_to_variable = { pops_need@token:resource_electricity = slaves_electricity_need }
+                add_to_variable = { pops_need@token:resource_services = slaves_services_need }
             #
             #Peasants
-                set_variable = { pops_needs_spending = peasants_needs_spending }
-                set_variable = { pops_food_cost = peasants_food_cost }
-                set_variable = { pops_consumer_goods_cost = peasants_consumer_goods_cost }
-                set_variable = { pops_luxury_goods_cost = peasants_luxury_goods_cost }
-                set_variable = { pops_energy_materials_cost = peasants_energy_materials_cost }
-                set_variable = { pops_electricity_cost = peasants_electricity_cost }
-                set_variable = { pops_services_cost = peasants_services_cost }
-                set_variable = { pops_food_need = peasants_food_need }
-                set_variable = { pops_consumer_goods_need = peasants_consumer_goods_need }
-                set_variable = { pops_luxury_goods_need = peasants_luxuries_need }
-                set_variable = { pops_energy_materials_need = peasants_energy_materials_need }
-                set_variable = { pops_electricity_need = peasants_electricity_need }
-                set_variable = { pops_services_need = peasants_services_need }
+                add_to_variable = { pops_needs_spending = peasants_needs_spending }
+                add_to_variable = { pops_food_cost = peasants_food_cost }
+                add_to_variable = { pops_consumer_goods_cost = peasants_consumer_goods_cost }
+                add_to_variable = { pops_luxury_goods_cost = peasants_luxury_goods_cost }
+                add_to_variable = { pops_energy_materials_cost = peasants_energy_materials_cost }
+                add_to_variable = { pops_electricity_cost = peasants_electricity_cost }
+                add_to_variable = { pops_services_cost = peasants_services_cost }
+                add_to_variable = { pops_need@token:resource_food = peasants_food_need }
+                add_to_variable = { pops_need@token:resource_consumer_goods = peasants_consumer_goods_need }
+                add_to_variable = { pops_need@token:resource_luxury_goods = peasants_luxuries_need }
+                add_to_variable = { pops_need@token:resource_energy_materials = peasants_energy_materials_need }
+                add_to_variable = { pops_need@token:resource_electricity = peasants_electricity_need }
+                add_to_variable = { pops_need@token:resource_services = peasants_services_need }
             #
             #Laborers
-                set_variable = { pops_needs_spending = laborers_needs_spending }
-                set_variable = { pops_food_cost = laborers_food_cost }
-                set_variable = { pops_consumer_goods_cost = laborers_consumer_goods_cost }
-                set_variable = { pops_luxury_goods_cost = laborers_luxury_goods_cost }
-                set_variable = { pops_energy_materials_cost = laborers_energy_materials_cost }
-                set_variable = { pops_electricity_cost = laborers_electricity_cost }
-                set_variable = { pops_services_cost = laborers_services_cost }
-                set_variable = { pops_food_need = laborers_food_need }
-                set_variable = { pops_consumer_goods_need = laborers_consumer_goods_need }
-                set_variable = { pops_luxury_goods_need = laborers_luxuries_need }
-                set_variable = { pops_energy_materials_need = laborers_energy_materials_need }
-                set_variable = { pops_electricity_need = laborers_electricity_need }
-                set_variable = { pops_services_need = laborers_services_need }
+                add_to_variable = { pops_needs_spending = laborers_needs_spending }
+                add_to_variable = { pops_food_cost = laborers_food_cost }
+                add_to_variable = { pops_consumer_goods_cost = laborers_consumer_goods_cost }
+                add_to_variable = { pops_luxury_goods_cost = laborers_luxury_goods_cost }
+                add_to_variable = { pops_energy_materials_cost = laborers_energy_materials_cost }
+                add_to_variable = { pops_electricity_cost = laborers_electricity_cost }
+                add_to_variable = { pops_services_cost = laborers_services_cost }
+                add_to_variable = { pops_need@token:resource_food = laborers_food_need }
+                add_to_variable = { pops_need@token:resource_consumer_goods = laborers_consumer_goods_need }
+                add_to_variable = { pops_need@token:resource_luxury_goods = laborers_luxuries_need }
+                add_to_variable = { pops_need@token:resource_energy_materials = laborers_energy_materials_need }
+                add_to_variable = { pops_need@token:resource_electricity = laborers_electricity_need }
+                add_to_variable = { pops_need@token:resource_services = laborers_services_need }
             #
             #Workers
-                set_variable = { pops_needs_spending = workers_needs_spending }
-                set_variable = { pops_food_cost = workers_food_cost }
-                set_variable = { pops_consumer_goods_cost = workers_consumer_goods_cost }
-                set_variable = { pops_luxury_goods_cost = workers_luxury_goods_cost }
-                set_variable = { pops_energy_materials_cost = workers_energy_materials_cost }
-                set_variable = { pops_electricity_cost = workers_electricity_cost }
-                set_variable = { pops_services_cost = workers_services_cost }
-                set_variable = { pops_food_need = workers_food_need }
-                set_variable = { pops_consumer_goods_need = workers_consumer_goods_need }
-                set_variable = { pops_luxury_goods_need = workers_luxuries_need }
-                set_variable = { pops_energy_materials_need = workers_energy_materials_need }
-                set_variable = { pops_electricity_need = workers_electricity_need }
-                set_variable = { pops_services_need = workers_services_need }
+                add_to_variable = { pops_needs_spending = workers_needs_spending }
+                add_to_variable = { pops_food_cost = workers_food_cost }
+                add_to_variable = { pops_consumer_goods_cost = workers_consumer_goods_cost }
+                add_to_variable = { pops_luxury_goods_cost = workers_luxury_goods_cost }
+                add_to_variable = { pops_energy_materials_cost = workers_energy_materials_cost }
+                add_to_variable = { pops_electricity_cost = workers_electricity_cost }
+                add_to_variable = { pops_services_cost = workers_services_cost }
+                add_to_variable = { pops_need@token:resource_food = workers_food_need }
+                add_to_variable = { pops_need@token:resource_consumer_goods = workers_consumer_goods_need }
+                add_to_variable = { pops_need@token:resource_luxury_goods = workers_luxuries_need }
+                add_to_variable = { pops_need@token:resource_energy_materials = workers_energy_materials_need }
+                add_to_variable = { pops_need@token:resource_electricity = workers_electricity_need }
+                add_to_variable = { pops_need@token:resource_services = workers_services_need }
             #
             #Professionals
-                set_variable = { pops_needs_spending = professionals_needs_spending }
-                set_variable = { pops_food_cost = professionals_food_cost }
-                set_variable = { pops_consumer_goods_cost = professionals_consumer_goods_cost }
-                set_variable = { pops_luxury_goods_cost = professionals_luxury_goods_cost }
-                set_variable = { pops_energy_materials_cost = professionals_energy_materials_cost }
-                set_variable = { pops_electricity_cost = professionals_electricity_cost }
-                set_variable = { pops_services_cost = professionals_services_cost }
-                set_variable = { pops_food_need = professionals_food_need }
-                set_variable = { pops_consumer_goods_need = professionals_consumer_goods_need }
-                set_variable = { pops_luxury_goods_need = professionals_luxuries_need }
-                set_variable = { pops_energy_materials_need = professionals_energy_materials_need }
-                set_variable = { pops_electricity_need = professionals_electricity_need }
-                set_variable = { pops_services_need = professionals_services_need }
+                add_to_variable = { pops_needs_spending = professionals_needs_spending }
+                add_to_variable = { pops_food_cost = professionals_food_cost }
+                add_to_variable = { pops_consumer_goods_cost = professionals_consumer_goods_cost }
+                add_to_variable = { pops_luxury_goods_cost = professionals_luxury_goods_cost }
+                add_to_variable = { pops_energy_materials_cost = professionals_energy_materials_cost }
+                add_to_variable = { pops_electricity_cost = professionals_electricity_cost }
+                add_to_variable = { pops_services_cost = professionals_services_cost }
+                add_to_variable = { pops_need@token:resource_food = professionals_food_need }
+                add_to_variable = { pops_need@token:resource_consumer_goods = professionals_consumer_goods_need }
+                add_to_variable = { pops_need@token:resource_luxury_goods = professionals_luxuries_need }
+                add_to_variable = { pops_need@token:resource_energy_materials = professionals_energy_materials_need }
+                add_to_variable = { pops_need@token:resource_electricity = professionals_electricity_need }
+                add_to_variable = { pops_need@token:resource_services = professionals_services_need }
             #
             #Specialists
-                set_variable = { pops_needs_spending = specialists_needs_spending }
-                set_variable = { pops_food_cost = specialists_food_cost }
-                set_variable = { pops_consumer_goods_cost = specialists_consumer_goods_cost }
-                set_variable = { pops_luxury_goods_cost = specialists_luxury_goods_cost }
-                set_variable = { pops_energy_materials_cost = specialists_energy_materials_cost }
-                set_variable = { pops_electricity_cost = specialists_electricity_cost }
-                set_variable = { pops_services_cost = specialists_services_cost }
-                set_variable = { pops_food_need = specialists_food_need }
-                set_variable = { pops_consumer_goods_need = specialists_consumer_goods_need }
-                set_variable = { pops_luxury_goods_need = specialists_luxuries_need }
-                set_variable = { pops_energy_materials_need = specialists_energy_materials_need }
-                set_variable = { pops_electricity_need = specialists_electricity_need }
-                set_variable = { pops_services_need = specialists_services_need }
+                add_to_variable = { pops_needs_spending = specialists_needs_spending }
+                add_to_variable = { pops_food_cost = specialists_food_cost }
+                add_to_variable = { pops_consumer_goods_cost = specialists_consumer_goods_cost }
+                add_to_variable = { pops_luxury_goods_cost = specialists_luxury_goods_cost }
+                add_to_variable = { pops_energy_materials_cost = specialists_energy_materials_cost }
+                add_to_variable = { pops_electricity_cost = specialists_electricity_cost }
+                add_to_variable = { pops_services_cost = specialists_services_cost }
+                add_to_variable = { pops_need@token:resource_food = specialists_food_need }
+                add_to_variable = { pops_need@token:resource_consumer_goods = specialists_consumer_goods_need }
+                add_to_variable = { pops_need@token:resource_luxury_goods = specialists_luxuries_need }
+                add_to_variable = { pops_need@token:resource_energy_materials = specialists_energy_materials_need }
+                add_to_variable = { pops_need@token:resource_electricity = specialists_electricity_need }
+                add_to_variable = { pops_need@token:resource_services = specialists_services_need }
             #
             #Aristocrats
-                set_variable = { pops_needs_spending = aristocrats_needs_spending }
-                set_variable = { pops_food_cost = aristocrats_food_cost }
-                set_variable = { pops_consumer_goods_cost = aristocrats_consumer_goods_cost }
-                set_variable = { pops_luxury_goods_cost = aristocrats_luxury_goods_cost }
-                set_variable = { pops_energy_materials_cost = aristocrats_energy_materials_cost }
-                set_variable = { pops_electricity_cost = aristocrats_electricity_cost }
-                set_variable = { pops_services_cost = aristocrats_services_cost }
-                set_variable = { pops_food_need = aristocrats_food_need }
-                set_variable = { pops_consumer_goods_need = aristocrats_consumer_goods_need }
-                set_variable = { pops_luxury_goods_need = aristocrats_luxuries_need }
-                set_variable = { pops_energy_materials_need = aristocrats_energy_materials_need }
-                set_variable = { pops_electricity_need = aristocrats_electricity_need }
-                set_variable = { pops_services_need = aristocrats_services_need }
+                add_to_variable = { pops_needs_spending = aristocrats_needs_spending }
+                add_to_variable = { pops_food_cost = aristocrats_food_cost }
+                add_to_variable = { pops_consumer_goods_cost = aristocrats_consumer_goods_cost }
+                add_to_variable = { pops_luxury_goods_cost = aristocrats_luxury_goods_cost }
+                add_to_variable = { pops_energy_materials_cost = aristocrats_energy_materials_cost }
+                add_to_variable = { pops_electricity_cost = aristocrats_electricity_cost }
+                add_to_variable = { pops_services_cost = aristocrats_services_cost }
+                add_to_variable = { pops_need@token:resource_food = aristocrats_food_need }
+                add_to_variable = { pops_need@token:resource_consumer_goods = aristocrats_consumer_goods_need }
+                add_to_variable = { pops_need@token:resource_luxury_goods = aristocrats_luxuries_need }
+                add_to_variable = { pops_need@token:resource_energy_materials = aristocrats_energy_materials_need }
+                add_to_variable = { pops_need@token:resource_electricity = aristocrats_electricity_need }
+                add_to_variable = { pops_need@token:resource_services = aristocrats_services_need }
             #
             #Capitalists
-                set_variable = { pops_needs_spending = capitalists_needs_spending }
-                set_variable = { pops_food_cost = capitalists_food_cost }
-                set_variable = { pops_consumer_goods_cost = capitalists_consumer_goods_cost }
-                set_variable = { pops_luxury_goods_cost = capitalists_luxury_goods_cost }
-                set_variable = { pops_energy_materials_cost = capitalists_energy_materials_cost }
-                set_variable = { pops_electricity_cost = capitalists_electricity_cost }
-                set_variable = { pops_services_cost = capitalists_services_cost }
-                set_variable = { pops_food_need = capitalists_food_need }
-                set_variable = { pops_consumer_goods_need = capitalists_consumer_goods_need }
-                set_variable = { pops_luxury_goods_need = capitalists_luxuries_need }
-                set_variable = { pops_energy_materials_need = capitalists_energy_materials_need }
-                set_variable = { pops_electricity_need = capitalists_electricity_need }
-                set_variable = { pops_services_need = capitalists_services_need }
+                add_to_variable = { pops_needs_spending = capitalists_needs_spending }
+                add_to_variable = { pops_food_cost = capitalists_food_cost }
+                add_to_variable = { pops_consumer_goods_cost = capitalists_consumer_goods_cost }
+                add_to_variable = { pops_luxury_goods_cost = capitalists_luxury_goods_cost }
+                add_to_variable = { pops_energy_materials_cost = capitalists_energy_materials_cost }
+                add_to_variable = { pops_electricity_cost = capitalists_electricity_cost }
+                add_to_variable = { pops_services_cost = capitalists_services_cost }
+                add_to_variable = { pops_need@token:resource_food = capitalists_food_need }
+                add_to_variable = { pops_need@token:resource_consumer_goods = capitalists_consumer_goods_need }
+                add_to_variable = { pops_need@token:resource_luxury_goods = capitalists_luxuries_need }
+                add_to_variable = { pops_need@token:resource_energy_materials = capitalists_energy_materials_need }
+                add_to_variable = { pops_need@token:resource_electricity = capitalists_electricity_need }
+                add_to_variable = { pops_need@token:resource_services = capitalists_services_need }
             #
             #Bureaucrats
-                set_variable = { pops_needs_spending = bureaucrats_needs_spending }
-                set_variable = { pops_food_cost = bureaucrats_food_cost }
-                set_variable = { pops_consumer_goods_cost = bureaucrats_consumer_goods_cost }
-                set_variable = { pops_luxury_goods_cost = bureaucrats_luxury_goods_cost }
-                set_variable = { pops_energy_materials_cost = bureaucrats_energy_materials_cost }
-                set_variable = { pops_electricity_cost = bureaucrats_electricity_cost }
-                set_variable = { pops_services_cost = bureaucrats_services_cost }
-                set_variable = { pops_food_need = bureaucrats_food_need }
-                set_variable = { pops_consumer_goods_need = bureaucrats_consumer_goods_need }
-                set_variable = { pops_luxury_goods_need = bureaucrats_luxuries_need }
-                set_variable = { pops_energy_materials_need = bureaucrats_energy_materials_need }
-                set_variable = { pops_electricity_need = bureaucrats_electricity_need }
-                set_variable = { pops_services_need = bureaucrats_services_need }
+                add_to_variable = { pops_needs_spending = bureaucrats_needs_spending }
+                add_to_variable = { pops_food_cost = bureaucrats_food_cost }
+                add_to_variable = { pops_consumer_goods_cost = bureaucrats_consumer_goods_cost }
+                add_to_variable = { pops_luxury_goods_cost = bureaucrats_luxury_goods_cost }
+                add_to_variable = { pops_energy_materials_cost = bureaucrats_energy_materials_cost }
+                add_to_variable = { pops_electricity_cost = bureaucrats_electricity_cost }
+                add_to_variable = { pops_services_cost = bureaucrats_services_cost }
+                add_to_variable = { pops_need@token:resource_food = bureaucrats_food_need }
+                add_to_variable = { pops_need@token:resource_consumer_goods = bureaucrats_consumer_goods_need }
+                add_to_variable = { pops_need@token:resource_luxury_goods = bureaucrats_luxuries_need }
+                add_to_variable = { pops_need@token:resource_energy_materials = bureaucrats_energy_materials_need }
+                add_to_variable = { pops_need@token:resource_electricity = bureaucrats_electricity_need }
+                add_to_variable = { pops_need@token:resource_services = bureaucrats_services_need }
             #
             #Soldiers
-                set_variable = { pops_needs_spending = soldiers_needs_spending }
-                set_variable = { pops_food_cost = soldiers_food_cost }
-                set_variable = { pops_consumer_goods_cost = soldiers_consumer_goods_cost }
-                set_variable = { pops_luxury_goods_cost = soldiers_luxury_goods_cost }
-                set_variable = { pops_energy_materials_cost = soldiers_energy_materials_cost }
-                set_variable = { pops_electricity_cost = soldiers_electricity_cost }
-                set_variable = { pops_services_cost = soldiers_services_cost }
-                set_variable = { pops_food_need = soldiers_food_need }
-                set_variable = { pops_consumer_goods_need = soldiers_consumer_goods_need }
-                set_variable = { pops_luxury_goods_need = soldiers_luxuries_need }
-                set_variable = { pops_energy_materials_need = soldiers_energy_materials_need }
-                set_variable = { pops_electricity_need = soldiers_electricity_need }
-                set_variable = { pops_services_need = soldiers_services_need }
+                add_to_variable = { pops_needs_spending = soldiers_needs_spending }
+                add_to_variable = { pops_food_cost = soldiers_food_cost }
+                add_to_variable = { pops_consumer_goods_cost = soldiers_consumer_goods_cost }
+                add_to_variable = { pops_luxury_goods_cost = soldiers_luxury_goods_cost }
+                add_to_variable = { pops_energy_materials_cost = soldiers_energy_materials_cost }
+                add_to_variable = { pops_electricity_cost = soldiers_electricity_cost }
+                add_to_variable = { pops_services_cost = soldiers_services_cost }
+                add_to_variable = { pops_need@token:resource_food = soldiers_food_need }
+                add_to_variable = { pops_need@token:resource_consumer_goods = soldiers_consumer_goods_need }
+                add_to_variable = { pops_need@token:resource_luxury_goods = soldiers_luxuries_need }
+                add_to_variable = { pops_need@token:resource_energy_materials = soldiers_energy_materials_need }
+                add_to_variable = { pops_need@token:resource_electricity = soldiers_electricity_need }
+                add_to_variable = { pops_need@token:resource_services = soldiers_services_need }
             #
         #
     }
@@ -2834,6 +3267,52 @@
 #
 
 #Buildings
+	change_building_avg_wage = {
+		#wage_change_temp, building_token
+
+		set_temp_variable = { total_wage_multiplier = 0 }
+        
+		set_temp_variable = { wage_multiplier = peasants_employed@var:building_token }
+		multiply_temp_variable = { wage_multiplier = 1 }
+		add_to_temp_variable = { total_wage_multiplier = wage_multiplier }
+
+		set_temp_variable = { wage_multiplier = laborers_employed@var:building_token }
+		multiply_temp_variable = { wage_multiplier = 2 }
+		add_to_temp_variable = { total_wage_multiplier = wage_multiplier }
+
+		set_temp_variable = { wage_multiplier = workers_employed@var:building_token }
+		multiply_temp_variable = { wage_multiplier = 5 }
+		add_to_temp_variable = { total_wage_multiplier = wage_multiplier }
+
+		set_temp_variable = { wage_multiplier = professionals_employed@var:building_token }
+		multiply_temp_variable = { wage_multiplier = 10 }
+		add_to_temp_variable = { total_wage_multiplier = wage_multiplier }
+
+		set_temp_variable = { wage_multiplier = specialists_employed@var:building_token }
+		multiply_temp_variable = { wage_multiplier = 20 }
+		add_to_temp_variable = { total_wage_multiplier = wage_multiplier }
+
+		set_temp_variable = { wage_multiplier = aristocrats_employed@var:building_token }
+		multiply_temp_variable = { wage_multiplier = 30 }
+		add_to_temp_variable = { total_wage_multiplier = wage_multiplier }
+
+		set_temp_variable = { wage_multiplier = capitalists_employed@var:building_token }
+		multiply_temp_variable = { wage_multiplier = 50 }
+		add_to_temp_variable = { total_wage_multiplier = wage_multiplier }
+
+		set_temp_variable = { ciw_wage = wage_change_temp }
+		multiply_temp_variable = { ciw_wage = employed@var:building_token }
+		divide_temp_variable = { ciw_wage = total_wage_multiplier }
+		
+		add_to_variable = { base_wage@var:building_token = ciw_wage }
+	}
+	change_building_base_wage = {
+		#wage_change_temp, building_token
+
+		add_to_variable = { base_wage@var:building_token = wage_change_temp }
+	}
+
+
     reload_building_array = {
         clear_array = urban_buildings
         clear_array = rural_buildings
@@ -3543,6 +4022,104 @@
 			set_variable = { production_5@var:bu_token = max_production_5@var:bu_token }
 			multiply_variable = { production_5@var:bu_token = production_percentage@var:bu_token }
 		#
+
+        #Capacities
+			set_variable = { industrial_capacity_use@var:b_type = global.building_industrial_capacity_use@var:bu_token }
+            multiply_variable = { industrial_capacity_use@var:b_type = size@var:b_type }
+
+            set_variable = { shipping_capacity@var:b_type = 0 }
+            set_variable = { industrial_capacity@var:b_type = 0 }
+			if = { #Basic
+				limit = {
+					check_variable = { production_method@var:bu_token = 0 }
+				}
+				set_variable = { shipping_capacity@var:b_type = global.building_basic_output_shipping_capacity@var:bu_token }
+				set_variable = { industrial_capacity@var:b_type = global.building_basic_output_industrial_capacity@var:bu_token }
+			}
+			else_if = { #Advanced
+				limit = {
+					check_variable = { production_method@var:bu_token = 1 }
+				}
+				set_variable = { shipping_capacity@var:b_type = global.building_advanced_output_shipping_capacity@var:bu_token }
+				set_variable = { industrial_capacity@var:b_type = global.building_advanced_output_industrial_capacity@var:bu_token }
+			}
+			else_if = { #Industrialized
+				limit = {
+					check_variable = { production_method@var:bu_token = 2 }
+				}
+				set_variable = { shipping_capacity@var:b_type = global.building_industrialized_output_shipping_capacity@var:bu_token }
+				set_variable = { industrial_capacity@var:b_type = global.building_industrialized_output_industrial_capacity@var:bu_token }
+			}
+			else_if = { #Mechanized
+				limit = {
+					check_variable = { production_method@var:bu_token = 3 }
+				}
+				set_variable = { shipping_capacity@var:b_type = global.building_mechanized_output_shipping_capacity@var:bu_token }
+				set_variable = { industrial_capacity@var:b_type = global.building_mechanized_output_industrial_capacity@var:bu_token }
+			}
+			else_if = { #Electrified
+				limit = {
+					check_variable = { production_method@var:bu_token = 4 }
+				}
+				set_variable = { shipping_capacity@var:b_type = global.building_electrified_output_shipping_capacity@var:bu_token }
+				set_variable = { industrial_capacity@var:b_type = global.building_electrified_output_industrial_capacity@var:bu_token }
+			}
+			else_if = { #Motorized
+				limit = {
+					check_variable = { production_method@var:bu_token = 5 }
+				}
+				set_variable = { shipping_capacity@var:b_type = global.building_motorized_output_shipping_capacity@var:bu_token }
+				set_variable = { industrial_capacity@var:b_type = global.building_motorized_output_industrial_capacity@var:bu_token }
+			}
+			else_if = { #Modernized
+				limit = {
+					check_variable = { production_method@var:bu_token = 6 }
+				}
+				set_variable = { shipping_capacity@var:b_type = global.building_modernized_output_shipping_capacity@var:bu_token }
+				set_variable = { industrial_capacity@var:b_type = global.building_modernized_output_industrial_capacity@var:bu_token }
+			}
+			else_if = { #Roboticized
+				limit = {
+					check_variable = { production_method@var:bu_token = 7 }
+				}
+				set_variable = { shipping_capacity@var:b_type = global.building_roboticized_output_shipping_capacity@var:bu_token }
+				set_variable = { industrial_capacity@var:b_type = global.building_roboticized_output_industrial_capacity@var:bu_token }
+			}
+			else_if = { #Computerized
+				limit = {
+					check_variable = { production_method@var:bu_token = 8 }
+				}
+				set_variable = { shipping_capacity@var:b_type = global.building_computerized_output_shipping_capacity@var:bu_token }
+				set_variable = { industrial_capacity@var:b_type = global.building_computerized_output_industrial_capacity@var:bu_token }
+			}
+			else_if = { #Digitalized
+				limit = {
+					check_variable = { production_method@var:bu_token = 9 }
+				}
+				set_variable = { shipping_capacity@var:b_type = global.building_digitalized_output_shipping_capacity@var:bu_token }
+				set_variable = { industrial_capacity@var:b_type = global.building_digitalized_output_industrial_capacity@var:bu_token }
+			}
+			else_if = { #Automatized
+				limit = {
+					check_variable = { production_method@var:bu_token = 10 }
+				}
+				set_variable = { shipping_capacity@var:b_type = global.building_automatized_output_shipping_capacity@var:bu_token }
+				set_variable = { industrial_capacity@var:b_type = global.building_automatized_output_industrial_capacity@var:bu_token }
+			}
+			else_if = { #Futurized
+				limit = {
+					check_variable = { production_method@var:bu_token = 11 }
+				}
+				set_variable = { shipping_capacity@var:b_type = global.building_futurized_output_shipping_capacity@var:bu_token }
+				set_variable = { industrial_capacity@var:b_type = global.building_futurized_output_industrial_capacity@var:bu_token }
+			}
+            
+            multiply_variable = { shipping_capacity@var:b_type = size@var:b_type }
+            multiply_variable = { industrial_capacity@var:b_type = size@var:b_type }
+            
+            multiply_variable = { shipping_capacity@var:b_type = production_percentage@var:b_type }
+            multiply_variable = { industrial_capacity@var:b_type = production_percentage@var:b_type }
+        #
     }
     building_update_finances = {
         #bu_token
@@ -3711,6 +4288,673 @@
 			subtract_from_variable = { productivity@var:bu_token = expenses_temp }
 			divide_variable = { productivity@var:bu_token = jobs@var:bu_token }
 		#
+    }
+#
+
+#Resources
+    get_resource_price = {
+        #Updates a single resource's price
+        #Requires updated supply/demand
+        #Input: r_type (Resource Token)
+        #Country Scope
+        
+        set_variable = { price@var:r_type = global.base_price@var:r_type }
+        if = {
+            limit = {
+                NOT = { check_variable = { r_type = token:resource_valuable_materials } }
+                #NOT = { check_variable = { r_type = token:resource_finance } }
+            }
+            if = {
+                limit = {
+                    check_variable = { supply@var:r_type > demand@var:r_type }
+                }
+                if = {
+                    limit = {
+                        check_variable = { demand@var:r_type > 0.0 }
+                    }
+                    set_temp_variable = { grp_sd = supply@var:r_type }
+                    divide_temp_variable = { grp_sd = demand@var:r_type }
+
+                    set_temp_variable = { grp_multiplier = 3 }
+                    subtract_from_temp_variable = { grp_multiplier = grp_sd }
+                    divide_temp_variable = { grp_multiplier = 2 }
+
+                    if = {
+                        limit = {
+                            check_variable = { grp_multiplier < 0.25 }
+                        }
+                        set_temp_variable = { grp_multiplier = 0.25 }
+                    }
+                }
+                else = {
+                    set_temp_variable = { grp_multiplier = 0.25 }
+                }
+
+                multiply_variable = { price@var:r_type = grp_multiplier } #P = B * ((3 - S/D) / 2)
+            }
+            else_if = {
+                limit = {
+                    check_variable = { supply@var:r_type < demand@var:r_type }
+                }
+                if = {
+                    limit = {
+                        check_variable = { supply@var:r_type > 0.0 }
+                    }
+                    set_temp_variable = { grp_multiplier = demand@var:r_type }
+                    divide_temp_variable = { grp_multiplier = supply@var:r_type }
+                    add_to_temp_variable = { grp_multiplier = 1 }
+                    divide_temp_variable = { grp_multiplier = 2 }
+
+                    if = {
+                        limit = {
+                            check_variable = { grp_multiplier > 2.0 }
+                        }
+                        set_temp_variable = { grp_multiplier = 2.0 }
+                    }
+                }
+                else = {
+                    set_temp_variable = { grp_multiplier = 2.0 }
+                }
+
+                multiply_variable = { price@var:r_type = grp_multiplier } #P = B * ( (D/S + 1) / 2)
+            }
+        }
+
+        every_controlled_state = {
+            set_variable = { price@var:r_type = PREV.price@var:r_type }
+        }
+    }
+    get_resource_prices = {
+        #Updates all resource prices
+        #Requires updated supply/demand
+        #Country Scope
+        
+        for_each_loop = {
+            array = global.resource_token_array
+            value = r_type
+
+            set_variable = { price@var:r_type = global.base_price@var:r_type }
+            if = {
+                limit = {
+                    NOT = { check_variable = { r_type = token:resource_valuable_materials } }
+                    #NOT = { check_variable = { r_type = token:resource_finance } }
+                }
+                if = {
+                    limit = {
+                        check_variable = { supply@var:r_type > demand@var:r_type }
+                    }
+                    if = {
+                        limit = {
+                            check_variable = { demand@var:r_type > 0.0 }
+                        }
+                        set_temp_variable = { grp_sd = supply@var:r_type }
+                        divide_temp_variable = { grp_sd = demand@var:r_type }
+
+                        set_temp_variable = { grp_multiplier = 3 }
+                        subtract_from_temp_variable = { grp_multiplier = grp_sd }
+                        divide_temp_variable = { grp_multiplier = 2 }
+
+                        if = {
+                            limit = {
+                                check_variable = { grp_multiplier < 0.25 }
+                            }
+                            set_temp_variable = { grp_multiplier = 0.25 }
+                        }
+                    }
+                    else = {
+                        set_temp_variable = { grp_multiplier = 0.25 }
+                    }
+
+                    multiply_variable = { price@var:r_type = grp_multiplier } #P = B * ((3 - S/D) / 2)
+                }
+                else_if = {
+                    limit = {
+                        check_variable = { supply@var:r_type < demand@var:r_type }
+                    }
+
+                    if = {
+                        limit = {
+                            check_variable = { supply@var:r_type > 0.0 }
+                        }
+                        set_temp_variable = { grp_multiplier = demand@var:r_type }
+                        divide_temp_variable = { grp_multiplier = supply@var:r_type }
+                        add_to_temp_variable = { grp_multiplier = 1 }
+                        divide_temp_variable = { grp_multiplier = 2 }
+
+                        if = {
+                            limit = {
+                                check_variable = { grp_multiplier > 2.0 }
+                            }
+                            set_temp_variable = { grp_multiplier = 2.0 }
+                        }
+                    }
+                    else = {
+                        set_temp_variable = { grp_multiplier = 2.0 }
+                    }
+
+
+                    multiply_variable = { price@var:r_type = grp_multiplier } #P = B * ( (D/S + 1) / 2)
+                }
+            }
+        }
+
+        every_controlled_state = {
+            for_each_loop = {
+                array = global.resource_token_array
+                value = r_type
+                
+                set_variable = { price@var:r_type = PREV.price@var:r_type }
+            }
+        }
+    }
+    
+    calc_capacities = {
+        set_variable = { shipping_capacity = 0 }
+
+        every_controlled_state = {
+            set_variable = { industrial_capacity = 0 }
+            set_variable = { industrial_capacity_used = 0 }
+
+            for_each_loop = {
+                array = urban_buildings
+                value = b_type
+
+                add_to_variable = { industrial_capacity_used = industrial_capacity_use@var:b_type }
+                add_to_variable = { PREV.shipping_capacity = shipping_capacity@var:b_type }
+                add_to_variable = { industrial_capacity = industrial_capacity@var:b_type }
+            }
+            for_each_loop = {
+                array = rural_buildings
+                value = b_type
+
+                add_to_variable = { industrial_capacity_used = industrial_capacity_use@var:b_type }
+                add_to_variable = { PREV.shipping_capacity = shipping_capacity@var:b_type }
+                add_to_variable = { industrial_capacity = industrial_capacity@var:b_type }
+            }
+        }
+    }
+    calc_demand = {
+        #Country Scope
+
+        for_each_loop = {
+            array = global.resource_token_array
+            value = r_type
+
+            set_variable = { demand@var:r_type = 0 }
+        }
+
+        every_controlled_state = {
+            for_each_loop = {
+                array = global.resource_token_array
+                value = r_type
+                
+                set_variable = { demand@var:r_type = 0 }
+                add_to_variable = { demand@var:r_type = pops_need@var:r_type }
+            }
+            
+            for_each_loop = {
+                array = urban_buildings
+                value = b_type
+                
+                if = { #Basic
+                    limit = {
+                        check_variable = { production_method@var:b_type = 0 }
+                    }
+                    set_temp_variable = { input_rtype = global.building_basic_input_resource_1@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_1_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_basic_input_resource_2@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_2_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_basic_input_resource_3@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_3_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_basic_input_resource_4@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_4_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_basic_input_resource_5@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_5_amount@var:b_type }
+                }
+                else_if = { #Advanced
+                    limit = {
+                        check_variable = { production_method@var:b_type = 1 }
+                    }
+                    set_temp_variable = { input_rtype = global.building_advanced_input_resource_1@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_1_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_advanced_input_resource_2@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_2_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_advanced_input_resource_3@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_3_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_advanced_input_resource_4@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_4_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_advanced_input_resource_5@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_5_amount@var:b_type }
+                }
+                else_if = { #Industrialized
+                    limit = {
+                        check_variable = { production_method@var:b_type = 2 }
+                    }
+                    set_temp_variable = { input_rtype = global.building_industrialized_input_resource_1@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_1_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_industrialized_input_resource_2@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_2_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_industrialized_input_resource_3@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_3_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_industrialized_input_resource_4@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_4_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_industrialized_input_resource_5@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_5_amount@var:b_type }
+                }
+                else_if = { #Mechanized
+                    limit = {
+                        check_variable = { production_method@var:b_type = 3 }
+                    }
+                    set_temp_variable = { input_rtype = global.building_mechanized_input_resource_1@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_1_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_mechanized_input_resource_2@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_2_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_mechanized_input_resource_3@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_3_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_mechanized_input_resource_4@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_4_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_mechanized_input_resource_5@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_5_amount@var:b_type }
+                }
+                else_if = { #Electrified
+                    limit = {
+                        check_variable = { production_method@var:b_type = 4 }
+                    }
+                    set_temp_variable = { input_rtype = global.building_electrified_input_resource_1@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_1_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_electrified_input_resource_2@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_2_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_electrified_input_resource_3@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_3_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_electrified_input_resource_4@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_4_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_electrified_input_resource_5@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_5_amount@var:b_type }
+                }
+                else_if = { #Motorized
+                    limit = {
+                        check_variable = { production_method@var:b_type = 5 }
+                    }
+                    set_temp_variable = { input_rtype = global.building_motorized_input_resource_1@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_1_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_motorized_input_resource_2@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_2_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_motorized_input_resource_3@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_3_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_motorized_input_resource_4@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_4_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_motorized_input_resource_5@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_5_amount@var:b_type }
+                }
+                else_if = { #Modernized
+                    limit = {
+                        check_variable = { production_method@var:b_type = 6 }
+                    }
+                    set_temp_variable = { input_rtype = global.building_modernized_input_resource_1@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_1_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_modernized_input_resource_2@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_2_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_modernized_input_resource_3@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_3_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_modernized_input_resource_4@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_4_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_modernized_input_resource_5@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_5_amount@var:b_type }
+                }
+                else_if = { #Roboticized
+                    limit = {
+                        check_variable = { production_method@var:b_type = 7 }
+                    }
+                    set_temp_variable = { input_rtype = global.building_roboticized_input_resource_1@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_1_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_roboticized_input_resource_2@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_2_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_roboticized_input_resource_3@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_3_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_roboticized_input_resource_4@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_4_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_roboticized_input_resource_5@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_5_amount@var:b_type }
+                }
+                else_if = { #Computerized
+                    limit = {
+                        check_variable = { production_method@var:b_type = 8 }
+                    }
+                    set_temp_variable = { input_rtype = global.building_computerized_input_resource_1@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_1_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_computerized_input_resource_2@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_2_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_computerized_input_resource_3@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_3_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_computerized_input_resource_4@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_4_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_computerized_input_resource_5@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_5_amount@var:b_type }
+                }
+                else_if = { #Digitalized
+                    limit = {
+                        check_variable = { production_method@var:b_type = 9 }
+                    }
+                    set_temp_variable = { input_rtype = global.building_digitalized_input_resource_1@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_1_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_digitalized_input_resource_2@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_2_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_digitalized_input_resource_3@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_3_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_digitalized_input_resource_4@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_4_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_digitalized_input_resource_5@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_5_amount@var:b_type }
+                }
+                else_if = { #Automatized
+                    limit = {
+                        check_variable = { production_method@var:b_type = 10 }
+                    }
+                    set_temp_variable = { input_rtype = global.building_automatized_input_resource_1@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_1_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_automatized_input_resource_2@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_2_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_automatized_input_resource_3@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_3_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_automatized_input_resource_4@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_4_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_automatized_input_resource_5@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_5_amount@var:b_type }
+                }
+                else_if = { #Futurized
+                    limit = {
+                        check_variable = { production_method@var:b_type = 11 }
+                    }
+                    set_temp_variable = { input_rtype = global.building_futurized_input_resource_1@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_1_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_futurized_input_resource_2@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_2_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_futurized_input_resource_3@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_3_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_futurized_input_resource_4@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_4_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_futurized_input_resource_5@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_5_amount@var:b_type }
+                }
+            }
+            for_each_loop = {
+                array = rural_buildings
+                value = b_type
+                
+                if = { #Basic
+                    limit = {
+                        check_variable = { production_method@var:b_type = 0 }
+                    }
+                    set_temp_variable = { input_rtype = global.building_basic_input_resource_1@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_1_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_basic_input_resource_2@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_2_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_basic_input_resource_3@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_3_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_basic_input_resource_4@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_4_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_basic_input_resource_5@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_5_amount@var:b_type }
+                }
+                else_if = { #Advanced
+                    limit = {
+                        check_variable = { production_method@var:b_type = 1 }
+                    }
+                    set_temp_variable = { input_rtype = global.building_advanced_input_resource_1@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_1_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_advanced_input_resource_2@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_2_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_advanced_input_resource_3@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_3_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_advanced_input_resource_4@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_4_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_advanced_input_resource_5@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_5_amount@var:b_type }
+                }
+                else_if = { #Industrialized
+                    limit = {
+                        check_variable = { production_method@var:b_type = 2 }
+                    }
+                    set_temp_variable = { input_rtype = global.building_industrialized_input_resource_1@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_1_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_industrialized_input_resource_2@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_2_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_industrialized_input_resource_3@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_3_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_industrialized_input_resource_4@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_4_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_industrialized_input_resource_5@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_5_amount@var:b_type }
+                }
+                else_if = { #Mechanized
+                    limit = {
+                        check_variable = { production_method@var:b_type = 3 }
+                    }
+                    set_temp_variable = { input_rtype = global.building_mechanized_input_resource_1@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_1_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_mechanized_input_resource_2@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_2_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_mechanized_input_resource_3@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_3_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_mechanized_input_resource_4@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_4_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_mechanized_input_resource_5@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_5_amount@var:b_type }
+                }
+                else_if = { #Electrified
+                    limit = {
+                        check_variable = { production_method@var:b_type = 4 }
+                    }
+                    set_temp_variable = { input_rtype = global.building_electrified_input_resource_1@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_1_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_electrified_input_resource_2@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_2_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_electrified_input_resource_3@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_3_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_electrified_input_resource_4@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_4_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_electrified_input_resource_5@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_5_amount@var:b_type }
+                }
+                else_if = { #Motorized
+                    limit = {
+                        check_variable = { production_method@var:b_type = 5 }
+                    }
+                    set_temp_variable = { input_rtype = global.building_motorized_input_resource_1@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_1_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_motorized_input_resource_2@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_2_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_motorized_input_resource_3@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_3_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_motorized_input_resource_4@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_4_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_motorized_input_resource_5@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_5_amount@var:b_type }
+                }
+                else_if = { #Modernized
+                    limit = {
+                        check_variable = { production_method@var:b_type = 6 }
+                    }
+                    set_temp_variable = { input_rtype = global.building_modernized_input_resource_1@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_1_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_modernized_input_resource_2@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_2_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_modernized_input_resource_3@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_3_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_modernized_input_resource_4@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_4_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_modernized_input_resource_5@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_5_amount@var:b_type }
+                }
+                else_if = { #Roboticized
+                    limit = {
+                        check_variable = { production_method@var:b_type = 7 }
+                    }
+                    set_temp_variable = { input_rtype = global.building_roboticized_input_resource_1@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_1_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_roboticized_input_resource_2@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_2_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_roboticized_input_resource_3@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_3_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_roboticized_input_resource_4@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_4_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_roboticized_input_resource_5@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_5_amount@var:b_type }
+                }
+                else_if = { #Computerized
+                    limit = {
+                        check_variable = { production_method@var:b_type = 8 }
+                    }
+                    set_temp_variable = { input_rtype = global.building_computerized_input_resource_1@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_1_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_computerized_input_resource_2@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_2_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_computerized_input_resource_3@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_3_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_computerized_input_resource_4@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_4_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_computerized_input_resource_5@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_5_amount@var:b_type }
+                }
+                else_if = { #Digitalized
+                    limit = {
+                        check_variable = { production_method@var:b_type = 9 }
+                    }
+                    set_temp_variable = { input_rtype = global.building_digitalized_input_resource_1@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_1_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_digitalized_input_resource_2@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_2_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_digitalized_input_resource_3@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_3_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_digitalized_input_resource_4@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_4_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_digitalized_input_resource_5@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_5_amount@var:b_type }
+                }
+                else_if = { #Automatized
+                    limit = {
+                        check_variable = { production_method@var:b_type = 10 }
+                    }
+                    set_temp_variable = { input_rtype = global.building_automatized_input_resource_1@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_1_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_automatized_input_resource_2@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_2_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_automatized_input_resource_3@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_3_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_automatized_input_resource_4@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_4_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_automatized_input_resource_5@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_5_amount@var:b_type }
+                }
+                else_if = { #Futurized
+                    limit = {
+                        check_variable = { production_method@var:b_type = 11 }
+                    }
+                    set_temp_variable = { input_rtype = global.building_futurized_input_resource_1@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_1_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_futurized_input_resource_2@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_2_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_futurized_input_resource_3@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_3_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_futurized_input_resource_4@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_4_amount@var:b_type }
+                    set_temp_variable = { input_rtype = global.building_futurized_input_resource_5@var:b_type }
+                    add_to_variable = { demand@var:input_rtype = input_5_amount@var:b_type }
+                }
+            }
+
+
+            for_each_loop = {
+                array = global.resource_token_array
+                value = r_type
+                add_to_variable = { PREV.demand@var:r_type = demand@var:r_type }
+                add_to_variable = { PREV.need@var:r_type = need@var:r_type }
+            }
+        }
+
+    }
+    calc_supply = {
+        #Country Scope
+
+        for_each_loop = {
+            array = global.resource_token_array
+            value = r_type
+
+            set_variable = { production@var:r_type = 0 }
+        }
+
+        every_controlled_state = {
+            for_each_loop = {
+                array = global.resource_token_array
+                value = r_type
+                set_variable = { supply@var:r_type = 0 }
+                set_variable = { production@var:r_type = 0 }
+            }
+
+            for_each_loop = {
+                array = urban_buildings
+                value = b_type
+
+                set_temp_variable = { building_rtype = global.building_output_resource_1@var:b_type }
+                add_to_variable = { production@var:building_rtype = production_1@var:b_type }
+                
+                set_temp_variable = { building_rtype = global.building_output_resource_2@var:b_type }
+                add_to_variable = { production@var:building_rtype = production_2@var:b_type }
+                
+                set_temp_variable = { building_rtype = global.building_output_resource_3@var:b_type }
+                add_to_variable = { production@var:building_rtype = production_3@var:b_type }
+                
+                set_temp_variable = { building_rtype = global.building_output_resource_4@var:b_type }
+                add_to_variable = { production@var:building_rtype = production_4@var:b_type }
+                
+                set_temp_variable = { building_rtype = global.building_output_resource_5@var:b_type }
+                add_to_variable = { production@var:building_rtype = production_5@var:b_type }
+            }
+            for_each_loop = {
+                array = rural_buildings
+                value = b_type
+
+                set_temp_variable = { building_rtype = global.building_output_resource_1@var:b_type }
+                add_to_variable = { production@var:building_rtype = production_1@var:b_type }
+                
+                set_temp_variable = { building_rtype = global.building_output_resource_2@var:b_type }
+                add_to_variable = { production@var:building_rtype = production_2@var:b_type }
+                
+                set_temp_variable = { building_rtype = global.building_output_resource_3@var:b_type }
+                add_to_variable = { production@var:building_rtype = production_3@var:b_type }
+                
+                set_temp_variable = { building_rtype = global.building_output_resource_4@var:b_type }
+                add_to_variable = { production@var:building_rtype = production_4@var:b_type }
+                
+                set_temp_variable = { building_rtype = global.building_output_resource_5@var:b_type }
+                add_to_variable = { production@var:building_rtype = production_5@var:b_type }
+            }
+
+            for_each_loop = {
+                array = global.resource_token_array
+                value = r_type
+                add_to_variable = { PREV.production@var:r_type = production@var:r_type }
+            }
+        }
+
+        for_each_loop = {
+            array = global.resource_token_array
+            value = r_type
+            set_variable = { supply@var:r_type = production@var:r_type }
+
+            set_temp_variable = { supply_ratio = supply@var:r_type }
+            if = {
+                limit = {
+                    check_variable = { demand@var:r_type > 0 }
+                }
+                divide_temp_variable = { supply_ratio = demand@var:r_type }
+            }
+            every_controlled_state = {
+                set_variable = { supply@var:r_type = demand@var:r_type }
+                multiply_variable = { supply@var:r_type = supply_ratio }
+            }
+        }
+
     }
 #
 
