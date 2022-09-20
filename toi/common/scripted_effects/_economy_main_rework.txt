@@ -67,20 +67,6 @@
                     # 80: 1.8 Food, 12.0 Consumer Goods, 2.5 Luxury Goods, 12.0 Energy, 24.0 Services: $217.4 per K
                     # 90: 2.0 Food, 24.0 Consumer Goods, 5.0 Luxury Goods, 24.0 Energy, 48.0 Services: $430.0 per K
                     # 100: 2.2 Food, 48.0 Consumer Goods, 10.0 Luxury Goods, 48.0 Energy, 96.0 Services: $854.6 per K
-                    
-                    clear_array = global.sol_cost
-                    for_loop_effect = {
-                        start = 0
-                        end = 150
-                        add = 1
-                        value = sol_temp
-                        break = b
-
-                        get_pop_needs = yes
-
-                        multiply_temp_variable = { total_cost_temp = global.pops_workforce_participation }
-                        add_to_array = { global.sol_cost = total_cost_temp } #sol_cost^i -> Costs for each level of standard of living (arranged in an array)
-                    }
                 #
             #
 
@@ -402,6 +388,27 @@
 					set_variable = { global.credit_rating_SD_base_interest_rate = 10.0 }
                 #
             #
+
+            UCT = {
+                clear_array = global.sol_cost
+                for_each_loop = {
+                    array = global.resource_token_array
+                    value = r_type
+                    set_variable = { price@var:r_type = global.base_price@var:r_type }
+                }
+                for_loop_effect = {
+                    start = 0
+                    end = 150
+                    add = 1
+                    value = sol_temp
+                    break = b
+
+                    get_pop_needs = yes
+
+                    multiply_temp_variable = { total_cost_temp = global.pops_workforce_participation }
+                    add_to_array = { global.sol_cost = total_cost_temp } #sol_cost^i -> Costs for each level of standard of living (arranged in an array)
+                }
+            }
         #
 
 		#Setup Projects
@@ -443,6 +450,7 @@
                     set_variable = { pops = state_population_k }
                     set_variable = { pops_workforce = pops }
                     multiply_variable = { pops_workforce = global.pops_workforce_participation }
+                    set_variable = { pops_workforce_participation = global.pops_workforce_participation }
 
                     #Literacy Percentage
                         if = {
@@ -980,7 +988,6 @@
 
                     #Slaves
                         set_temp_variable = { earnings_temp = slaves_earnings }
-                        multiply_temp_variable = { earnings_temp = 100 }
                         divide_temp_variable = { earnings_temp = slaves }
                         for_each_loop = {
                             array = global.sol_cost
@@ -1159,6 +1166,8 @@
                             }
                         }
                     #
+
+                    calculate_pop_needs = yes
                 #
             }
             
