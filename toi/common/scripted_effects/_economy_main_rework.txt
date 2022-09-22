@@ -1,4 +1,967 @@
 
+    r_advance_time = {
+		random_country = {
+			if = {
+				limit = {
+					check_variable = { global.month > 11 }
+				}
+				set_variable = { global.month = 0 }
+				add_to_variable = { global.years_passed = 1 }
+			}
+			clear_array = global.econ_gp_list_array
+			# add_to_array = { global.econ_gp_list_array = ENG }
+			add_to_array = { global.econ_gp_list_array = USA }
+			# add_to_array = { global.econ_gp_list_array = BRA }
+			# add_to_array = { global.econ_gp_list_array = MEX }
+			# add_to_array = { global.econ_gp_list_array = COL }
+			# add_to_array = { global.econ_gp_list_array = VEN }
+			# add_to_array = { global.econ_gp_list_array = CAN }
+			# add_to_array = { global.econ_gp_list_array = CHL }
+			# add_to_array = { global.econ_gp_list_array = BOL }
+			# add_to_array = { global.econ_gp_list_array = PRU }
+			# add_to_array = { global.econ_gp_list_array = ARG }
+			# add_to_array = { global.econ_gp_list_array = BUE }
+			# add_to_array = { global.econ_gp_list_array = HBC }
+			# add_to_array = { global.econ_gp_list_array = URG }
+			# add_to_array = { global.econ_gp_list_array = PAR }
+			# #
+			# add_to_array = { global.econ_gp_list_array = ECU }
+			# #
+			# add_to_array = { global.econ_gp_list_array = UTA }
+			# add_to_array = { global.econ_gp_list_array = NVS }
+			# add_to_array = { global.econ_gp_list_array = VAN }
+			# add_to_array = { global.econ_gp_list_array = BRK }
+			# add_to_array = { global.econ_gp_list_array = NFL }
+			# add_to_array = { global.econ_gp_list_array = BCO }
+			# add_to_array = { global.econ_gp_list_array = QCI }
+			# add_to_array = { global.econ_gp_list_array = NWT }
+			# #
+			# add_to_array = { global.econ_gp_list_array = GUA }
+			# add_to_array = { global.econ_gp_list_array = HON }
+			# add_to_array = { global.econ_gp_list_array = NIC }
+			# add_to_array = { global.econ_gp_list_array = COS }
+			# add_to_array = { global.econ_gp_list_array = ELS }
+			# add_to_array = { global.econ_gp_list_array = DOM }
+			# add_to_array = { global.econ_gp_list_array = HAI }
+			# #
+			# #Primitives
+			# add_to_array = { global.econ_gp_list_array = SIX }
+			# add_to_array = { global.econ_gp_list_array = CHY }
+			# add_to_array = { global.econ_gp_list_array = COM }
+			# add_to_array = { global.econ_gp_list_array = SHO }
+			# add_to_array = { global.econ_gp_list_array = APA }
+			# add_to_array = { global.econ_gp_list_array = CRW }
+			# add_to_array = { global.econ_gp_list_array = BFT }
+			# add_to_array = { global.econ_gp_list_array = NAV }
+			# add_to_array = { global.econ_gp_list_array = NEZ }
+			# add_to_array = { global.econ_gp_list_array = SEM }
+
+			clear_array = global.econ_order_array
+			clear_array = global.econ_value_array
+			
+			for_each_scope_loop = {
+				array = global.econ_gp_list_array #global.score_tag_array
+
+				if = {
+					limit = {
+						NOT = { has_variable = has_afr_empire_mechanic_system }
+					}
+					for_each_loop = {
+						array = global.econ_value_array
+						index = ii
+						value = vv
+						break = bb
+
+						if = {
+							limit = {
+								check_variable = { vv < industrial_power }
+							}
+							add_to_array = { 
+								array = global.econ_value_array
+								value = industrial_power
+								index = ii
+							}
+							add_to_array = { 
+								array = global.econ_order_array 
+								value = THIS
+								index = ii
+							}
+							set_temp_variable = { bb = 1 }
+						}
+					}
+					if = {
+						limit = {
+							check_variable = { bb = 0 }
+						}
+						add_to_array = { global.econ_value_array = industrial_power }
+						add_to_array = { global.econ_order_array = THIS }
+					}
+				}
+			}
+
+			#Reset
+				set_variable = { global.highest_state_gdp = 0 }
+				set_variable = { global.highest_state_gdp_c = 0 }
+			#
+		}
+
+		for_each_scope_loop = {
+			array = global.econ_order_array
+
+            every_controlled_state = {
+                
+                #Buildings
+                    for_each_loop = {
+                        array = buildings
+                        value = om_building
+
+                        #Money Accumulation
+                        add_to_variable = { money@var:om_building = profit@var:om_building }
+                        if = { #Excess goes to owners
+                            limit = {
+                                check_variable = { money@var:om_building > money_limit@var:om_building }
+                            }
+                            set_variable = { money_transfer@var:om_building = money@var:om_building }
+                            subtract_from_variable = { money_transfer@var:om_building = money_limit@var:om_building }
+
+                            subtract_from_variable = { money@var:om_building = money_transfer@var:om_building }
+                            #TODO - Add to Aristocrats/Capitalists' money pool and/or Corporate money pools
+                        }
+                        else = {
+                            set_variable = { money_transfer@var:om_building = 0 }
+                        }
+                        if = {
+                            limit = {
+                                check_variable = { money@var:om_building < 0 }
+                            }
+                            set_variable = { money@var:om_building = 0 }
+                        }
+                    }
+                #
+
+                #Pops
+
+                    #Finances
+                        #Earnings & Spending
+                        add_to_variable = { slaves_money = slaves_earnings }
+                        add_to_variable = { peasants_money = peasants_earnings }
+                        add_to_variable = { laborers_money = laborers_earnings }
+                        add_to_variable = { workers_money = workers_earnings }
+                        add_to_variable = { professionals_money = professionals_earnings }
+                        add_to_variable = { specialists_money = specialists_earnings }
+                        add_to_variable = { aristocrats_money = aristocrats_earnings }
+                        add_to_variable = { capitalists_money = capitalists_earnings }
+                        add_to_variable = { bureaucrats_money = bureaucrats_earnings }
+                        add_to_variable = { soldiers_money = soldiers_earnings }
+                        
+                        subtract_from_variable = { slaves_money = slaves_needs_spending }
+                        subtract_from_variable = { peasants_money = peasants_needs_spending }
+                        subtract_from_variable = { laborers_money = laborers_needs_spending }
+                        subtract_from_variable = { workers_money = workers_needs_spending }
+                        subtract_from_variable = { professionals_money = professionals_needs_spending }
+                        subtract_from_variable = { specialists_money = specialists_needs_spending }
+                        subtract_from_variable = { aristocrats_money = aristocrats_needs_spending }
+                        subtract_from_variable = { capitalists_money = capitalists_needs_spending }
+                        subtract_from_variable = { bureaucrats_money = bureaucrats_needs_spending }
+                        subtract_from_variable = { soldiers_money = soldiers_needs_spending }
+
+                        #SoL changes
+                            #Slaves
+                                if = {
+                                    limit = {
+                                        check_variable = { slaves_money < 0 }
+                                    }
+                                    set_temp_variable = { regression_temp = slaves_money }
+                                    divide_temp_variable = { regression_temp = slaves_needs_spending }
+                                    multiply_temp_variable = { regression_temp = 10 }
+
+                                    if = {
+                                        limit = {
+                                            check_variable = { slaves_sol > 1 }
+                                        }
+                                        add_to_variable = { slaves_sol_progress = regression_temp }
+                                    }
+                                    else_if = {
+                                        limit = {
+                                            check_variable = { slaves_sol_progress < 0 }
+                                        }
+                                        set_variable = { slaves_sol_progress = 0 }
+                                    }
+                                    set_variable = { slaves_money = 0 }
+                                }
+                                else_if = {
+                                    limit = {
+                                        check_variable = { slaves_money > slaves_needs_spending }
+                                    }
+                                    set_temp_variable = { progression_temp = slaves_money }
+                                    subtract_from_temp_variable = { progression_temp = slaves_needs_spending }
+                                    divide_temp_variable = { progression_temp = slaves_needs_spending }
+                                    multiply_temp_variable = { progression_temp = 10 }
+
+                                    add_to_variable = { slaves_sol_progress = progression_temp }
+                                    set_variable = { slaves_money = slaves_needs_spending }
+                                }
+
+                                if = {
+                                    limit = {
+                                        check_variable = { slaves_sol_progress > 0.999 }
+                                    }
+                                    if = {
+                                        limit = {
+                                            check_variable = { slaves_sol_progress > 5 }
+                                        }
+                                        set_variable = { slaves_sol_progress = 5 }
+                                    }
+                                    set_temp_variable = { progression_temp = slaves_sol_progress }
+                                    subtract_from_temp_variable = { progression_temp = 0.5 }
+                                    round_temp_variable = progression_temp
+
+                                    subtract_from_variable = { slaves_sol_progress = progression_temp }
+                                    add_to_variable = { slaves_sol = progression_temp }
+                                }
+                                else_if = {
+                                    limit = {
+                                        check_variable = { slaves_sol_progress < -0.999 }
+                                    }
+                                    if = {
+                                        limit = {
+                                            check_variable = { regression_temp < -5 }
+                                        }
+                                        set_variable = { slaves_sol_progress = -5 }
+                                    }
+                                    set_temp_variable = { regression_temp = slaves_sol_progress }
+                                    add_to_temp_variable = { regression_temp = 0.5 }
+                                    round_temp_variable = regression_temp
+
+                                    subtract_from_variable = { slaves_sol_progress = regression_temp }
+                                    add_to_variable = { slaves_sol = regression_temp }
+                                }
+
+                                if = {
+                                    limit = {
+                                        check_variable = { slaves_sol < 1 }
+                                    }
+                                    set_variable = { slaves_sol = 1 }
+                                }
+                            #
+                            #Peasants
+                                if = {
+                                    limit = {
+                                        check_variable = { peasants_money < 0 }
+                                    }
+                                    set_temp_variable = { regression_temp = peasants_money }
+                                    divide_temp_variable = { regression_temp = peasants_needs_spending }
+                                    multiply_temp_variable = { regression_temp = 10 }
+
+                                    if = {
+                                        limit = {
+                                            check_variable = { peasants_sol > 1 }
+                                        }
+                                        add_to_variable = { peasants_sol_progress = regression_temp }
+                                    }
+                                    else_if = {
+                                        limit = {
+                                            check_variable = { peasants_sol_progress < 0 }
+                                        }
+                                        set_variable = { peasants_sol_progress = 0 }
+                                    }
+                                    set_variable = { peasants_money = 0 }
+                                }
+                                else_if = {
+                                    limit = {
+                                        check_variable = { peasants_money > peasants_needs_spending }
+                                    }
+                                    set_temp_variable = { progression_temp = peasants_money }
+                                    subtract_from_temp_variable = { progression_temp = peasants_needs_spending }
+                                    divide_temp_variable = { progression_temp = peasants_needs_spending }
+                                    multiply_temp_variable = { progression_temp = 10 }
+
+                                    add_to_variable = { peasants_sol_progress = progression_temp }
+                                    set_variable = { peasants_money = peasants_needs_spending }
+                                }
+
+                                if = {
+                                    limit = {
+                                        check_variable = { peasants_sol_progress > 0.999 }
+                                    }
+                                    if = {
+                                        limit = {
+                                            check_variable = { peasants_sol_progress > 5 }
+                                        }
+                                        set_variable = { peasants_sol_progress = 5 }
+                                    }
+                                    set_temp_variable = { progression_temp = peasants_sol_progress }
+                                    subtract_from_temp_variable = { progression_temp = 0.5 }
+                                    round_temp_variable = progression_temp
+
+                                    subtract_from_variable = { peasants_sol_progress = progression_temp }
+                                    add_to_variable = { peasants_sol = progression_temp }
+                                }
+                                else_if = {
+                                    limit = {
+                                        check_variable = { peasants_sol_progress < -0.999 }
+                                    }
+                                    if = {
+                                        limit = {
+                                            check_variable = { regression_temp < -5 }
+                                        }
+                                        set_variable = { peasants_sol_progress = -5 }
+                                    }
+                                    set_temp_variable = { regression_temp = peasants_sol_progress }
+                                    add_to_temp_variable = { regression_temp = 0.5 }
+                                    round_temp_variable = regression_temp
+
+                                    subtract_from_variable = { peasants_sol_progress = regression_temp }
+                                    add_to_variable = { peasants_sol = regression_temp }
+                                }
+
+                                if = {
+                                    limit = {
+                                        check_variable = { peasants_sol < 1 }
+                                    }
+                                    set_variable = { peasants_sol = 1 }
+                                }
+                            #
+                            #Laborers
+                                if = {
+                                    limit = {
+                                        check_variable = { laborers_money < 0 }
+                                    }
+                                    set_temp_variable = { regression_temp = laborers_money }
+                                    divide_temp_variable = { regression_temp = laborers_needs_spending }
+                                    multiply_temp_variable = { regression_temp = 10 }
+
+                                    if = {
+                                        limit = {
+                                            check_variable = { laborers_sol > 1 }
+                                        }
+                                        add_to_variable = { laborers_sol_progress = regression_temp }
+                                    }
+                                    else_if = {
+                                        limit = {
+                                            check_variable = { laborers_sol_progress < 0 }
+                                        }
+                                        set_variable = { laborers_sol_progress = 0 }
+                                    }
+                                    set_variable = { laborers_money = 0 }
+                                }
+                                else_if = {
+                                    limit = {
+                                        check_variable = { laborers_money > laborers_needs_spending }
+                                    }
+                                    set_temp_variable = { progression_temp = laborers_money }
+                                    subtract_from_temp_variable = { progression_temp = laborers_needs_spending }
+                                    divide_temp_variable = { progression_temp = laborers_needs_spending }
+                                    multiply_temp_variable = { progression_temp = 10 }
+
+                                    add_to_variable = { laborers_sol_progress = progression_temp }
+                                    set_variable = { laborers_money = laborers_needs_spending }
+                                }
+
+                                if = {
+                                    limit = {
+                                        check_variable = { laborers_sol_progress > 0.999 }
+                                    }
+                                    if = {
+                                        limit = {
+                                            check_variable = { laborers_sol_progress > 5 }
+                                        }
+                                        set_variable = { laborers_sol_progress = 5 }
+                                    }
+                                    set_temp_variable = { progression_temp = laborers_sol_progress }
+                                    subtract_from_temp_variable = { progression_temp = 0.5 }
+                                    round_temp_variable = progression_temp
+
+                                    subtract_from_variable = { laborers_sol_progress = progression_temp }
+                                    add_to_variable = { laborers_sol = progression_temp }
+                                }
+                                else_if = {
+                                    limit = {
+                                        check_variable = { laborers_sol_progress < -0.999 }
+                                    }
+                                    if = {
+                                        limit = {
+                                            check_variable = { regression_temp < -5 }
+                                        }
+                                        set_variable = { laborers_sol_progress = -5 }
+                                    }
+                                    set_temp_variable = { regression_temp = laborers_sol_progress }
+                                    add_to_temp_variable = { regression_temp = 0.5 }
+                                    round_temp_variable = regression_temp
+
+                                    subtract_from_variable = { laborers_sol_progress = regression_temp }
+                                    add_to_variable = { laborers_sol = regression_temp }
+                                }
+
+                                if = {
+                                    limit = {
+                                        check_variable = { laborers_sol < 1 }
+                                    }
+                                    set_variable = { laborers_sol = 1 }
+                                }
+                            #
+                            #Workers
+                                if = {
+                                    limit = {
+                                        check_variable = { workers_money < 0 }
+                                    }
+                                    set_temp_variable = { regression_temp = workers_money }
+                                    divide_temp_variable = { regression_temp = workers_needs_spending }
+                                    multiply_temp_variable = { regression_temp = 10 }
+
+                                    if = {
+                                        limit = {
+                                            check_variable = { workers_sol > 1 }
+                                        }
+                                        add_to_variable = { workers_sol_progress = regression_temp }
+                                    }
+                                    else_if = {
+                                        limit = {
+                                            check_variable = { workers_sol_progress < 0 }
+                                        }
+                                        set_variable = { workers_sol_progress = 0 }
+                                    }
+                                    set_variable = { workers_money = 0 }
+                                }
+                                else_if = {
+                                    limit = {
+                                        check_variable = { workers_money > workers_needs_spending }
+                                    }
+                                    set_temp_variable = { progression_temp = workers_money }
+                                    subtract_from_temp_variable = { progression_temp = workers_needs_spending }
+                                    divide_temp_variable = { progression_temp = workers_needs_spending }
+                                    multiply_temp_variable = { progression_temp = 10 }
+
+                                    add_to_variable = { workers_sol_progress = progression_temp }
+                                    set_variable = { workers_money = workers_needs_spending }
+                                }
+
+                                if = {
+                                    limit = {
+                                        check_variable = { workers_sol_progress > 0.999 }
+                                    }
+                                    if = {
+                                        limit = {
+                                            check_variable = { workers_sol_progress > 5 }
+                                        }
+                                        set_variable = { workers_sol_progress = 5 }
+                                    }
+                                    set_temp_variable = { progression_temp = workers_sol_progress }
+                                    subtract_from_temp_variable = { progression_temp = 0.5 }
+                                    round_temp_variable = progression_temp
+
+                                    subtract_from_variable = { workers_sol_progress = progression_temp }
+                                    add_to_variable = { workers_sol = progression_temp }
+                                }
+                                else_if = {
+                                    limit = {
+                                        check_variable = { workers_sol_progress < -0.999 }
+                                    }
+                                    if = {
+                                        limit = {
+                                            check_variable = { regression_temp < -5 }
+                                        }
+                                        set_variable = { workers_sol_progress = -5 }
+                                    }
+                                    set_temp_variable = { regression_temp = workers_sol_progress }
+                                    add_to_temp_variable = { regression_temp = 0.5 }
+                                    round_temp_variable = regression_temp
+
+                                    subtract_from_variable = { workers_sol_progress = regression_temp }
+                                    add_to_variable = { workers_sol = regression_temp }
+                                }
+
+                                if = {
+                                    limit = {
+                                        check_variable = { workers_sol < 1 }
+                                    }
+                                    set_variable = { workers_sol = 1 }
+                                }
+                            #
+                            #Professionals
+                                if = {
+                                    limit = {
+                                        check_variable = { professionals_money < 0 }
+                                    }
+                                    set_temp_variable = { regression_temp = professionals_money }
+                                    divide_temp_variable = { regression_temp = professionals_needs_spending }
+                                    multiply_temp_variable = { regression_temp = 10 }
+
+                                    if = {
+                                        limit = {
+                                            check_variable = { professionals_sol > 1 }
+                                        }
+                                        add_to_variable = { professionals_sol_progress = regression_temp }
+                                    }
+                                    else_if = {
+                                        limit = {
+                                            check_variable = { professionals_sol_progress < 0 }
+                                        }
+                                        set_variable = { professionals_sol_progress = 0 }
+                                    }
+                                    set_variable = { professionals_money = 0 }
+                                }
+                                else_if = {
+                                    limit = {
+                                        check_variable = { professionals_money > professionals_needs_spending }
+                                    }
+                                    set_temp_variable = { progression_temp = professionals_money }
+                                    subtract_from_temp_variable = { progression_temp = professionals_needs_spending }
+                                    divide_temp_variable = { progression_temp = professionals_needs_spending }
+                                    multiply_temp_variable = { progression_temp = 10 }
+
+                                    add_to_variable = { professionals_sol_progress = progression_temp }
+                                    set_variable = { professionals_money = professionals_needs_spending }
+                                }
+
+                                if = {
+                                    limit = {
+                                        check_variable = { professionals_sol_progress > 0.999 }
+                                    }
+                                    if = {
+                                        limit = {
+                                            check_variable = { professionals_sol_progress > 5 }
+                                        }
+                                        set_variable = { professionals_sol_progress = 5 }
+                                    }
+                                    set_temp_variable = { progression_temp = professionals_sol_progress }
+                                    subtract_from_temp_variable = { progression_temp = 0.5 }
+                                    round_temp_variable = progression_temp
+
+                                    subtract_from_variable = { professionals_sol_progress = progression_temp }
+                                    add_to_variable = { professionals_sol = progression_temp }
+                                }
+                                else_if = {
+                                    limit = {
+                                        check_variable = { professionals_sol_progress < -0.999 }
+                                    }
+                                    if = {
+                                        limit = {
+                                            check_variable = { regression_temp < -5 }
+                                        }
+                                        set_variable = { professionals_sol_progress = -5 }
+                                    }
+                                    set_temp_variable = { regression_temp = professionals_sol_progress }
+                                    add_to_temp_variable = { regression_temp = 0.5 }
+                                    round_temp_variable = regression_temp
+
+                                    subtract_from_variable = { professionals_sol_progress = regression_temp }
+                                    add_to_variable = { professionals_sol = regression_temp }
+                                }
+
+                                if = {
+                                    limit = {
+                                        check_variable = { professionals_sol < 1 }
+                                    }
+                                    set_variable = { professionals_sol = 1 }
+                                }
+                            #
+                            #Specialists
+                                if = {
+                                    limit = {
+                                        check_variable = { specialists_money < 0 }
+                                    }
+                                    set_temp_variable = { regression_temp = specialists_money }
+                                    divide_temp_variable = { regression_temp = specialists_needs_spending }
+                                    multiply_temp_variable = { regression_temp = 10 }
+
+                                    if = {
+                                        limit = {
+                                            check_variable = { specialists_sol > 1 }
+                                        }
+                                        add_to_variable = { specialists_sol_progress = regression_temp }
+                                    }
+                                    else_if = {
+                                        limit = {
+                                            check_variable = { specialists_sol_progress < 0 }
+                                        }
+                                        set_variable = { specialists_sol_progress = 0 }
+                                    }
+                                    set_variable = { specialists_money = 0 }
+                                }
+                                else_if = {
+                                    limit = {
+                                        check_variable = { specialists_money > specialists_needs_spending }
+                                    }
+                                    set_temp_variable = { progression_temp = specialists_money }
+                                    subtract_from_temp_variable = { progression_temp = specialists_needs_spending }
+                                    divide_temp_variable = { progression_temp = specialists_needs_spending }
+                                    multiply_temp_variable = { progression_temp = 10 }
+
+                                    add_to_variable = { specialists_sol_progress = progression_temp }
+                                    set_variable = { specialists_money = specialists_needs_spending }
+                                }
+
+                                if = {
+                                    limit = {
+                                        check_variable = { specialists_sol_progress > 0.999 }
+                                    }
+                                    if = {
+                                        limit = {
+                                            check_variable = { specialists_sol_progress > 5 }
+                                        }
+                                        set_variable = { specialists_sol_progress = 5 }
+                                    }
+                                    set_temp_variable = { progression_temp = specialists_sol_progress }
+                                    subtract_from_temp_variable = { progression_temp = 0.5 }
+                                    round_temp_variable = progression_temp
+
+                                    subtract_from_variable = { specialists_sol_progress = progression_temp }
+                                    add_to_variable = { specialists_sol = progression_temp }
+                                }
+                                else_if = {
+                                    limit = {
+                                        check_variable = { specialists_sol_progress < -0.999 }
+                                    }
+                                    if = {
+                                        limit = {
+                                            check_variable = { regression_temp < -5 }
+                                        }
+                                        set_variable = { specialists_sol_progress = -5 }
+                                    }
+                                    set_temp_variable = { regression_temp = specialists_sol_progress }
+                                    add_to_temp_variable = { regression_temp = 0.5 }
+                                    round_temp_variable = regression_temp
+
+                                    subtract_from_variable = { specialists_sol_progress = regression_temp }
+                                    add_to_variable = { specialists_sol = regression_temp }
+                                }
+
+                                if = {
+                                    limit = {
+                                        check_variable = { specialists_sol < 1 }
+                                    }
+                                    set_variable = { specialists_sol = 1 }
+                                }
+                            #
+                            #Aristocrats
+                                if = {
+                                    limit = {
+                                        check_variable = { aristocrats_money < 0 }
+                                    }
+                                    set_temp_variable = { regression_temp = aristocrats_money }
+                                    divide_temp_variable = { regression_temp = aristocrats_needs_spending }
+                                    multiply_temp_variable = { regression_temp = 10 }
+
+                                    if = {
+                                        limit = {
+                                            check_variable = { aristocrats_sol > 1 }
+                                        }
+                                        add_to_variable = { aristocrats_sol_progress = regression_temp }
+                                    }
+                                    else_if = {
+                                        limit = {
+                                            check_variable = { aristocrats_sol_progress < 0 }
+                                        }
+                                        set_variable = { aristocrats_sol_progress = 0 }
+                                    }
+                                    set_variable = { aristocrats_money = 0 }
+                                }
+                                else_if = {
+                                    limit = {
+                                        check_variable = { aristocrats_money > aristocrats_needs_spending }
+                                    }
+                                    set_temp_variable = { progression_temp = aristocrats_money }
+                                    subtract_from_temp_variable = { progression_temp = aristocrats_needs_spending }
+                                    divide_temp_variable = { progression_temp = aristocrats_needs_spending }
+                                    multiply_temp_variable = { progression_temp = 10 }
+
+                                    add_to_variable = { aristocrats_sol_progress = progression_temp }
+                                    set_variable = { aristocrats_money = aristocrats_needs_spending }
+                                }
+
+                                if = {
+                                    limit = {
+                                        check_variable = { aristocrats_sol_progress > 0.999 }
+                                    }
+                                    if = {
+                                        limit = {
+                                            check_variable = { aristocrats_sol_progress > 5 }
+                                        }
+                                        set_variable = { aristocrats_sol_progress = 5 }
+                                    }
+                                    set_temp_variable = { progression_temp = aristocrats_sol_progress }
+                                    subtract_from_temp_variable = { progression_temp = 0.5 }
+                                    round_temp_variable = progression_temp
+
+                                    subtract_from_variable = { aristocrats_sol_progress = progression_temp }
+                                    add_to_variable = { aristocrats_sol = progression_temp }
+                                }
+                                else_if = {
+                                    limit = {
+                                        check_variable = { aristocrats_sol_progress < -0.999 }
+                                    }
+                                    if = {
+                                        limit = {
+                                            check_variable = { regression_temp < -5 }
+                                        }
+                                        set_variable = { aristocrats_sol_progress = -5 }
+                                    }
+                                    set_temp_variable = { regression_temp = aristocrats_sol_progress }
+                                    add_to_temp_variable = { regression_temp = 0.5 }
+                                    round_temp_variable = regression_temp
+
+                                    subtract_from_variable = { aristocrats_sol_progress = regression_temp }
+                                    add_to_variable = { aristocrats_sol = regression_temp }
+                                }
+
+                                if = {
+                                    limit = {
+                                        check_variable = { aristocrats_sol < 1 }
+                                    }
+                                    set_variable = { aristocrats_sol = 1 }
+                                }
+                            #
+                            #Capitalists
+                                if = {
+                                    limit = {
+                                        check_variable = { capitalists_money < 0 }
+                                    }
+                                    set_temp_variable = { regression_temp = capitalists_money }
+                                    divide_temp_variable = { regression_temp = capitalists_needs_spending }
+                                    multiply_temp_variable = { regression_temp = 10 }
+
+                                    if = {
+                                        limit = {
+                                            check_variable = { capitalists_sol > 1 }
+                                        }
+                                        add_to_variable = { capitalists_sol_progress = regression_temp }
+                                    }
+                                    else_if = {
+                                        limit = {
+                                            check_variable = { capitalists_sol_progress < 0 }
+                                        }
+                                        set_variable = { capitalists_sol_progress = 0 }
+                                    }
+                                    set_variable = { capitalists_money = 0 }
+                                }
+                                else_if = {
+                                    limit = {
+                                        check_variable = { capitalists_money > capitalists_needs_spending }
+                                    }
+                                    set_temp_variable = { progression_temp = capitalists_money }
+                                    subtract_from_temp_variable = { progression_temp = capitalists_needs_spending }
+                                    divide_temp_variable = { progression_temp = capitalists_needs_spending }
+                                    multiply_temp_variable = { progression_temp = 10 }
+
+                                    add_to_variable = { capitalists_sol_progress = progression_temp }
+                                    set_variable = { capitalists_money = capitalists_needs_spending }
+                                }
+
+                                if = {
+                                    limit = {
+                                        check_variable = { capitalists_sol_progress > 0.999 }
+                                    }
+                                    if = {
+                                        limit = {
+                                            check_variable = { capitalists_sol_progress > 5 }
+                                        }
+                                        set_variable = { capitalists_sol_progress = 5 }
+                                    }
+                                    set_temp_variable = { progression_temp = capitalists_sol_progress }
+                                    subtract_from_temp_variable = { progression_temp = 0.5 }
+                                    round_temp_variable = progression_temp
+
+                                    subtract_from_variable = { capitalists_sol_progress = progression_temp }
+                                    add_to_variable = { capitalists_sol = progression_temp }
+                                }
+                                else_if = {
+                                    limit = {
+                                        check_variable = { capitalists_sol_progress < -0.999 }
+                                    }
+                                    if = {
+                                        limit = {
+                                            check_variable = { regression_temp < -5 }
+                                        }
+                                        set_variable = { capitalists_sol_progress = -5 }
+                                    }
+                                    set_temp_variable = { regression_temp = capitalists_sol_progress }
+                                    add_to_temp_variable = { regression_temp = 0.5 }
+                                    round_temp_variable = regression_temp
+
+                                    subtract_from_variable = { capitalists_sol_progress = regression_temp }
+                                    add_to_variable = { capitalists_sol = regression_temp }
+                                }
+
+                                if = {
+                                    limit = {
+                                        check_variable = { capitalists_sol < 1 }
+                                    }
+                                    set_variable = { capitalists_sol = 1 }
+                                }
+                            #
+                            #Bureaucrats
+                                if = {
+                                    limit = {
+                                        check_variable = { bureaucrats_money < 0 }
+                                    }
+                                    set_temp_variable = { regression_temp = bureaucrats_money }
+                                    divide_temp_variable = { regression_temp = bureaucrats_needs_spending }
+                                    multiply_temp_variable = { regression_temp = 10 }
+
+                                    if = {
+                                        limit = {
+                                            check_variable = { bureaucrats_sol > 1 }
+                                        }
+                                        add_to_variable = { bureaucrats_sol_progress = regression_temp }
+                                    }
+                                    else_if = {
+                                        limit = {
+                                            check_variable = { bureaucrats_sol_progress < 0 }
+                                        }
+                                        set_variable = { bureaucrats_sol_progress = 0 }
+                                    }
+                                    set_variable = { bureaucrats_money = 0 }
+                                }
+                                else_if = {
+                                    limit = {
+                                        check_variable = { bureaucrats_money > bureaucrats_needs_spending }
+                                    }
+                                    set_temp_variable = { progression_temp = bureaucrats_money }
+                                    subtract_from_temp_variable = { progression_temp = bureaucrats_needs_spending }
+                                    divide_temp_variable = { progression_temp = bureaucrats_needs_spending }
+                                    multiply_temp_variable = { progression_temp = 10 }
+
+                                    add_to_variable = { bureaucrats_sol_progress = progression_temp }
+                                    set_variable = { bureaucrats_money = bureaucrats_needs_spending }
+                                }
+
+                                if = {
+                                    limit = {
+                                        check_variable = { bureaucrats_sol_progress > 0.999 }
+                                    }
+                                    if = {
+                                        limit = {
+                                            check_variable = { bureaucrats_sol_progress > 5 }
+                                        }
+                                        set_variable = { bureaucrats_sol_progress = 5 }
+                                    }
+                                    set_temp_variable = { progression_temp = bureaucrats_sol_progress }
+                                    subtract_from_temp_variable = { progression_temp = 0.5 }
+                                    round_temp_variable = progression_temp
+
+                                    subtract_from_variable = { bureaucrats_sol_progress = progression_temp }
+                                    add_to_variable = { bureaucrats_sol = progression_temp }
+                                }
+                                else_if = {
+                                    limit = {
+                                        check_variable = { bureaucrats_sol_progress < -0.999 }
+                                    }
+                                    if = {
+                                        limit = {
+                                            check_variable = { regression_temp < -5 }
+                                        }
+                                        set_variable = { bureaucrats_sol_progress = -5 }
+                                    }
+                                    set_temp_variable = { regression_temp = bureaucrats_sol_progress }
+                                    add_to_temp_variable = { regression_temp = 0.5 }
+                                    round_temp_variable = regression_temp
+
+                                    subtract_from_variable = { bureaucrats_sol_progress = regression_temp }
+                                    add_to_variable = { bureaucrats_sol = regression_temp }
+                                }
+
+                                if = {
+                                    limit = {
+                                        check_variable = { bureaucrats_sol < 1 }
+                                    }
+                                    set_variable = { bureaucrats_sol = 1 }
+                                }
+                            #
+                            #Soldiers
+                                if = {
+                                    limit = {
+                                        check_variable = { soldiers_money < 0 }
+                                    }
+                                    set_temp_variable = { regression_temp = soldiers_money }
+                                    divide_temp_variable = { regression_temp = soldiers_needs_spending }
+                                    multiply_temp_variable = { regression_temp = 10 }
+
+                                    if = {
+                                        limit = {
+                                            check_variable = { soldiers_sol > 1 }
+                                        }
+                                        add_to_variable = { soldiers_sol_progress = regression_temp }
+                                    }
+                                    else_if = {
+                                        limit = {
+                                            check_variable = { soldiers_sol_progress < 0 }
+                                        }
+                                        set_variable = { soldiers_sol_progress = 0 }
+                                    }
+                                    set_variable = { soldiers_money = 0 }
+                                }
+                                else_if = {
+                                    limit = {
+                                        check_variable = { soldiers_money > soldiers_needs_spending }
+                                    }
+                                    set_temp_variable = { progression_temp = soldiers_money }
+                                    subtract_from_temp_variable = { progression_temp = soldiers_needs_spending }
+                                    divide_temp_variable = { progression_temp = soldiers_needs_spending }
+                                    multiply_temp_variable = { progression_temp = 10 }
+
+                                    add_to_variable = { soldiers_sol_progress = progression_temp }
+                                    set_variable = { soldiers_money = soldiers_needs_spending }
+                                }
+
+                                if = {
+                                    limit = {
+                                        check_variable = { soldiers_sol_progress > 0.999 }
+                                    }
+                                    if = {
+                                        limit = {
+                                            check_variable = { soldiers_sol_progress > 5 }
+                                        }
+                                        set_variable = { soldiers_sol_progress = 5 }
+                                    }
+                                    set_temp_variable = { progression_temp = soldiers_sol_progress }
+                                    subtract_from_temp_variable = { progression_temp = 0.5 }
+                                    round_temp_variable = progression_temp
+
+                                    subtract_from_variable = { soldiers_sol_progress = progression_temp }
+                                    add_to_variable = { soldiers_sol = progression_temp }
+                                }
+                                else_if = {
+                                    limit = {
+                                        check_variable = { soldiers_sol_progress < -0.999 }
+                                    }
+                                    if = {
+                                        limit = {
+                                            check_variable = { regression_temp < -5 }
+                                        }
+                                        set_variable = { soldiers_sol_progress = -5 }
+                                    }
+                                    set_temp_variable = { regression_temp = soldiers_sol_progress }
+                                    add_to_temp_variable = { regression_temp = 0.5 }
+                                    round_temp_variable = regression_temp
+
+                                    subtract_from_variable = { soldiers_sol_progress = regression_temp }
+                                    add_to_variable = { soldiers_sol = regression_temp }
+                                }
+
+                                if = {
+                                    limit = {
+                                        check_variable = { soldiers_sol < 1 }
+                                    }
+                                    set_variable = { soldiers_sol = 1 }
+                                }
+                            #
+                        #
+                    #
+                #
+            }
+
+            calc_supply = yes
+            calc_demand = yes
+            get_resource_prices = yes
+
+            every_controlled_state = {
+                buildings_update = yes
+                pops_update = yes
+            }
+        }
+    }
+
     r_reset = {
         #Global Vars
             set_variable = { global.month = 0 }
@@ -748,34 +1711,7 @@
                         }
                         #Buildings Employ Pops
                         for_each_loop = {
-                            array = urban_buildings
-                            value = emp_ind_token
-                            
-                            set_variable = { peasants_employed@var:emp_ind_token = peasants_jobs@var:emp_ind_token }
-                            multiply_variable = { peasants_employed@var:emp_ind_token = multiplier_temp }
-                            set_variable = { laborers_employed@var:emp_ind_token = laborers_jobs@var:emp_ind_token }
-                            multiply_variable = { laborers_employed@var:emp_ind_token = multiplier_temp }
-                            set_variable = { workers_employed@var:emp_ind_token = workers_jobs@var:emp_ind_token }
-                            multiply_variable = { workers_employed@var:emp_ind_token = multiplier_temp }
-                            set_variable = { professionals_employed@var:emp_ind_token = professionals_jobs@var:emp_ind_token }
-                            multiply_variable = { professionals_employed@var:emp_ind_token = multiplier_temp }
-                            set_variable = { specialists_employed@var:emp_ind_token = specialists_jobs@var:emp_ind_token }
-                            multiply_variable = { specialists_employed@var:emp_ind_token = multiplier_temp }
-                            set_variable = { aristocrats_employed@var:emp_ind_token = aristocrats_jobs@var:emp_ind_token }
-                            multiply_variable = { aristocrats_employed@var:emp_ind_token = multiplier_temp }
-                            set_variable = { capitalists_employed@var:emp_ind_token = capitalists_jobs@var:emp_ind_token }
-                            multiply_variable = { capitalists_employed@var:emp_ind_token = multiplier_temp }
-                            
-                            add_to_variable = { peasants_employed = peasants_employed@var:emp_ind_token }
-                            add_to_variable = { laborers_employed = laborers_employed@var:emp_ind_token }
-                            add_to_variable = { workers_employed = workers_employed@var:emp_ind_token }
-                            add_to_variable = { professionals_employed = professionals_employed@var:emp_ind_token }
-                            add_to_variable = { specialists_employed = specialists_employed@var:emp_ind_token }
-                            add_to_variable = { aristocrats_employed = aristocrats_employed@var:emp_ind_token }
-                            add_to_variable = { capitalists_employed = capitalists_employed@var:emp_ind_token }
-                        }
-                        for_each_loop = {
-                            array = rural_buildings
+                            array = buildings
                             value = emp_ind_token
                             if = {
                                 limit = {
@@ -988,24 +1924,7 @@
 
                 #Standard of Living Setup
                     for_each_loop = {
-                        array = urban_buildings
-                        value = bu_token
-
-                        set_temp_variable = { prod_cap = productivity@var:bu_token }
-                        multiply_temp_variable = { prod_cap = 0.95 }
-                        if = {
-                            limit = {
-                                check_variable = { prod_cap > 0 }
-                            }
-                            set_temp_variable = { building_token = bu_token }
-                            set_temp_variable = { wage_change_temp = prod_cap }
-                            subtract_from_temp_variable = { wage_change_temp = average_wage@var:building_token }
-                            change_building_avg_wage = yes
-                        }
-                        building_update_finances = yes
-                    }
-                    for_each_loop = {
-                        array = rural_buildings
+                        array = buildings
                         value = bu_token
 
                         set_temp_variable = { prod_cap = productivity@var:bu_token }
@@ -1301,27 +2220,7 @@
 
 			#Industries
 			for_each_loop = {
-				array = urban_buildings
-				value = pops_bld_token
-
-				add_to_variable = { peasants_employed = peasants_employed@var:pops_bld_token }
-				add_to_variable = { laborers_employed = laborers_employed@var:pops_bld_token }
-				add_to_variable = { workers_employed = workers_employed@var:pops_bld_token }
-				add_to_variable = { professionals_employed = professionals_employed@var:pops_bld_token }
-				add_to_variable = { specialists_employed = specialists_employed@var:pops_bld_token }
-				add_to_variable = { aristocrats_employed = aristocrats_employed@var:pops_bld_token }
-				add_to_variable = { capitalists_employed = capitalists_employed@var:pops_bld_token }
-
-				add_to_variable = { peasants_jobs = peasants_jobs@var:pops_bld_token }
-				add_to_variable = { laborers_jobs = laborers_jobs@var:pops_bld_token }
-				add_to_variable = { workers_jobs = workers_jobs@var:pops_bld_token }
-				add_to_variable = { professionals_jobs = professionals_jobs@var:pops_bld_token }
-				add_to_variable = { specialists_jobs = specialists_jobs@var:pops_bld_token }
-				add_to_variable = { aristocrats_jobs = aristocrats_jobs@var:pops_bld_token }
-				add_to_variable = { capitalists_jobs = capitalists_jobs@var:pops_bld_token }
-			}
-			for_each_loop = {
-				array = rural_buildings
+				array = buildings
 				value = pops_bld_token
 
 				add_to_variable = { peasants_employed = peasants_employed@var:pops_bld_token }
@@ -1591,19 +2490,7 @@
 
 			#Buildings
 			for_each_loop = {
-				array = urban_buildings
-				value = pops_bld_token
-
-				add_to_variable = { peasants_earnings = peasants_payroll@var:pops_bld_token }
-				add_to_variable = { laborers_earnings = laborers_payroll@var:pops_bld_token }
-				add_to_variable = { workers_earnings = workers_payroll@var:pops_bld_token }
-				add_to_variable = { professionals_earnings = professionals_payroll@var:pops_bld_token }
-				add_to_variable = { specialists_earnings = specialists_payroll@var:pops_bld_token }
-				add_to_variable = { aristocrats_earnings = aristocrats_payroll@var:pops_bld_token }
-				add_to_variable = { capitalists_earnings = capitalists_payroll@var:pops_bld_token }
-			}
-			for_each_loop = {
-				array = rural_buildings
+				array = buildings
 				value = pops_bld_token
 
 				add_to_variable = { peasants_earnings = peasants_payroll@var:pops_bld_token }
@@ -3493,6 +4380,7 @@
     reload_building_array = {
         clear_array = urban_buildings
         clear_array = rural_buildings
+        clear_array = buildings
         for_each_loop = {
             array = global.urban_building_token_array
             value = bld_token
@@ -3501,6 +4389,7 @@
                     check_variable = { size@var:bld_token > 0 }
                 }
                 add_to_array = { urban_buildings = bld_token }
+                add_to_array = { buildings = bld_token }
             }
         }
         for_each_loop = {
@@ -3511,6 +4400,7 @@
                     check_variable = { size@var:bld_token > 0 }
                 }
                 add_to_array = { rural_buildings = bld_token }
+                add_to_array = { buildings = bld_token }
             }
         }
     }
@@ -3521,18 +4411,7 @@
 		set_variable = { employed_buildings = 0 }
 
 		for_each_loop = {
-			array = urban_buildings
-			value = bu_token
-			index = ind
-			break = ind_break
-
-			building_update = yes
-
-			add_to_variable = { jobs_buildings = jobs@var:bu_token }
-			add_to_variable = { employed_buildings = employed@var:bu_token }
-		}
-		for_each_loop = {
-			array = rural_buildings
+			array = buildings
 			value = bu_token
 			index = ind
 			break = ind_break
@@ -4221,103 +5100,103 @@
 		#
 
         #Capacities
-			set_variable = { industrial_capacity_use@var:b_type = global.building_industrial_capacity_use@var:bu_token }
-            multiply_variable = { industrial_capacity_use@var:b_type = size@var:b_type }
+			set_variable = { industrial_capacity_use@var:bu_token = global.building_industrial_capacity_use@var:bu_token }
+            multiply_variable = { industrial_capacity_use@var:bu_token = size@var:bu_token }
 
-            set_variable = { shipping_capacity@var:b_type = 0 }
-            set_variable = { industrial_capacity@var:b_type = 0 }
+            set_variable = { shipping_capacity@var:bu_token = 0 }
+            set_variable = { industrial_capacity@var:bu_token = 0 }
 			if = { #Basic
 				limit = {
 					check_variable = { production_method@var:bu_token = 0 }
 				}
-				set_variable = { shipping_capacity@var:b_type = global.building_basic_output_shipping_capacity@var:bu_token }
-				set_variable = { industrial_capacity@var:b_type = global.building_basic_output_industrial_capacity@var:bu_token }
+				set_variable = { shipping_capacity@var:bu_token = global.building_basic_output_shipping_capacity@var:bu_token }
+				set_variable = { industrial_capacity@var:bu_token = global.building_basic_output_industrial_capacity@var:bu_token }
 			}
 			else_if = { #Advanced
 				limit = {
 					check_variable = { production_method@var:bu_token = 1 }
 				}
-				set_variable = { shipping_capacity@var:b_type = global.building_advanced_output_shipping_capacity@var:bu_token }
-				set_variable = { industrial_capacity@var:b_type = global.building_advanced_output_industrial_capacity@var:bu_token }
+				set_variable = { shipping_capacity@var:bu_token = global.building_advanced_output_shipping_capacity@var:bu_token }
+				set_variable = { industrial_capacity@var:bu_token = global.building_advanced_output_industrial_capacity@var:bu_token }
 			}
 			else_if = { #Industrialized
 				limit = {
 					check_variable = { production_method@var:bu_token = 2 }
 				}
-				set_variable = { shipping_capacity@var:b_type = global.building_industrialized_output_shipping_capacity@var:bu_token }
-				set_variable = { industrial_capacity@var:b_type = global.building_industrialized_output_industrial_capacity@var:bu_token }
+				set_variable = { shipping_capacity@var:bu_token = global.building_industrialized_output_shipping_capacity@var:bu_token }
+				set_variable = { industrial_capacity@var:bu_token = global.building_industrialized_output_industrial_capacity@var:bu_token }
 			}
 			else_if = { #Mechanized
 				limit = {
 					check_variable = { production_method@var:bu_token = 3 }
 				}
-				set_variable = { shipping_capacity@var:b_type = global.building_mechanized_output_shipping_capacity@var:bu_token }
-				set_variable = { industrial_capacity@var:b_type = global.building_mechanized_output_industrial_capacity@var:bu_token }
+				set_variable = { shipping_capacity@var:bu_token = global.building_mechanized_output_shipping_capacity@var:bu_token }
+				set_variable = { industrial_capacity@var:bu_token = global.building_mechanized_output_industrial_capacity@var:bu_token }
 			}
 			else_if = { #Electrified
 				limit = {
 					check_variable = { production_method@var:bu_token = 4 }
 				}
-				set_variable = { shipping_capacity@var:b_type = global.building_electrified_output_shipping_capacity@var:bu_token }
-				set_variable = { industrial_capacity@var:b_type = global.building_electrified_output_industrial_capacity@var:bu_token }
+				set_variable = { shipping_capacity@var:bu_token = global.building_electrified_output_shipping_capacity@var:bu_token }
+				set_variable = { industrial_capacity@var:bu_token = global.building_electrified_output_industrial_capacity@var:bu_token }
 			}
 			else_if = { #Motorized
 				limit = {
 					check_variable = { production_method@var:bu_token = 5 }
 				}
-				set_variable = { shipping_capacity@var:b_type = global.building_motorized_output_shipping_capacity@var:bu_token }
-				set_variable = { industrial_capacity@var:b_type = global.building_motorized_output_industrial_capacity@var:bu_token }
+				set_variable = { shipping_capacity@var:bu_token = global.building_motorized_output_shipping_capacity@var:bu_token }
+				set_variable = { industrial_capacity@var:bu_token = global.building_motorized_output_industrial_capacity@var:bu_token }
 			}
 			else_if = { #Modernized
 				limit = {
 					check_variable = { production_method@var:bu_token = 6 }
 				}
-				set_variable = { shipping_capacity@var:b_type = global.building_modernized_output_shipping_capacity@var:bu_token }
-				set_variable = { industrial_capacity@var:b_type = global.building_modernized_output_industrial_capacity@var:bu_token }
+				set_variable = { shipping_capacity@var:bu_token = global.building_modernized_output_shipping_capacity@var:bu_token }
+				set_variable = { industrial_capacity@var:bu_token = global.building_modernized_output_industrial_capacity@var:bu_token }
 			}
 			else_if = { #Roboticized
 				limit = {
 					check_variable = { production_method@var:bu_token = 7 }
 				}
-				set_variable = { shipping_capacity@var:b_type = global.building_roboticized_output_shipping_capacity@var:bu_token }
-				set_variable = { industrial_capacity@var:b_type = global.building_roboticized_output_industrial_capacity@var:bu_token }
+				set_variable = { shipping_capacity@var:bu_token = global.building_roboticized_output_shipping_capacity@var:bu_token }
+				set_variable = { industrial_capacity@var:bu_token = global.building_roboticized_output_industrial_capacity@var:bu_token }
 			}
 			else_if = { #Computerized
 				limit = {
 					check_variable = { production_method@var:bu_token = 8 }
 				}
-				set_variable = { shipping_capacity@var:b_type = global.building_computerized_output_shipping_capacity@var:bu_token }
-				set_variable = { industrial_capacity@var:b_type = global.building_computerized_output_industrial_capacity@var:bu_token }
+				set_variable = { shipping_capacity@var:bu_token = global.building_computerized_output_shipping_capacity@var:bu_token }
+				set_variable = { industrial_capacity@var:bu_token = global.building_computerized_output_industrial_capacity@var:bu_token }
 			}
 			else_if = { #Digitalized
 				limit = {
 					check_variable = { production_method@var:bu_token = 9 }
 				}
-				set_variable = { shipping_capacity@var:b_type = global.building_digitalized_output_shipping_capacity@var:bu_token }
-				set_variable = { industrial_capacity@var:b_type = global.building_digitalized_output_industrial_capacity@var:bu_token }
+				set_variable = { shipping_capacity@var:bu_token = global.building_digitalized_output_shipping_capacity@var:bu_token }
+				set_variable = { industrial_capacity@var:bu_token = global.building_digitalized_output_industrial_capacity@var:bu_token }
 			}
 			else_if = { #Automatized
 				limit = {
 					check_variable = { production_method@var:bu_token = 10 }
 				}
-				set_variable = { shipping_capacity@var:b_type = global.building_automatized_output_shipping_capacity@var:bu_token }
-				set_variable = { industrial_capacity@var:b_type = global.building_automatized_output_industrial_capacity@var:bu_token }
+				set_variable = { shipping_capacity@var:bu_token = global.building_automatized_output_shipping_capacity@var:bu_token }
+				set_variable = { industrial_capacity@var:bu_token = global.building_automatized_output_industrial_capacity@var:bu_token }
 			}
 			else_if = { #Futurized
 				limit = {
 					check_variable = { production_method@var:bu_token = 11 }
 				}
-				set_variable = { shipping_capacity@var:b_type = global.building_futurized_output_shipping_capacity@var:bu_token }
-				set_variable = { industrial_capacity@var:b_type = global.building_futurized_output_industrial_capacity@var:bu_token }
+				set_variable = { shipping_capacity@var:bu_token = global.building_futurized_output_shipping_capacity@var:bu_token }
+				set_variable = { industrial_capacity@var:bu_token = global.building_futurized_output_industrial_capacity@var:bu_token }
 			}
             
-            multiply_variable = { shipping_capacity@var:b_type = size@var:b_type }
-            multiply_variable = { industrial_capacity@var:b_type = size@var:b_type }
+            multiply_variable = { shipping_capacity@var:bu_token = size@var:bu_token }
+            multiply_variable = { industrial_capacity@var:bu_token = size@var:bu_token }
             
-            multiply_variable = { shipping_capacity@var:b_type = production_percentage@var:b_type }
-            divide_variable = { shipping_capacity@var:b_type = 100 }
-            multiply_variable = { industrial_capacity@var:b_type = production_percentage@var:b_type }
-            divide_variable = { industrial_capacity@var:b_type = 100 }
+            multiply_variable = { shipping_capacity@var:bu_token = production_percentage@var:bu_token }
+            divide_variable = { shipping_capacity@var:bu_token = 100 }
+            multiply_variable = { industrial_capacity@var:bu_token = production_percentage@var:bu_token }
+            divide_variable = { industrial_capacity@var:bu_token = 100 }
         #
     }
     building_update_finances = {
@@ -4655,15 +5534,7 @@
             set_variable = { industrial_capacity_used = 0 }
 
             for_each_loop = {
-                array = urban_buildings
-                value = b_type
-
-                add_to_variable = { industrial_capacity_used = industrial_capacity_use@var:b_type }
-                add_to_variable = { PREV.shipping_capacity = shipping_capacity@var:b_type }
-                add_to_variable = { industrial_capacity = industrial_capacity@var:b_type }
-            }
-            for_each_loop = {
-                array = rural_buildings
+                array = buildings
                 value = b_type
 
                 add_to_variable = { industrial_capacity_used = industrial_capacity_use@var:b_type }
@@ -4692,192 +5563,7 @@
             }
             
             for_each_loop = {
-                array = urban_buildings
-                value = b_type
-                
-                if = { #Basic
-                    limit = {
-                        check_variable = { production_method@var:b_type = 0 }
-                    }
-                    set_temp_variable = { input_rtype = global.building_basic_input_resource_1@var:b_type }
-                    add_to_variable = { demand@var:input_rtype = input_1_amount@var:b_type }
-                    set_temp_variable = { input_rtype = global.building_basic_input_resource_2@var:b_type }
-                    add_to_variable = { demand@var:input_rtype = input_2_amount@var:b_type }
-                    set_temp_variable = { input_rtype = global.building_basic_input_resource_3@var:b_type }
-                    add_to_variable = { demand@var:input_rtype = input_3_amount@var:b_type }
-                    set_temp_variable = { input_rtype = global.building_basic_input_resource_4@var:b_type }
-                    add_to_variable = { demand@var:input_rtype = input_4_amount@var:b_type }
-                    set_temp_variable = { input_rtype = global.building_basic_input_resource_5@var:b_type }
-                    add_to_variable = { demand@var:input_rtype = input_5_amount@var:b_type }
-                }
-                else_if = { #Advanced
-                    limit = {
-                        check_variable = { production_method@var:b_type = 1 }
-                    }
-                    set_temp_variable = { input_rtype = global.building_advanced_input_resource_1@var:b_type }
-                    add_to_variable = { demand@var:input_rtype = input_1_amount@var:b_type }
-                    set_temp_variable = { input_rtype = global.building_advanced_input_resource_2@var:b_type }
-                    add_to_variable = { demand@var:input_rtype = input_2_amount@var:b_type }
-                    set_temp_variable = { input_rtype = global.building_advanced_input_resource_3@var:b_type }
-                    add_to_variable = { demand@var:input_rtype = input_3_amount@var:b_type }
-                    set_temp_variable = { input_rtype = global.building_advanced_input_resource_4@var:b_type }
-                    add_to_variable = { demand@var:input_rtype = input_4_amount@var:b_type }
-                    set_temp_variable = { input_rtype = global.building_advanced_input_resource_5@var:b_type }
-                    add_to_variable = { demand@var:input_rtype = input_5_amount@var:b_type }
-                }
-                else_if = { #Industrialized
-                    limit = {
-                        check_variable = { production_method@var:b_type = 2 }
-                    }
-                    set_temp_variable = { input_rtype = global.building_industrialized_input_resource_1@var:b_type }
-                    add_to_variable = { demand@var:input_rtype = input_1_amount@var:b_type }
-                    set_temp_variable = { input_rtype = global.building_industrialized_input_resource_2@var:b_type }
-                    add_to_variable = { demand@var:input_rtype = input_2_amount@var:b_type }
-                    set_temp_variable = { input_rtype = global.building_industrialized_input_resource_3@var:b_type }
-                    add_to_variable = { demand@var:input_rtype = input_3_amount@var:b_type }
-                    set_temp_variable = { input_rtype = global.building_industrialized_input_resource_4@var:b_type }
-                    add_to_variable = { demand@var:input_rtype = input_4_amount@var:b_type }
-                    set_temp_variable = { input_rtype = global.building_industrialized_input_resource_5@var:b_type }
-                    add_to_variable = { demand@var:input_rtype = input_5_amount@var:b_type }
-                }
-                else_if = { #Mechanized
-                    limit = {
-                        check_variable = { production_method@var:b_type = 3 }
-                    }
-                    set_temp_variable = { input_rtype = global.building_mechanized_input_resource_1@var:b_type }
-                    add_to_variable = { demand@var:input_rtype = input_1_amount@var:b_type }
-                    set_temp_variable = { input_rtype = global.building_mechanized_input_resource_2@var:b_type }
-                    add_to_variable = { demand@var:input_rtype = input_2_amount@var:b_type }
-                    set_temp_variable = { input_rtype = global.building_mechanized_input_resource_3@var:b_type }
-                    add_to_variable = { demand@var:input_rtype = input_3_amount@var:b_type }
-                    set_temp_variable = { input_rtype = global.building_mechanized_input_resource_4@var:b_type }
-                    add_to_variable = { demand@var:input_rtype = input_4_amount@var:b_type }
-                    set_temp_variable = { input_rtype = global.building_mechanized_input_resource_5@var:b_type }
-                    add_to_variable = { demand@var:input_rtype = input_5_amount@var:b_type }
-                }
-                else_if = { #Electrified
-                    limit = {
-                        check_variable = { production_method@var:b_type = 4 }
-                    }
-                    set_temp_variable = { input_rtype = global.building_electrified_input_resource_1@var:b_type }
-                    add_to_variable = { demand@var:input_rtype = input_1_amount@var:b_type }
-                    set_temp_variable = { input_rtype = global.building_electrified_input_resource_2@var:b_type }
-                    add_to_variable = { demand@var:input_rtype = input_2_amount@var:b_type }
-                    set_temp_variable = { input_rtype = global.building_electrified_input_resource_3@var:b_type }
-                    add_to_variable = { demand@var:input_rtype = input_3_amount@var:b_type }
-                    set_temp_variable = { input_rtype = global.building_electrified_input_resource_4@var:b_type }
-                    add_to_variable = { demand@var:input_rtype = input_4_amount@var:b_type }
-                    set_temp_variable = { input_rtype = global.building_electrified_input_resource_5@var:b_type }
-                    add_to_variable = { demand@var:input_rtype = input_5_amount@var:b_type }
-                }
-                else_if = { #Motorized
-                    limit = {
-                        check_variable = { production_method@var:b_type = 5 }
-                    }
-                    set_temp_variable = { input_rtype = global.building_motorized_input_resource_1@var:b_type }
-                    add_to_variable = { demand@var:input_rtype = input_1_amount@var:b_type }
-                    set_temp_variable = { input_rtype = global.building_motorized_input_resource_2@var:b_type }
-                    add_to_variable = { demand@var:input_rtype = input_2_amount@var:b_type }
-                    set_temp_variable = { input_rtype = global.building_motorized_input_resource_3@var:b_type }
-                    add_to_variable = { demand@var:input_rtype = input_3_amount@var:b_type }
-                    set_temp_variable = { input_rtype = global.building_motorized_input_resource_4@var:b_type }
-                    add_to_variable = { demand@var:input_rtype = input_4_amount@var:b_type }
-                    set_temp_variable = { input_rtype = global.building_motorized_input_resource_5@var:b_type }
-                    add_to_variable = { demand@var:input_rtype = input_5_amount@var:b_type }
-                }
-                else_if = { #Modernized
-                    limit = {
-                        check_variable = { production_method@var:b_type = 6 }
-                    }
-                    set_temp_variable = { input_rtype = global.building_modernized_input_resource_1@var:b_type }
-                    add_to_variable = { demand@var:input_rtype = input_1_amount@var:b_type }
-                    set_temp_variable = { input_rtype = global.building_modernized_input_resource_2@var:b_type }
-                    add_to_variable = { demand@var:input_rtype = input_2_amount@var:b_type }
-                    set_temp_variable = { input_rtype = global.building_modernized_input_resource_3@var:b_type }
-                    add_to_variable = { demand@var:input_rtype = input_3_amount@var:b_type }
-                    set_temp_variable = { input_rtype = global.building_modernized_input_resource_4@var:b_type }
-                    add_to_variable = { demand@var:input_rtype = input_4_amount@var:b_type }
-                    set_temp_variable = { input_rtype = global.building_modernized_input_resource_5@var:b_type }
-                    add_to_variable = { demand@var:input_rtype = input_5_amount@var:b_type }
-                }
-                else_if = { #Roboticized
-                    limit = {
-                        check_variable = { production_method@var:b_type = 7 }
-                    }
-                    set_temp_variable = { input_rtype = global.building_roboticized_input_resource_1@var:b_type }
-                    add_to_variable = { demand@var:input_rtype = input_1_amount@var:b_type }
-                    set_temp_variable = { input_rtype = global.building_roboticized_input_resource_2@var:b_type }
-                    add_to_variable = { demand@var:input_rtype = input_2_amount@var:b_type }
-                    set_temp_variable = { input_rtype = global.building_roboticized_input_resource_3@var:b_type }
-                    add_to_variable = { demand@var:input_rtype = input_3_amount@var:b_type }
-                    set_temp_variable = { input_rtype = global.building_roboticized_input_resource_4@var:b_type }
-                    add_to_variable = { demand@var:input_rtype = input_4_amount@var:b_type }
-                    set_temp_variable = { input_rtype = global.building_roboticized_input_resource_5@var:b_type }
-                    add_to_variable = { demand@var:input_rtype = input_5_amount@var:b_type }
-                }
-                else_if = { #Computerized
-                    limit = {
-                        check_variable = { production_method@var:b_type = 8 }
-                    }
-                    set_temp_variable = { input_rtype = global.building_computerized_input_resource_1@var:b_type }
-                    add_to_variable = { demand@var:input_rtype = input_1_amount@var:b_type }
-                    set_temp_variable = { input_rtype = global.building_computerized_input_resource_2@var:b_type }
-                    add_to_variable = { demand@var:input_rtype = input_2_amount@var:b_type }
-                    set_temp_variable = { input_rtype = global.building_computerized_input_resource_3@var:b_type }
-                    add_to_variable = { demand@var:input_rtype = input_3_amount@var:b_type }
-                    set_temp_variable = { input_rtype = global.building_computerized_input_resource_4@var:b_type }
-                    add_to_variable = { demand@var:input_rtype = input_4_amount@var:b_type }
-                    set_temp_variable = { input_rtype = global.building_computerized_input_resource_5@var:b_type }
-                    add_to_variable = { demand@var:input_rtype = input_5_amount@var:b_type }
-                }
-                else_if = { #Digitalized
-                    limit = {
-                        check_variable = { production_method@var:b_type = 9 }
-                    }
-                    set_temp_variable = { input_rtype = global.building_digitalized_input_resource_1@var:b_type }
-                    add_to_variable = { demand@var:input_rtype = input_1_amount@var:b_type }
-                    set_temp_variable = { input_rtype = global.building_digitalized_input_resource_2@var:b_type }
-                    add_to_variable = { demand@var:input_rtype = input_2_amount@var:b_type }
-                    set_temp_variable = { input_rtype = global.building_digitalized_input_resource_3@var:b_type }
-                    add_to_variable = { demand@var:input_rtype = input_3_amount@var:b_type }
-                    set_temp_variable = { input_rtype = global.building_digitalized_input_resource_4@var:b_type }
-                    add_to_variable = { demand@var:input_rtype = input_4_amount@var:b_type }
-                    set_temp_variable = { input_rtype = global.building_digitalized_input_resource_5@var:b_type }
-                    add_to_variable = { demand@var:input_rtype = input_5_amount@var:b_type }
-                }
-                else_if = { #Automatized
-                    limit = {
-                        check_variable = { production_method@var:b_type = 10 }
-                    }
-                    set_temp_variable = { input_rtype = global.building_automatized_input_resource_1@var:b_type }
-                    add_to_variable = { demand@var:input_rtype = input_1_amount@var:b_type }
-                    set_temp_variable = { input_rtype = global.building_automatized_input_resource_2@var:b_type }
-                    add_to_variable = { demand@var:input_rtype = input_2_amount@var:b_type }
-                    set_temp_variable = { input_rtype = global.building_automatized_input_resource_3@var:b_type }
-                    add_to_variable = { demand@var:input_rtype = input_3_amount@var:b_type }
-                    set_temp_variable = { input_rtype = global.building_automatized_input_resource_4@var:b_type }
-                    add_to_variable = { demand@var:input_rtype = input_4_amount@var:b_type }
-                    set_temp_variable = { input_rtype = global.building_automatized_input_resource_5@var:b_type }
-                    add_to_variable = { demand@var:input_rtype = input_5_amount@var:b_type }
-                }
-                else_if = { #Futurized
-                    limit = {
-                        check_variable = { production_method@var:b_type = 11 }
-                    }
-                    set_temp_variable = { input_rtype = global.building_futurized_input_resource_1@var:b_type }
-                    add_to_variable = { demand@var:input_rtype = input_1_amount@var:b_type }
-                    set_temp_variable = { input_rtype = global.building_futurized_input_resource_2@var:b_type }
-                    add_to_variable = { demand@var:input_rtype = input_2_amount@var:b_type }
-                    set_temp_variable = { input_rtype = global.building_futurized_input_resource_3@var:b_type }
-                    add_to_variable = { demand@var:input_rtype = input_3_amount@var:b_type }
-                    set_temp_variable = { input_rtype = global.building_futurized_input_resource_4@var:b_type }
-                    add_to_variable = { demand@var:input_rtype = input_4_amount@var:b_type }
-                    set_temp_variable = { input_rtype = global.building_futurized_input_resource_5@var:b_type }
-                    add_to_variable = { demand@var:input_rtype = input_5_amount@var:b_type }
-                }
-            }
-            for_each_loop = {
-                array = rural_buildings
+                array = buildings
                 value = b_type
                 
                 if = { #Basic
@@ -5091,26 +5777,7 @@
             }
 
             for_each_loop = {
-                array = urban_buildings
-                value = b_type
-
-                set_temp_variable = { building_rtype = global.building_output_resource_1@var:b_type }
-                add_to_variable = { production@var:building_rtype = production_1@var:b_type }
-                
-                set_temp_variable = { building_rtype = global.building_output_resource_2@var:b_type }
-                add_to_variable = { production@var:building_rtype = production_2@var:b_type }
-                
-                set_temp_variable = { building_rtype = global.building_output_resource_3@var:b_type }
-                add_to_variable = { production@var:building_rtype = production_3@var:b_type }
-                
-                set_temp_variable = { building_rtype = global.building_output_resource_4@var:b_type }
-                add_to_variable = { production@var:building_rtype = production_4@var:b_type }
-                
-                set_temp_variable = { building_rtype = global.building_output_resource_5@var:b_type }
-                add_to_variable = { production@var:building_rtype = production_5@var:b_type }
-            }
-            for_each_loop = {
-                array = rural_buildings
+                array = buildings
                 value = b_type
 
                 set_temp_variable = { building_rtype = global.building_output_resource_1@var:b_type }
