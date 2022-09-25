@@ -112,7 +112,7 @@
 		        set_variable = { base_wage = 0 }
                 
                 #Buildings
-			        clear_temp_array = industries_wage_sort
+			        clear_temp_array = buildings_wage_sort
                     for_each_loop = {
                         array = buildings
                         value = om_building
@@ -144,15 +144,15 @@
                             limit = {
                                 check_variable = { productivity@var:om_building > average_wage@var:om_building }
                                 OR = {
-                                    check_variable = { employment_percentage@var:om_building < 1 }
+                                    check_variable = { employment_percentage@var:om_building < 100 }
                                     check_variable = { base_wage@var:om_building < base_wage }
                                 }
                             }
                             set_temp_variable = { wage_change_temp = 0.01 }
                             set_temp_variable = { building_token = om_building }
                             set_temp_variable = { iu_token = building_token }
-                            change_industry_base_wage = yes
-                            industry_update_finances = yes
+                            change_building_base_wage = yes
+                            building_update_finances = yes
                         }
                         
                         if = {
@@ -167,8 +167,8 @@
                                 set_temp_variable = { x_percent_temp = -12 }
                                 set_temp_variable = { building_token = om_building }
                                 set_temp_variable = { iu_token = building_token }
-                                change_industry_employment_by_x_percent = yes
-                                industry_update = yes
+                                change_building_employment_by_x_percent = yes
+                                building_update = yes
                             }
                             if = { #Productivity is Negative, then some layoffs
                                 limit = {
@@ -177,15 +177,15 @@
                                 set_temp_variable = { x_percent_temp = -6 }
                                 set_temp_variable = { building_token = om_building }
                                 set_temp_variable = { iu_token = building_token }
-                                change_industry_employment_by_x_percent = yes
-                                industry_update = yes
+                                change_building_employment_by_x_percent = yes
+                                building_update = yes
                             }
                             else = { #4% of employees leave as a base
                                 set_temp_variable = { x_percent_temp = -4 }
                                 set_temp_variable = { building_token = om_building }
                                 set_temp_variable = { iu_token = building_token }
-                                change_industry_employment_by_x_percent = yes
-                                industry_update = yes
+                                change_building_employment_by_x_percent = yes
+                                building_update = yes
                             }
 
                             #Wages are over productivity therefore cut wages
@@ -200,8 +200,8 @@
                                 }
                                 set_temp_variable = { building_token = om_building }
                                 set_temp_variable = { wage_change_temp = -0.025 }
-                                change_industry_base_wage = yes
-                                industry_update_finances = yes
+                                change_building_base_wage = yes
+                                building_update_finances = yes
                             }
 
                             #Wages are too high
@@ -227,8 +227,8 @@
                                 }
                                 set_temp_variable = { building_token = om_building }
                                 set_temp_variable = { iu_token = building_token }
-                                change_industry_avg_wage = yes
-                                industry_update = yes
+                                change_building_avg_wage = yes
+                                building_update = yes
                             }
                         }
                         
@@ -241,22 +241,40 @@
 
                         #Create a temporary array of industries sorted by wage (highest to lowest)
                         set_temp_variable = { effective_wage_om = base_wage@var:om_building }
+                        if = {
+                            limit = {
+                                OR = {
+                                    check_variable = { om_building = token:building_subsistence_farm }
+                                    check_variable = { om_building = token:building_rice_paddy }
+                                }
+                            }
+                            set_temp_variable = { effective_wage_om = 0 }
+                        }
 
 
                         for_each_loop = {
-                            array = industries_wage_sort
+                            array = buildings_wage_sort
                             index = ii
                             value = vv
                             break = bb
 
                             set_temp_variable = { effective_wage_vv = base_wage@var:vv }
+                            if = {
+                                limit = {
+                                    OR = {
+                                        check_variable = { vv = token:building_subsistence_farm }
+                                        check_variable = { vv = token:building_rice_paddy }
+                                    }
+                                }
+                                set_temp_variable = { effective_wage_vv = 0 }
+                            }
 
                             if = {
                                 limit = {
                                     check_variable = { effective_wage_vv < effective_wage_om }
                                 }
                                 add_to_temp_array = { 
-                                    array = industries_wage_sort 
+                                    array = buildings_wage_sort 
                                     value = om_building
                                     index = ii
                                 }
@@ -267,21 +285,27 @@
                             limit = {
                                 check_variable = { bb = 0 }
                             }
-                            add_to_temp_array = { industries_wage_sort = om_building }
+                            add_to_temp_array = { buildings_wage_sort = om_building }
                         }
                     }
 
 			        pops_update_workforce = yes
 
                     
+                    if = {
+                        limit = {
+                            state = 358
+                        }
+                        log = ""
+                    }
                     #Hiring
                     for_each_loop = {
-                        array = buildings
+                        array = buildings_wage_sort
                         value = om_building
                         if = {
                             limit = {
-                                NOT = { check_variable = { productivity@var:om_building < -0.001 } }
-                                check_variable = { employment_percentage@var:om_building < 1 }
+                                check_variable = { productivity@var:om_building > 0 }
+                                check_variable = { employment_percentage@var:om_building < 100 }
                             }
                             #Hiring Percent
                             set_temp_variable = { x_percent_temp = 100.0 }
@@ -300,12 +324,12 @@
                             }
                             set_temp_variable = { building_token = om_building }
 
-                            change_industry_employment_by_x_percent = yes
+                            change_building_employment_by_x_percent = yes
                         }
 
                         #Adding to average base wage
-                        set_temp_variable = { weighted_base_wage = base_wage@var:om_industry }
-                        multiply_temp_variable = { weighted_base_wage = employed@var:om_industry }
+                        set_temp_variable = { weighted_base_wage = base_wage@var:om_building }
+                        multiply_temp_variable = { weighted_base_wage = employed@var:om_building }
                         add_to_variable = { base_wage = weighted_base_wage }
                     }
                 #
@@ -4553,13 +4577,13 @@
 	}
 
 
-	change_industry_employment_by_x_percent = {
+	change_building_employment_by_x_percent = {
 		#x_percent_temp (0-100), building_token
 		add_to_temp_variable = { x_percent_temp = employment_percentage@var:building_token }
 
-		set_industry_employment_to_x_percent = yes
+		set_building_employment_to_x_percent = yes
 	}
-	set_industry_employment_to_x_percent = {
+	set_building_employment_to_x_percent = {
 		#x_percent_temp (0-100), building_token
 		if = {
 			limit = {
@@ -5005,13 +5029,6 @@
                 divide_variable = { aristocrats_employed@var:building_token = 100 }
                 divide_variable = { capitalists_employed@var:building_token = 100 }
             }
-			multiply_variable = { peasants_employed@var:building_token = employment_percentage@var:building_token }
-			multiply_variable = { laborers_employed@var:building_token = employment_percentage@var:building_token }
-			multiply_variable = { workers_employed@var:building_token = employment_percentage@var:building_token }
-			multiply_variable = { professionals_employed@var:building_token = employment_percentage@var:building_token }
-			multiply_variable = { specialists_employed@var:building_token = employment_percentage@var:building_token }
-			multiply_variable = { aristocrats_employed@var:building_token = employment_percentage@var:building_token }
-			multiply_variable = { capitalists_employed@var:building_token = employment_percentage@var:building_token }
 
 			add_to_variable = { peasants_employed_amount = peasants_employed@var:building_token }
 			add_to_variable = { laborers_employed_amount = laborers_employed@var:building_token }
@@ -9586,6 +9603,14 @@
                 set_variable = { global.building_basic_specialists_employment@token:building_commercial_farm = 0 } #20x
                 set_variable = { global.building_basic_aristocrats_employment@token:building_commercial_farm = 0.2 } #30x
                 set_variable = { global.building_basic_capitalists_employment@token:building_commercial_farm = 0 } #50x
+                
+                # set_variable = { global.building_employment@token:building_commercial_farm = 11.8 } #1x
+                # set_variable = { global.building_employment@token:building_commercial_farm = 8.0 } #2x
+                # set_variable = { global.building_employment@token:building_commercial_farm = 0 } #5x
+                # set_variable = { global.building_employment@token:building_commercial_farm = 0 } #10x
+                # set_variable = { global.building_employment@token:building_commercial_farm = 0 } #20x
+                # set_variable = { global.building_employment@token:building_commercial_farm = 0.2 } #30x
+                # set_variable = { global.building_employment@token:building_commercial_farm = 0 } #50x
             #
             #Advanced
                 set_variable = { global.building_advanced_tech_unlock@token:building_commercial_farm = token:pre_industrial_farms }
