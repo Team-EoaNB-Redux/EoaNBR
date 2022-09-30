@@ -54,11 +54,11 @@ This site is the official respository (cloud) for sharing and cooperating in the
 Get easy access to our open-source development, with just a few quick steps!
 Here's a useful installation video by one of our lead developers: 
 
-**Video Link:** https://www.youtube.com/watch?v=gEEKq-Rwn84</a>
+**Video Link:** https://www.youtube.com/watch?v=gEEKq-Rwn84
 
 ### Links from the Video 
-* **Github Desktop App:** https://desktop.github.com/</a>
-* **Github Repo URL:** https://github.com/team-EoaNB-Redux/EoaNBR</a>
+* **Github Desktop App:** https://desktop.github.com/
+* **Github Repo URL:** https://github.com/team-EoaNB-Redux/EoaNBR
 
 <hr>
 
