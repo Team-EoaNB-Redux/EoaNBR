@@ -110,6 +110,8 @@
 
             every_controlled_state = {
 		        set_variable = { base_wage = 0 }
+
+                r_update_modifiers_state_effects = yes
                 
                 #Buildings
 			        clear_temp_array = buildings_wage_sort
@@ -239,7 +241,7 @@
                             set_variable = { base_wage@var:om_building = global.minimum_base_wage }
                         }
 
-                        #Create a temporary array of industries sorted by wage (highest to lowest)
+                        #Create a temporary array of buildings sorted by wage (highest to lowest)
                         set_temp_variable = { effective_wage_om = base_wage@var:om_building }
                         if = {
                             limit = {
@@ -1158,6 +1160,53 @@
             every_controlled_state = {
                 buildings_update = yes
                 pops_update = yes
+                #Statistics
+                    set_variable = { prev_gdp_amount = gdp_amount }
+                    gdp_update = yes
+						
+                    add_to_array = { 
+                        array = gdp_amount_array
+                        value = gdp_amount
+                        index = 0
+                    }
+                    if = {
+                        limit = {
+                            check_variable = { gdp_amount_array^num > 37 }
+                        }
+                        remove_from_array = { array = gdp_amount_array }
+                    }
+
+                    set_temp_variable = { num_temp = 12 }
+                    if = {
+                        limit = {
+                            check_variable = { gdp_amount_array^num < num_temp }
+                        }
+                        set_temp_variable = { num_temp = gdp_amount_array^num }
+                    }
+                    subtract_from_temp_variable = { num_temp = 1 }
+
+                    set_variable = { gdp_growth = gdp_amount }
+                    if = {
+                        limit = {
+                            OR = {
+                                check_variable = { gdp_amount > 1000 }
+                                check_variable = { gdp_amount_array^num_temp > 1000 }
+                            }
+                        }
+                        set_temp_variable = { gdp_temp = gdp_amount_array^num_temp }
+                        divide_temp_variable = { gdp_temp = 100 }
+                        divide_variable = { gdp_growth = gdp_temp }
+                    }
+                    else = {
+                        set_variable = { gdp_growth = gdp_amount }
+                        multiply_variable = { gdp_growth = 100 }
+                        divide_variable = { gdp_growth = gdp_amount_array^num_temp }
+                    }
+                    subtract_from_variable = { gdp_growth = 100 }
+
+                    
+                    create_state_gdp_graph = yes
+                #
             }
         }
     }
@@ -1236,7 +1285,8 @@
             #Buildings
 		        set_variable = { global.building_money_limit = 1 } #Money limit for an building for its output times the base price of the outputted resource
                 set_variable = { global.minimum_base_wage = 0.01 } #Minimum base wage (not average) for an building
-                set_variable = { global.industries_economy_of_scale_factor = 0.01 } #What bonus gets added to throughput for each size building in a state
+                set_variable = { global.buildings_economy_of_scale_factor = 0.01 } #What bonus gets added to throughput for each size building in a state
+                set_variable = { global.base_industrial_capacity = 5 } #Base amount of IC that each state gets
 
                 #Define Buildings
                 define_military_industry = yes
@@ -1604,6 +1654,9 @@
         every_country = {
             
             every_controlled_state = {
+                r_update_modifiers_state_effects = yes
+                set_variable = { gdp_growth = 0 }
+                clear_array = gdp_amount_array
 
                 #Resource Setup
                 for_each_loop = {
@@ -1693,6 +1746,16 @@
                         }
                     #
                 #
+
+                if = {
+                    limit = {
+                        NOT = { has_variable = arable_land }
+                    }
+                    set_variable = { arable_land = pops_workforce }
+                    divide_variable = { arable_land = 20 }
+                    round_variable = arable_land
+                    add_to_variable = { arable_land = 1 }
+                }
 
                 #Building Setup
                     #Rural Buildings
@@ -2089,6 +2152,8 @@
                     reload_building_array = yes
                     buildings_update = yes
                 #
+
+                r_update_modifiers_state_effects = yes
 
                 #Employment Setup
                     set_variable = { peasants_employed = 0 }
@@ -2542,6 +2607,8 @@
 
                     calculate_pop_needs = yes
                 #
+
+                calc_industrial_capacity = yes
             }
             
             calc_demand = yes
@@ -2563,6 +2630,10 @@
                 pops_update = yes
                 buildings_update = yes
                 create_pie_chart_pop_type = yes
+                gdp_update = yes
+                clear_array = gdp_graph_amount_array
+                clear_array = gdp_graph_color_array
+                clear_array = gdp_graph_y_array
             }
         }
 
@@ -2635,7 +2706,7 @@
 			set_variable = { bureaucrats_jobs = 0 }
 			set_variable = { soldiers_jobs = 0 }
 
-			#Industries
+			#buildings
 			for_each_loop = {
 				array = buildings
 				value = pops_bld_token
@@ -4254,7 +4325,7 @@
                 add_to_variable = { pops_services_cost = slaves_services_cost }
                 add_to_variable = { pops_need@token:resource_food = slaves_food_need }
                 add_to_variable = { pops_need@token:resource_consumer_goods = slaves_consumer_goods_need }
-                add_to_variable = { pops_need@token:resource_luxury_goods = slaves_luxuries_need }
+                add_to_variable = { pops_need@token:resource_luxury_goods = slaves_luxury_goods_need }
                 add_to_variable = { pops_need@token:resource_energy_materials = slaves_energy_materials_need }
                 add_to_variable = { pops_need@token:resource_electricity = slaves_electricity_need }
                 add_to_variable = { pops_need@token:resource_services = slaves_services_need }
@@ -4269,7 +4340,7 @@
                 add_to_variable = { pops_services_cost = peasants_services_cost }
                 add_to_variable = { pops_need@token:resource_food = peasants_food_need }
                 add_to_variable = { pops_need@token:resource_consumer_goods = peasants_consumer_goods_need }
-                add_to_variable = { pops_need@token:resource_luxury_goods = peasants_luxuries_need }
+                add_to_variable = { pops_need@token:resource_luxury_goods = peasants_luxury_goods_need }
                 add_to_variable = { pops_need@token:resource_energy_materials = peasants_energy_materials_need }
                 add_to_variable = { pops_need@token:resource_electricity = peasants_electricity_need }
                 add_to_variable = { pops_need@token:resource_services = peasants_services_need }
@@ -4284,7 +4355,7 @@
                 add_to_variable = { pops_services_cost = laborers_services_cost }
                 add_to_variable = { pops_need@token:resource_food = laborers_food_need }
                 add_to_variable = { pops_need@token:resource_consumer_goods = laborers_consumer_goods_need }
-                add_to_variable = { pops_need@token:resource_luxury_goods = laborers_luxuries_need }
+                add_to_variable = { pops_need@token:resource_luxury_goods = laborers_luxury_goods_need }
                 add_to_variable = { pops_need@token:resource_energy_materials = laborers_energy_materials_need }
                 add_to_variable = { pops_need@token:resource_electricity = laborers_electricity_need }
                 add_to_variable = { pops_need@token:resource_services = laborers_services_need }
@@ -4299,7 +4370,7 @@
                 add_to_variable = { pops_services_cost = workers_services_cost }
                 add_to_variable = { pops_need@token:resource_food = workers_food_need }
                 add_to_variable = { pops_need@token:resource_consumer_goods = workers_consumer_goods_need }
-                add_to_variable = { pops_need@token:resource_luxury_goods = workers_luxuries_need }
+                add_to_variable = { pops_need@token:resource_luxury_goods = workers_luxury_goods_need }
                 add_to_variable = { pops_need@token:resource_energy_materials = workers_energy_materials_need }
                 add_to_variable = { pops_need@token:resource_electricity = workers_electricity_need }
                 add_to_variable = { pops_need@token:resource_services = workers_services_need }
@@ -4314,7 +4385,7 @@
                 add_to_variable = { pops_services_cost = professionals_services_cost }
                 add_to_variable = { pops_need@token:resource_food = professionals_food_need }
                 add_to_variable = { pops_need@token:resource_consumer_goods = professionals_consumer_goods_need }
-                add_to_variable = { pops_need@token:resource_luxury_goods = professionals_luxuries_need }
+                add_to_variable = { pops_need@token:resource_luxury_goods = professionals_luxury_goods_need }
                 add_to_variable = { pops_need@token:resource_energy_materials = professionals_energy_materials_need }
                 add_to_variable = { pops_need@token:resource_electricity = professionals_electricity_need }
                 add_to_variable = { pops_need@token:resource_services = professionals_services_need }
@@ -4329,7 +4400,7 @@
                 add_to_variable = { pops_services_cost = specialists_services_cost }
                 add_to_variable = { pops_need@token:resource_food = specialists_food_need }
                 add_to_variable = { pops_need@token:resource_consumer_goods = specialists_consumer_goods_need }
-                add_to_variable = { pops_need@token:resource_luxury_goods = specialists_luxuries_need }
+                add_to_variable = { pops_need@token:resource_luxury_goods = specialists_luxury_goods_need }
                 add_to_variable = { pops_need@token:resource_energy_materials = specialists_energy_materials_need }
                 add_to_variable = { pops_need@token:resource_electricity = specialists_electricity_need }
                 add_to_variable = { pops_need@token:resource_services = specialists_services_need }
@@ -4344,7 +4415,7 @@
                 add_to_variable = { pops_services_cost = aristocrats_services_cost }
                 add_to_variable = { pops_need@token:resource_food = aristocrats_food_need }
                 add_to_variable = { pops_need@token:resource_consumer_goods = aristocrats_consumer_goods_need }
-                add_to_variable = { pops_need@token:resource_luxury_goods = aristocrats_luxuries_need }
+                add_to_variable = { pops_need@token:resource_luxury_goods = aristocrats_luxury_goods_need }
                 add_to_variable = { pops_need@token:resource_energy_materials = aristocrats_energy_materials_need }
                 add_to_variable = { pops_need@token:resource_electricity = aristocrats_electricity_need }
                 add_to_variable = { pops_need@token:resource_services = aristocrats_services_need }
@@ -4359,7 +4430,7 @@
                 add_to_variable = { pops_services_cost = capitalists_services_cost }
                 add_to_variable = { pops_need@token:resource_food = capitalists_food_need }
                 add_to_variable = { pops_need@token:resource_consumer_goods = capitalists_consumer_goods_need }
-                add_to_variable = { pops_need@token:resource_luxury_goods = capitalists_luxuries_need }
+                add_to_variable = { pops_need@token:resource_luxury_goods = capitalists_luxury_goods_need }
                 add_to_variable = { pops_need@token:resource_energy_materials = capitalists_energy_materials_need }
                 add_to_variable = { pops_need@token:resource_electricity = capitalists_electricity_need }
                 add_to_variable = { pops_need@token:resource_services = capitalists_services_need }
@@ -4374,7 +4445,7 @@
                 add_to_variable = { pops_services_cost = bureaucrats_services_cost }
                 add_to_variable = { pops_need@token:resource_food = bureaucrats_food_need }
                 add_to_variable = { pops_need@token:resource_consumer_goods = bureaucrats_consumer_goods_need }
-                add_to_variable = { pops_need@token:resource_luxury_goods = bureaucrats_luxuries_need }
+                add_to_variable = { pops_need@token:resource_luxury_goods = bureaucrats_luxury_goods_need }
                 add_to_variable = { pops_need@token:resource_energy_materials = bureaucrats_energy_materials_need }
                 add_to_variable = { pops_need@token:resource_electricity = bureaucrats_electricity_need }
                 add_to_variable = { pops_need@token:resource_services = bureaucrats_services_need }
@@ -4389,7 +4460,7 @@
                 add_to_variable = { pops_services_cost = soldiers_services_cost }
                 add_to_variable = { pops_need@token:resource_food = soldiers_food_need }
                 add_to_variable = { pops_need@token:resource_consumer_goods = soldiers_consumer_goods_need }
-                add_to_variable = { pops_need@token:resource_luxury_goods = soldiers_luxuries_need }
+                add_to_variable = { pops_need@token:resource_luxury_goods = soldiers_luxury_goods_need }
                 add_to_variable = { pops_need@token:resource_energy_materials = soldiers_energy_materials_need }
                 add_to_variable = { pops_need@token:resource_electricity = soldiers_electricity_need }
                 add_to_variable = { pops_need@token:resource_services = soldiers_services_need }
@@ -6998,6 +7069,15 @@
 			multiply_variable = { aristocrats_jobs@var:bu_token =  size@var:bu_token }
 			multiply_variable = { capitalists_jobs@var:bu_token =  size@var:bu_token }
 
+            set_temp_variable = { size_modifier_temp = building_size_factor@var:bu_token }
+            add_to_temp_variable = { size_modifier_temp = 1 }
+			multiply_variable = { peasants_jobs@var:bu_token = size_modifier_temp }
+			multiply_variable = { laborers_jobs@var:bu_token = size_modifier_temp }
+			multiply_variable = { workers_jobs@var:bu_token =  size_modifier_temp }
+			multiply_variable = { professionals_jobs@var:bu_token = size_modifier_temp }
+			multiply_variable = { specialists_jobs@var:bu_token =  size_modifier_temp }
+			multiply_variable = { aristocrats_jobs@var:bu_token =  size_modifier_temp }
+			multiply_variable = { capitalists_jobs@var:bu_token =  size_modifier_temp }
 
 			set_variable = { jobs@var:bu_token = peasants_jobs@var:bu_token }
 			add_to_variable = { jobs@var:bu_token = laborers_jobs@var:bu_token }
@@ -7040,17 +7120,14 @@
 		#
 
 		#Production Modifiers
-			set_temp_variable = { output_modifier_temp = output_factor@var:bu_token }
+			set_temp_variable = { output_modifier_temp = building_output_factor@var:bu_token }
 			add_to_temp_variable = { output_modifier_temp = 1 }
 
-			set_temp_variable = { throughput_modifier_temp = throughput_factor@var:bu_token }
+			set_temp_variable = { throughput_modifier_temp = building_throughput_factor@var:bu_token }
 			add_to_temp_variable = { throughput_modifier_temp = 1 }
 
-			set_temp_variable = { input_modifier_temp = input_factor@var:bu_token }
+			set_temp_variable = { input_modifier_temp = building_input_factor@var:bu_token }
 			add_to_temp_variable = { input_modifier_temp = 1 }
-
-			set_temp_variable = { maintenance_modifier_temp = maintenance_factor@var:bu_token }
-			add_to_temp_variable = { maintenance_modifier_temp = 1 }
 		#
 
 		#Max Production
@@ -7519,6 +7596,18 @@
                     }
                 }
                 set_temp_variable = { cgf = controller:modifier@consumer_goods_factor }
+                if = {
+                    limit = {
+                        check_variable = { cgf > 1 }
+                    }
+                    set_temp_variable = { cgf = 1 }
+                }
+                if = {
+                    limit = {
+                        check_variable = { cgf < 0 }
+                    }
+                    set_temp_variable = { cgf = 0 }
+                }
 			    multiply_variable = { production_1@var:bu_token = cgf }
 			    multiply_variable = { production_2@var:bu_token = cgf }
 			    multiply_variable = { production_3@var:bu_token = cgf }
@@ -8024,20 +8113,41 @@
         }
     }
     
-    calc_capacities = {
+    calc_industrial_capacity = {
+        set_variable = { industrial_capacity = global.base_industrial_capacity }
+        set_variable = { industrial_capacity_use = 0 }
+
+        for_each_loop = {
+            array = buildings
+            value = b_type
+
+            add_to_variable = { industrial_capacity_use = industrial_capacity_use@var:b_type }
+            add_to_variable = { PREV.shipping_capacity = shipping_capacity@var:b_type }
+            add_to_variable = { industrial_capacity = industrial_capacity@var:b_type }
+        }
+
+        if = {
+            limit = {
+                check_variable = { industrial_capacity_use > industrial_capacity }
+            }
+            set_variable = { industrial_capacity_service = industrial_capacity }
+            divide_variable = { industrial_capacity_service = industrial_capacity_use }
+            # multiply_variable = { industrial_capacity_service = industrial_capacity }
+            # divide_variable = { industrial_capacity_service = industrial_capacity_use }
+        }
+        else = {
+            set_variable = { industrial_capacity_service = 1 }
+        }
+    }
+    calc_shipping_capacity = {
         set_variable = { shipping_capacity = 0 }
 
         every_controlled_state = {
-            set_variable = { industrial_capacity = 0 }
-            set_variable = { industrial_capacity_used = 0 }
-
             for_each_loop = {
                 array = buildings
                 value = b_type
 
-                add_to_variable = { industrial_capacity_used = industrial_capacity_use@var:b_type }
                 add_to_variable = { PREV.shipping_capacity = shipping_capacity@var:b_type }
-                add_to_variable = { industrial_capacity = industrial_capacity@var:b_type }
             }
         }
     }
@@ -8319,6 +8429,717 @@
             }
         }
 
+    }
+#
+
+#Statistics
+    gdp_update = {
+        #State
+        set_variable = { gdp_amount = 0 }
+        for_each_loop = {
+            array = global.resource_token_array
+            value = r_token
+
+            set_temp_variable = { gdp_temp = production@var:r_token }
+            multiply_temp_variable = { gdp_temp = price@var:r_token }
+            add_to_variable = { gdp_amount = gdp_temp }
+        }
+        
+        set_variable = { gdp_per_capita = gdp_amount }
+        divide_variable = { gdp_per_capita = pops }
+    }
+
+	create_state_gdp_graph = {
+		set_variable = { gdp_graph_min = 2000000 }
+		set_variable = { gdp_graph_max = 0 }
+		clr_state_flag = gdp_graph_thousands
+		clear_array = gdp_graph_amount_array
+		clear_array = gdp_graph_color_array
+		clear_array = gdp_graph_y_array
+
+		for_each_loop = {
+			array = gdp_amount_array
+			value = vv
+			index = ii
+			if = {
+				limit = {
+					check_variable = { vv > gdp_graph_max }
+				}
+				set_variable = { gdp_graph_max = vv }
+			}
+			if = {
+				limit = {
+					check_variable = { vv < gdp_graph_min }
+				}
+				set_variable = { gdp_graph_min = vv }
+			}
+			
+			if = {
+				limit = {
+					check_variable = { ii > 0 }
+				}
+				set_temp_variable = { prev_i = ii }
+				subtract_from_temp_variable = { prev_i = 1 }
+
+				set_temp_variable = { value_temp = vv }
+				add_to_temp_variable = { value_temp = gdp_amount_array^prev_i }
+				divide_temp_variable = { value_temp = 2 }
+				add_to_array = { gdp_graph_amount_array = value_temp }
+
+				if = {
+					limit = {
+						check_variable = { vv > gdp_amount_array^prev_i }
+					}
+					add_to_array = { gdp_graph_color_array = 1 }
+					add_to_array = { gdp_graph_color_array = 1 }
+				}
+				else_if = {
+					limit = {
+						check_variable = { vv = gdp_amount_array^prev_i }
+					}
+					add_to_array = { gdp_graph_color_array = 2 }
+					add_to_array = { gdp_graph_color_array = 2 }
+				}
+				else = {
+					add_to_array = { gdp_graph_color_array = 3 }
+					add_to_array = { gdp_graph_color_array = 3 }
+				}
+
+				add_to_array = { gdp_graph_amount_array = vv }
+			}
+			else = {
+				add_to_array = { gdp_graph_amount_array = vv }
+				add_to_array = { gdp_graph_color_array = 2 }
+			}
+		}
+
+		#Creating the Graph
+		for_each_loop = {
+			array = gdp_graph_amount_array
+			value = vv
+			index = ii
+
+			set_temp_variable = { gdp_per_y_temp = gdp_graph_max }
+			subtract_from_temp_variable = { gdp_per_y_temp = gdp_graph_min }
+			divide_temp_variable = { gdp_per_y_temp = -75 } #75 Pixels, making it negative b/c going from top to bottom
+
+			set_temp_variable = { y_temp = vv }
+			subtract_from_temp_variable = { y_temp = gdp_graph_max }
+			divide_temp_variable = { y_temp = gdp_per_y_temp }
+			round_temp_variable = y_temp
+			if = {
+				limit = {
+					check_variable = { y_temp > 76 }
+				}
+				set_temp_variable = { y_temp = 76 }
+			}
+			add_to_array = { gdp_graph_y_array = y_temp }
+		}
+
+
+
+		#Correcting the max/min
+		if = {
+			limit = {
+				check_variable = { gdp_graph_max > 1000 } #gdp_graph_min should always be less than max, so there's no point to checking it
+			}
+			divide_variable = { gdp_graph_min = 1000 }
+			divide_variable = { gdp_graph_max = 1000 }
+			set_state_flag = gdp_graph_thousands
+		}
+		else_if = {
+			limit = {
+				check_variable = { gdp_graph_max > 100 }
+			}
+			divide_variable = { gdp_graph_min = 100 } #This gets rid of some decimals so there's only up to 4 digits
+			divide_variable = { gdp_graph_max = 100 }
+			multiply_variable = { gdp_graph_min = 100 }
+			multiply_variable = { gdp_graph_max = 100 }
+		}
+		else_if = {
+			limit = {
+				check_variable = { gdp_graph_max > 10 }
+			}
+			divide_variable = { gdp_graph_min = 10 } #This gets rid of some decimals so there's only up to 4 digits
+			divide_variable = { gdp_graph_max = 10 }
+			multiply_variable = { gdp_graph_min = 10 }
+			multiply_variable = { gdp_graph_max = 10 }
+		}
+		add_to_variable = { update_state_econ_window = 1 }
+	}
+#
+
+#Modifiers
+    r_update_modifiers_state_effects = {
+        set_variable = { building_construction_speed_factor = controller:modifier@building_construction_speed_factor }
+        set_variable = { building_construction_cost_factor = controller:modifier@building_construction_cost_factor }
+        set_variable = { building_upgrade_speed_factor = controller:modifier@building_upgrade_speed_factor }
+        set_variable = { building_upgrade_cost_factor = controller:modifier@building_upgrade_cost_factor }
+        
+        #Subsistence Farm
+            set_variable = { building_size_factor@token:building_subsistence_farm = controller:modifier@building_subsistence_farm_size_factor }
+            set_variable = { building_output_factor@token:building_subsistence_farm = controller:modifier@building_subsistence_farm_output_factor }
+        #
+        #Rice Paddy
+            set_variable = { building_size_factor@token:building_rice_paddy = controller:modifier@building_rice_paddy_size_factor }
+            set_variable = { building_output_factor@token:building_rice_paddy = controller:modifier@building_rice_paddy_output_factor }
+        #
+        
+        #Military_industry
+            set_variable = { building_input_factor@token:building_military_industry = controller:modifier@building_military_industry_input_factor }
+            set_variable = { building_output_factor@token:building_military_industry = controller:modifier@building_military_industry_output_factor }
+            set_variable = { building_throughput_factor@token:building_military_industry = controller:modifier@building_military_industry_throughput_factor }
+            set_variable = { building_attractiveness_modifier@token:building_military_industry = controller:modifier@building_military_industry_attractiveness_modifier }
+            set_variable = { building_attractiveness_factor@token:building_military_industry = controller:modifier@building_military_industry_attractiveness_factor }
+            set_variable = { building_industrial_capacity_use_factor@token:building_military_industry = controller:modifier@building_military_industry_industrial_capacity_use_factor }
+        #
+        #Civilian_industry
+            set_variable = { building_input_factor@token:building_civilian_industry = controller:modifier@building_civilian_industry_input_factor }
+            set_variable = { building_output_factor@token:building_civilian_industry = controller:modifier@building_civilian_industry_output_factor }
+            set_variable = { building_throughput_factor@token:building_civilian_industry = controller:modifier@building_civilian_industry_throughput_factor }
+            set_variable = { building_attractiveness_modifier@token:building_civilian_industry = controller:modifier@building_civilian_industry_attractiveness_modifier }
+            set_variable = { building_attractiveness_factor@token:building_civilian_industry = controller:modifier@building_civilian_industry_attractiveness_factor }
+            set_variable = { building_industrial_capacity_use_factor@token:building_civilian_industry = controller:modifier@building_civilian_industry_industrial_capacity_use_factor }
+        #
+        #Naval_industry
+            set_variable = { building_input_factor@token:building_naval_industry = controller:modifier@building_naval_industry_input_factor }
+            set_variable = { building_output_factor@token:building_naval_industry = controller:modifier@building_naval_industry_output_factor }
+            set_variable = { building_throughput_factor@token:building_naval_industry = controller:modifier@building_naval_industry_throughput_factor }
+            set_variable = { building_attractiveness_modifier@token:building_naval_industry = controller:modifier@building_naval_industry_attractiveness_modifier }
+            set_variable = { building_attractiveness_factor@token:building_naval_industry = controller:modifier@building_naval_industry_attractiveness_factor }
+            set_variable = { building_industrial_capacity_use_factor@token:building_naval_industry = controller:modifier@building_naval_industry_industrial_capacity_use_factor }
+        #
+
+        #Infrastructure
+            set_variable = { building_input_factor@token:building_infrastructure = controller:modifier@building_infrastructure_input_factor }
+            set_variable = { building_output_factor@token:building_infrastructure = controller:modifier@building_infrastructure_output_factor }
+            set_variable = { building_throughput_factor@token:building_infrastructure = controller:modifier@building_infrastructure_throughput_factor }
+            set_variable = { building_industrial_capacity_factor@token:building_infrastructure = controller:modifier@building_infrastructure_industrial_capacity_factor }
+            set_variable = { building_shipping_capacity_factor@token:building_infrastructure = controller:modifier@building_infrastructure_shipping_capacity_factor }
+            set_variable = { building_attractiveness_modifier@token:building_infrastructure = controller:modifier@building_infrastructure_attractiveness_modifier }
+            set_variable = { building_attractiveness_factor@token:building_infrastructure = controller:modifier@building_infrastructure_attractiveness_factor }
+        #
+        #Railway
+            set_variable = { building_input_factor@token:building_railway = controller:modifier@building_railway_input_factor }
+            set_variable = { building_output_factor@token:building_railway = controller:modifier@building_railway_output_factor }
+            set_variable = { building_throughput_factor@token:building_railway = controller:modifier@building_railway_throughput_factor }
+            set_variable = { building_industrial_capacity_factor@token:building_railway = controller:modifier@building_railway_industrial_capacity_factor }
+            set_variable = { building_shipping_capacity_factor@token:building_railway = controller:modifier@building_railway_shipping_capacity_factor }
+            set_variable = { building_attractiveness_modifier@token:building_railway = controller:modifier@building_railway_attractiveness_modifier }
+            set_variable = { building_attractiveness_factor@token:building_railway = controller:modifier@building_railway_attractiveness_factor }
+        #
+        #Port
+            set_variable = { building_input_factor@token:building_port = controller:modifier@building_port_input_factor }
+            set_variable = { building_output_factor@token:building_port = controller:modifier@building_port_output_factor }
+            set_variable = { building_throughput_factor@token:building_port = controller:modifier@building_port_throughput_factor }
+            set_variable = { building_shipping_capacity_factor@token:building_port = controller:modifier@building_port_shipping_capacity_factor }
+            set_variable = { building_attractiveness_modifier@token:building_port = controller:modifier@building_port_attractiveness_modifier }
+            set_variable = { building_attractiveness_factor@token:building_port = controller:modifier@building_port_attractiveness_factor }
+        #
+        #Airport
+            set_variable = { building_input_factor@token:building_airport = controller:modifier@building_airport_input_factor }
+            set_variable = { building_output_factor@token:building_airport = controller:modifier@building_airport_output_factor }
+            set_variable = { building_throughput_factor@token:building_airport = controller:modifier@building_airport_throughput_factor }
+            set_variable = { building_shipping_capacity_factor@token:building_airport = controller:modifier@building_airport_shipping_capacity_factor }
+            set_variable = { building_attractiveness_modifier@token:building_airport = controller:modifier@building_airport_attractiveness_modifier }
+            set_variable = { building_attractiveness_factor@token:building_airport = controller:modifier@building_airport_attractiveness_factor }
+        #
+        
+        #Consumer_goods_factory
+            set_variable = { building_input_factor@token:building_consumer_goods_factory = controller:modifier@building_consumer_goods_factory_input_factor }
+            set_variable = { building_output_factor@token:building_consumer_goods_factory = controller:modifier@building_consumer_goods_factory_output_factor }
+            set_variable = { building_throughput_factor@token:building_consumer_goods_factory = controller:modifier@building_consumer_goods_factory_throughput_factor }
+            set_variable = { building_attractiveness_modifier@token:building_consumer_goods_factory = controller:modifier@building_consumer_goods_factory_attractiveness_modifier }
+            set_variable = { building_attractiveness_factor@token:building_consumer_goods_factory = controller:modifier@building_consumer_goods_factory_attractiveness_factor }
+            set_variable = { building_industrial_capacity_use_factor@token:building_consumer_goods_factory = controller:modifier@building_consumer_goods_factory_industrial_capacity_use_factor }
+        #
+        #Luxury_goods_factory
+            set_variable = { building_input_factor@token:building_luxury_goods_factory = controller:modifier@building_luxury_goods_factory_input_factor }
+            set_variable = { building_output_factor@token:building_luxury_goods_factory = controller:modifier@building_luxury_goods_factory_output_factor }
+            set_variable = { building_throughput_factor@token:building_luxury_goods_factory = controller:modifier@building_luxury_goods_factory_throughput_factor }
+            set_variable = { building_attractiveness_modifier@token:building_luxury_goods_factory = controller:modifier@building_luxury_goods_factory_attractiveness_modifier }
+            set_variable = { building_attractiveness_factor@token:building_luxury_goods_factory = controller:modifier@building_luxury_goods_factory_attractiveness_factor }
+            set_variable = { building_industrial_capacity_use_factor@token:building_luxury_goods_factory = controller:modifier@building_luxury_goods_factory_industrial_capacity_use_factor }
+        #
+        #Industrial_goods_factory
+            set_variable = { building_input_factor@token:building_industrial_goods_factory = controller:modifier@building_industrial_goods_factory_input_factor }
+            set_variable = { building_output_factor@token:building_industrial_goods_factory = controller:modifier@building_industrial_goods_factory_output_factor }
+            set_variable = { building_throughput_factor@token:building_industrial_goods_factory = controller:modifier@building_industrial_goods_factory_throughput_factor }
+            set_variable = { building_attractiveness_modifier@token:building_industrial_goods_factory = controller:modifier@building_industrial_goods_factory_attractiveness_modifier }
+            set_variable = { building_attractiveness_factor@token:building_industrial_goods_factory = controller:modifier@building_industrial_goods_factory_attractiveness_factor }
+            set_variable = { building_industrial_capacity_use_factor@token:building_industrial_goods_factory = controller:modifier@building_industrial_goods_factory_industrial_capacity_use_factor }
+        #
+        #Services_building
+            set_variable = { building_input_factor@token:building_services_building = controller:modifier@building_services_building_input_factor }
+            set_variable = { building_output_factor@token:building_services_building = controller:modifier@building_services_building_output_factor }
+            set_variable = { building_throughput_factor@token:building_services_building = controller:modifier@building_services_building_throughput_factor }
+            set_variable = { building_attractiveness_modifier@token:building_services_building = controller:modifier@building_services_building_attractiveness_modifier }
+            set_variable = { building_attractiveness_factor@token:building_services_building = controller:modifier@building_services_building_attractiveness_factor }
+            set_variable = { building_industrial_capacity_use_factor@token:building_services_building = controller:modifier@building_services_building_industrial_capacity_use_factor }
+        #
+        #Power_plant
+            set_variable = { building_input_factor@token:building_power_plant = controller:modifier@building_power_plant_input_factor }
+            set_variable = { building_output_factor@token:building_power_plant = controller:modifier@building_power_plant_output_factor }
+            set_variable = { building_throughput_factor@token:building_power_plant = controller:modifier@building_power_plant_throughput_factor }
+            set_variable = { building_attractiveness_modifier@token:building_power_plant = controller:modifier@building_power_plant_attractiveness_modifier }
+            set_variable = { building_attractiveness_factor@token:building_power_plant = controller:modifier@building_power_plant_attractiveness_factor }
+            set_variable = { building_industrial_capacity_use_factor@token:building_power_plant = controller:modifier@building_power_plant_industrial_capacity_use_factor }
+        #
+        
+        #Commercial_farm
+            set_variable = { building_input_factor@token:building_commercial_farm = controller:modifier@building_commercial_farm_input_factor }
+            set_variable = { building_output_factor@token:building_commercial_farm = controller:modifier@building_commercial_farm_output_factor }
+            set_variable = { building_throughput_factor@token:building_commercial_farm = controller:modifier@building_commercial_farm_throughput_factor }
+            set_variable = { building_attractiveness_modifier@token:building_commercial_farm = controller:modifier@building_commercial_farm_attractiveness_modifier }
+            set_variable = { building_attractiveness_factor@token:building_commercial_farm = controller:modifier@building_commercial_farm_attractiveness_factor }
+            set_variable = { building_industrial_capacity_use_factor@token:building_commercial_farm = controller:modifier@building_commercial_farm_industrial_capacity_use_factor }
+        #
+        #Food_plantation
+            set_variable = { building_input_factor@token:building_food_plantation = controller:modifier@building_food_plantation_input_factor }
+            set_variable = { building_output_factor@token:building_food_plantation = controller:modifier@building_food_plantation_output_factor }
+            set_variable = { building_throughput_factor@token:building_food_plantation = controller:modifier@building_food_plantation_throughput_factor }
+            set_variable = { building_attractiveness_modifier@token:building_food_plantation = controller:modifier@building_food_plantation_attractiveness_modifier }
+            set_variable = { building_attractiveness_factor@token:building_food_plantation = controller:modifier@building_food_plantation_attractiveness_factor }
+            set_variable = { building_industrial_capacity_use_factor@token:building_food_plantation = controller:modifier@building_food_plantation_industrial_capacity_use_factor }
+        #
+        #Material_plantation
+            set_variable = { building_input_factor@token:building_material_plantation = controller:modifier@building_material_plantation_input_factor }
+            set_variable = { building_output_factor@token:building_material_plantation = controller:modifier@building_material_plantation_output_factor }
+            set_variable = { building_throughput_factor@token:building_material_plantation = controller:modifier@building_material_plantation_throughput_factor }
+            set_variable = { building_attractiveness_modifier@token:building_material_plantation = controller:modifier@building_material_plantation_attractiveness_modifier }
+            set_variable = { building_attractiveness_factor@token:building_material_plantation = controller:modifier@building_material_plantation_attractiveness_factor }
+            set_variable = { building_industrial_capacity_use_factor@token:building_material_plantation = controller:modifier@building_material_plantation_industrial_capacity_use_factor }
+        #
+        #Luxuries_plantation
+            set_variable = { building_input_factor@token:building_luxuries_plantation = controller:modifier@building_luxuries_plantation_input_factor }
+            set_variable = { building_output_factor@token:building_luxuries_plantation = controller:modifier@building_luxuries_plantation_output_factor }
+            set_variable = { building_throughput_factor@token:building_luxuries_plantation = controller:modifier@building_luxuries_plantation_throughput_factor }
+            set_variable = { building_attractiveness_modifier@token:building_luxuries_plantation = controller:modifier@building_luxuries_plantation_attractiveness_modifier }
+            set_variable = { building_attractiveness_factor@token:building_luxuries_plantation = controller:modifier@building_luxuries_plantation_attractiveness_factor }
+            set_variable = { building_industrial_capacity_use_factor@token:building_luxuries_plantation = controller:modifier@building_luxuries_plantation_industrial_capacity_use_factor }
+        #
+        #Lumber_mill
+            set_variable = { building_input_factor@token:building_lumber_mill = controller:modifier@building_lumber_mill_input_factor }
+            set_variable = { building_output_factor@token:building_lumber_mill = controller:modifier@building_lumber_mill_output_factor }
+            set_variable = { building_throughput_factor@token:building_lumber_mill = controller:modifier@building_lumber_mill_throughput_factor }
+            set_variable = { building_attractiveness_modifier@token:building_lumber_mill = controller:modifier@building_lumber_mill_attractiveness_modifier }
+            set_variable = { building_attractiveness_factor@token:building_lumber_mill = controller:modifier@building_lumber_mill_attractiveness_factor }
+            set_variable = { building_industrial_capacity_use_factor@token:building_lumber_mill = controller:modifier@building_lumber_mill_industrial_capacity_use_factor }
+        #
+        #Metals_mine
+            set_variable = { building_input_factor@token:building_metals_mine = controller:modifier@building_metals_mine_input_factor }
+            set_variable = { building_output_factor@token:building_metals_mine = controller:modifier@building_metals_mine_output_factor }
+            set_variable = { building_throughput_factor@token:building_metals_mine = controller:modifier@building_metals_mine_throughput_factor }
+            set_variable = { building_attractiveness_modifier@token:building_metals_mine = controller:modifier@building_metals_mine_attractiveness_modifier }
+            set_variable = { building_attractiveness_factor@token:building_metals_mine = controller:modifier@building_metals_mine_attractiveness_factor }
+            set_variable = { building_industrial_capacity_use_factor@token:building_metals_mine = controller:modifier@building_metals_mine_industrial_capacity_use_factor }
+        #
+        #Coal_mine
+            set_variable = { building_input_factor@token:building_coal_mine = controller:modifier@building_coal_mine_input_factor }
+            set_variable = { building_output_factor@token:building_coal_mine = controller:modifier@building_coal_mine_output_factor }
+            set_variable = { building_throughput_factor@token:building_coal_mine = controller:modifier@building_coal_mine_throughput_factor }
+            set_variable = { building_attractiveness_modifier@token:building_coal_mine = controller:modifier@building_coal_mine_attractiveness_modifier }
+            set_variable = { building_attractiveness_factor@token:building_coal_mine = controller:modifier@building_coal_mine_attractiveness_factor }
+            set_variable = { building_industrial_capacity_use_factor@token:building_coal_mine = controller:modifier@building_coal_mine_industrial_capacity_use_factor }
+        #
+        #Oil_well
+            set_variable = { building_input_factor@token:building_oil_well = controller:modifier@building_oil_well_input_factor }
+            set_variable = { building_output_factor@token:building_oil_well = controller:modifier@building_oil_well_output_factor }
+            set_variable = { building_throughput_factor@token:building_oil_well = controller:modifier@building_oil_well_throughput_factor }
+            set_variable = { building_attractiveness_modifier@token:building_oil_well = controller:modifier@building_oil_well_attractiveness_modifier }
+            set_variable = { building_attractiveness_factor@token:building_oil_well = controller:modifier@building_oil_well_attractiveness_factor }
+            set_variable = { building_industrial_capacity_use_factor@token:building_oil_well = controller:modifier@building_oil_well_industrial_capacity_use_factor }
+        #
+        #Valuables_extractor
+            set_variable = { building_input_factor@token:building_valuables_extractor = controller:modifier@building_valuables_extractor_input_factor }
+            set_variable = { building_output_factor@token:building_valuables_extractor = controller:modifier@building_valuables_extractor_output_factor }
+            set_variable = { building_throughput_factor@token:building_valuables_extractor = controller:modifier@building_valuables_extractor_throughput_factor }
+            set_variable = { building_attractiveness_modifier@token:building_valuables_extractor = controller:modifier@building_valuables_extractor_attractiveness_modifier }
+            set_variable = { building_attractiveness_factor@token:building_valuables_extractor = controller:modifier@building_valuables_extractor_attractiveness_factor }
+            set_variable = { building_industrial_capacity_use_factor@token:building_valuables_extractor = controller:modifier@building_valuables_extractor_industrial_capacity_use_factor }
+        #
+
+        #General
+            #Military_industry
+                add_to_variable = { building_input_factor@token:building_military_industry = controller:modifier@building_input_factor }
+                add_to_variable = { building_output_factor@token:building_military_industry = controller:modifier@building_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_military_industry = controller:modifier@building_throughput_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_military_industry = controller:modifier@building_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_military_industry = controller:modifier@building_attractiveness_factor }
+                add_to_variable = { building_industrial_capacity_use_factor@token:building_military_industry = controller:modifier@building_industrial_capacity_use_factor }
+            #
+            #Civilian_industry
+                add_to_variable = { building_input_factor@token:building_civilian_industry = controller:modifier@building_input_factor }
+                add_to_variable = { building_output_factor@token:building_civilian_industry = controller:modifier@building_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_civilian_industry = controller:modifier@building_throughput_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_civilian_industry = controller:modifier@building_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_civilian_industry = controller:modifier@building_attractiveness_factor }
+                add_to_variable = { building_industrial_capacity_use_factor@token:building_civilian_industry = controller:modifier@building_industrial_capacity_use_factor }
+            #
+            #Naval_industry
+                add_to_variable = { building_input_factor@token:building_naval_industry = controller:modifier@building_input_factor }
+                add_to_variable = { building_output_factor@token:building_naval_industry = controller:modifier@building_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_naval_industry = controller:modifier@building_throughput_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_naval_industry = controller:modifier@building_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_naval_industry = controller:modifier@building_attractiveness_factor }
+                add_to_variable = { building_industrial_capacity_use_factor@token:building_naval_industry = controller:modifier@building_industrial_capacity_use_factor }
+            #
+
+            #Infrastructure
+                add_to_variable = { building_input_factor@token:building_infrastructure = controller:modifier@building_input_factor }
+                add_to_variable = { building_output_factor@token:building_infrastructure = controller:modifier@building_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_infrastructure = controller:modifier@building_throughput_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_infrastructure = controller:modifier@building_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_infrastructure = controller:modifier@building_attractiveness_factor }
+            #
+            #Railway
+                add_to_variable = { building_input_factor@token:building_railway = controller:modifier@building_input_factor }
+                add_to_variable = { building_output_factor@token:building_railway = controller:modifier@building_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_railway = controller:modifier@building_throughput_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_railway = controller:modifier@building_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_railway = controller:modifier@building_attractiveness_factor }
+            #
+            #Port
+                add_to_variable = { building_input_factor@token:building_port = controller:modifier@building_input_factor }
+                add_to_variable = { building_output_factor@token:building_port = controller:modifier@building_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_port = controller:modifier@building_throughput_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_port = controller:modifier@building_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_port = controller:modifier@building_attractiveness_factor }
+            #
+            #Airport
+                add_to_variable = { building_input_factor@token:building_airport = controller:modifier@building_input_factor }
+                add_to_variable = { building_output_factor@token:building_airport = controller:modifier@building_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_airport = controller:modifier@building_throughput_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_airport = controller:modifier@building_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_airport = controller:modifier@building_attractiveness_factor }
+            #
+            
+            #Consumer_goods_factory
+                add_to_variable = { building_input_factor@token:building_consumer_goods_factory = controller:modifier@building_input_factor }
+                add_to_variable = { building_output_factor@token:building_consumer_goods_factory = controller:modifier@building_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_consumer_goods_factory = controller:modifier@building_throughput_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_consumer_goods_factory = controller:modifier@building_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_consumer_goods_factory = controller:modifier@building_attractiveness_factor }
+                add_to_variable = { building_industrial_capacity_use_factor@token:building_consumer_goods_factory = controller:modifier@building_industrial_capacity_use_factor }
+            #
+            #Luxury_goods_factory
+                add_to_variable = { building_input_factor@token:building_luxury_goods_factory = controller:modifier@building_input_factor }
+                add_to_variable = { building_output_factor@token:building_luxury_goods_factory = controller:modifier@building_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_luxury_goods_factory = controller:modifier@building_throughput_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_luxury_goods_factory = controller:modifier@building_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_luxury_goods_factory = controller:modifier@building_attractiveness_factor }
+                add_to_variable = { building_industrial_capacity_use_factor@token:building_luxury_goods_factory = controller:modifier@building_industrial_capacity_use_factor }
+            #
+            #Industrial_goods_factory
+                add_to_variable = { building_input_factor@token:building_industrial_goods_factory = controller:modifier@building_input_factor }
+                add_to_variable = { building_output_factor@token:building_industrial_goods_factory = controller:modifier@building_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_industrial_goods_factory = controller:modifier@building_throughput_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_industrial_goods_factory = controller:modifier@building_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_industrial_goods_factory = controller:modifier@building_attractiveness_factor }
+                add_to_variable = { building_industrial_capacity_use_factor@token:building_industrial_goods_factory = controller:modifier@building_industrial_capacity_use_factor }
+            #
+            #Services_building
+                add_to_variable = { building_input_factor@token:building_services_building = controller:modifier@building_input_factor }
+                add_to_variable = { building_output_factor@token:building_services_building = controller:modifier@building_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_services_building = controller:modifier@building_throughput_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_services_building = controller:modifier@building_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_services_building = controller:modifier@building_attractiveness_factor }
+                add_to_variable = { building_industrial_capacity_use_factor@token:building_services_building = controller:modifier@building_industrial_capacity_use_factor }
+            #
+            #Power_plant
+                add_to_variable = { building_input_factor@token:building_power_plant = controller:modifier@building_input_factor }
+                add_to_variable = { building_output_factor@token:building_power_plant = controller:modifier@building_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_power_plant = controller:modifier@building_throughput_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_power_plant = controller:modifier@building_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_power_plant = controller:modifier@building_attractiveness_factor }
+                add_to_variable = { building_industrial_capacity_use_factor@token:building_power_plant = controller:modifier@building_industrial_capacity_use_factor }
+            #
+            
+            #Commercial_farm
+                add_to_variable = { building_input_factor@token:building_commercial_farm = controller:modifier@building_input_factor }
+                add_to_variable = { building_output_factor@token:building_commercial_farm = controller:modifier@building_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_commercial_farm = controller:modifier@building_throughput_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_commercial_farm = controller:modifier@building_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_commercial_farm = controller:modifier@building_attractiveness_factor }
+                add_to_variable = { building_industrial_capacity_use_factor@token:building_commercial_farm = controller:modifier@building_industrial_capacity_use_factor }
+            #
+            #Food_plantation
+                add_to_variable = { building_input_factor@token:building_food_plantation = controller:modifier@building_input_factor }
+                add_to_variable = { building_output_factor@token:building_food_plantation = controller:modifier@building_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_food_plantation = controller:modifier@building_throughput_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_food_plantation = controller:modifier@building_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_food_plantation = controller:modifier@building_attractiveness_factor }
+                add_to_variable = { building_industrial_capacity_use_factor@token:building_food_plantation = controller:modifier@building_industrial_capacity_use_factor }
+            #
+            #Material_plantation
+                add_to_variable = { building_input_factor@token:building_material_plantation = controller:modifier@building_input_factor }
+                add_to_variable = { building_output_factor@token:building_material_plantation = controller:modifier@building_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_material_plantation = controller:modifier@building_throughput_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_material_plantation = controller:modifier@building_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_material_plantation = controller:modifier@building_attractiveness_factor }
+                add_to_variable = { building_industrial_capacity_use_factor@token:building_material_plantation = controller:modifier@building_industrial_capacity_use_factor }
+            #
+            #Luxuries_plantation
+                add_to_variable = { building_input_factor@token:building_luxuries_plantation = controller:modifier@building_input_factor }
+                add_to_variable = { building_output_factor@token:building_luxuries_plantation = controller:modifier@building_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_luxuries_plantation = controller:modifier@building_throughput_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_luxuries_plantation = controller:modifier@building_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_luxuries_plantation = controller:modifier@building_attractiveness_factor }
+                add_to_variable = { building_industrial_capacity_use_factor@token:building_luxuries_plantation = controller:modifier@building_industrial_capacity_use_factor }
+            #
+            #Lumber_mill
+                add_to_variable = { building_input_factor@token:building_lumber_mill = controller:modifier@building_input_factor }
+                add_to_variable = { building_output_factor@token:building_lumber_mill = controller:modifier@building_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_lumber_mill = controller:modifier@building_throughput_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_lumber_mill = controller:modifier@building_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_lumber_mill = controller:modifier@building_attractiveness_factor }
+                add_to_variable = { building_industrial_capacity_use_factor@token:building_lumber_mill = controller:modifier@building_industrial_capacity_use_factor }
+            #
+            #Metals_mine
+                add_to_variable = { building_input_factor@token:building_metals_mine = controller:modifier@building_input_factor }
+                add_to_variable = { building_output_factor@token:building_metals_mine = controller:modifier@building_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_metals_mine = controller:modifier@building_throughput_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_metals_mine = controller:modifier@building_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_metals_mine = controller:modifier@building_attractiveness_factor }
+                add_to_variable = { building_industrial_capacity_use_factor@token:building_metals_mine = controller:modifier@building_industrial_capacity_use_factor }
+            #
+            #Coal_mine
+                add_to_variable = { building_input_factor@token:building_coal_mine = controller:modifier@building_input_factor }
+                add_to_variable = { building_output_factor@token:building_coal_mine = controller:modifier@building_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_coal_mine = controller:modifier@building_throughput_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_coal_mine = controller:modifier@building_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_coal_mine = controller:modifier@building_attractiveness_factor }
+                add_to_variable = { building_industrial_capacity_use_factor@token:building_coal_mine = controller:modifier@building_industrial_capacity_use_factor }
+            #
+            #Oil_well
+                add_to_variable = { building_input_factor@token:building_oil_well = controller:modifier@building_input_factor }
+                add_to_variable = { building_output_factor@token:building_oil_well = controller:modifier@building_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_oil_well = controller:modifier@building_throughput_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_oil_well = controller:modifier@building_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_oil_well = controller:modifier@building_attractiveness_factor }
+                add_to_variable = { building_industrial_capacity_use_factor@token:building_oil_well = controller:modifier@building_industrial_capacity_use_factor }
+            #
+            #Valuables_extractor
+                add_to_variable = { building_input_factor@token:building_valuables_extractor = controller:modifier@building_input_factor }
+                add_to_variable = { building_output_factor@token:building_valuables_extractor = controller:modifier@building_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_valuables_extractor = controller:modifier@building_throughput_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_valuables_extractor = controller:modifier@building_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_valuables_extractor = controller:modifier@building_attractiveness_factor }
+                add_to_variable = { building_industrial_capacity_use_factor@token:building_valuables_extractor = controller:modifier@building_industrial_capacity_use_factor }
+            #
+        #
+        #Factories
+            #Military_industry
+                add_to_variable = { building_input_factor@token:building_military_industry = controller:modifier@building_factory_input_factor }
+                add_to_variable = { building_output_factor@token:building_military_industry = controller:modifier@building_factory_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_military_industry = controller:modifier@building_factory_throughput_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_military_industry = controller:modifier@building_factory_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_military_industry = controller:modifier@building_factory_attractiveness_factor }
+                add_to_variable = { building_industrial_capacity_use_factor@token:building_military_industry = controller:modifier@building_factory_industrial_capacity_use_factor }
+            #
+            #Civilian_industry
+                add_to_variable = { building_input_factor@token:building_civilian_industry = controller:modifier@building_factory_input_factor }
+                add_to_variable = { building_output_factor@token:building_civilian_industry = controller:modifier@building_factory_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_civilian_industry = controller:modifier@building_factory_throughput_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_civilian_industry = controller:modifier@building_factory_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_civilian_industry = controller:modifier@building_factory_attractiveness_factor }
+                add_to_variable = { building_industrial_capacity_use_factor@token:building_civilian_industry = controller:modifier@building_factory_industrial_capacity_use_factor }
+            #
+            #Naval_industry
+                add_to_variable = { building_input_factor@token:building_naval_industry = controller:modifier@building_factory_input_factor }
+                add_to_variable = { building_output_factor@token:building_naval_industry = controller:modifier@building_factory_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_naval_industry = controller:modifier@building_factory_throughput_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_naval_industry = controller:modifier@building_factory_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_naval_industry = controller:modifier@building_factory_attractiveness_factor }
+                add_to_variable = { building_industrial_capacity_use_factor@token:building_naval_industry = controller:modifier@building_factory_industrial_capacity_use_factor }
+            #
+            
+            #Consumer_goods_factory
+                add_to_variable = { building_input_factor@token:building_consumer_goods_factory = controller:modifier@building_factory_input_factor }
+                add_to_variable = { building_output_factor@token:building_consumer_goods_factory = controller:modifier@building_factory_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_consumer_goods_factory = controller:modifier@building_factory_throughput_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_consumer_goods_factory = controller:modifier@building_factory_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_consumer_goods_factory = controller:modifier@building_factory_attractiveness_factor }
+                add_to_variable = { building_industrial_capacity_use_factor@token:building_consumer_goods_factory = controller:modifier@building_factory_industrial_capacity_use_factor }
+            #
+            #Luxury_goods_factory
+                add_to_variable = { building_input_factor@token:building_luxury_goods_factory = controller:modifier@building_factory_input_factor }
+                add_to_variable = { building_output_factor@token:building_luxury_goods_factory = controller:modifier@building_factory_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_luxury_goods_factory = controller:modifier@building_factory_throughput_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_luxury_goods_factory = controller:modifier@building_factory_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_luxury_goods_factory = controller:modifier@building_factory_attractiveness_factor }
+                add_to_variable = { building_industrial_capacity_use_factor@token:building_luxury_goods_factory = controller:modifier@building_factory_industrial_capacity_use_factor }
+            #
+            #Industrial_goods_factory
+                add_to_variable = { building_input_factor@token:building_industrial_goods_factory = controller:modifier@building_factory_input_factor }
+                add_to_variable = { building_output_factor@token:building_industrial_goods_factory = controller:modifier@building_factory_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_industrial_goods_factory = controller:modifier@building_factory_throughput_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_industrial_goods_factory = controller:modifier@building_factory_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_industrial_goods_factory = controller:modifier@building_factory_attractiveness_factor }
+                add_to_variable = { building_industrial_capacity_use_factor@token:building_industrial_goods_factory = controller:modifier@building_factory_industrial_capacity_use_factor }
+            #
+        #
+        #Agriculture
+            #Commercial_farm
+                add_to_variable = { building_input_factor@token:building_commercial_farm = controller:modifier@building_agriculture_input_factor }
+                add_to_variable = { building_output_factor@token:building_commercial_farm = controller:modifier@building_agriculture_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_commercial_farm = controller:modifier@building_agriculture_throughput_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_commercial_farm = controller:modifier@building_agriculture_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_commercial_farm = controller:modifier@building_agriculture_attractiveness_factor }
+                add_to_variable = { building_industrial_capacity_use_factor@token:building_commercial_farm = controller:modifier@building_agriculture_industrial_capacity_use_factor }
+            #
+            #Food_plantation
+                add_to_variable = { building_input_factor@token:building_food_plantation = controller:modifier@building_agriculture_input_factor }
+                add_to_variable = { building_output_factor@token:building_food_plantation = controller:modifier@building_agriculture_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_food_plantation = controller:modifier@building_agriculture_throughput_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_food_plantation = controller:modifier@building_agriculture_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_food_plantation = controller:modifier@building_agriculture_attractiveness_factor }
+                add_to_variable = { building_industrial_capacity_use_factor@token:building_food_plantation = controller:modifier@building_agriculture_industrial_capacity_use_factor }
+            #
+            #Material_plantation
+                add_to_variable = { building_input_factor@token:building_material_plantation = controller:modifier@building_agriculture_input_factor }
+                add_to_variable = { building_output_factor@token:building_material_plantation = controller:modifier@building_agriculture_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_material_plantation = controller:modifier@building_agriculture_throughput_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_material_plantation = controller:modifier@building_agriculture_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_material_plantation = controller:modifier@building_agriculture_attractiveness_factor }
+                add_to_variable = { building_industrial_capacity_use_factor@token:building_material_plantation = controller:modifier@building_agriculture_industrial_capacity_use_factor }
+            #
+            #Luxuries_plantation
+                add_to_variable = { building_input_factor@token:building_luxuries_plantation = controller:modifier@building_agriculture_input_factor }
+                add_to_variable = { building_output_factor@token:building_luxuries_plantation = controller:modifier@building_agriculture_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_luxuries_plantation = controller:modifier@building_agriculture_throughput_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_luxuries_plantation = controller:modifier@building_agriculture_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_luxuries_plantation = controller:modifier@building_agriculture_attractiveness_factor }
+                add_to_variable = { building_industrial_capacity_use_factor@token:building_luxuries_plantation = controller:modifier@building_agriculture_industrial_capacity_use_factor }
+            #
+        #
+        #Plantation
+            #Food_plantation
+                add_to_variable = { building_input_factor@token:building_food_plantation = controller:modifier@building_plantation_input_factor }
+                add_to_variable = { building_output_factor@token:building_food_plantation = controller:modifier@building_plantation_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_food_plantation = controller:modifier@building_plantation_throughput_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_food_plantation = controller:modifier@building_plantation_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_food_plantation = controller:modifier@building_plantation_attractiveness_factor }
+                add_to_variable = { building_industrial_capacity_use_factor@token:building_food_plantation = controller:modifier@building_plantation_industrial_capacity_use_factor }
+            #
+            #Material_plantation
+                add_to_variable = { building_input_factor@token:building_material_plantation = controller:modifier@building_plantation_input_factor }
+                add_to_variable = { building_output_factor@token:building_material_plantation = controller:modifier@building_plantation_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_material_plantation = controller:modifier@building_plantation_throughput_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_material_plantation = controller:modifier@building_plantation_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_material_plantation = controller:modifier@building_plantation_attractiveness_factor }
+                add_to_variable = { building_industrial_capacity_use_factor@token:building_material_plantation = controller:modifier@building_plantation_industrial_capacity_use_factor }
+            #
+            #Luxuries_plantation
+                add_to_variable = { building_input_factor@token:building_luxuries_plantation = controller:modifier@building_plantation_input_factor }
+                add_to_variable = { building_output_factor@token:building_luxuries_plantation = controller:modifier@building_plantation_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_luxuries_plantation = controller:modifier@building_plantation_throughput_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_luxuries_plantation = controller:modifier@building_plantation_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_luxuries_plantation = controller:modifier@building_plantation_attractiveness_factor }
+                add_to_variable = { building_industrial_capacity_use_factor@token:building_luxuries_plantation = controller:modifier@building_plantation_industrial_capacity_use_factor }
+            #
+        #
+        #Resource
+            #Lumber_mill
+                add_to_variable = { building_input_factor@token:building_lumber_mill = controller:modifier@building_resource_input_factor }
+                add_to_variable = { building_output_factor@token:building_lumber_mill = controller:modifier@building_resource_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_lumber_mill = controller:modifier@building_resource_throughput_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_lumber_mill = controller:modifier@building_resource_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_lumber_mill = controller:modifier@building_resource_attractiveness_factor }
+                add_to_variable = { building_industrial_capacity_use_factor@token:building_lumber_mill = controller:modifier@building_resource_industrial_capacity_use_factor }
+            #
+            #Metals_mine
+                add_to_variable = { building_input_factor@token:building_metals_mine = controller:modifier@building_resource_input_factor }
+                add_to_variable = { building_output_factor@token:building_metals_mine = controller:modifier@building_resource_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_metals_mine = controller:modifier@building_resource_throughput_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_metals_mine = controller:modifier@building_resource_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_metals_mine = controller:modifier@building_resource_attractiveness_factor }
+                add_to_variable = { building_industrial_capacity_use_factor@token:building_metals_mine = controller:modifier@building_resource_industrial_capacity_use_factor }
+            #
+            #Coal_mine
+                add_to_variable = { building_input_factor@token:building_coal_mine = controller:modifier@building_resource_input_factor }
+                add_to_variable = { building_output_factor@token:building_coal_mine = controller:modifier@building_resource_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_coal_mine = controller:modifier@building_resource_throughput_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_coal_mine = controller:modifier@building_resource_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_coal_mine = controller:modifier@building_resource_attractiveness_factor }
+                add_to_variable = { building_industrial_capacity_use_factor@token:building_coal_mine = controller:modifier@building_resource_industrial_capacity_use_factor }
+            #
+            #Oil_well
+                add_to_variable = { building_input_factor@token:building_oil_well = controller:modifier@building_resource_input_factor }
+                add_to_variable = { building_output_factor@token:building_oil_well = controller:modifier@building_resource_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_oil_well = controller:modifier@building_resource_throughput_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_oil_well = controller:modifier@building_resource_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_oil_well = controller:modifier@building_resource_attractiveness_factor }
+                add_to_variable = { building_industrial_capacity_use_factor@token:building_oil_well = controller:modifier@building_resource_industrial_capacity_use_factor }
+            #
+            #Valuables_extractor
+                add_to_variable = { building_input_factor@token:building_valuables_extractor = controller:modifier@building_resource_input_factor }
+                add_to_variable = { building_output_factor@token:building_valuables_extractor = controller:modifier@building_resource_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_valuables_extractor = controller:modifier@building_resource_throughput_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_valuables_extractor = controller:modifier@building_resource_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_valuables_extractor = controller:modifier@building_resource_attractiveness_factor }
+                add_to_variable = { building_industrial_capacity_use_factor@token:building_valuables_extractor = controller:modifier@building_resource_industrial_capacity_use_factor }
+            #
+        #
+        #Transport
+            #Infrastructure
+                add_to_variable = { building_input_factor@token:building_infrastructure = controller:modifier@building_transport_input_factor }
+                add_to_variable = { building_output_factor@token:building_infrastructure = controller:modifier@building_transport_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_infrastructure = controller:modifier@building_transport_throughput_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_infrastructure = controller:modifier@building_transport_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_infrastructure = controller:modifier@building_transport_attractiveness_factor }
+            #
+            #Railway
+                add_to_variable = { building_input_factor@token:building_railway = controller:modifier@building_transport_input_factor }
+                add_to_variable = { building_output_factor@token:building_railway = controller:modifier@building_transport_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_railway = controller:modifier@building_transport_throughput_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_railway = controller:modifier@building_transport_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_railway = controller:modifier@building_transport_attractiveness_factor }
+            #
+            #Port
+                add_to_variable = { building_input_factor@token:building_port = controller:modifier@building_transport_input_factor }
+                add_to_variable = { building_output_factor@token:building_port = controller:modifier@building_transport_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_port = controller:modifier@building_transport_throughput_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_port = controller:modifier@building_transport_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_port = controller:modifier@building_transport_attractiveness_factor }
+            #
+            #Airport
+                add_to_variable = { building_input_factor@token:building_airport = controller:modifier@building_transport_input_factor }
+                add_to_variable = { building_output_factor@token:building_airport = controller:modifier@building_transport_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_airport = controller:modifier@building_transport_throughput_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_airport = controller:modifier@building_transport_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_airport = controller:modifier@building_transport_attractiveness_factor }
+            #
+        #
+        #Subsistence Agriculture
+            #Subsistence Farm
+                add_to_variable = { building_size_factor@token:building_subsistence_farm = controller:modifier@building_subsistence_agriculture_size_factor }
+                add_to_variable = { building_output_factor@token:building_subsistence_farm = controller:modifier@building_subsistence_agriculture_output_factor }
+            #
+            #Rice Paddy
+                add_to_variable = { building_size_factor@token:building_rice_paddy = controller:modifier@building_subsistence_agriculture_size_factor }
+                add_to_variable = { building_output_factor@token:building_rice_paddy = controller:modifier@building_subsistence_agriculture_output_factor }
+            #
+        #
+
+        #Economies of Scale
+            #For all but subsistence farms
+			for_each_loop = {
+				array = buildings
+				value = modifier_token
+                if = {
+                    limit = {
+                        NOT = { check_variable = { modifier_token = token:building_subsistence_farm } }
+                        NOT = { check_variable = { modifier_token = token:building_rice_paddy } }
+                    }
+
+                    set_temp_variable = { mod_temp = size@var:modifier_token }
+                    multiply_temp_variable = { mod_temp = global.buildings_economy_of_scale_factor }
+                    add_to_variable = { building_throughput_factor@var:modifier_token = mod_temp }
+                }
+			}
+
+        #
     }
 #
 
@@ -9678,7 +10499,7 @@
                 set_variable = { global.building_industrialized_capitalists_employment@token:building_military_industry = 0.2 } #50x
             #
             #Mechanized
-                set_variable = { global.building_mechanized_tech_unlock@token:building_military_industry = token:mechanical_production_3 }
+                set_variable = { global.building_mechanized_tech_unlock@token:building_military_industry = token:mechanical_production_2 }
 
                 #Productivity: $4.0 /K
                 set_variable = { global.building_mechanized_output_1@token:building_military_industry = 34 }
@@ -10039,7 +10860,7 @@
                 set_variable = { global.building_industrialized_capitalists_employment@token:building_civilian_industry = 0.2 } #50x
             #
             #Mechanized
-                set_variable = { global.building_mechanized_tech_unlock@token:building_civilian_industry = token:mechanical_production_3 }
+                set_variable = { global.building_mechanized_tech_unlock@token:building_civilian_industry = token:mechanical_production_2 }
 
                 #Productivity: $4.0 /K
                 set_variable = { global.building_mechanized_output_1@token:building_civilian_industry = 40 }
@@ -10495,7 +11316,7 @@
                 set_variable = { global.building_modernized_capitalists_employment@token:building_naval_industry = 0.1 } #50x
             #
             #Roboticized
-                set_variable = { global.building_roboticized_tech_unlock@token:building_naval_industry = token:combined_transbuilding_naval_industryation_networks }
+                set_variable = { global.building_roboticized_tech_unlock@token:building_naval_industry = token:combined_transportation_networks }
 
                 #Productivity: $11.2 /K
                 set_variable = { global.building_roboticized_output_1@token:building_naval_industry = 40 }
@@ -10549,7 +11370,7 @@
                 set_variable = { global.building_computerized_capitalists_employment@token:building_naval_industry = 0.1 } #50x
             #
             #Digitalized
-                set_variable = { global.building_digitalized_tech_unlock@token:building_naval_industry = token:mass_transbuilding_naval_industryation_networks }
+                set_variable = { global.building_digitalized_tech_unlock@token:building_naval_industry = token:mass_transportation_networks }
 
                 #Productivity: $16.5 /K
                 set_variable = { global.building_digitalized_output_1@token:building_naval_industry = 52 }
@@ -10576,7 +11397,7 @@
                 set_variable = { global.building_digitalized_capitalists_employment@token:building_naval_industry = 0.1 } #50x
             #
             #Automatized
-                set_variable = { global.building_automatized_tech_unlock@token:building_naval_industry = token:early_automated_transbuilding_naval_industryation }
+                set_variable = { global.building_automatized_tech_unlock@token:building_naval_industry = token:early_automated_transportation }
 
                 #Productivity: $20.0 /K
                 set_variable = { global.building_automatized_output_1@token:building_naval_industry = 60 }
@@ -10603,7 +11424,7 @@
                 set_variable = { global.building_automatized_capitalists_employment@token:building_naval_industry = 0.1 } #50x
             #
             #Futurized
-                set_variable = { global.building_futurized_tech_unlock@token:building_naval_industry = token:fully_automated_transbuilding_naval_industryation }
+                set_variable = { global.building_futurized_tech_unlock@token:building_naval_industry = token:fully_automated_transportation }
 
                 #Productivity: $27.0 /K
                 set_variable = { global.building_futurized_output_1@token:building_naval_industry = 70 }
@@ -10715,7 +11536,7 @@
                 set_variable = { global.building_industrialized_capitalists_employment@token:building_consumer_goods_factory = 0.2 } #50x
             #
             #Mechanized
-                set_variable = { global.building_mechanized_tech_unlock@token:building_consumer_goods_factory = token:mechanical_production_3 }
+                set_variable = { global.building_mechanized_tech_unlock@token:building_consumer_goods_factory = token:mechanical_production_2 }
 
                 #Productivity: $4.0 /K
                 set_variable = { global.building_mechanized_output_1@token:building_consumer_goods_factory = 40 }
@@ -11072,7 +11893,7 @@
                 set_variable = { global.building_industrialized_capitalists_employment@token:building_luxury_goods_factory = 0.2 } #50x
             #
             #Mechanized
-                set_variable = { global.building_mechanized_tech_unlock@token:building_luxury_goods_factory = token:mechanical_production_3 }
+                set_variable = { global.building_mechanized_tech_unlock@token:building_luxury_goods_factory = token:mechanical_production_2 }
 
                 #Productivity: $4.0 /K
                 set_variable = { global.building_mechanized_output_1@token:building_luxury_goods_factory = 20 }
@@ -11482,7 +12303,7 @@
                 set_variable = { global.building_mechanized_capitalists_employment@token:building_industrial_goods_factory = 0.2 } #50x
             #
             #Electrified
-                set_variable = { global.building_electrified_tech_unlock@token:building_industrial_goods_factory = token:bayer_process }
+                set_variable = { global.building_electrified_tech_unlock@token:building_industrial_goods_factory = token:electric_arc_furnace }
 
                 #Productivity: $5.5 /K
                 set_variable = { global.building_electrified_output_1@token:building_industrial_goods_factory = 40 }
@@ -12115,6 +12936,29 @@
             
             set_variable = { global.building_industrial_capacity_use@token:building_power_plant = 3 }
 
+            #Industrialized
+                set_variable = { global.building_industrialized_tech_unlock@token:building_power_plant = token:woolrich_electrical_generator }
+
+                #Productivity: $2.5 /K
+                set_variable = { global.building_industrialized_output_1@token:building_power_plant = 35 }
+                
+                set_variable = { global.building_industrialized_construction_amount@token:building_power_plant = 50 }
+                set_variable = { global.building_industrialized_construction_speed@token:building_power_plant = 4 }
+                
+                set_variable = { global.building_industrialized_upgrade_amount@token:building_power_plant = 15 }
+                set_variable = { global.building_industrialized_upgrade_speed@token:building_power_plant = 2.5 }
+
+                set_variable = { global.building_industrialized_input_resource_1@token:building_power_plant = token:resource_industrial_goods }
+                set_variable = { global.building_industrialized_input_amount_1@token:building_power_plant = 5.0 }
+                
+                set_variable = { global.building_industrialized_peasants_employment@token:building_power_plant = 0.0 } #1x
+                set_variable = { global.building_industrialized_laborers_employment@token:building_power_plant = 10.8 } #2x
+                set_variable = { global.building_industrialized_workers_employment@token:building_power_plant = 5.0 } #5x
+                set_variable = { global.building_industrialized_professionals_employment@token:building_power_plant = 0 } #10x
+                set_variable = { global.building_industrialized_specialists_employment@token:building_power_plant = 0 } #20x
+                set_variable = { global.building_industrialized_aristocrats_employment@token:building_power_plant = 0.0 } #30x
+                set_variable = { global.building_industrialized_capitalists_employment@token:building_power_plant = 0.2 } #50x
+            #
             #Mechanized
                 set_variable = { global.building_mechanized_tech_unlock@token:building_power_plant = token:hydroelectric_plant }
 
@@ -12595,7 +13439,7 @@
                 set_variable = { global.building_modernized_capitalists_employment@token:building_commercial_farm = 0.2 } #50x
             #
             #Roboticized
-                set_variable = { global.building_roboticized_tech_unlock@token:building_commercial_farm = token:advanced_agricultural_machines }
+                set_variable = { global.building_roboticized_tech_unlock@token:building_commercial_farm = token:refined_agricultural_machines }
 
                 #Productivity: $11.8 /K
                 set_variable = { global.building_roboticized_output_1@token:building_commercial_farm = 60 }
@@ -12942,7 +13786,7 @@
                 set_variable = { global.building_modernized_capitalists_employment@token:building_food_plantation = 0.1 } #50x
             #
             #Roboticized
-                set_variable = { global.building_roboticized_tech_unlock@token:building_food_plantation = token:advanced_agricultural_machines }
+                set_variable = { global.building_roboticized_tech_unlock@token:building_food_plantation = token:refined_agricultural_machines }
 
                 #Productivity: $12.58 /K
                 set_variable = { global.building_roboticized_output_1@token:building_food_plantation = 70 }
@@ -13289,7 +14133,7 @@
                 set_variable = { global.building_modernized_capitalists_employment@token:building_material_plantation = 0.1 } #50x
             #
             #Roboticized
-                set_variable = { global.building_roboticized_tech_unlock@token:building_material_plantation = token:advanced_agricultural_machines }
+                set_variable = { global.building_roboticized_tech_unlock@token:building_material_plantation = token:refined_agricultural_machines }
 
                 #Productivity: $12.58 /K
                 set_variable = { global.building_roboticized_output_1@token:building_material_plantation = 105 }
@@ -13636,7 +14480,7 @@
                 set_variable = { global.building_modernized_capitalists_employment@token:building_luxuries_plantation = 0.1 } #50x
             #
             #Roboticized
-                set_variable = { global.building_roboticized_tech_unlock@token:building_luxuries_plantation = token:advanced_agricultural_machines }
+                set_variable = { global.building_roboticized_tech_unlock@token:building_luxuries_plantation = token:refined_agricultural_machines }
 
                 #Productivity: $12.58 /K
                 set_variable = { global.building_roboticized_output_1@token:building_luxuries_plantation = 35 }
@@ -13981,7 +14825,7 @@
                 set_variable = { global.building_modernized_capitalists_employment@token:building_lumber_mill = 0.2 } #50x
             #
             #Roboticized
-                set_variable = { global.building_roboticized_tech_unlock@token:building_lumber_mill = token:advanced_agricultural_machines }
+                set_variable = { global.building_roboticized_tech_unlock@token:building_lumber_mill = token:refined_agricultural_machines }
 
                 #Productivity: $11.8 /K
                 set_variable = { global.building_roboticized_output_1@token:building_lumber_mill = 65 }
@@ -14395,7 +15239,7 @@
                 set_variable = { global.building_digitalized_capitalists_employment@token:building_metals_mine = 0.2 } #50x
             #
             #Automatized
-                set_variable = { global.building_automatized_tech_unlock@token:building_metals_mine = token:mining_rig_16 }
+                set_variable = { global.building_automatized_tech_unlock@token:building_metals_mine = token:mining_rig_17 }
 
                 #Productivity: $21.6 /K
                 set_variable = { global.building_automatized_output_1@token:building_metals_mine = 143 }
@@ -14424,7 +15268,7 @@
                 set_variable = { global.building_automatized_capitalists_employment@token:building_metals_mine = 0.2 } #50x
             #
             #Futurized
-                set_variable = { global.building_futurized_tech_unlock@token:building_metals_mine = token:mining_rig_17 }
+                set_variable = { global.building_futurized_tech_unlock@token:building_metals_mine = token:mining_rig_18 }
 
                 #Productivity: $24.5 /K
                 set_variable = { global.building_futurized_output_1@token:building_metals_mine = 165 }
@@ -14688,7 +15532,7 @@
                 set_variable = { global.building_computerized_capitalists_employment@token:building_coal_mine = 0.2 } #50x
             #
             #Digitalized
-                set_variable = { global.building_digitalized_tech_unlock@token:building_coal_mine = token:mining_rig_15 }
+                set_variable = { global.building_digitalized_tech_unlock@token:building_coal_mine = token:mining_rig_16 }
 
                 #Productivity: $18.0 /K
                 set_variable = { global.building_digitalized_output_1@token:building_coal_mine = 127 }
@@ -14717,7 +15561,7 @@
                 set_variable = { global.building_digitalized_capitalists_employment@token:building_coal_mine = 0.2 } #50x
             #
             #Automatized
-                set_variable = { global.building_automatized_tech_unlock@token:building_coal_mine = token:mining_rig_16 }
+                set_variable = { global.building_automatized_tech_unlock@token:building_coal_mine = token:mining_rig_17 }
 
                 #Productivity: $21.6 /K
                 set_variable = { global.building_automatized_output_1@token:building_coal_mine = 143 }
@@ -14746,7 +15590,7 @@
                 set_variable = { global.building_automatized_capitalists_employment@token:building_coal_mine = 0.2 } #50x
             #
             #Futurized
-                set_variable = { global.building_futurized_tech_unlock@token:building_coal_mine = token:mining_rig_17 }
+                set_variable = { global.building_futurized_tech_unlock@token:building_coal_mine = token:mining_rig_18 }
 
                 #Productivity: $24.5 /K
                 set_variable = { global.building_futurized_output_1@token:building_coal_mine = 165 }
@@ -14822,7 +15666,7 @@
                 set_variable = { global.building_advanced_capitalists_employment@token:building_oil_well = 0.1 } #50x
             #
             #Industrialized
-                set_variable = { global.building_industrialized_tech_unlock@token:building_oil_well = token:oil_refinery_1 }
+                set_variable = { global.building_industrialized_tech_unlock@token:building_oil_well = token:oil_refinery_2 }
 
                 #Productivity: $2.89 /K
                 set_variable = { global.building_industrialized_output_1@token:building_oil_well = 35 }
@@ -15039,7 +15883,7 @@
                 set_variable = { global.building_digitalized_capitalists_employment@token:building_oil_well = 0.2 } #50x
             #
             #Automatized
-                set_variable = { global.building_automatized_tech_unlock@token:building_oil_well = token:mining_rig_16 }
+                set_variable = { global.building_automatized_tech_unlock@token:building_oil_well = token:mining_rig_17 }
 
                 #Productivity: $21.6 /K
                 set_variable = { global.building_automatized_output_1@token:building_oil_well = 150 }
@@ -15068,7 +15912,7 @@
                 set_variable = { global.building_automatized_capitalists_employment@token:building_oil_well = 0.2 } #50x
             #
             #Futurized
-                set_variable = { global.building_futurized_tech_unlock@token:building_oil_well = token:mining_rig_17 }
+                set_variable = { global.building_futurized_tech_unlock@token:building_oil_well = token:mining_rig_18 }
 
                 #Productivity: $24.5 /K
                 set_variable = { global.building_futurized_output_1@token:building_oil_well = 180 }
@@ -15332,7 +16176,7 @@
                 set_variable = { global.building_computerized_capitalists_employment@token:building_valuables_extractor = 0.1 } #50x
             #
             #Digitalized
-                set_variable = { global.building_digitalized_tech_unlock@token:building_valuables_extractor = token:mining_rig_15 }
+                set_variable = { global.building_digitalized_tech_unlock@token:building_valuables_extractor = token:mining_rig_16 }
 
                 #Productivity: $18.0 /K
                 set_variable = { global.building_digitalized_output_1@token:building_valuables_extractor = 25 }
@@ -15361,7 +16205,7 @@
                 set_variable = { global.building_digitalized_capitalists_employment@token:building_valuables_extractor = 0.1 } #50x
             #
             #Automatized
-                set_variable = { global.building_automatized_tech_unlock@token:building_valuables_extractor = token:mining_rig_16 }
+                set_variable = { global.building_automatized_tech_unlock@token:building_valuables_extractor = token:mining_rig_17 }
 
                 #Productivity: $21.6 /K
                 set_variable = { global.building_automatized_output_1@token:building_valuables_extractor = 28 }
@@ -15390,7 +16234,7 @@
                 set_variable = { global.building_automatized_capitalists_employment@token:building_valuables_extractor = 0.1 } #50x
             #
             #Futurized
-                set_variable = { global.building_futurized_tech_unlock@token:building_valuables_extractor = token:mining_rig_17 }
+                set_variable = { global.building_futurized_tech_unlock@token:building_valuables_extractor = token:mining_rig_18 }
 
                 #Productivity: $24.5 /K
                 set_variable = { global.building_futurized_output_1@token:building_valuables_extractor = 32 }
