@@ -8,7 +8,7 @@
 ![github-size]  ![github-activity] ![github-latest] ![github-beta-backlog] ![github-stars]
 
 [patreon-badge]: https://img.shields.io/static/v1?label=Patreon&message=Donate&color=orange&logo=patreon&style=for-the-badge
-[patreon-link]: https://www.patreon.com/mod_eoanb
+[patreon-link]: https://www.patreon.com/EoaNBR
 
 [steam-badge]: https://img.shields.io/static/v1?label=Steam&message=Download&color=lightgrey&logo=steam&style=for-the-badge
 [steam-link]: https://steamcommunity.com/sharedfiles/filedetails/?id=2114093692
