@@ -172,6 +172,56 @@ scripted_gui = {
 			extra_button_visible = {
 				is_debug = yes
 			}
+
+			urban_building_next_pm_button_visible = {
+				is_controlled_by = ROOT
+
+				set_temp_variable = { building_token = urban_buildings^i }
+				check_variable = { production_method@var:building_token < 11 }
+				check_variable = { buildings_pm_selected = building_token }
+			}
+			urban_building_next_pm_button_click_enabled = {
+				set_temp_variable = { building_token = urban_buildings^i }
+				return_latest_production_method = yes
+				check_variable = { production_method@var:building_token < pm_temp }
+			}
+			urban_building_prev_pm_button_visible = {
+				is_controlled_by = ROOT
+
+				set_temp_variable = { building_token = urban_buildings^i }
+				check_variable = { production_method@var:building_token > 0 }
+				check_variable = { buildings_pm_selected = building_token }
+			}
+			urban_building_prev_pm_button_click_enabled = {
+				set_temp_variable = { building_token = urban_buildings^i }
+				return_earliest_production_method = yes
+				check_variable = { production_method@var:building_token > pm_temp }
+			}
+
+			rural_building_next_pm_button_visible = {
+				is_controlled_by = ROOT
+
+				set_temp_variable = { building_token = rural_buildings^i }
+				check_variable = { production_method@var:building_token < 11 }
+				check_variable = { buildings_pm_selected = building_token }
+			}
+			rural_building_next_pm_button_click_enabled = {
+				set_temp_variable = { building_token = rural_buildings^i }
+				return_latest_production_method = yes
+				check_variable = { production_method@var:building_token < pm_temp }
+			}
+			rural_building_prev_pm_button_visible = {
+				is_controlled_by = ROOT
+
+				set_temp_variable = { building_token = rural_buildings^i }
+				check_variable = { production_method@var:building_token > 0 }
+				check_variable = { buildings_pm_selected = building_token }
+			}
+			rural_building_prev_pm_button_click_enabled = {
+				set_temp_variable = { building_token = rural_buildings^i }
+				return_earliest_production_method = yes
+				check_variable = { production_method@var:building_token > pm_temp }
+			}
 		}
 
 		effects = {
@@ -184,36 +234,101 @@ scripted_gui = {
 			urban_building_pm_button_click = {
 				set_temp_variable = { building_token = urban_buildings^i }
 				return_latest_production_method = yes
-
-				set_temp_variable ={ pm_temp_new = production_method@var:building_token }
-				add_to_temp_variable = { pm_temp_new = 1 }
+				log = "[?pm_temp]"
+				log = "[?production_method@var:building_token]"
 				if = {
 					limit = {
-						check_variable = { pm_temp_new > pm_temp }
+						is_controlled_by = ROOT
 					}
-					set_temp_variable = { pm_temp_new = pm_temp }
+					if = {
+						limit = {
+							NOT = { check_variable = { buildings_pm_selected = urban_buildings^i } }
+						}
+						set_variable = { buildings_pm_selected = urban_buildings^i }
+					}
+					else = {
+						clear_variable = buildings_pm_selected
+					}
+					add_to_variable = { update_state_econ_window = 1 }
 				}
-				set_temp_variable = { pm_temp = pm_temp_new }
-				set_production_method = yes
-				
-				add_to_variable = { update_state_econ_window = 1 }
 			}
-			urban_building_pm_button_right_click = {
-				set_temp_variable = { building_token = urban_buildings^i }
-				return_earliest_production_method = yes
-
-				set_temp_variable ={ pm_temp_new = production_method@var:building_token }
-				subtract_from_temp_variable = { pm_temp_new = 1 }
+			urban_building_next_pm_button_click = {
 				if = {
 					limit = {
-						check_variable = { pm_temp_new < pm_temp }
+						is_controlled_by = ROOT
 					}
-					set_temp_variable = { pm_temp_new = pm_temp }
+					set_temp_variable ={ building_token = buildings_pm_selected }
+					clear_variable = buildings_pm_selected
+
+					set_temp_variable ={ pm_temp = production_method@var:building_token }
+					add_to_temp_variable = { pm_temp = 1 }
+					set_production_method = yes
+					add_to_variable = { update_state_econ_window = 1 }
 				}
-				set_temp_variable = { pm_temp = pm_temp_new }
-				set_production_method = yes
-				
-				add_to_variable = { update_state_econ_window = 1 }
+			}
+			urban_building_prev_pm_button_click = {
+				if = {
+					limit = {
+						is_controlled_by = ROOT
+					}
+					set_temp_variable ={ building_token = buildings_pm_selected }
+					clear_variable = buildings_pm_selected
+
+					set_temp_variable ={ pm_temp = production_method@var:building_token }
+					subtract_from_temp_variable = { pm_temp = 1 }
+					set_production_method = yes
+					add_to_variable = { update_state_econ_window = 1 }
+				}
+			}
+
+			rural_building_pm_button_click = {
+				set_temp_variable = { building_token = rural_buildings^i }
+				return_latest_production_method = yes
+				log = "[?pm_temp]"
+				log = "[?production_method@var:building_token]"
+				if = {
+					limit = {
+						is_controlled_by = ROOT
+					}
+					if = {
+						limit = {
+							NOT = { check_variable = { buildings_pm_selected = rural_buildings^i } }
+						}
+						set_variable = { buildings_pm_selected = rural_buildings^i }
+					}
+					else = {
+						clear_variable = buildings_pm_selected
+					}
+					add_to_variable = { update_state_econ_window = 1 }
+				}
+			}
+			rural_building_next_pm_button_click = {
+				if = {
+					limit = {
+						is_controlled_by = ROOT
+					}
+					set_temp_variable ={ building_token = buildings_pm_selected }
+					clear_variable = buildings_pm_selected
+
+					set_temp_variable ={ pm_temp = production_method@var:building_token }
+					add_to_temp_variable = { pm_temp = 1 }
+					set_production_method = yes
+					add_to_variable = { update_state_econ_window = 1 }
+				}
+			}
+			rural_building_prev_pm_button_click = {
+				if = {
+					limit = {
+						is_controlled_by = ROOT
+					}
+					set_temp_variable ={ building_token = buildings_pm_selected }
+					clear_variable = buildings_pm_selected
+
+					set_temp_variable ={ pm_temp = production_method@var:building_token }
+					subtract_from_temp_variable = { pm_temp = 1 }
+					set_production_method = yes
+					add_to_variable = { update_state_econ_window = 1 }
+				}
 			}
 
 			time_button_click = {
@@ -254,12 +369,27 @@ scripted_gui = {
 			urban_building_pm_button = {
 				image = "[GetUrbanBuildingPMButton]"
 			}
+			urban_building_next_pm_button = {
+				image = "[GetUrbanBuildingNextPMButton]"
+			}
+			urban_building_prev_pm_button = {
+				image = "[GetUrbanBuildingPrevPMButton]"
+			}
 			
 			rural_building_background = {
 				image = "[GetRuralBuildingBackground]"
 			}
 			rural_building_icon = {
 				image = "[GetRuralBuildingIcon]"
+			}
+			rural_building_pm_button = {
+				image = "[GetRuralBuildingPMButton]"
+			}
+			rural_building_next_pm_button = {
+				image = "[GetRuralBuildingNextPMButton]"
+			}
+			rural_building_prev_pm_button = {
+				image = "[GetRuralBuildingPrevPMButton]"
 			}
 
 			pops_life_needs_fulfilled_strip = {
