@@ -1,0 +1,59 @@
+d_print_variables = {
+	#SCOPE: ANY
+
+	print_variables = {
+		file = eoanbr_variables
+		append = yes
+		print_global = yes
+	}
+}
+d_print_demographics = {
+	if = {
+		limit = {
+			check_variable = {
+				args^num > 0
+			}
+		}
+		for_each_scope_loop = {
+			array = args
+			log = "[THIS.GetID] - [THIS.GetName]: ([OWNER.GetName])"
+			log = " Cultures:"
+			set_temp_variable = { pop_temp = 0 }
+			for_each_loop = {
+				array = pops_culture_array
+				value = vv
+				log = " - [?vv.GetTokenLocalizedKey] - [?percentage@var:vv|%]"
+				add_to_temp_variable = { pop_temp = percentage@var:vv }
+			}
+			log = "	Total: [?pop_temp|%]"
+			log = " Religions:"
+			set_temp_variable = { pop_temp = 0 }
+			for_each_loop = {
+				array = pops_religion_array
+				value = vv
+				log = " - [?vv.GetTokenLocalizedKey] - [?popularity@var:vv|%]"
+				add_to_temp_variable = { pop_temp = percentage@var:vv }
+			}
+			log = "	Total: [?pop_temp|%]"
+			log = ""
+		}
+	}
+	else = {
+		every_state = {
+			log = "[THIS.GetID] - [THIS.GetName]: ([OWNER.GetName])"
+			log = " Cultures:"
+			for_each_loop = {
+				array = pops_culture_array
+				value = vv
+				log = " - [?vv.GetTokenLocalizedKey] - [?popularity@var:vv|%]"
+			}
+			log = " Religions:"
+			for_each_loop = {
+				array = pops_religion_array
+				value = vv
+				log = " - [?vv.GetTokenLocalizedKey] - [?popularity@var:vv|%]"
+			}
+			log = ""
+		}
+	}
+}
