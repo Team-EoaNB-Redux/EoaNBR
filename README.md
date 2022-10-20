@@ -26,8 +26,8 @@
 [github-stars]: https://img.shields.io/github/stars/team-EoaNB-Redux/EoaNBR?style=for-the-badge
 
 [github-latest]: https://img.shields.io/github/last-commit/team-EoaNB-Redux/EoaNBR?label=Latest%20Commit&color=blue&style=for-the-badge
-[github-activity]: https://img.shields.io/github/commit-activity/m/team-EoaNB-Redux/EoaNBR?label=Activity&style=for-the-badge
-[github-beta-backlog]: https://img.shields.io/github/commits-since/team-EoaNB-Redux/EoaNBR/0.2.11?label=BETA%20VER.&style=for-the-badge&color=blue
+[github-activity]: https://img.shields.io/github/commit-activity/m/team-EoaNB-Redux/EoaNBR?label=Team%20Activity&style=for-the-badge
+[github-beta-backlog]: https://img.shields.io/github/commits-since/team-EoaNB-Redux/EoaNBR/0.2.11?label=Ahead%20Of%20Steam&style=for-the-badge&color=blue
 [discord-link]: https://img.shields.io/discord/1005522629052088340?color=lightgrey&label=DISCORD&style=for-the-badge
 
 <hr>
