@@ -101,6 +101,254 @@ USA_readmission_decisions = {
 		}
 	}
 }
+USA_reconstruction_in_the_south = {
+	eoanb_usarecon_reconstruction_in_southern_state = {
+		icon = placeholder
+
+		allowed = {
+			original_tag = USA
+		}
+
+		state_target = yes
+
+		on_map_mode = map_only
+
+		available = {
+			has_capitulated = no
+			NOT = { has_country_flag = USAROD_Reconstruction_Decision_Taken }
+			FROM = {
+				OWNER = {
+					has_capitulated = no
+					controls_state = PREV
+				}
+				NOT = { has_state_flag = USARECON_State_Rebuilt_flag }
+			}
+		}
+
+		visible = {
+			FROM = {
+				NOT = { has_state_flag = NA_B_Disregardable_State }
+				NOT = { has_state_flag = USARECON_State_Rebuilt_flag }
+				OR = {
+					OWNER = {
+						is_subject_of = ROOT
+						OR = {
+							has_cosmetic_tag = USA_unintegrated_seceded_zone_1
+							has_cosmetic_tag = USA_unintegrated_seceded_zone_2
+							has_cosmetic_tag = USA_unintegrated_seceded_zone_3
+							has_cosmetic_tag = USA_unintegrated_seceded_zone_4
+							has_cosmetic_tag = USA_unintegrated_seceded_zone_5
+							has_cosmetic_tag = USA_unintegrated_seceded_zone_6
+							has_cosmetic_tag = USA_unintegrated_seceded_zone_7
+							has_cosmetic_tag = USA_unintegrated_seceded_zone_8
+							has_cosmetic_tag = USA_unintegrated_seceded_zone_9
+						}
+					}
+					AND = {
+						is_owned_by = ROOT
+						is_core_of = CSA
+					}
+				}
+			}
+		}
+
+		days_remove = 28
+
+		complete_effect = {
+			set_country_flag = {
+				flag = USAROD_Reconstruction_Decision_Taken
+				days = 14
+				value = 1
+			}
+		}
+		remove_effect = {
+			FROM = {
+				set_state_flag = USARECON_State_Rebuilt_flag
+				add_extra_state_shared_building_slots = 1
+				add_building_construction = {
+					type = infrastructure
+					level = 1
+					instant_build = yes
+				}
+			}
+		}
+	}
+	eoanb_usarecon_public_relations_effort = {
+		icon = placeholder
+
+		allowed = {
+			original_tag = USA
+		}
+
+		available = {
+			has_capitulated = no
+			NOT = { has_country_flag = USAROD_Reconstruction_Decision_Taken }
+		}
+
+		visible = {
+			has_capitulated = no
+			NOT = { has_country_flag = USARECON_Southern_Reconstruction_Over }
+		}
+
+		days_remove = 28
+
+		complete_effect = {
+			set_country_flag = {
+				flag = USAROD_Reconstruction_Decision_Taken
+				days = 14
+				value = 1
+			}
+		}
+		remove_effect = {
+			USARECON_decrease_southern_unrest_5 = yes
+			add_political_power = -10
+		}
+	}
+	eoanb_usarecon_crack_down_on_resistance = {
+		icon = placeholder
+
+		allowed = {
+			original_tag = USA
+		}
+
+		available = {
+			has_capitulated = no
+			NOT = { has_country_flag = USAROD_Reconstruction_Decision_Taken }
+		}
+
+		visible = {
+			has_capitulated = no
+			NOT = { has_country_flag = USARECON_Southern_Reconstruction_Over }
+		}
+
+		days_remove = 28
+
+		complete_effect = {
+			set_country_flag = {
+				flag = USAROD_Reconstruction_Decision_Taken
+				days = 14
+				value = 1
+			}
+		}
+		remove_effect = {
+			USARECON_decrease_southern_unrest_10 = yes
+			set_temp_variable = { usarecon_num_federal_soldiers_lost = random }
+			multiply_temp_variable = { usarecon_num_federal_soldiers_lost = 200 }
+			round_temp_variable = usarecon_num_federal_soldiers_lost
+			subtract_from_variable = {
+				var = USARECON_federal_troop_count
+				value = usarecon_num_federal_soldiers_lost
+			}
+			multiply_temp_variable = {
+				tooltip = usarecon_num_federal_soldiers_lost_tt
+				usarecon_num_federal_soldiers_lost = -1 
+			}
+			add_political_power = -10
+		}
+	}
+	eoanb_usarecon_increase_troop_garrison = {
+		icon = placeholder
+
+		ai_will_do = {
+			base = 0
+			modifier = {
+				check_variable = { USARECON_federal_troop_count < 1000 }
+				add = 10
+			}
+		}
+
+		allowed = {
+			original_tag = USA
+		}
+
+		available = {
+			has_capitulated = no
+			NOT = { has_country_flag = USAROD_Reconstruction_Decision_Taken }
+		}
+
+		visible = {
+			has_capitulated = no
+			NOT = { has_country_flag = USARECON_Southern_Reconstruction_Over }
+		}
+
+		days_remove = 28
+
+		complete_effect = {
+			set_country_flag = {
+				flag = USAROD_Reconstruction_Decision_Taken
+				days = 14
+				value = 1
+			}
+			country_event = acw_reconstruction.19
+		}
+	}
+	eoanb_usarecon_southern_reprisal_mission = {
+		icon = placeholder
+		
+		allowed = {
+			original_tag = USA
+		}
+
+		available = {
+			always = no
+		}
+
+		activation = {
+			custom_trigger_tooltip = {
+				tooltip = USARECON_southern_resistance_more_than_50_tt
+				check_variable = { USARECON_southern_resistance > 49 }
+			}
+		}
+
+		cancel_trigger = {
+			custom_trigger_tooltip = {
+				tooltip = USARECON_southern_resistance_less_than_50_tt
+				check_variable = { USARECON_southern_resistance < 50 }
+			}
+		}
+
+		is_good = no
+
+		days_mission_timeout = 100
+		timeout_effect = {
+			custom_effect_tooltip = eoanb_usarecon_southern_reprisal_mission_tt
+			hidden_effect = {
+				random_list = {
+					10 = {
+						country_event = acw_reconstruction.7
+					}
+					10 = {
+						country_event = acw_reconstruction.8
+					}
+					10 = {
+						country_event = acw_reconstruction.11
+					}
+					10 = {
+						country_event = acw_reconstruction.12
+					}
+					10 = {
+						country_event = acw_reconstruction.13
+					}
+					10 = {
+						country_event = acw_reconstruction.14
+					}
+					10 = {
+						country_event = acw_reconstruction.15
+					}
+					10 = {
+						country_event = acw_reconstruction.16
+					}
+					10 = {
+						country_event = acw_reconstruction.17
+					}
+					10 = {
+						country_event = acw_reconstruction.18
+					}
+				}
+			}
+		}
+	}
+}
 # 	# Alabama
 # 	eoanb_decision_reconstruct_1_alabama = {
 # 		icon = generic_political_discourse

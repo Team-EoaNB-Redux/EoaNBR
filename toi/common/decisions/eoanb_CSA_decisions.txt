@@ -300,3 +300,179 @@ CSA_confederate_mexican_war = {
 		}
 	}
 }
+
+CSA_ACW_development_category={
+	CSA_laird_shipbuilding = {
+
+		icon = generic_wreckers
+
+		available = {
+			#check_variable = { FEN_total_bunker_slots > FEN_used_bunker_slots}
+			#num_of_civilian_factories_available_for_projects > 2
+		}
+
+		visible = {
+			#has_completed_focus = CHI_seek_japanese_support
+			always = no
+		}
+
+		fire_only_once = yes
+
+		days_remove = 300
+
+		cost = 0
+
+		# modifier = {
+			# civilian_factory_use = 3
+		# }
+
+		remove_effect = {
+			add_offsite_building = { type = dockyard level = -3 }
+		}
+		
+		ai_will_do = {
+			base = 0
+		}
+	}
+}
+CSA_centralization_balance_of_power_category={
+	CSA_concessions_to_the_states = {
+
+		icon = generic_wreckers
+
+		available = {
+			custom_trigger_tooltip={
+				tooltip = CSA_acw_has_more_than_1_months_funding
+				check_variable = {CSA_ACW_funding > 1}
+			}
+		}
+
+		visible = {
+			#has_completed_focus = CHI_seek_japanese_support
+			#always = no
+		}
+
+		fire_only_once = yes
+
+		days_remove = 25
+		days_re_enable = 25
+
+		cost = 25
+
+		# modifier = {
+			# civilian_factory_use = 3
+		# }
+
+		remove_effect = {
+			set_temp_variable = {var_CSA_temp_reduce_funds = 1}
+			CSA_reduce_acw_funds = yes
+			add_power_balance_value = {
+				id = CSA_centralisation_balance
+				value = 0.02
+			}
+		}
+		
+		ai_will_do = {
+			base = 0
+		}
+	}
+	CSA_centralise_power = {
+
+		icon = generic_wreckers
+
+		available = {
+			
+		}
+
+		visible = {
+			#has_completed_focus = CHI_seek_japanese_support
+			#always = no
+		}
+
+		fire_only_once = yes
+
+		days_remove = 25
+		days_re_enable = 25
+
+		cost = 100
+
+		# modifier = {
+			# civilian_factory_use = 3
+		# }
+
+		remove_effect = {
+			add_power_balance_value = {
+				id = CSA_centralisation_balance
+				value = -0.02
+			}
+		}
+		
+		ai_will_do = {
+			base = 0
+		}
+	}
+}
+
+CSA_ACW_supply_category={
+	CSA_monthly_supply_tick = {
+		icon = generic_civil_support
+
+		allowed = { always = no } # Don't Touch
+
+		activation = { always = no } # Don't Touch
+
+		available = {
+			has_country_flag = CSAIndependence_Won
+		}
+
+		days_mission_timeout = 30
+
+		timeout_effect = {
+			if={
+				limit={
+					custom_trigger_tooltip={
+						tooltip = CSA_acw_has_more_than_1_months_funding
+						check_variable = {CSA_ACW_funding > 1}
+					}
+				}
+				set_temp_variable = {var_CSA_temp_reduce_funds = 1}
+				CSA_reduce_acw_funds = yes
+			}
+			else={
+				debt_level_increase_by_1 = yes
+			}
+			if={
+				limit={
+					custom_trigger_tooltip={
+						tooltip = CSA_acw_has_more_than_1_months_supplies
+						check_variable = {CSA_ACW_supplies > 1}
+					}
+				}
+				set_temp_variable = {var_CSA_temp_reduce_supplies = 1}
+				CSA_reduce_acw_supplies = yes
+				if={
+					limit={
+						has_country_flag = CSA_ACW_starving_populous
+					}
+					remove_ideas = CSA_ACW_starving
+				}
+			}
+			else={
+				if={
+					limit={
+						NOT={has_country_flag = CSA_ACW_starving_populous}
+					}
+					set_country_flag = CSA_ACW_starving_populous
+					add_ideas = {CSA_ACW_starving}
+				}
+			}
+			
+			activate_mission = CSA_monthly_supply_tick
+		}
+
+		complete_effect = {
+			# Country Avoids/Succeeds in Crisis
+			
+		}
+	}
+}
