@@ -1,5 +1,5 @@
 name="End of a New Beginning Redux ~ GitHub Edition"
-version="0.2.11 Ver Tersus"
+version="0.2.13 Ver Tersus"
 tags={
 	"Alternative History"
 	"Events"
