@@ -376,7 +376,7 @@ NDefines = {
 
 		FUEL_LEASE_CONVOY_RATIO = 0.0005,				-- num convoys needed per fuel land lease
 
-		STARTING_FUEL_RATIO = 0.25,						-- starting fuel ratio compared to max fuel for countries
+		STARTING_FUEL_RATIO = 0.1,						-- starting fuel ratio compared to max fuel for countries
 		BASE_FUEL_GAIN_PER_OIL = 2,						-- base amount of fuel gained hourly per excess oil
 		BASE_FUEL_GAIN = 2.0,							-- base amount of fuel gained hourly, independent of excess oil
 		BASE_FUEL_CAPACITY = 50000,						-- base amount of fuel capacity
@@ -561,12 +561,12 @@ NDefines = {
 		EQUIPMENT_LEND_LEASE_WEIGHT_FACTOR = 0.01, -- Base equipment lend lease factor
 		ANNEX_STOCKPILES_RATIO = 1.0,		-- How much stockpiled equipment will be transferred on annexation
 		ANNEX_FIELD_EQUIPMENT_RATIO = 0.25,	-- How much equipment from deployed divisions will be transferred on annexation
-		ANNEX_FUEL_RATIO = 0.25,	-- How much fuel will be transferred on annexation
+		ANNEX_FUEL_RATIO = 0.5,	-- How much fuel will be transferred on annexation
 		ANNEX_CONVOYS_RATIO = 0.15,			-- How many convoys will be transferred on annexation
 		MIN_POSSIBLE_TRAINING_MANPOWER = 100000,	-- How many deployment lines minimum can be training
 		MIN_FIELD_TO_TRAINING_MANPOWER_RATIO = 0.75,	-- Ratio which % of army in field can be trained
 		CAPITULATE_STOCKPILES_RATIO = 0.5, -- How much equipment from deployed divisions will be transferred on capitulation
-		CAPITULATE_FUEL_RATIO = 0.5, -- How much fuel will be transferred on capitulation
+		CAPITULATE_FUEL_RATIO = 0.25, -- How much fuel will be transferred on capitulation
 		INFRA_MAX_CONSTRUCTION_COST_EFFECT = 1, 		-- Building in a state with higher infrastructure will reduce the cost of shared buildings.
 		PRODUCTION_RESOURCE_LACK_PENALTY = -0.5,			-- Penalty decrease while lack of resource per factory
 		MIN_LICENSE_ACTIVE_DAYS = 30,						-- Min days for license to be active
@@ -1443,7 +1443,7 @@ NDefines = {
 		NAVAL_SUPREMACY_CAN_INVADE = 0.5,								-- required naval supremacy to perform invasions on an area
 		CARRIER_STACK_PENALTY = 4,										-- The most efficient is 4 carriers in combat. 5+ brings the penalty to the amount of wings in battle.
 		CARRIER_STACK_PENALTY_EFFECT = 0.2,								-- Each carrier above the optimal amount decreases the amount of airplanes being able to takeoff by such %.
-		SHORE_BOMBARDMENT_CAP = 0.25,
+		SHORE_BOMBARDMENT_CAP = 0.5,
 		ANTI_AIR_TARGETING = 0.9,                                       -- how good ships are at hitting aircraft
 		MIN_TRACTED_ASSIST_DAMAGE_RATIO = 0.05,							-- How much damage counts as assist damage
 		SUPPLY_NEED_FACTOR = 4,										    -- multiplies supply usage
@@ -1485,7 +1485,7 @@ NDefines = {
 			1.0, -- MINES SWEEPING
 			0.6, -- TRAIN
 			0.0, -- RESERVE_FLEET (consumes fuel HOLD_MISSION_MOVEMENT_COST fuel while moving)
-			1.0, -- NAVAL_INVASION_SUPPORT (does not cost fuel at base, only costs while doing bombardment and escorting units)
+			0.75, -- NAVAL_INVASION_SUPPORT (does not cost fuel at base, only costs while doing bombardment and escorting units)
 		},
 
 		HOLD_MISSION_MOVEMENT_COST = 1.0,								-- ships on hold cost this much fuel while moving
@@ -1496,8 +1496,8 @@ NDefines = {
 		MAX_FUEL_FLOW_MULT = 2.0, -- max fuel flow ratio for ships, which will be multiplied by supply
 		FUEL_COST_MULT = 0.10, -- fuel multiplier for all naval missions
 
-		OUT_OF_FUEL_SPEED_FACTOR = -0.75,
-		OUT_OF_FUEL_RANGE_FACTOR = -0.75,
+		OUT_OF_FUEL_SPEED_FACTOR = -0.95,
+		OUT_OF_FUEL_RANGE_FACTOR = -0.95,
 		OUT_OF_FUEL_ATTACK_FACTOR = -0.5,
 		OUT_OF_FUEL_TORPEDO_FACTOR = -0.8,
 
