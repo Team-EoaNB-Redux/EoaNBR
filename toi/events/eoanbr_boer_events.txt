@@ -668,34 +668,10 @@ country_event = { # ENG - GOS declares themselves as an independant state
 				}
 				add_manpower = 1000
 			}
-			hidden_effect = {
-				GOS = {country_event = {id = boer_states.23 days = 365 random = 100}}
-			}
 		}
 	}	
 	option = { # another boer state?
 		name = boer_states.22.a
-	}
-}
-country_event = { # GOS - ask STL for unifaction
-	id = boer_states.23
-	title = boer_states.23.t
-	desc = boer_states.23.d
-		
-	is_triggered_only = yes
-			
-	option = { # go ahead
-		name = boer_states.23.a
-		STL = {country_event = {id = boer_states.24 days = 2}}
-		ai_chance = {
-			factor = 95
-		}
-	}
-	option = { # no
-		name = boer_states.23.b
-		ai_chance = {
-			factor = 5
-		}
 	}
 }
 country_event = { # STL - GOS asks for unifaction
@@ -710,6 +686,10 @@ country_event = { # STL - GOS asks for unifaction
 		annex_country = {
 			target = GOS
 			transfer_troops = yes
+		}
+		1067 = {
+			add_core_of = STL
+			remove_core_of = GOS
 		}
 		set_cosmetic_tag = USS
 		ai_chance = {
@@ -780,12 +760,13 @@ country_event = { # STL - ENG has declared us to be part of it's realm, shall we
 	picture = GFX_report_event_british_army4
 
 	fire_only_once = yes
+	is_triggered_only = yes
 		
-	trigger = {
-		TAG = STL
-		date > 1884.9.1
-		is_guaranteed_by = SAF
-	}	
+	# trigger = {
+		# TAG = STL
+		# date > 1884.9.1
+		# is_guaranteed_by = SAF
+	# }	
 	option = { # go to TRV
 		name = boer_states.26.a
 		trigger = {
@@ -3885,5 +3866,137 @@ country_event = { #OFS - declaration of dominion
 		ENG={puppet = ROOT}
 		load_prevous_ideologies = yes
 		ai_chance = { factor = 75 }
+	}
+}
+
+country_event = { #TRV/OFS - Dorsland Trek - 20 May 1874
+	id = boer_states.125
+	title = boer_states.125.t
+	desc = boer_states.125.d
+		
+	is_triggered_only = yes
+	option = {
+		name = boer_states.125.a #ok
+		ai_chance = { factor = 75 }
+		hidden_effect = {
+			POR={country_event = {id = boer_states.126 days = 2421}}
+		}
+	}
+}
+country_event = { #POR - arrival of the Dorsland Trek in angola - 4 jan 1881
+	id = boer_states.126
+	title = boer_states.126.t
+	desc = boer_states.126.d
+		
+	is_triggered_only = yes
+	immediate={
+		hidden_effect = {
+			1214={owner={country_event = {id = boer_states.127 days = 1750}}}
+		}
+	}
+	option = {
+		name = boer_states.126.a #invite them in
+		ai_chance = { factor = 75 }
+		#add 1000 boers to 932
+		#increase POR control over 932
+	}
+	option = {
+		name = boer_states.126.a #diswade them from settling
+		ai_chance = { factor = 25 }
+		set_country_flag = dorslandtrekkers_driven_south
+	}
+}
+country_event = { #OVB - arrival of the Dorsland Trek in grotfontien - 20 October 1885
+	id = boer_states.127
+	title = boer_states.127.t
+	desc = boer_states.127.d
+		
+	is_triggered_only = yes
+	option = {
+		name = boer_states.126.a #invite them in
+		ai_chance = { factor = 75 }
+		if={
+			limit={
+				GOS={
+					exists = yes
+				}
+			}
+			if={
+				limit={
+					STL={exists = yes}
+				}
+				STL={
+					annex_country = {
+						target = GOS
+						transfer_troops = yes
+					}
+					set_cosmetic_tag = USS
+					1067={
+						add_core_of = STL
+					}
+				}
+			}
+			else={
+				SAF={
+					annex_country = {
+						target = GOS
+						transfer_troops = yes
+					}
+				}
+			}
+			1067 = {
+				remove_core_of = GOS
+			}
+		}
+		1214={
+			add_core_of = GOS
+			transfer_state_to = GOS
+			add_manpower=500
+			#add 500 boers
+			if={
+				limit={
+					POR={has_country_flag = dorslandtrekkers_driven_south}
+				}
+				add_manpower=500
+				#add 500 boers
+				GOS={load_oob = GOS_lijdensrust_veterans}
+			}
+		}
+		GOS={
+			set_cosmetic_tag = GOS_lijdensrust
+			give_guarantee = ROOT
+			#George Diederik P. Prinsloo is leader
+			GOS_George_Diederik_P_Prinsloo={
+				add_country_leader_role = {
+					promote_leader = yes
+					country_leader = {
+						ideology = conserv
+						expire = "1885.1.1.1"
+						traits = {  }
+					}
+				}
+				promote_character = yes
+			}
+		}
+		#add 1000 boers to 932
+		#
+		TRV={country_event = {id = boer_states.128}}
+	}
+}
+country_event = { #TRV/OFS - Dorsland Trek founds lijdensrust
+	id = boer_states.128
+	title = boer_states.128.t
+	desc = boer_states.128.d
+		
+	is_triggered_only = yes
+	option = {
+		name = boer_states.128.a #ok
+		ai_chance = { factor = 75 }
+		
+	}
+	option = {
+		name = boer_states.128.b #switch to lijdensrust
+		ai_chance = { factor = 75 }
+		switch_tag = GOS
 	}
 }
