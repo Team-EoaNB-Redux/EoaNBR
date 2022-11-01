@@ -47,26 +47,48 @@
     	}
     }
 #Culture Family/Groups List
-  defined_text = {
-    name = GetGermanicCultureFamilyList
-    text = {
-      trigger = {
-        #Renderer Data
-          clear_temp_array = layered_param_temp_array
-          all_of = {
-            array = culture_groups_germanic_array
-            value = culture_group_temp
-            
-            add_to_temp_array = {
-              array = layered_param_temp_array
+  #Germanic
+    defined_text = {
+      name = GetGermanicCultureFamilyList
+      text = {
+        trigger = {
+          #Renderer Data
+            clear_temp_array = layered_param_temp_array
+            all_of = {
+              array = culture_groups_germanic_array
               value = culture_group_temp
+              
+              add_to_temp_array = {
+                array = layered_param_temp_array
+                value = culture_group_temp
+              }
             }
-          }
-        #
+          #
+        }
+        localization_key = "§H$culture_family_germanic$:§![RenderCultureFamilyList]"
       }
-      localization_key = "§H$culture_family_germanic$§!:[RenderCultureFamilyList]"
     }
-  }
+    defined_text = {
+      name = GetGermanicNordicCultureGroupList
+      text = {
+        trigger = {
+          #Renderer Data
+            clear_temp_array = param_temp_array
+            all_of = {
+              array = culture_germanic_nordic_array
+              value = culture_temp
+              
+              add_to_temp_array = {
+                array = param_temp_array
+                value = culture_temp
+              }
+            }
+          #
+        }
+        localization_key = " §Y$culture_group_germanic_nordic$§![RenderCultureGroupList]"
+      }
+    }
+  #
   
   defined_text = {
     name = RenderCultureFamilyList
@@ -101,6 +123,41 @@
         #
       }
       localization_key = "[RenderCultureFamilyListInner]"
+    }
+  }
+  defined_text = {
+    name = RenderCultureGroupList
+    text = {
+      trigger = {
+        check_variable = {
+          var = param_temp_array^num
+          value = 0
+          compare = greater_than
+        }
+        #Renderer Settings
+          set_temp_variable = {
+            var = param_cutoff
+            value = 20
+          }
+          set_temp_variable = {
+            var = param_cutoff_suffix
+            value = token:array_cutoff_suffix_ellipsis
+          }
+          set_temp_variable = {
+            var = culture_iter
+            value = -1
+          }
+          set_temp_variable = {
+            var = culture_stop
+            value = = layered_param_temp_array^num
+          }
+          add_to_temp_variable = {
+            var = culture_stop
+            value = -1
+          }
+        #
+      }
+      localization_key = "[RenderGroupFamilyListInner]"
     }
   }
   
@@ -157,7 +214,61 @@
       localization_key = "\n §Y[?culture_group_temp.GetTokenLocalizedKey]:§! [RenderCultureGroupTransfer] [RenderCultureFamilyListInner]"
     }
   }
-  
+  defined_text = {
+    name = RenderGroupFamilyListInner
+    text = {
+      trigger = {
+        add_to_temp_variable = {
+          var = culture_iter
+          value = 1
+        }
+        AND = {
+          check_variable = {
+            var = culture_iter
+            value = param_temp_array^num
+            compare = less_than
+          }
+          check_variable = {
+            var = culture_iter
+            value = param_cutoff
+            compare = less_than
+          }
+          check_variable = {
+            var = culture_highlight
+            value = param_temp_array^culture_iter
+          }
+        }
+        set_temp_variable = {
+          var = culture_temp
+          value = param_temp_array^culture_iter
+        }
+      }
+      localization_key = "\n  - §C[?culture_temp.GetTokenLocalizedKey]:§! [RenderCultureGroupListInner]"
+    }
+    text = {
+      trigger = {
+        AND = {
+          check_variable = {
+            var = culture_iter
+            value = param_temp_array^num
+            compare = less_than
+          }
+          check_variable = {
+            var = culture_iter
+            value = param_cutoff
+            compare = less_than
+          }
+        }
+        set_temp_variable = {
+          var = culture_temp
+          value = param_temp_array^culture_iter
+        }
+      }
+      localization_key = "\n  - §Y[?culture_temp.GetTokenLocalizedKey]:§! [RenderCultureGroupListInner]"
+    }
+  }
+#
+#Transfer
   defined_text = {
     name = RenderCultureFamilyTransfer
     text = {
@@ -888,5 +999,4 @@
       localization_key = "[GetDravidianColonialCultureGroupList]"
     }
   }
-  
-  
+#
