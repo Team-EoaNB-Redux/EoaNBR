@@ -104,3 +104,9 @@ NDefines.NAI.MAX_INVASION_FRONT_SCORE = 2000                            -- max s
 NDefines.NAI.MAX_INVASION_FRONT_SCORE = 2000                            -- max score for naval invasion front scores
 
 NDefines.NFocus.FOCUS_POINT_DAYS = 1 -- 7
+NDefines.NMapMode.UI_CONFIGURABLE_SLOT_TO = 12
+NDefines.NGraphics.GRADIENT_BORDERS_THICKNESS_STATE = 11.0
+NDefines.NGraphics.GRADIENT_BORDERS_THICKNESS_RESISTANCE = 11.0
+NDefines.NGraphics.COUNTRY_FLAG_SMALL_TEX_MAX_SIZE = 256
+NDefines.NGraphics.MINIMUM_PROVINCE_SIZE_IN_PIXELS = 1
+NDefines.NGraphics.POLITICAL_GRID_SMALL_BOX_LIMIT = 100
