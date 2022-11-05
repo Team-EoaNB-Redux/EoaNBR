@@ -11,7 +11,7 @@
 [patreon-link]: https://www.patreon.com/EoaNBR
 
 [steam-badge]: https://img.shields.io/static/v1?label=Steam&message=Download&color=lightgrey&logo=steam&style=for-the-badge
-[steam-link]: https://steamcommunity.com/sharedfiles/filedetails/?id=2114093692
+[steam-link]: https://steamcommunity.com/sharedfiles/filedetails/?id=2861920794
 
 [youtube-badge]: https://img.shields.io/static/v1?label=Youtube&message=Watch&color=red&logo=youtube&style=for-the-badge
 [youtube-link]: https://www.youtube.com/channel/UCR6n-pjZ4ain9hhUESuhZNw
