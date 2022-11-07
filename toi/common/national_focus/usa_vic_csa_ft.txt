@@ -14,7 +14,7 @@ focus_tree = {
 		id = CSA_proclaim_confederacy
 		icon = GFX_Focus_Diplomatic_Ally_CSA_2
 		cost = 35
-		x = 8
+		x = 0
 		y = 0
 		completion_reward = {
 			add_war_support = 0.05
@@ -99,7 +99,8 @@ focus_tree = {
 		prerequisite = {
 			focus = CSA_proclaim_confederacy
 		}
-		x = 9
+		relative_position_id = CSA_proclaim_confederacy
+		x = 1
 		y = 1
 		available = { 
 			OR = {
@@ -135,7 +136,8 @@ focus_tree = {
 		prerequisite = {
 			focus = CSA_proclaim_confederacy
 		}
-		x = 9
+		relative_position_id = CSA_proclaim_confederacy
+		x = 1
 		y = 1
 		available = { 
 			NOT={has_war_with = USA}
@@ -155,14 +157,11 @@ focus_tree = {
 		}
 	}
 	focus = {
-		id = CSA_civil_war_address_issues
-		icon = GFX_focus_generic_support_the_left_right
-		cost = 40
+		id = CSA_civil_war_military
+		icon = GFX_Focus_Army_Law_Reform
+		cost = 35
 		prerequisite = {
-			focus = CSA_initial_soldiers
-		}
-		prerequisite = {
-			focus = CSA_civil_war_sumter
+			focus = CSA_civil_war_capital
 		}
 		bypass = {
 			OR = {
@@ -170,10 +169,10 @@ focus_tree = {
 				has_country_flag = CSAIndependence_Won
 			}
 		}
-		x = 4
-		y = 2
+		relative_position_id = CSA_civil_war_capital
+		x = -9
+		y = 1
 		completion_reward = {
-			remove_ideas = USA_Spirit_Civil_War_Initial_Disorganize
 			army_experience = 5
 			set_temp_variable = { temp1 = 5 }
 			if = {
@@ -217,6 +216,555 @@ focus_tree = {
 			}
 			set_temp_variable = { acw_draft_count_change = temp1 }
 			ACW_Draft_Count_Get = yes
+			add_power_balance_value = {
+				id = CSA_centralisation_balance
+				value = -0.05
+			}
+		}
+		ai_will_do = {
+			base = 10
+			modifier = {
+				add = 10
+				OR = {
+					has_country_flag = ACW_hard_mode
+					has_country_flag = ACW_horde_mode
+				}
+			}
+			modifier = {
+				add = 5
+				has_war_with = USA
+			}
+		}
+	}
+	focus = {
+		id = CSA_civil_war_supply_problems
+		icon = GFX_goal_unknown
+		cost = 35
+		prerequisite = {
+			focus = CSA_civil_war_military
+		}
+		bypass = {
+			OR = {
+				has_country_flag = CSAIndependence_Loss
+				has_country_flag = CSAIndependence_Won
+			}
+		}
+		relative_position_id = CSA_civil_war_military
+		x = 2
+		y = 1
+		completion_reward = {
+			add_ideas = {CSA_solving_supply_issues}
+		}
+		ai_will_do = {
+			base = 10
+			modifier = {
+				add = 5
+				has_war_with = USA
+			}
+		}
+	}
+	focus = {
+		id = CSA_civil_war_northern_supplies
+		icon = GFX_goal_unknown
+		cost = 35
+		prerequisite = {
+			focus = CSA_civil_war_supply_problems
+		}
+		bypass = {
+			OR = {
+				has_country_flag = CSAIndependence_Loss
+				has_country_flag = CSAIndependence_Won
+			}
+		}
+		relative_position_id = CSA_civil_war_supply_problems
+		x = -3
+		y = 1
+		completion_reward = {
+			set_temp_variable = { acw_weapons_count_change = 2 }
+			ACW_Weapons_Count_Get = yes
+		}
+		ai_will_do = {
+			base = 10
+		}
+	}
+	focus = {
+		id = CSA_civil_war_secret_deals
+		icon = GFX_goal_tripartite_pact
+		cost = 35
+		prerequisite = {
+			focus = CSA_civil_war_northern_supplies
+		}
+		bypass = {
+			OR = {
+				has_country_flag = CSAIndependence_Loss
+				has_country_flag = CSAIndependence_Won
+			}
+		}
+		relative_position_id = CSA_civil_war_northern_supplies
+		x = -1
+		y = 1
+		completion_reward = {
+			set_temp_variable = { acw_weapons_count_change = 3 }
+			ACW_Weapons_Count_Get = yes
+			set_temp_variable = {var_CSA_temp_increase_supplies = 2}
+			CSA_increase_acw_supplies = yes
+		}
+		ai_will_do = {
+			base = 10
+			modifier={
+				factor = 100
+				check_variable = {CSA_ACW_supplies < 5}
+			}
+		}
+	}
+	focus = {
+		id = CSA_civil_war_extort_PA_towns
+		icon = GFX_goal_unknown
+		cost = 35
+		prerequisite = {
+			focus = CSA_civil_war_northern_supplies
+		}
+		bypass = {
+			OR = {
+				has_country_flag = CSAIndependence_Loss
+				has_country_flag = CSAIndependence_Won
+			}
+		}
+		relative_position_id = CSA_civil_war_northern_supplies
+		available={
+			360={
+				any_neighbor_state = {
+					is_controlled_by = ROOT
+				}
+			}
+		}
+		x = 1
+		y = 1
+		completion_reward = {
+			set_temp_variable = {var_CSA_temp_increase_supplies = 3}
+			CSA_increase_acw_supplies = yes
+			set_temp_variable = {var_CSA_temp_increase_funds = 3}
+			CSA_increase_acw_funds = yes
+		}
+		ai_will_do = {
+			base = 50
+			modifier={
+				factor = 100
+				check_variable = {CSA_ACW_funding < 5}
+			}
+			modifier={
+				factor = 100
+				check_variable = {CSA_ACW_supplies < 5}
+			}
+		}
+	}
+	focus = {
+		id = CSA_civil_war_rail_problem
+		icon = GFX_Focus_transport_war_gauges
+		cost = 35
+		prerequisite = {
+			focus = CSA_civil_war_supply_problems
+		}
+		bypass = {
+			OR = {
+				has_country_flag = CSAIndependence_Loss
+				has_country_flag = CSAIndependence_Won
+			}
+		}
+		relative_position_id = CSA_civil_war_supply_problems
+		available={
+			OR={
+				is_power_balance_in_range = {
+					id = CSA_centralisation_balance
+					range = CSA_balanced_centralisation
+				}
+				is_power_balance_in_range = {
+					id = CSA_centralisation_balance
+					range = federalists_taking_power_CSA
+				}
+				is_power_balance_in_range = {
+					id = CSA_centralisation_balance
+					range = federalists_full_control_CSA
+				}
+			}
+		}
+		x = 2
+		y = 1
+		completion_reward = {
+			swap_ideas={
+				remove_idea = CSA_solving_supply_issues
+				add_idea = CSA_solving_supply_issues_2
+			}
+		}
+		ai_will_do = {
+			base = 10
+		}
+	}
+	focus = {
+		id = CSA_civil_war_counter_rail_wreaking
+		icon = GFX_goal_unknown
+		cost = 35
+		prerequisite = {
+			focus = CSA_civil_war_rail_problem
+		}
+		bypass = {
+			OR = {
+				has_country_flag = CSAIndependence_Loss
+				has_country_flag = CSAIndependence_Won
+			}
+		}
+		relative_position_id = CSA_civil_war_rail_problem
+		x = -2
+		y = 1
+		completion_reward = {
+			if={
+				limit={has_idea = CSA_union_rail_wreakers}
+				remove_ideas = {CSA_union_rail_wreakers}
+			}
+			else={
+				custom_effect_tooltip = CSA_counter_union_rail_wreakers
+				set_country_flag = CSA_countered_union_rail_wreakers
+			}
+		}
+		ai_will_do = {
+			base = 10
+		}
+	}
+	focus = {
+		id = CSA_civil_war_military_rails
+		icon = GFX_Focus_transport_war_gauges
+		cost = 35
+		prerequisite = {
+			focus = CSA_civil_war_rail_problem
+		}
+		bypass = {
+			OR = {
+				has_country_flag = CSAIndependence_Loss
+				has_country_flag = CSAIndependence_Won
+			}
+		}
+		relative_position_id = CSA_civil_war_rail_problem
+		x = 0
+		y = 1
+		completion_reward = {
+			add_ideas= {CSA_military_railway_control}
+			add_power_balance_value = {
+				id = CSA_centralisation_balance
+				value = -0.15
+			}
+		}
+		ai_will_do = {
+			base = 10
+		}
+	}
+	focus = {
+		id = CSA_civil_war_standard_gauge
+		icon = GFX_Focus_transport_railroad_development
+		cost = 35
+		prerequisite = {
+			focus = CSA_civil_war_rail_problem
+		}
+		bypass = {
+			OR = {
+				has_country_flag = CSAIndependence_Loss
+				has_country_flag = CSAIndependence_Won
+			}
+		}
+		relative_position_id = CSA_civil_war_rail_problem
+		x = 2
+		y = 1
+		completion_reward = {
+			swap_ideas={
+				remove_idea = CSA_solving_supply_issues_2
+				add_idea = CSA_solving_supply_issues_3
+			}
+			add_power_balance_value = {
+				id = CSA_centralisation_balance
+				value = -0.15
+			}
+		}
+		ai_will_do = {
+			base = 10
+		}
+	}
+	focus = {
+		id = CSA_civil_war_manpower_problems
+		icon = GFX_Focus_Army_Generic_Coalition_Army
+		cost = 35
+		prerequisite = {
+			focus = CSA_civil_war_military
+		}
+		bypass = {
+			OR = {
+				has_country_flag = CSAIndependence_Loss
+				has_country_flag = CSAIndependence_Won
+			}
+		}
+		relative_position_id = CSA_civil_war_military
+		x = -7
+		y = 1
+		completion_reward = {
+			set_temp_variable = { temp1 = 1 }
+			if = {
+				limit = {
+					has_country_flag = ACW_normal_mode
+				}
+				multiply_temp_variable = { temp1 = 2 }
+			}
+			else_if = {
+				limit = {
+					has_country_flag = ACW_hard_mode
+				}
+				multiply_temp_variable = { temp1 = 3 }
+			}
+			else_if = {
+				limit = {
+					has_country_flag = ACW_horde_mode
+				}
+				multiply_temp_variable = { temp1 = 5 }
+			}
+			set_temp_variable = { acw_draft_count_change = temp1 }
+			ACW_Draft_Count_Get = yes
+		}
+		ai_will_do = {
+			base = 10
+			modifier = {
+				add = 5
+				has_war_with = USA
+			}
+		}
+	}
+	focus = {
+		id = CSA_civil_war_foreign_volunteers
+		icon = GFX_Focus_Soldier_send_abroad_cadets
+		cost = 35
+		prerequisite = {
+			focus = CSA_civil_war_manpower_problems
+		}
+		bypass = {
+			OR = {
+				has_country_flag = CSAIndependence_Loss
+				has_country_flag = CSAIndependence_Won
+			}
+		}
+		relative_position_id = CSA_civil_war_manpower_problems
+		x = -2
+		y = 1
+		completion_reward = {
+			add_manpower = 2500
+		}
+		ai_will_do = {
+			base = 10
+		}
+	}
+	focus = {
+		id = CSA_civil_war_conscription_act
+		icon = GFX_Focus_conscription
+		cost = 35
+		prerequisite = {
+			focus = CSA_civil_war_manpower_problems
+		}
+		bypass = {
+			OR = {
+				has_country_flag = CSAIndependence_Loss
+				has_country_flag = CSAIndependence_Won
+			}
+		}
+		relative_position_id = CSA_civil_war_manpower_problems
+		x = 0
+		y = 1
+		completion_reward = {
+			if = {
+				limit = {
+					has_country_flag = ACW_horde_mode
+				}
+				add_ideas = { CSA_Civil_War_Conscription2 }
+			}
+			else = {
+				add_ideas = { CSA_Civil_War_Conscription1 }
+			}
+			
+			set_temp_variable = { temp1 = 3 }
+			if = {
+				limit = {
+					has_country_flag = ACW_normal_mode
+				}
+				add_to_temp_variable = { temp1 = 1 }
+			}
+			else_if = {
+				limit = {
+					has_country_flag = ACW_hard_mode
+				}
+				add_to_temp_variable = { temp1 = 2 }
+			}
+			else_if = {
+				limit = {
+					has_country_flag = ACW_horde_mode
+				}
+				multiply_temp_variable = { temp1 = 2 }
+			}
+			set_temp_variable = { acw_draft_count_change = temp1 }
+			ACW_Draft_Count_Get = yes
+			add_power_balance_value = {
+				id = CSA_centralisation_balance
+				value = -0.10
+			}
+		}
+		ai_will_do = {
+			base = 10
+			modifier = {
+				add = 10
+				OR = {
+					has_country_flag = ACW_hard_mode
+					has_country_flag = ACW_horde_mode
+				}
+			}
+			modifier = {
+				add = 5
+				has_war_with = USA
+			}
+		}
+	}
+	focus = {
+		id = CSA_civil_war_end_substition
+		icon = GFX_Focus_army_enlistment_act
+		cost = 35
+		prerequisite = {
+			focus = CSA_civil_war_conscription_act
+		}
+		bypass = {
+			OR = {
+				has_country_flag = CSAIndependence_Loss
+				has_country_flag = CSAIndependence_Won
+			}
+		}
+		relative_position_id = CSA_civil_war_conscription_act
+		x = -1
+		y = 1
+
+		available={
+			has_stability > 0.55
+		}
+		completion_reward = {
+			set_temp_variable = { temp1 = 1 }
+			if = {
+				limit = {
+					has_country_flag = ACW_normal_mode
+				}
+				multiply_temp_variable = { temp1 = 2 }
+			}
+			else_if = {
+				limit = {
+					has_country_flag = ACW_hard_mode
+				}
+				multiply_temp_variable = { temp1 = 3 }
+			}
+			else_if = {
+				limit = {
+					has_country_flag = ACW_horde_mode
+				}
+				multiply_temp_variable = { temp1 = 5 }
+			}
+			set_temp_variable = { acw_draft_count_change = temp1 }
+			ACW_Draft_Count_Get = yes
+			add_stability = -0.05
+			subtract_from_variable = {artisotracy_starting_power = 1}
+		}
+		ai_will_do = {
+			base = 10
+		}
+	}
+	focus = {
+		id = CSA_civil_war_increase_conscription
+		icon = GFX_Focus_Mandatory_Conscription
+		cost = 35
+		prerequisite = {
+			focus = CSA_civil_war_conscription_act
+		}
+		bypass = {
+			OR = {
+				has_country_flag = CSAIndependence_Loss
+				has_country_flag = CSAIndependence_Won
+			}
+		}
+		relative_position_id = CSA_civil_war_conscription_act
+		x = 1
+		y = 1
+		completion_reward = {
+			set_temp_variable = { temp1 = 1 }
+			if = {
+				limit = {
+					has_country_flag = ACW_normal_mode
+				}
+				multiply_temp_variable = { temp1 = 2 }
+			}
+			else_if = {
+				limit = {
+					has_country_flag = ACW_hard_mode
+				}
+				multiply_temp_variable = { temp1 = 3 }
+			}
+			else_if = {
+				limit = {
+					has_country_flag = ACW_horde_mode
+				}
+				multiply_temp_variable = { temp1 = 5 }
+			}
+			set_temp_variable = { acw_draft_count_change = temp1 }
+			ACW_Draft_Count_Get = yes
+		}
+		ai_will_do = {
+			base = 10
+		}
+	}
+	focus = {
+		id = CSA_civil_war_tatics_issues
+		icon = GFX_Focus_Army_Crush
+		cost = 35
+		prerequisite = {
+			focus = CSA_civil_war_military
+		}
+		bypass = {
+			OR = {
+				has_country_flag = CSAIndependence_Loss
+				has_country_flag = CSAIndependence_Won
+			}
+		}
+		relative_position_id = CSA_civil_war_military
+		x = -4
+		y = 1
+		completion_reward = {
+			add_doctrine_cost_reduction = {
+				cost_reduction = 0.5
+				uses = 1
+				category = land_doctrine
+			}
+		}
+		ai_will_do = {
+			base = 10
+		}
+	}
+	focus = {
+		id = CSA_civil_war_improving_tatics
+		icon = GFX_Focus_adapt_new_doctrines
+		cost = 35
+		prerequisite = {
+			focus = CSA_civil_war_tatics_issues
+		}
+		bypass = {
+			OR = {
+				has_country_flag = CSAIndependence_Loss
+				has_country_flag = CSAIndependence_Won
+			}
+		}
+		available={
+			date > 1863.1.1
+		}
+		relative_position_id = CSA_civil_war_tatics_issues
+		x = 0
+		y = 2
+		completion_reward = {
+			add_ideas = {CSA_united_army}
 		}
 		ai_will_do = {
 			base = 10
@@ -230,11 +778,14 @@ focus_tree = {
 		}
 	}
 	focus = {
-		id = CSA_civil_war_military
-		icon = GFX_focus_generic_military_mission
-		cost = 40
+		id = CSA_civil_war_concentrate_push
+		icon = GFX_Focus_Army_Generic_Revanchism
+		cost = 35
 		prerequisite = {
-			focus = CSA_civil_war_address_issues
+			focus = CSA_civil_war_tatics_issues
+		}
+		mutually_exclusive = {
+			focus = CSA_civil_war_concentrate_defence
 		}
 		bypass = {
 			OR = {
@@ -242,92 +793,28 @@ focus_tree = {
 				has_country_flag = CSAIndependence_Won
 			}
 		}
-		x = 2
-		y = 3
-			completion_reward = {
-					army_experience = 50
-					add_command_power = 100
-				}
-				ai_will_do = {
-					base = 10
-					modifier = {
-						add = 10
-						OR = {
-							has_country_flag = ACW_hard_mode
-							has_country_flag = ACW_horde_mode
-						}
-					}
-				}
-
-	}
-	focus = {
-		id = CSA_civil_war_research
-		icon = GFX_goal_generic_army_doctrines
-		cost = 40
-		prerequisite = {
-			focus = CSA_civil_war_military
-		}
-		bypass = {
-			OR = {
-				has_country_flag = CSAIndependence_Loss
-				has_country_flag = CSAIndependence_Won
-			}
-		}
-		x = 1
-		y = 4
-			completion_reward = {
-				add_doctrine_cost_reduction = {
-					cost_reduction = 0.5
-					uses = 1
-					category = land_doctrine
-				}
-			}
-			ai_will_do = {
-				base = 10
-				modifier = {
-					add = 10
-					OR = {
-						has_country_flag = ACW_hard_mode
-						has_country_flag = ACW_horde_mode
-					}
-				}
-			}
-
-	}
-	focus = {
-		id = CSA_civil_war_johnathan_laird
-		icon = GFX_goal_generic_construct_naval_dockyard
-		cost = 40
-		prerequisite = {
-			focus = CSA_civil_war_military
-		}
-		bypass = {
-			OR = {
-				has_country_flag = CSAIndependence_Loss
-				has_country_flag = CSAIndependence_Won
-			}
-		}
-		x = 3
-		y = 4
+		relative_position_id = CSA_civil_war_tatics_issues
+		x = -1
+		y = 1
 		completion_reward = {
-			362 = {
-					add_building_construction = {
-							type = dockyard
-							level = 1
-							instant_build = yes
-						}
-					}
+			add_timed_idea={
+				idea = CSA_concentrated_push
+				days = 160
+			}
 		}
 		ai_will_do = {
 			base = 10
 		}
 	}
 	focus = {
-		id = CSA_civil_war_industry
-		icon = GFX_goal_generic_construction
-		cost = 40
+		id = CSA_civil_war_concentrate_defence
+		icon = GFX_Focus_Army_Conservative
+		cost = 35
 		prerequisite = {
-			focus = CSA_civil_war_address_issues
+			focus = CSA_civil_war_tatics_issues
+		}
+		mutually_exclusive = {
+			focus = CSA_civil_war_concentrate_push
 		}
 		bypass = {
 			OR = {
@@ -335,25 +822,58 @@ focus_tree = {
 				has_country_flag = CSAIndependence_Won
 			}
 		}
-		x = 7
-		y = 4
-			completion_reward = {
-					add_timed_idea = {
-							idea = CSA_Civil_War_Industry1
-							days = 140
-						}
-				}
-				ai_will_do = {
-					base = 10
-				}
+		relative_position_id = CSA_civil_war_tatics_issues
+		x = 1
+		y = 1
+		completion_reward = {
+			add_timed_idea={
+				idea = CSA_concentrated_defence
+				days = 160
+			}
+		}
+		ai_will_do = {
+			base = 10
+		}
+	}
+	focus = {
+		id = CSA_civil_war_economy
+		icon = GFX_Focus_Commercial_Act
+		cost = 35
+		prerequisite = {
+			focus = CSA_civil_war_capital
+		}
+		bypass = {
+			OR = {
+				has_country_flag = CSAIndependence_Loss
+				has_country_flag = CSAIndependence_Won
+			}
+		}
+		relative_position_id = CSA_civil_war_capital
+		x = 8
+		y = 1
+		completion_reward = {
+			set_temp_variable = {var_CSA_temp_increase_funds = 4}
+			CSA_increase_acw_funds = yes
+			add_power_balance_value = {
+				id = CSA_centralisation_balance
+				value = -0.05
+			}
+		}
+		ai_will_do = {
+			base = 10
+			modifier={
+				factor = 100
+				check_variable = {CSA_ACW_funding < 5}
+			}
+		}
 
 	}
 	focus = {
 		id = CSA_civil_war_tredegar_iron
-		icon = GFX_focus_generic_steel
-		cost = 40
-		prerequisite = {
-			focus = CSA_civil_war_industry
+		icon = GFX_Focus_transport_rolling_stock
+		cost = 70
+		prerequisite={
+			focus = CSA_civil_war_economy
 		}
 		bypass = {
 			OR = {
@@ -361,68 +881,32 @@ focus_tree = {
 				has_country_flag = CSAIndependence_Won
 			}
 		}
-		x = 5
-		y = 5
+		available={
+			controls_state = 362
+		}
+		relative_position_id = CSA_civil_war_economy
+		x = -4
+		y = 1
 		completion_reward = {
-			362 = {
-					add_building_construction = {
-							type = steel_mill
-							level = 1
-							instant_build = yes
-						}
-					}
-			add_resource = {
-				type = steel
-				amount = 16
-				state = 362
+			country_event={
+				id = csa.43
 			}
+			#add_resource = {
+			#	type = steel
+			#	amount = 16
+			#	state = 362
+			#}
 		}
 		ai_will_do = {
 			base = 10
 		}
 	}
 	focus = {
-		id = CSA_civil_war_tradition
-		icon = GFX_goal_continuous_def_against_influence
-		cost = 40
-		prerequisite = {
-			focus = CSA_civil_war_tredegar_iron
-		}
-		bypass = {
-			OR = {
-				has_country_flag = CSAIndependence_Loss
-				has_country_flag = CSAIndependence_Won
-			}
-		}
-		x = 5
-		y = 6
-			completion_reward = {
-					random_owned_controlled_state = {
-							add_building_construction = {
-									type = cotton_farm
-									level = 1
-									instant_build = yes
-								}
-						}
-					random_owned_controlled_state = {
-							add_building_construction = {
-									type = cotton_farm
-									level = 1
-									instant_build = yes
-								}
-						}
-				}
-				ai_will_do = {
-					base = 10
-				}
-
-	}
-	focus = {
 		id = CSA_civil_war_industry_war
 		icon = GFX_goal_generic_construct_mil_factory
-		cost = 40
-		prerequisite = {
-			focus = CSA_civil_war_industry
+		cost = 70
+		prerequisite={
+			focus = CSA_civil_war_economy
 		}
 		bypass = {
 			OR = {
@@ -430,28 +914,33 @@ focus_tree = {
 				has_country_flag = CSAIndependence_Won
 			}
 		}
-		x = 7
-		y = 5
-			completion_reward = {
-					random_owned_controlled_state = {
-							add_building_construction = {
-									type = arms_factory
-									level = 1
-									instant_build = yes
-								}
-						}
+		relative_position_id = CSA_civil_war_economy
+		x = -2
+		y = 1
+		completion_reward = {
+			random_owned_controlled_state = {
+				add_extra_state_shared_building_slots = 1
+				add_building_construction = {
+					type = arms_factory
+					level = 1
+					instant_build = yes
 				}
-				ai_will_do = {
-					base = 10
-				}
+			}
+		}
+		ai_will_do = {
+			base = 10
+		}
 
 	}
 	focus = {
 		id = CSA_civil_war_palmetto_arsenal
 		icon = GFX_goal_generic_build_tank
-		cost = 40
+		cost = 70
 		prerequisite = {
-			focus = CSA_civil_war_industry_war
+			focus = CSA_civil_war_economy
+		}
+		available={
+			controls_state = 364
 		}
 		bypass = {
 			OR = {
@@ -459,16 +948,288 @@ focus_tree = {
 				has_country_flag = CSAIndependence_Won
 			}
 		}
-		x = 7
-		y = 6
+		relative_position_id = CSA_civil_war_economy
+		x = 2
+		y = 1
 		completion_reward = {
-				364 = {
-						add_building_construction = {
-								type = arms_factory
-								level = 2
-								instant_build = yes
-							}
-					}
+			364 = {
+				add_extra_state_shared_building_slots = 1
+				add_building_construction = {
+					type = arms_factory
+					level = 1
+					instant_build = yes
+				}
+			}
+		}
+		ai_will_do = {
+			base = 10
+		}
+	}
+	focus = {
+		id = CSA_confederate_state_arsenal
+		icon = GFX_Focus_Industry
+		cost = 70
+		prerequisite = {
+			focus = CSA_civil_war_economy
+		}
+		bypass = {
+			OR = {
+				has_country_flag = CSAIndependence_Loss
+				has_country_flag = CSAIndependence_Won
+			}
+		}
+		available={
+			controls_state = 363
+		}
+		relative_position_id = CSA_civil_war_economy
+		x = 4
+		y = 1
+		completion_reward = {
+			363 = {
+				add_extra_state_shared_building_slots = 1
+				add_building_construction = {
+					type = arms_factory
+					level = 1
+					instant_build = yes
+				}
+			}
+		}
+		ai_will_do = {
+			base = 10
+		}
+	}
+	focus = {
+		id = CSA_civil_war_funding_war
+		icon = GFX_Focus_Economy_Tax
+		cost = 35
+		prerequisite = {
+			focus = CSA_civil_war_economy
+		}
+		bypass = {
+			OR = {
+				has_country_flag = CSAIndependence_Loss
+				has_country_flag = CSAIndependence_Won
+			}
+		}
+		relative_position_id = CSA_civil_war_economy
+		x = 0
+		y = 1
+		completion_reward = {
+			set_temp_variable = {var_CSA_temp_increase_funds = 6}
+			CSA_increase_acw_funds = yes
+		}
+		ai_will_do = {
+			base = 10
+			modifier={
+				factor = 100
+				check_variable = {CSA_ACW_funding < 5}
+			}
+		}
+	}
+	focus = {
+		id = CSA_civil_war_issue_greybacks
+		icon = GFX_Focus_Diplomatic_Ally_CSA_2
+		cost = 35
+		prerequisite = {
+			focus = CSA_civil_war_funding_war
+		}
+		bypass = {
+			OR = {
+				has_country_flag = CSAIndependence_Loss
+				has_country_flag = CSAIndependence_Won
+			}
+		}
+		relative_position_id = CSA_civil_war_funding_war
+		x = 2
+		y = 1
+		completion_reward = {
+			add_ideas = {CSA_greyback_currency}
+			set_temp_variable = {var_CSA_temp_increase_funds = 2}
+			CSA_increase_acw_funds = yes
+		}
+		ai_will_do = {
+			base = 10
+			modifier={
+				factor = 100
+				check_variable = {CSA_ACW_funding < 5}
+			}
+		}
+	}
+	focus = {
+		id = CSA_civil_war_crack_down_on_state_printing
+		icon = GFX_Focus_Economy_Reforms
+		cost = 35
+		prerequisite = {
+			focus = CSA_civil_war_issue_greybacks
+		}
+		mutually_exclusive = {
+			focus = CSA_civil_war_printing_money
+		}
+		bypass = {
+			OR = {
+				has_country_flag = CSAIndependence_Loss
+				has_country_flag = CSAIndependence_Won
+			}
+		}
+		relative_position_id = CSA_civil_war_issue_greybacks
+		x = -1
+		y = 1
+		available = {
+			custom_trigger_tooltip={
+				tooltip = CSA_acw_has_more_than_3_months_funding
+				check_variable = {CSA_ACW_funding > 3}
+			}
+		}
+		completion_reward = {
+			add_power_balance_value = {
+				id = CSA_centralisation_balance
+				value = -0.07
+			}
+			set_temp_variable = {var_CSA_temp_reduce_funds = 3}
+			CSA_reduce_acw_funds = yes
+			set_country_flag = CSA_ACW_fought_inflation
+		}
+		ai_will_do = {
+			base = 10
+			modifier={
+				factor = 2
+				check_variable = {CSA_ACW_funding > 30}
+			}
+		}
+	}
+	focus = {
+		id = CSA_civil_war_printing_money
+		icon = GFX_Focus_economic_money_printing
+		cost = 35
+		prerequisite = {
+			focus = CSA_civil_war_issue_greybacks
+		}
+		mutually_exclusive = {
+			focus = CSA_civil_war_crack_down_on_state_printing
+		}
+		bypass = {
+			OR = {
+				has_country_flag = CSAIndependence_Loss
+				has_country_flag = CSAIndependence_Won
+			}
+		}
+		relative_position_id = CSA_civil_war_issue_greybacks
+		x = 1
+		y = 1
+		completion_reward = {
+			set_temp_variable = {var_CSA_temp_increase_funds = 3}
+			CSA_increase_acw_funds = yes
+		}
+		ai_will_do = {
+			base = 10
+			modifier={
+				factor = 100
+				check_variable = {CSA_ACW_funding < 5}
+			}
+		}
+	}
+	focus = {
+		id = CSA_civil_war_king_cotton
+		icon = GFX_Focus_confederate_cotton_trade
+		cost = 35
+		prerequisite = {
+			focus = CSA_civil_war_funding_war
+		}
+		mutually_exclusive = {
+			focus = CSA_civil_war_continue_exports
+		}
+		bypass = {
+			OR = {
+				has_country_flag = CSAIndependence_Loss
+				has_country_flag = CSAIndependence_Won
+			}
+		}
+		relative_position_id = CSA_civil_war_funding_war
+		x = -3
+		y = 1
+		completion_reward = {
+			#increases the likelyhood of europeans accepting requests
+			custom_effect_tooltip = CSA_increase_likelyhood_of_EU_diplo
+			set_country_flag = CSA_king_cotton_flag
+			add_ideas = {limited_exports}
+		}
+		ai_will_do = {
+			base = 10
+		}
+	}
+	focus = {
+		id = CSA_civil_war_diplomatic_pressure_EU
+		icon = GFX_Focus_Map_Europe
+		cost = 35
+		prerequisite = {
+			focus = CSA_civil_war_king_cotton
+		}
+		bypass = {
+			OR = {
+				has_country_flag = CSAIndependence_Loss
+				has_country_flag = CSAIndependence_Won
+			}
+		}
+		relative_position_id = CSA_civil_war_king_cotton
+		x = 0
+		y = 1
+		completion_reward = {
+			#increases the likelyhood of europeans accepting requests
+			custom_effect_tooltip = CSA_increase_likelyhood_of_EU_diplo
+			set_country_flag = CSA_diplomatic_pressure_flag
+		}
+		ai_will_do = {
+			base = 10
+		}
+	}
+	focus = {
+		id = CSA_civil_war_continue_exports
+		icon = GFX_Focus_Economy_Increase_Wages
+		cost = 35
+		mutually_exclusive = {
+			focus = CSA_civil_war_king_cotton
+		}
+		prerequisite = {
+			focus = CSA_civil_war_funding_war
+		}
+		bypass = {
+			OR = {
+				has_country_flag = CSAIndependence_Loss
+				has_country_flag = CSAIndependence_Won
+			}
+		}
+		relative_position_id = CSA_civil_war_funding_war
+		x = -1
+		y = 1
+		completion_reward = {
+			add_stability = -0.05
+			remove_ideas = CSA_king_cotton_idea
+			set_temp_variable = {var_CSA_temp_increase_funds = 1}
+			CSA_increase_acw_funds = yes
+		}
+		ai_will_do = {
+			base = 10
+		}
+	}
+	focus = {
+		id = CSA_civil_war_need_money
+		icon = GFX_goal_unknown
+		cost = 35
+		prerequisite = {
+			focus = CSA_civil_war_continue_exports
+		}
+		bypass = {
+			OR = {
+				has_country_flag = CSAIndependence_Loss
+				has_country_flag = CSAIndependence_Won
+			}
+		}
+		relative_position_id = CSA_civil_war_continue_exports
+		x = 0
+		y = 1
+		completion_reward = {
+			set_temp_variable = {var_CSA_temp_increase_funds = 2}
+			CSA_increase_acw_funds = yes
 		}
 		ai_will_do = {
 			base = 10
@@ -477,9 +1238,15 @@ focus_tree = {
 	focus = {
 		id = CSA_civil_war_rails
 		icon = GFX_goal_generic_construct_infrastructure
-		cost = 40
-		prerequisite = {
-			focus = CSA_civil_war_industry
+		cost = 35
+		prerequisite={
+			focus = CSA_civil_war_counter_rail_wreaking
+		}
+		prerequisite={
+			focus = CSA_civil_war_military_rails
+		}
+		prerequisite={
+			focus = CSA_civil_war_standard_gauge
 		}
 		bypass = {
 			OR = {
@@ -487,121 +1254,40 @@ focus_tree = {
 				has_country_flag = CSAIndependence_Won
 			}
 		}
-		x = 9
-		y = 5
-			completion_reward = {
-					365 = {
-							add_building_construction = {
-									type = infrastructure
-									level = 1
-									instant_build = yes
-								}
-						}
-					364 = {
-							add_building_construction = {
-									type = infrastructure
-									level = 1
-									instant_build = yes
-								}
-						}
-					363 = {
-							add_building_construction = {
-									type = infrastructure
-									level = 1
-									instant_build = yes
-								}
-						}
-					362 = {
-							add_building_construction = {
-									type = infrastructure
-									level = 1
-									instant_build = yes
-								}
-						}
-				}
-				ai_will_do = {
-					base = 10
-				}
-
-	}
-	focus = {
-		id = CSA_civil_war_civilian
-		icon = GFX_goal_generic_construct_civ_factory
-		cost = 40
-		prerequisite = {
-			focus = CSA_civil_war_rails
+		relative_position_id = CSA_civil_war_military_rails
+		x = 0
+		y = 1
+		available={
+			controls_state = 365
+			controls_state = 364
+			controls_state = 363
+			controls_state = 362
 		}
-		bypass = {
-			OR = {
-				has_country_flag = CSAIndependence_Loss
-				has_country_flag = CSAIndependence_Won
+		completion_reward = {
+			build_railway = {
+				level = 1
+				build_only_on_allied = yes
+				controller_priority = {
+				  base = 1
+				}
+				fallback = yes
+				path = { 9931 12445 10096 10495 4653 1485 9949 638 12384}
+				start_province = 9931
+				target_province = 12384
 			}
 		}
-		x = 9
-		y = 6
-			completion_reward = {
-					random_owned_controlled_state = {
-							add_building_construction = {
-									type = industrial_complex
-									level = 1
-									instant_build = yes
-								}
-						}
-					random_owned_controlled_state = {
-							add_building_construction = {
-									type = industrial_complex
-									level = 1
-									instant_build = yes
-								}
-						}
-					add_timed_idea = {
-							idea = CSA_Civil_War_Industry2
-							days = 140
-						}
-				}
-				ai_will_do = {
-					base = 10
-				}
-
-	}
-	focus = {
-		id = CSA_civil_war_might
-		icon = GFX_goal_generic_demand_territory
-		cost = 75
-		prerequisite = {
-			focus = CSA_civil_war_tradition
+		ai_will_do = {
+			base = 10
 		}
-		prerequisite = {
-			focus = CSA_civil_war_civilian
-		}
-		prerequisite = {
-			focus = CSA_civil_war_palmetto_arsenal
-		}
-		bypass = {
-			OR = {
-				has_country_flag = CSAIndependence_Loss
-				has_country_flag = CSAIndependence_Won
-			}
-		}
-		x = 7
-		y = 8
-			completion_reward = {
-					add_timed_idea = {
-							idea = CSA_Civil_War_Industry3
-							days = 365
-						}
-				}
-				ai_will_do = {
-					base = 10
-				}
 
 	}
 	focus = {
 		id = CSA_civil_war_capital
 		icon = GFX_focus_generic_self_management
-		cost = 30
+		cost = 35
 		prerequisite = {
 			focus = CSA_civil_war_sumter
+			#focus = CSA_collapse_of_union
 		}
 		prerequisite = {
 			focus = CSA_initial_soldiers
@@ -612,10 +1298,14 @@ focus_tree = {
 				has_country_flag = CSAIndependence_Won
 			}
 		}
-		x = 12
-		y = 2
+		allow_branch={
+			always = yes
+		}
+		relative_position_id = CSA_initial_soldiers
+		x = 1
+		y = 1
 		completion_reward = {
-			set_capital = { state = 362 }
+			country_event = {id = csa.41}
 		}
 		ai_will_do = {
 			base = 10
@@ -638,20 +1328,21 @@ focus_tree = {
 		available = {
 			has_war_with = USA
 		}
-		x = 12
-		y = 3
-			completion_reward = {
-					add_political_power = 50
-				}
-				ai_will_do = {
-					base = 10
-				}
+		relative_position_id = CSA_civil_war_capital
+		x = 0
+		y = 1
+		completion_reward = {
+			add_political_power = 100
+		}
+		ai_will_do = {
+			base = 10
+		}
 
 	}
 	focus = {
 		id = CSA_civil_war_invite
 		icon = GFX_goal_generic_military_deal
-		cost = 40
+		cost = 35
 		prerequisite = {
 			focus = CSA_civil_war_support
 		}
@@ -661,8 +1352,9 @@ focus_tree = {
 				has_country_flag = CSAIndependence_Won
 			}
 		}
-		x = 11
-		y = 4
+		relative_position_id = CSA_civil_war_support
+		x = -2
+		y = 1
 		completion_reward = {
 			if = {
 				limit = {
@@ -717,56 +1409,9 @@ focus_tree = {
 
 	}
 	focus = {
-		id = CSA_civil_war_volunteers
-		icon = GFX_focus_generic_little_entente
-		cost = 40
-		prerequisite = {
-			focus = CSA_civil_war_invite
-		}
-		bypass = {
-			OR = {
-				has_country_flag = CSAIndependence_Loss
-				has_country_flag = CSAIndependence_Won
-			}
-		}
-		x = 11
-		y = 5
-			completion_reward = {
-					add_manpower = 5000
-				}
-				ai_will_do = {
-					base = 10
-				}
-
-	}
-	focus = {
-		id = CSA_civil_war_downplay
-		icon = GFX_goal_continuous_restrict_freedom
-		cost = 40
-		prerequisite = {
-			focus = CSA_civil_war_volunteers
-		}
-		bypass = {
-			OR = {
-				has_country_flag = CSAIndependence_Loss
-				has_country_flag = CSAIndependence_Won
-			}
-		}
-		x = 11
-		y = 6
-			completion_reward = {
-					add_political_power = 50
-					add_stability = 0.05
-				}
-				ai_will_do = {
-					base = 10
-				}
-
-	}
-	focus = {
-		id = CSA_hire_james_bulloch
-		icon = GFX_goal_generic_occupy_states_coastal
-		cost = 40
+		id = CSA_civil_war_BRA_delegations
+		icon = GFX_Focus_Diplomatic_Ally_BRA
+		cost = 35
 		prerequisite = {
 			focus = CSA_civil_war_support
 		}
@@ -776,8 +1421,188 @@ focus_tree = {
 				has_country_flag = CSAIndependence_Won
 			}
 		}
-		x = 13
-		y = 4
+		relative_position_id = CSA_civil_war_support
+		x = 2
+		y = 1
+		available={
+			BRA={
+				NOT = {has_completed_focus = BRA_honor_our_alliance}
+				NOT = {has_completed_focus = BRA_recognize_csa}
+			}
+		}
+		completion_reward = {
+			BRA={country_event = {id = csa.46}}
+		}
+		ai_will_do = {
+			base = 10
+		}
+	}
+	focus = {
+		id = CSA_civil_war_ENG_FRA_delegations
+		icon = GFX_Focus_Diplomatic_foreign
+		cost = 35
+		prerequisite = {
+			focus = CSA_civil_war_support
+		}
+		bypass = {
+			OR = {
+				has_country_flag = CSAIndependence_Loss
+				has_country_flag = CSAIndependence_Won
+			}
+		}
+		relative_position_id = CSA_civil_war_support
+		x = 0
+		y = 1
+		completion_reward = {
+			country_event={ id = csa.45}
+		}
+		ai_will_do = {
+			base = 10
+		}
+	}
+	focus = {
+		id = CSA_civil_war_FRA_aid
+		icon = GFX_Focus_Diplomacy_FRA
+		cost = 35
+		prerequisite = {
+			focus = CSA_civil_war_ENG_FRA_delegations
+		}
+		bypass = {
+			OR = {
+				has_country_flag = CSAIndependence_Loss
+				has_country_flag = CSAIndependence_Won
+			}
+		}
+		relative_position_id = CSA_civil_war_ENG_FRA_delegations
+		x = -2
+		y = 1
+		available={
+			FRA = {has_country_flag = FRA_flag_support_csa}
+		}
+		completion_reward = {
+			set_temp_variable = {var_CSA_temp_increase_funds = 2}
+			CSA_increase_acw_funds = yes
+			set_temp_variable = { temp1 = 3 }
+			if = {
+				limit = {
+					has_country_flag = ACW_normal_mode
+				}
+				multiply_temp_variable = { temp1 = 2 }
+			}
+			else_if = {
+				limit = {
+					has_country_flag = ACW_hard_mode
+				}
+				multiply_temp_variable = { temp1 = 3 }
+			}
+			else_if = {
+				limit = {
+					has_country_flag = ACW_horde_mode
+				}
+				multiply_temp_variable = { temp1 = 5 }
+			}
+			set_temp_variable = { acw_weapons_count_change = temp1 }
+			ACW_Weapons_Count_Get = yes
+		}
+		ai_will_do = {
+			base = 10
+			modifier={
+				factor = 100
+				check_variable = {CSA_ACW_funding < 5}
+			}
+		}
+	}
+	focus = {
+		id = CSA_civil_war_recognition
+		icon = GFX_Focus_Diplomatic_foreign_central
+		cost = 35
+		prerequisite = {
+			focus = CSA_civil_war_ENG_FRA_delegations
+		}
+		bypass = {
+			OR = {
+				has_country_flag = CSAIndependence_Loss
+				has_country_flag = CSAIndependence_Won
+			}
+		}
+		relative_position_id = CSA_civil_war_ENG_FRA_delegations
+		x = 0
+		y = 1
+		completion_reward = {
+		}
+		ai_will_do = {
+			base = 10
+		}
+	}
+	focus = {
+		id = CSA_civil_war_ENG_aid
+		icon = GFX_Focus_Diplomacy_UK
+		cost = 35
+		prerequisite = {
+			focus = CSA_civil_war_ENG_FRA_delegations
+		}
+		bypass = {
+			OR = {
+				has_country_flag = CSAIndependence_Loss
+				has_country_flag = CSAIndependence_Won
+			}
+		}
+		relative_position_id = CSA_civil_war_ENG_FRA_delegations
+		x = 2
+		y = 1
+		available={
+			ENG = {has_country_flag = ENG_flag_support_csa}
+		}
+		completion_reward = {
+			set_temp_variable = {var_CSA_temp_increase_funds = 2}
+			CSA_increase_acw_funds = yes
+			set_temp_variable = { temp1 = 3 }
+			if = {
+				limit = {
+					has_country_flag = ACW_normal_mode
+				}
+				multiply_temp_variable = { temp1 = 2 }
+			}
+			else_if = {
+				limit = {
+					has_country_flag = ACW_hard_mode
+				}
+				multiply_temp_variable = { temp1 = 3 }
+			}
+			else_if = {
+				limit = {
+					has_country_flag = ACW_horde_mode
+				}
+				multiply_temp_variable = { temp1 = 5 }
+			}
+			set_temp_variable = { acw_weapons_count_change = temp1 }
+			ACW_Weapons_Count_Get = yes
+		}
+		ai_will_do = {
+			base = 10
+			modifier={
+				factor = 100
+				check_variable = {CSA_ACW_funding < 5}
+			}
+		}
+	}
+
+	focus = {
+		id = CSA_hire_james_bulloch
+		icon = GFX_goal_generic_occupy_states_coastal
+		cost = 35
+		prerequisite = {
+			focus = CSA_civil_war_navy
+		}
+		bypass = {
+			OR = {
+				has_country_flag = CSAIndependence_Loss
+				has_country_flag = CSAIndependence_Won
+			}
+		}
+		relative_position_id = CSA_civil_war_navy
+		x = 6
+		y = 1
 		completion_reward = {
 			add_doctrine_cost_reduction = {
 				cost_reduction = 0.5
@@ -791,11 +1616,11 @@ focus_tree = {
 		}
 	}
 	focus = {
-		id = CSA_civil_war_commission_laird
+		id = CSA_civil_war_navy
 		icon = GFX_goal_generic_navy_cruiser
-		cost = 40
+		cost = 35
 		prerequisite = {
-			focus = CSA_hire_james_bulloch
+			focus = CSA_civil_war_capital
 		}
 		bypass = {
 			OR = {
@@ -803,28 +1628,351 @@ focus_tree = {
 				has_country_flag = CSAIndependence_Won
 			}
 		}
-		x = 13
-		y = 5
+		relative_position_id = CSA_civil_war_capital
+		x = -25
+		y = 1
 		completion_reward = {
-			random_owned_controlled_state = {
-					add_building_construction = {
-							type = dockyard
-							level = 1
-							instant_build = yes
-						}
-					}
+			navy_experience = 25
+			add_power_balance_value = {
+				id = CSA_centralisation_balance
+				value = -0.05
+			}
 		}
 		ai_will_do = {
 			base = 10
 		}
 	}
 	focus = {
-		id = CSA_civil_war_plead
-		icon = GFX_focus_generic_concessions
-		cost = 75
+		id = CSA_military_john_porter
+		icon = GFX_Focus_Navy_Tactics
+		cost = 35
 		prerequisite = {
-			focus = CSA_civil_war_downplay
+			focus = CSA_civil_war_navy
 		}
+		bypass = {
+			OR = {
+				has_country_flag = CSAIndependence_Loss
+				has_country_flag = CSAIndependence_Won
+			}
+		}
+		relative_position_id = CSA_civil_war_navy
+		x = -5
+		y = 1
+		completion_reward = {
+			add_tech_bonus = {
+				bonus = 0.75
+				uses = 1
+				category = naval_mtg_frigate_hulls_tech
+				category = naval_mtg_frigate_tech
+			}
+		}
+		ai_will_do = {
+			base = 10
+		}
+
+	}
+	focus = {
+		id = CSA_military_whispers_of_iron
+		icon = GFX_Focus_Armor_Plates
+		cost = 35
+		prerequisite = {
+			focus = CSA_civil_war_navy
+		}
+		bypass = {
+			OR = {
+				has_country_flag = CSAIndependence_Loss
+				has_country_flag = CSAIndependence_Won
+			}
+		}
+		relative_position_id = CSA_civil_war_navy
+		x = -3
+		y = 1
+		completion_reward = {
+			add_tech_bonus = {
+				bonus = 0.60
+			 	uses = 2
+			 	technology = tech_naval_mtg_ironclad_corvette_hull
+				technology = tech_naval_mtg_prototype_ironclad
+				technology = tech_naval_mtg_prototype_submarine_hull
+				technology = tech_naval_mtg_prototype_monitor
+			}
+		}
+		ai_will_do = {
+			base = 10
+		}
+
+	}
+	focus = {
+		id = CSA_CSS_virginia
+		icon = GFX_Focus_commision_monitors
+		cost = 70
+		prerequisite = {
+			focus = CSA_military_whispers_of_iron
+		}
+		prerequisite = {
+			focus = CSA_military_john_porter
+		}
+		bypass = {
+			OR = {
+				has_country_flag = CSAIndependence_Loss
+				has_country_flag = CSAIndependence_Won
+			}
+		}
+		relative_position_id = CSA_military_whispers_of_iron
+		x = -1
+		y = 1
+		available = {
+			has_tech = tech_naval_mtg_prototype_ironclad
+			custom_trigger_tooltip={
+				tooltip = CSA_acw_has_more_than_1_months_funding
+				check_variable = {CSA_ACW_funding > 1}
+			}
+		}
+		completion_reward = {
+			set_temp_variable = {var_CSA_temp_reduce_funds = 1}
+			CSA_reduce_acw_funds = yes
+			custom_effect_tooltip = 01_CSA_CSS_Virginia
+			hidden_effect = {
+				create_equipment_variant = {
+					name = "CSS Virginia"
+					type = ship_hull_ironclad_0
+					name_group = GER_CA_HISTORICAL
+					parent_version = 0
+					modules = {
+						fixed_ship_battery_slot = ship_cannon_battery_2
+						fixed_ship_fire_control_system_slot = fire_control_system_0
+						fixed_ship_engine_slot = ship_engine_steam_screw_cruiser_2
+						fixed_ship_armor_slot = ship_armor_capital_ironclad_0
+						front_1_custom_slot = empty
+						mid_1_custom_slot = ship_RML_battery_1
+						mid_2_custom_slot = empty
+						rear_1_custom_slot = ship_cannon_battery_2
+					}
+					#obsolete = no
+				}
+				load_oob = CSA_CSS_virginia
+			}
+		}
+		ai_will_do = {
+			base = 10
+			modifier={
+				factor = 0
+				check_variable = {CSA_ACW_funding < 5}
+			}
+		}
+
+	}
+	focus = {
+		id = CSA_CSS_hunley
+		icon = GFX_Goal_early_submarine_focus
+		cost = 70
+		prerequisite = {
+			focus = CSA_military_whispers_of_iron
+		}
+		bypass = {
+			OR = {
+				has_country_flag = CSAIndependence_Loss
+				has_country_flag = CSAIndependence_Won
+			}
+		}
+		relative_position_id = CSA_military_whispers_of_iron
+		available = {
+			custom_trigger_tooltip={
+				tooltip = CSA_acw_has_more_than_1_months_funding
+				check_variable = {CSA_ACW_funding > 1}
+			}
+			has_tech = tech_naval_mtg_prototype_submarine_hull
+		}
+		x = 1
+		y = 1
+		completion_reward = {
+			set_temp_variable = {var_CSA_temp_reduce_funds = 1}
+			CSA_reduce_acw_funds = yes
+			navy_experience = 25
+			custom_effect_tooltip = 01_CSA_CSS_Hunley
+			hidden_effect = {
+				create_equipment_variant = {
+					name = "CSS Hunley"
+					type = ship_hull_submarine_0
+					name_group = GER_CA_HISTORICAL
+					parent_version = 0
+					modules = {
+						fixed_ship_torpedo_slot = ship_torpedo_submarine_spar
+						fixed_ship_engine_slot = ship_engine_steam_screw_sub
+					}
+					#obsolete = no
+				}
+				load_oob = CSA_CSS_HUNLEY
+			}
+		}
+		ai_will_do = {
+			base = 10
+			modifier={
+				factor = 0
+				check_variable = {CSA_ACW_funding < 5}
+			}
+		}
+
+	}
+	focus = {
+		id = CSA_civil_war_milita_of_sea
+		icon = GFX_Focus_Navy_Independence
+		cost = 35
+		prerequisite = {
+			focus = CSA_civil_war_navy
+		}
+		bypass = {
+			OR = {
+				has_country_flag = CSAIndependence_Loss
+				has_country_flag = CSAIndependence_Won
+			}
+		}
+		relative_position_id = CSA_civil_war_navy
+		x = 0
+		y = 1
+		completion_reward = {
+			add_equipment_to_stockpile ={
+				type = convoy
+				amount = 15
+				producer = CSA
+			}
+		}
+		ai_will_do = {
+			base = 10
+		}
+
+	}
+	focus = {
+		id = CSA_cw_blockade_running
+		icon = GFX_Focus_combat_piracy
+		cost = 35
+		prerequisite = {
+			focus = CSA_civil_war_milita_of_sea
+		}
+		bypass = {
+			OR = {
+				has_country_flag = CSAIndependence_Loss
+				has_country_flag = CSAIndependence_Won
+			}
+		}
+		relative_position_id = CSA_civil_war_milita_of_sea
+		x = 0
+		y = 1
+		completion_reward = {
+			add_equipment_to_stockpile ={
+				type = convoy
+				amount = 10
+				producer = CSA
+			}
+			set_temp_variable = { acw_weapons_count_change = 4 }
+			ACW_Weapons_Count_Get = yes
+			set_temp_variable = {var_CSA_temp_increase_supplies = 2}
+			CSA_increase_acw_supplies = yes
+		}
+		ai_will_do = {
+			base = 10
+		}
+
+	}
+	focus = {
+		id = CSA_cw_sea_presence
+		icon = GFX_Focus_Victorian_Line_Ship
+		cost = 35
+		prerequisite = {
+			focus = CSA_civil_war_navy
+		}
+		bypass = {
+			OR = {
+				has_country_flag = CSAIndependence_Loss
+				has_country_flag = CSAIndependence_Won
+			}
+		}
+		relative_position_id = CSA_civil_war_navy
+		x = 2
+		y = 1
+		completion_reward = {
+			navy_experience = 25
+		}
+		ai_will_do = {
+			base = 10
+		}
+
+	}
+	
+	focus = {
+		id = CSA_civil_war_johnathan_laird
+		icon = GFX_goal_generic_construct_naval_dockyard
+		cost = 35
+		prerequisite = {
+			focus = CSA_civil_war_navy
+		}
+		bypass = {
+			OR = {
+				has_country_flag = CSAIndependence_Loss
+				has_country_flag = CSAIndependence_Won
+			}
+		}
+		relative_position_id = CSA_civil_war_navy
+		x = 4
+		y = 1
+		available = {
+			custom_trigger_tooltip={
+				tooltip = CSA_acw_has_more_than_2_months_funding
+				check_variable = {CSA_ACW_funding > 2}
+			}
+		}
+		completion_reward = {
+			country_event={ id = csa.44 }
+			set_temp_variable = {var_CSA_temp_reduce_funds = 2}
+			CSA_reduce_acw_funds = yes
+		}
+		ai_will_do = {
+			base = 10
+			modifier={
+				factor = 0
+				check_variable = {CSA_ACW_funding < 5}
+			}
+		}
+	}
+	focus = {
+		id = CSA_civil_war_commission_laird
+		icon = GFX_Focus_Navy_Budget
+		cost = 35
+		prerequisite = {
+			focus = CSA_civil_war_johnathan_laird 
+		}
+		bypass = {
+			OR = {
+				has_country_flag = CSAIndependence_Loss
+				has_country_flag = CSAIndependence_Won
+			}
+		}
+		relative_position_id = CSA_civil_war_johnathan_laird
+		x = 0
+		y = 1
+		available={
+			has_decision = CSA_laird_shipbuilding
+			custom_trigger_tooltip={
+				tooltip = CSA_acw_has_more_than_2_months_funding
+				check_variable = {CSA_ACW_funding > 2}
+			}
+		}
+		completion_reward = {
+			add_days_remove = {
+				decision = CSA_laird_shipbuilding
+				days = 180
+			}
+			set_temp_variable = {var_CSA_temp_reduce_funds = 2}
+			CSA_reduce_acw_funds = yes
+		}
+		ai_will_do = {
+			base = 10
+		}
+	}
+	focus = {
+		id = CSA_civil_war_governmental_shipbuilding_monopoly
+		icon = GFX_goal_generic_construct_naval_dockyard
+		cost = 35
 		prerequisite = {
 			focus = CSA_civil_war_commission_laird
 		}
@@ -834,105 +1982,26 @@ focus_tree = {
 				has_country_flag = CSAIndependence_Won
 			}
 		}
-		x = 12
-		y = 8
-			completion_reward = {
-					add_political_power = 50
-					add_war_support = 0.05
-					add_manpower = 5000
-				}
-				ai_will_do = {
-					base = 10
-				}
-
-	}
-	focus = {
-		id = CSA_military_john_porter
-		cost = 40
-		prerequisite = {
-			focus = CSA_civil_war_johnathan_laird
+		relative_position_id = CSA_civil_war_commission_laird
+		x = 0
+		y = 1
+		available={
+			has_decision = CSA_laird_shipbuilding
 		}
-		bypass = {
-			OR = {
-				has_country_flag = CSAIndependence_Loss
-				has_country_flag = CSAIndependence_Won
-			}
-		}
-		x = 3
-		y = 5
 		completion_reward = {
-			# add_tech_bonus = {
-			# 	bonus = 0.75
-			# 	uses = 1
-			# 	category = frigate_tech
-			# }
-			navy_experience = 25
+			add_days_remove = {
+				decision = CSA_laird_shipbuilding
+				days = 180
+			}
+			set_country_flag = CSA_promising_laird_monopoly
 		}
 		ai_will_do = {
 			base = 10
-		}
-
-	}
-	focus = {
-		id = CSA_civil_war_recruit
-		icon = GFX_focus_generic_military_academy
-		cost = 40
-		prerequisite = {
-			focus = CSA_civil_war_research
-			focus = CSA_civil_war_johnathan_laird
-		}
-		bypass = {
-			OR = {
-				has_country_flag = CSAIndependence_Loss
-				has_country_flag = CSAIndependence_Won
+			modifier={
+				factor = 0
+				check_variable = {CSA_ACW_funding < 5}
 			}
 		}
-		x = 1
-		y = 5
-		completion_reward = {
-			if = {
-				limit = {
-					has_country_flag = ACW_horde_mode
-				}
-				add_ideas = { CSA_Civil_War_Conscription2 }
-			}
-			else = {
-				add_ideas = { CSA_Civil_War_Conscription1 }
-			}
-			
-			set_temp_variable = { temp1 = 3 }
-			if = {
-				limit = {
-					has_country_flag = ACW_normal_mode
-				}
-				add_to_temp_variable = { temp1 = 1 }
-			}
-			else_if = {
-				limit = {
-					has_country_flag = ACW_hard_mode
-				}
-				add_to_temp_variable = { temp1 = 2 }
-			}
-			else_if = {
-				limit = {
-					has_country_flag = ACW_horde_mode
-				}
-				multiply_temp_variable = { temp1 = 2 }
-			}
-			set_temp_variable = { acw_draft_count_change = temp1 }
-			ACW_Draft_Count_Get = yes
-		}
-		ai_will_do = {
-			base = 10
-			modifier = {
-				add = 10
-				OR = {
-					has_country_flag = ACW_hard_mode
-					has_country_flag = ACW_horde_mode
-				}
-			}
-		}
-
 	}
 	#focus = {
 	#	id = CSA_civil_war_css_virginia
@@ -966,12 +2035,9 @@ focus_tree = {
 	focus = {
 		id = CSA_civil_war_scouting
 		icon = GFX_focus_generic_provoke_border_clashes
-		cost = 40
+		cost = 35
 		prerequisite = {
-			focus = CSA_civil_war_recruit
-		}
-		prerequisite = {
-			focus = CSA_military_john_porter
+			focus = CSA_civil_war_improving_tatics
 		}
 		bypass = {
 			OR = {
@@ -979,19 +2045,21 @@ focus_tree = {
 				has_country_flag = CSAIndependence_Won
 			}
 		}
-		x = 2		y = 6
-			completion_reward = {
-					army_experience = 50
-				}
-				ai_will_do = {
-					base = 10
-				}
-
+		relative_position_id = CSA_civil_war_improving_tatics
+		x = 0	
+		y = 1
+		completion_reward = {
+			army_experience = 50
+		}
+		ai_will_do = {
+			base = 10
+		}
+		
 	}
 	focus = {
 		id = CSA_civil_war_scouting_yes
 		icon = GFX_goal_generic_more_territorial_claims
-		cost = 40
+		cost = 35
 		prerequisite = {
 			focus = CSA_civil_war_scouting
 		}
@@ -1004,8 +2072,9 @@ focus_tree = {
 				has_country_flag = CSAIndependence_Won
 			}
 		}
-		x = 1
-		y = 7
+		relative_position_id = CSA_civil_war_scouting
+		x = -1		
+		y = 1
 			completion_reward = {
 					swap_ideas = {
 							remove_idea = CSA_Civil_War_Scout_Dependency
@@ -1020,7 +2089,7 @@ focus_tree = {
 	focus = {
 		id = CSA_civil_war_scouting_no
 		icon = GFX_goal_generic_small_arms
-		cost = 40
+		cost = 35
 		prerequisite = {
 			focus = CSA_civil_war_scouting
 		}
@@ -1033,14 +2102,15 @@ focus_tree = {
 				has_country_flag = CSAIndependence_Won
 			}
 		}
-		x = 3
-		y = 7
-			completion_reward = {
-					remove_ideas = CSA_Civil_War_Scout_Dependency
-				}
-				ai_will_do = {
-					base = 10
-				}
+		relative_position_id = CSA_civil_war_scouting
+		x = 1	
+		y = 1
+		completion_reward = {
+			remove_ideas = CSA_Civil_War_Scout_Dependency
+		}
+		ai_will_do = {
+			base = 10
+		}
 
 	}
 	focus = {
@@ -1048,8 +2118,16 @@ focus_tree = {
 		icon = GFX_goal_generic_occupy_states_ongoing_war
 		cost = 75
 		prerequisite = {
-			focus = CSA_civil_war_scouting_no
-			focus = CSA_civil_war_scouting_yes
+			focus = CSA_civil_war_improving_tatics
+		}
+		prerequisite = {
+			focus = CSA_civil_war_secret_deals
+		}
+		prerequisite = {
+			focus = CSA_civil_war_extort_PA_towns
+		}
+		prerequisite = {
+			focus = CSA_civil_war_counter_rail_wreaking
 		}
 		bypass = {
 			OR = {
@@ -1057,8 +2135,25 @@ focus_tree = {
 				has_country_flag = CSAIndependence_Won
 			}
 		}
-		x = 2
-		y = 8
+		relative_position_id = CSA_civil_war_improving_tatics
+		x = 4
+		y = 1
+		available={
+			OR={
+				is_power_balance_in_range = {
+					id = CSA_centralisation_balance
+					range = CSA_balanced_centralisation
+				}
+				is_power_balance_in_range = {
+					id = CSA_centralisation_balance
+					range = federalists_taking_power_CSA
+				}
+				is_power_balance_in_range = {
+					id = CSA_centralisation_balance
+					range = federalists_full_control_CSA
+				}
+			}
+		}
 		completion_reward = {
 			add_ideas = CSA_Civil_War_Total_War
 			set_temp_variable = { temp1 = 5 }
@@ -1103,6 +2198,10 @@ focus_tree = {
 			}
 			set_temp_variable = { acw_draft_count_change = temp1 }
 			ACW_Draft_Count_Get = yes
+			add_power_balance_value = {
+				id = CSA_centralisation_balance
+				value = -0.20
+			}
 		}
 		ai_will_do = {
 			base = 10
@@ -1110,56 +2209,566 @@ focus_tree = {
 
 	}
 	focus = {
+		id = CSA_civil_war_might
+		icon = GFX_goal_generic_demand_territory
+		cost = 75
+		prerequisite = {
+			focus = CSA_civil_war_need_money
+			focus = CSA_civil_war_diplomatic_pressure_EU
+		}
+		prerequisite = {
+			focus = CSA_civil_war_crack_down_on_state_printing
+			focus = CSA_civil_war_printing_money
+		}
+		prerequisite = {
+			focus = CSA_civil_war_rationing
+		}
+		prerequisite = {
+			focus = CSA_civil_war_negro_to_work
+			focus = CSA_civil_war_slave_battalions
+		}
+		prerequisite = {
+			focus = CSA_civil_war_expand_deals
+		}
+		bypass = {
+			OR = {
+				has_country_flag = CSAIndependence_Loss
+				has_country_flag = CSAIndependence_Won
+			}
+		}
+		relative_position_id = CSA_civil_war_economy
+		x = 6
+		y = 4
+		available={
+			OR={
+				has_completed_focus = CSA_civil_war_crack_down_on_state_printing
+				is_power_balance_in_range = {
+					id = CSA_centralisation_balance
+					range = federalists_taking_power_CSA
+				}
+				is_power_balance_in_range = {
+					id = CSA_centralisation_balance
+					range = federalists_full_control_CSA
+				}
+			}
+			OR={
+				is_power_balance_in_range = {
+					id = CSA_centralisation_balance
+					range = CSA_balanced_centralisation
+				}
+				is_power_balance_in_range = {
+					id = CSA_centralisation_balance
+					range = federalists_taking_power_CSA
+				}
+				is_power_balance_in_range = {
+					id = CSA_centralisation_balance
+					range = federalists_full_control_CSA
+				}
+			}
+		}
+		completion_reward = {
+			add_timed_idea = {
+				idea = CSA_Civil_War_Industry3
+				days = 365
+			}
+			add_power_balance_value = {
+				id = CSA_centralisation_balance
+				value = -0.15
+			}
+		}
+		ai_will_do = {
+			base = 10
+		}
+
+	}
+
+	focus = {
+		id = CSA_civil_war_internal
+		icon = GFX_Focus_Assembly_Law
+		cost = 35
+		prerequisite = {
+			focus = CSA_civil_war_capital
+		}
+		bypass = {
+			OR = {
+				has_country_flag = CSAIndependence_Loss
+				has_country_flag = CSAIndependence_Won
+			}
+		}
+		relative_position_id = CSA_civil_war_capital
+		x = 19
+		y = 1
+		completion_reward = {
+			add_stability = 0.05
+			add_power_balance_value = {
+				id = CSA_centralisation_balance
+				value = -0.05
+			}
+		}
+		ai_will_do = {
+			base = 10
+		}
+	}
+	focus = {
+		id = CSA_civil_war_dealing_with_plantation
+		icon = GFX_Focus_Electorate_cater_to_land_owners
+		cost = 35
+		prerequisite = {
+			focus = CSA_civil_war_internal
+		}
+		bypass = {
+			OR = {
+				has_country_flag = CSAIndependence_Loss
+				has_country_flag = CSAIndependence_Won
+			}
+		}
+		relative_position_id = CSA_civil_war_internal
+		x = -5
+		y = 1
+		completion_reward = {
+			add_stability = 0.05
+			add_power_balance_value = {
+				id = CSA_centralisation_balance
+				value = 0.05
+			}
+		}
+		ai_will_do = {
+			base = 10
+		}
+	}
+	focus = {
+		id = CSA_civil_war_20_negro_law
+		icon = GFX_Focus_Law_protections
+		cost = 35
+		prerequisite = {
+			focus = CSA_civil_war_dealing_with_plantation
+		}
+		mutually_exclusive = {
+			focus = CSA_civil_war_plantion_leavies
+		}
+		bypass = {
+			OR = {
+				has_country_flag = CSAIndependence_Loss
+				has_country_flag = CSAIndependence_Won
+			}
+		}
+		relative_position_id = CSA_civil_war_dealing_with_plantation
+		x = -1
+		y = 1
+		completion_reward = {
+			add_power_balance_value = {
+				id = CSA_centralisation_balance
+				value = 0.05
+			}
+			swap_ideas={
+				add_idea = CSA_Slavery_Conscription_no_1
+				remove_idea = CSA_Slavery_Conscription
+			}
+			set_country_flag = CSA_ACW_strengthened_aristocrats
+		}
+		ai_will_do = {
+			base = 10
+		}
+	}
+	focus = {
+		id = CSA_civil_war_negro_to_work
+		icon = GFX_Focus_social_issues
+		cost = 35
+		prerequisite = {
+			focus = CSA_civil_war_20_negro_law
+		}
+		bypass = {
+			OR = {
+				has_country_flag = CSAIndependence_Loss
+				has_country_flag = CSAIndependence_Won
+			}
+		}
+		relative_position_id = CSA_civil_war_20_negro_law
+		x = 0
+		y = 1
+		completion_reward = {
+			swap_ideas={
+				add_idea = CSA_Slavery_Conscription_no_2
+				remove_idea = CSA_Slavery_Conscription_no_1
+			}
+			set_temp_variable = {var_CSA_temp_increase_supplies = 3}
+			CSA_increase_acw_supplies = yes
+			set_temp_variable = {var_CSA_temp_increase_funds = 3}
+			CSA_increase_acw_funds = yes
+		}
+		ai_will_do = {
+			base = 10
+		}
+	}
+	focus = {
+		id = CSA_civil_war_plantation_leavies
+		icon = GFX_goal_unknown
+		cost = 35
+		prerequisite = {
+			focus = CSA_civil_war_dealing_with_plantation
+		}
+		mutually_exclusive = {
+			focus = CSA_civil_war_20_negro_law
+		}
+		bypass = {
+			OR = {
+				has_country_flag = CSAIndependence_Loss
+				has_country_flag = CSAIndependence_Won
+			}
+		}
+		relative_position_id = CSA_civil_war_dealing_with_plantation
+		x = 1
+		y = 1
+		completion_reward = {
+			add_stability = -0.05
+			swap_ideas={
+				add_idea = CSA_Slavery_Conscription1
+				remove_idea = CSA_Slavery_Conscription
+			}
+		}
+		ai_will_do = {
+			base = 10
+		}
+	}
+	focus = {
+		id = CSA_civil_war_slave_battalions
+		icon = GFX_goal_unknown
+		cost = 35
+		prerequisite = {
+			focus = CSA_civil_war_plantation_leavies
+		}
+		bypass = {
+			OR = {
+				has_country_flag = CSAIndependence_Loss
+				has_country_flag = CSAIndependence_Won
+			}
+		}
+		relative_position_id = CSA_civil_war_plantation_leavies
+		x = 0
+		y = 1
+		completion_reward = {
+
+		}
+		ai_will_do = {
+			base = 10
+		}
+	}
+	focus = {
+		id = CSA_civil_war_crackdown_unionist_thugs
+		icon = GFX_Focus_Espionage_post_mortem
+		cost = 35
+		prerequisite = {
+			focus = CSA_civil_war_internal
+		}
+		bypass = {
+			OR = {
+				has_country_flag = CSAIndependence_Loss
+				has_country_flag = CSAIndependence_Won
+			}
+		}
+		relative_position_id = CSA_civil_war_internal
+		x = -2
+		y = 1
+		completion_reward = {
+			add_manpower = -2500
+			remove_ideas = {CSA_unionist_thugs}
+		}
+		ai_will_do = {
+			base = 10
+		}
+	}
+	focus = {
+		id = CSA_civil_war_native_wedge
+		icon = GFX_Focus_Government_authority
+		cost = 35
+		prerequisite = {
+			focus = CSA_civil_war_internal
+		}
+		bypass = {
+			OR = {
+				has_country_flag = CSAIndependence_Loss
+				has_country_flag = CSAIndependence_Won
+			}
+		}
+		relative_position_id = CSA_civil_war_internal
+		x = 0
+		y = 1
+		completion_reward = {
+			add_command_power = 100
+		}
+		ai_will_do = {
+			base = 10
+		}
+	}
+	focus = {
+		id = CSA_civil_war_chickasaw_treaty
+		icon = GFX_focus_na_n_solidarity
+		cost = 35
+		prerequisite = {
+			focus = CSA_civil_war_native_wedge
+		}
+		bypass = {
+			OR = {
+				has_country_flag = CSAIndependence_Loss
+				has_country_flag = CSAIndependence_Won
+			}
+		}
+		relative_position_id = CSA_civil_war_native_wedge
+		x = -2
+		y = 1
+		completion_reward = {
+			add_manpower = 2000
+		}
+		ai_will_do = {
+			base = 10
+		}
+	}
+	focus = {
+		id = CSA_civil_war_cherokee_treaty
+		icon = GFX_focus_na_n_solidarity
+		cost = 35
+		prerequisite = {
+			focus = CSA_civil_war_native_wedge
+		}
+		bypass = {
+			OR = {
+				has_country_flag = CSAIndependence_Loss
+				has_country_flag = CSAIndependence_Won
+			}
+		}
+		relative_position_id = CSA_civil_war_native_wedge
+		x = 0
+		y = 1
+		completion_reward = {
+			add_manpower = 2000
+		}
+		ai_will_do = {
+			base = 10
+		}
+	}
+	focus = {
+		id = CSA_civil_war_choctaw_treaty
+		icon = GFX_focus_na_n_solidarity
+		cost = 35
+		prerequisite = {
+			focus = CSA_civil_war_native_wedge
+		}
+		bypass = {
+			OR = {
+				has_country_flag = CSAIndependence_Loss
+				has_country_flag = CSAIndependence_Won
+			}
+		}
+		relative_position_id = CSA_civil_war_native_wedge
+		x = 2
+		y = 1
+		completion_reward = {
+			add_manpower = 2000
+		}
+		ai_will_do = {
+			base = 10
+		}
+	}
+	focus = {
+		id = CSA_civil_war_expand_deals
+		icon = GFX_focus_na_n_solidarity
+		cost = 35
+		prerequisite = {
+			focus = CSA_civil_war_cherokee_treaty
+		}
+		prerequisite = {
+			focus = CSA_civil_war_chickasaw_treaty
+		}
+		prerequisite = {
+			focus = CSA_civil_war_choctaw_treaty
+		}
+		bypass = {
+			OR = {
+				has_country_flag = CSAIndependence_Loss
+				has_country_flag = CSAIndependence_Won
+			}
+		}
+		relative_position_id = CSA_civil_war_cherokee_treaty
+		x = 0
+		y = 1
+		completion_reward = {
+		}
+		ai_will_do = {
+			base = 10
+		}
+	}
+	focus = {
+		id = CSA_civil_war_myth_states_rights
+		icon = GFX_Focus_Government_Decentralized
+		cost = 35
+		prerequisite = {
+			focus = CSA_civil_war_internal
+		}
+		bypass = {
+			OR = {
+				has_country_flag = CSAIndependence_Loss
+				has_country_flag = CSAIndependence_Won
+			}
+		}
+		relative_position_id = CSA_civil_war_internal
+		x = 2
+		y = 1
+		completion_reward = {
+			#increases the likelyhood of europeans accepting requests
+			custom_effect_tooltip = CSA_increase_likelyhood_of_EU_diplo
+			set_country_flag = CSA_myth_states_rights_flag
+			add_power_balance_value = {
+				id = CSA_centralisation_balance
+				value = 0.05
+			}
+		}
+		ai_will_do = {
+			base = 10
+		}
+	}
+	focus = {
+		id = CSA_civil_war_food_supply_problem
+		icon = GFX_Focus_Agriculture_field_question
+		cost = 35
+		prerequisite = {
+			focus = CSA_civil_war_internal
+		}
+		bypass = {
+			OR = {
+				has_country_flag = CSAIndependence_Loss
+				has_country_flag = CSAIndependence_Won
+			}
+		}
+		relative_position_id = CSA_civil_war_internal
+		x = 5
+		y = 1
+		completion_reward = {
+			set_temp_variable = {var_CSA_temp_increase_supplies = 6}
+			CSA_increase_acw_supplies = yes
+		}
+		ai_will_do = {
+			base = 10
+		}
+	}
+	focus = {
+		id = CSA_civil_war_discourage_cotton_overgrowing
+		icon = GFX_Focus_Agriculture_cotton
+		cost = 35
+		prerequisite = {
+			focus = CSA_civil_war_food_supply_problem
+		}
+		bypass = {
+			OR = {
+				has_country_flag = CSAIndependence_Loss
+				has_country_flag = CSAIndependence_Won
+			}
+		}
+		relative_position_id = CSA_civil_war_food_supply_problem
+		x = -1
+		y = 1
+		completion_reward = {
+			add_power_balance_value = {
+				id = CSA_centralisation_balance
+				value = -0.05
+			}
+			set_temp_variable = {var_CSA_temp_increase_supplies = 4}
+			CSA_increase_acw_supplies = yes
+		}
+		ai_will_do = {
+			base = 10
+		}
+	}
+	focus = {
+		id = CSA_civil_war_rationing
+		icon = GFX_Focus_Agriculture_famine
+		cost = 35
+		prerequisite = {
+			focus = CSA_civil_war_food_supply_problem
+		}
+		bypass = {
+			OR = {
+				has_country_flag = CSAIndependence_Loss
+				has_country_flag = CSAIndependence_Won
+			}
+		}
+		relative_position_id = CSA_civil_war_food_supply_problem
+		x = 0
+		y = 2
+		completion_reward = {
+			add_stability = -0.1
+			set_temp_variable = {var_CSA_temp_increase_supplies = 3}
+			CSA_increase_acw_supplies = yes
+			add_power_balance_value = {
+				id = CSA_centralisation_balance
+				value = -0.05
+			}
+		}
+		ai_will_do = {
+			base = 10
+		}
+	}
+	focus = {
+		id = CSA_civil_war_encourage_food
+		icon = GFX_Focus_Agriculture_wheat
+		cost = 35
+		prerequisite = {
+			focus = CSA_civil_war_food_supply_problem
+		}
+		bypass = {
+			OR = {
+				has_country_flag = CSAIndependence_Loss
+				has_country_flag = CSAIndependence_Won
+			}
+		}
+		relative_position_id = CSA_civil_war_food_supply_problem
+		x = 1
+		y = 1
+		completion_reward = {
+			set_temp_variable = {var_CSA_temp_increase_supplies = 3}
+			CSA_increase_acw_supplies = yes
+		}
+		ai_will_do = {
+			base = 10
+		}
+	}
+
+
+
+	focus = {
 		id = CSA_civil_war_victory
 		icon = GFX_goal_generic_major_alliance
 		cost = 0.00
-		prerequisite = {
-			focus = CSA_military_total_war
-		}
-		prerequisite = {
-			focus = CSA_civil_war_might
-		}
-		prerequisite = {
-			focus = CSA_civil_war_plead
-		}
+
 		mutually_exclusive = {
 			focus = CSA_civil_war_defeat
 		}
-		x = 2
-		y = 9
-			available = {
-					has_country_flag = CSAIndependence_Won
-				}
-			bypass = {
-					has_country_flag = CSAIndependence_Won
-				}
-			completion_reward = {
-					custom_effect_tooltip = 01_CSA_War_Result
-					custom_effect_tooltip = 01_CSA_EndUpdate
-				}
-				ai_will_do = {
-					base = 10
-				}
+		x = -2
+		y = 7
+		available = {
+			has_country_flag = CSAIndependence_Won
+		}
+		bypass = {
+			has_country_flag = CSAIndependence_Won
+		}
+		completion_reward = {
+			custom_effect_tooltip = 01_CSA_War_Result
+			#custom_effect_tooltip = 01_CSA_EndUpdate
+		}
+		ai_will_do = {
+			base = 10
+		}
 
 	}
 	focus = {
 		id = CSA_civil_war_defeat
 		icon = GFX_goal_generic_dangerous_deal
 		cost = 5
-		prerequisite = {
-			focus = CSA_civil_war_plead
-		}
-		prerequisite = {
-			focus = CSA_civil_war_might
-		}
-		prerequisite = {
-			focus = CSA_military_total_war
-		}
+
 		mutually_exclusive = {
 			focus = CSA_civil_war_victory
 		}
-		x = 12
-		y = 9
+		x = 2
+		y = 7
 			available = {
 					has_country_flag = CSAIndependence_Loss
 				}
@@ -1179,8 +2788,8 @@ focus_tree = {
 		id = CSA_prepare_convention
 		icon = GFX_Focus_Diplomatic_Ally_CSA_2
 		cost = 20
-		x = 24
-		y = 0
+		x = 0
+		y = 8
 		available = {
 			NOT = {
 				has_war_with = USA
@@ -1210,7 +2819,8 @@ focus_tree = {
 		id = CSA_convention_invite_delegates
 		icon = GFX_Focus_Diplomacy_CSA
 		cost = 20
-		x = 23
+		relative_position_id = CSA_prepare_convention
+		x = -1
 		y = 1
 		prerequisite = {
 			focus = CSA_prepare_convention
@@ -1229,7 +2839,8 @@ focus_tree = {
 		id = CSA_convention_organize
 		icon = GFX_Focus_Telegraph_Lines
 		cost = 20
-		x = 25
+		relative_position_id = CSA_prepare_convention
+		x = 1
 		y = 1
 		prerequisite = {
 			focus = CSA_prepare_convention
@@ -1248,7 +2859,8 @@ focus_tree = {
 		id = CSA_constitutional_convention
 		icon = GFX_Focus_Law_Vote_1
 		cost = 10
-		x = 24
+		relative_position_id = CSA_prepare_convention
+		x = 0
 		y = 2
 		available = {
 			is_puppet = no
@@ -1281,7 +2893,8 @@ focus_tree = {
 		id = CSA_convention_right_to_secede
 		icon = GFX_Focus_Map_Gerrymandering
 		cost = 10
-		x = 20
+		relative_position_id = CSA_prepare_convention
+		x = -4
 		y = 3
 		prerequisite = {
 			focus = CSA_constitutional_convention
@@ -1295,7 +2908,8 @@ focus_tree = {
 		id = CSA_convention_landowner_elite
 		icon = GFX_Focus_Elite
 		cost = 10
-		x = 22
+		relative_position_id = CSA_prepare_convention
+		x = -2
 		y = 3
 		prerequisite = {
 			focus = CSA_constitutional_convention
@@ -1308,7 +2922,8 @@ focus_tree = {
 		id = CSA_convention_commerce_clause
 		icon = GFX_Focus_Trade_International
 		cost = 10
-		x = 24
+		relative_position_id = CSA_prepare_convention
+		x = 0
 		y = 3
 		prerequisite = {
 			focus = CSA_constitutional_convention
@@ -1321,7 +2936,8 @@ focus_tree = {
 		id = CSA_convention_trade_of_slaves
 		icon = GFX_Focus_confederate_slave_trade
 		cost = 10
-		x = 26
+		relative_position_id = CSA_prepare_convention
+		x = 2
 		y = 3
 		prerequisite = {
 			focus = CSA_constitutional_convention
@@ -1334,7 +2950,8 @@ focus_tree = {
 		id = CSA_convention_taxation
 		icon = GFX_Focus_Economy_Increase_Wages
 		cost = 10
-		x = 28
+		relative_position_id = CSA_prepare_convention
+		x = 4
 		y = 3
 		prerequisite = {
 			focus = CSA_constitutional_convention
@@ -1347,7 +2964,8 @@ focus_tree = {
 		id = CSA_convention_confederate
 		icon = GFX_Focus_Government_Decentralized
 		cost = 10
-		x = 18
+		relative_position_id = CSA_prepare_convention
+		x = -6
 		y = 4
 		available = {
 			has_country_flag = CSA_convention_confederation_path
@@ -1381,7 +2999,8 @@ focus_tree = {
 		id = CSA_convention_federalize
 		icon = GFX_Focus_Partisans_Popularize
 		cost = 10
-		x = 24
+		relative_position_id = CSA_prepare_convention
+		x = 0
 		y = 4
 		available = {
 			has_country_flag = CSA_convention_federalism_path
@@ -1415,7 +3034,8 @@ focus_tree = {
 		id = CSA_convention_unitarian
 		icon = GFX_Focus_Government_Reform_Administration
 		cost = 10
-		x = 30
+		relative_position_id = CSA_prepare_convention
+		x = 6
 		y = 4
 		available = {
 			has_country_flag = CSA_convention_unitarian_path
@@ -1449,7 +3069,8 @@ focus_tree = {
 		id = CSA_convention_decentralization_process
 		icon = GFX_goal_anschluss
 		cost = 30
-		x = 18
+		relative_position_id = CSA_prepare_convention
+		x = -6
 		y = 5
 		prerequisite = {
 			focus = CSA_convention_confederate
@@ -1462,7 +3083,8 @@ focus_tree = {
 		id = CSA_convention_decentralization_borders
 		icon = GFX_Focus_Map_Gerrymandering
 		cost = 30
-		x = 17
+		relative_position_id = CSA_prepare_convention
+		x = -7
 		y = 6
 		prerequisite = {
 			focus = CSA_convention_decentralization_process
@@ -1475,7 +3097,8 @@ focus_tree = {
 		id = CSA_convention_decentralization_governors
 		icon = GFX_goal_generic_intelligence_exchange
 		cost = 30
-		x = 19
+		relative_position_id = CSA_prepare_convention
+		x = -5
 		y = 6
 		prerequisite = {
 			focus = CSA_convention_decentralization_process
@@ -1489,7 +3112,8 @@ focus_tree = {
 		id = CSA_convention_decentralization_complete
 		icon = GFX_goal_generic_major_alliance
 		cost = 70
-		x = 18
+		relative_position_id = CSA_prepare_convention
+		x = -6
 		y = 7
 		prerequisite = {
 			focus = CSA_convention_decentralization_governors
@@ -1505,7 +3129,8 @@ focus_tree = {
 		id = CSA_convention_constitution_framework
 		icon = GFX_focus_generic_treaty
 		cost = 30
-		x = 24
+		relative_position_id = CSA_prepare_convention
+		x = 0
 		y = 5
 		prerequisite = {
 			focus = CSA_convention_federalize
@@ -1518,7 +3143,8 @@ focus_tree = {
 		id = CSA_convention_constitution_enshrine_slavery
 		icon = GFX_Focus_confederate_cotton_trade
 		cost = 30
-		x = 23
+		relative_position_id = CSA_prepare_convention
+		x = -1
 		y = 6
 		prerequisite = {
 			focus = CSA_convention_constitution_framework
@@ -1531,7 +3157,8 @@ focus_tree = {
 		id = CSA_convention_constitution_federal_states
 		icon = GFX_Focus_Partisans_Fund
 		cost = 30
-		x = 25
+		relative_position_id = CSA_prepare_convention
+		x = 1
 		y = 6
 		prerequisite = {
 			focus = CSA_convention_constitution_framework
@@ -1545,7 +3172,8 @@ focus_tree = {
 		id = CSA_convention_constitution_federalize
 		icon = GFX_Focus_Continent_North_America
 		cost = 70
-		x = 24
+		relative_position_id = CSA_prepare_convention
+		x = 0
 		y = 7
 		prerequisite = {
 			focus = CSA_convention_constitution_federal_states
@@ -1564,7 +3192,8 @@ focus_tree = {
 		id = CSA_convention_unitarian_pressure
 		icon = GFX_Focus_Partisans_Stop_Fund
 		cost = 30
-		x = 30
+		relative_position_id = CSA_prepare_convention
+		x = 6
 		y = 5
 		prerequisite = {
 			focus = CSA_convention_unitarian
@@ -1579,7 +3208,8 @@ focus_tree = {
 		id = CSA_convention_unitarian_rewrite_constitution
 		icon = GFX_goal_generic_forceful_treaty
 		cost = 30
-		x = 29
+		relative_position_id = CSA_prepare_convention
+		x = 5
 		y = 6
 		prerequisite = {
 			focus = CSA_convention_unitarian_pressure
@@ -1592,7 +3222,8 @@ focus_tree = {
 		id = CSA_convention_unitarian_propaganda
 		icon = GFX_Focus_Freedom_Press_newspapers
 		cost = 30
-		x = 31
+		relative_position_id = CSA_prepare_convention
+		x = 7
 		y = 6
 		prerequisite = {
 			focus = CSA_convention_unitarian_pressure
@@ -1608,7 +3239,8 @@ focus_tree = {
 		id = CSA_convention_unitarian_finish
 		icon = GFX_Focus_imperialism
 		cost = 70
-		x = 30
+		relative_position_id = CSA_prepare_convention
+		x = 6
 		y = 7
 		available = {
 			OR = {
@@ -1628,18 +3260,15 @@ focus_tree = {
 			focus = CSA_convention_unitarian_rewrite_constitution
 		}
 		completion_reward = {
-			start_civil_war = {
-				ideology = radical_democracy
-				size = 0.4
-				capital = 364
-			}
+			
 		}
 	}
 	focus = {
 		id = CSA_convention_election
 		icon = GFX_Focus_Vote_Election
 		cost = 20
-		x = 24
+		relative_position_id = CSA_prepare_convention
+		x = 0
 		y = 8
 		prerequisite = {
 			focus = CSA_convention_unitarian_finish
@@ -1676,7 +3305,8 @@ focus_tree = {
 		id = CSA_convention_election_breckinridge
 		icon = GFX_Focus_Vote_Election
 		cost = 20
-		x = 24
+		relative_position_id = CSA_prepare_convention
+		x = 0
 		y = 9
 		prerequisite = {
 			focus = CSA_convention_election
@@ -1698,7 +3328,8 @@ focus_tree = {
 		id = CSA_convention_election_toombs
 		icon = GFX_Focus_Vote_Election
 		cost = 20
-		x = 20
+		relative_position_id = CSA_prepare_convention
+		x = -4
 		y = 9
 		prerequisite = {
 			focus = CSA_convention_election
@@ -1716,7 +3347,8 @@ focus_tree = {
 		id = CSA_convention_election_lee
 		icon = GFX_Focus_Vote_Election
 		cost = 20
-		x = 28
+		relative_position_id = CSA_prepare_convention
+		x = 4
 		y = 9
 		prerequisite = {
 			focus = CSA_convention_election
@@ -1728,1064 +3360,6 @@ focus_tree = {
 		}
 		completion_reward = {
 			add_stability = 0.05
-		}
-	}
-	focus = {
-		id = CSA_postwar_in_dixies_land
-		icon = GFX_Focus_Diplomatic_Ally_CSA_2
-		cost = 50
-		x = 46
-		y = 0
-		available = {
-			NOT = {
-				has_global_flag = ACW_American_Civil_War_Start
-				has_global_flag = ACW_American_Civil_War
-			}
-			OR = {
-				#has_country_flag = CSA_davis_elected
-				has_country_flag = CSA_breckinridge_elected
-				has_country_flag = CSA_toombs_elected
-				has_country_flag = CSA_lee_elected
-			}
-		}
-		completion_reward = {
-			add_political_power = 20
-		}
-	}
-	focus = {
-		id = CSA_postwar_international_recognition
-		icon = GFX_Focus_Diplomacy_CSA
-		cost = 50
-		x = 38
-		y = 1
-		prerequisite = {
-			focus = CSA_postwar_in_dixies_land
-		}
-		completion_reward = {
-			add_political_power = 20
-		}
-	}
-	focus = {
-		id = CSA_postwar_international_recognition_america
-		icon = GFX_Focus_Continent_North_America
-		cost = 50
-		x = 35
-		y = 2
-		prerequisite = {
-			focus = CSA_postwar_international_recognition
-		}
-		completion_reward = {
-		}
-	}
-	focus = {
-		id = CSA_postwar_international_recognition_brazil
-		icon = GFX_goal_focus_brazil
-		cost = 50
-		x = 32
-		y = 3
-		prerequisite = {
-			focus = CSA_postwar_international_recognition_america
-		}
-		completion_reward = {
-			BRA = {
-				add_opinion_modifier = {
-					target = CSA
-					modifier = CSA_embassy
-				}
-			}
-		}
-	}
-	focus = {
-		id = CSA_postwar_international_recognition_slave_trade
-		icon = GFX_Focus_confederate_slave_trade
-		cost = 50
-		x = 32
-		y = 4
-		prerequisite = {
-			focus = CSA_postwar_international_recognition_brazil
-		}
-		available = {
-			OR = {
-				BRA = {
-					has_idea = usa_slavery_law
-				}
-				BRA = {
-					has_idea = slavery
-				}
-			}
-			has_idea = usa_slavery_law
-		}
-		completion_reward = {
-			BRA = {
-				add_opinion_modifier = {
-					target = CSA
-					modifier = CSA_slave_trade_bra
-				}
-			}
-			add_opinion_modifier = {
-				target = BRA
-				modifier = CSA_slave_trade_bra
-			}
-			ENG = {
-				add_opinion_modifier = {
-					target = CSA
-					modifier = CSA_slave_trade_bra_britain
-				}
-			}
-		}
-	}
-	focus = {
-		id = CSA_postwar_international_recognition_mexico
-		icon = GFX_Focus_failure_mexico
-		cost = 50
-		x = 35
-		y = 3
-		prerequisite = {
-			focus = CSA_postwar_international_recognition_america
-		}
-		completion_reward = {
-			MEX = {
-				add_opinion_modifier = {
-					target = CSA
-					modifier = CSA_embassy
-				}
-			}
-		}
-	}
-	focus = {
-		id = CSA_postwar_international_recognition_mexico_liberal
-		icon = GFX_Focus_mexican_intervention
-		cost = 50
-		x = 34
-		y = 4
-		prerequisite = {
-			focus = CSA_postwar_international_recognition_mexico
-		}
-		available = {
-			MEX = { has_government = centrism }
-			MEX = { has_war = no }
-		}
-		completion_reward = {
-			MEX = {
-				add_political_power = 25
-			}
-		}
-	}
-	focus = {
-		id = CSA_postwar_international_recognition_mexico_conservative
-		icon = GFX_goal_focus_crown_maximilian_austria
-		cost = 50
-		x = 36
-		y = 4
-		prerequisite = {
-			focus = CSA_postwar_international_recognition_mexico
-		}
-		available = {
-			OR = {
-				AND = {
-					MEX = { has_government = centrism }
-					MEX = { has_war_with = FRA }
-				}
-				AND = {
-					MEX = { has_government = traditional_conservatism }
-				}
-			}
-		}
-		completion_reward = {
-			MEX = {
-				add_political_power = 25
-			}
-			add_political_power = 25
-		}
-	}
-	focus = {
-		id = CSA_postwar_international_recognition_mexico_purchase
-		icon = GFX_Focus_Economy_Increase_Wages
-		cost = 50
-		x = 35
-		y = 5
-		prerequisite = {
-			focus = CSA_postwar_international_recognition_mexico_conservative
-			focus = CSA_postwar_international_recognition_mexico_liberal
-		}
-		available = {
-			MEX = { has_war = no }
-			has_war = no
-			OR = {
-				num_of_civilian_factories > 12
-				date > 1880.1.1
-			}
-			owns_state = 1304
-			NOT = { has_idea = CSA_payment_for_states }
-			NOT = { has_idea = CSA_paying_civilwar_debt }
-		}
-		completion_reward = {
-			custom_effect_tooltip = CSA_purchase_sonora_chihuahua_tt
-			hidden_effect = {
-				MEX = { country_event = { id = csa.24 hours = 3 } }
-			}
-		}
-	}
-	focus = {
-		id = CSA_postwar_international_recognition_second_mexican_war
-		icon = GFX_Focus_War_American_Civil_War
-		cost = 50
-		x = 35
-		y = 6
-		prerequisite = {
-			focus = CSA_postwar_international_recognition_mexico_purchase
-		}
-		available = {
-			has_war_with = USA
-			has_country_flag = CSA_second_mexican_war
-		}
-		bypass = {
-			OR = {
-				has_country_flag = CSA_mexico_accepted_purchase_goes
-				has_country_flag = CSA_mexico_refused_purchase
-			}
-		}
-		completion_reward = {
-			add_war_support = 0.1
-		}
-	}
-	focus = {
-		id = CSA_postwar_international_recognition_mexican_war_win
-		icon = GFX_focus_generic_coastal_fort
-		cost = 10
-		x = 34
-		y = 7
-		prerequisite = {
-			focus = CSA_postwar_international_recognition_second_mexican_war
-		}
-		available = {
-			NOT = { has_war_with = USA }
-			owns_state = 482
-			owns_state = 483
-		}
-		completion_reward = {
-			add_stability = 0.1
-			add_political_power = 100
-			add_war_support = -0.1
-		}
-	}
-	focus = {
-		id = CSA_postwar_international_recognition_mexican_war_lose
-		icon = GFX_Focus_failure_mexico
-		cost = 10
-		x = 36
-		y = 7
-		prerequisite = {
-			focus = CSA_postwar_international_recognition_second_mexican_war
-		}
-		available = {
-			NOT = { has_war_with = USA }
-			NOT = { owns_state = 482 }
-			NOT = { owns_state = 483 }
-		}
-		completion_reward = {
-			add_stability = -0.1
-			add_political_power = -50
-			add_war_support = 0.1
-		}
-	}
-	focus = {
-		id = CSA_postwar_international_recognition_natives
-		icon = GFX_goal_demand_sudetenland
-		cost = 50
-		x = 39
-		y = 3
-		prerequisite = {
-			focus = CSA_postwar_international_recognition_america
-		}
-		completion_reward = {
-		}
-	}
-	focus = {
-		id = CSA_postwar_international_recognition_comanche
-		icon = GFX_focus_generic_concessions
-		cost = 50
-		x = 38
-		y = 4
-		prerequisite = {
-			focus = CSA_postwar_international_recognition_natives
-		}
-		available = {
-			owns_state = 375
-		}
-		bypass = {
-			owns_state = 1281
-			owns_state = 1280
-			owns_state = 1293
-		}
-		completion_reward = {
-			if = {
-				limit = { NOT = { owns_state = 1281 } }
-				1281 = {
-					OWNER = { 
-						country_event = { id = csa.36 } 
-						custom_effect_tooltip = afr_colonial_effect_tooltip
-						every_owned_state = {
-							limit = {
-								OR = {
-									state = 1281
-									state = 1280
-									state = 1293
-								}
-							}
-							custom_effect_tooltip = AFR_Racial_Tension_plus_2
-							hidden_effect = { state_event = { id = afr_rrp_racial_tension_increase.2 } }
-						}
-					} 
-				}
-			}
-			else_if = {
-				limit = { NOT = { owns_state = 1280 } }
-				1280 = {
-					OWNER = { 
-						country_event = { id = csa.36 } 
-						custom_effect_tooltip = afr_colonial_effect_tooltip
-						every_owned_state = {
-							limit = {
-								OR = {
-									state = 1281
-									state = 1280
-									state = 1293
-								}
-							}
-							custom_effect_tooltip = AFR_Racial_Tension_plus_2
-							hidden_effect = { state_event = { id = afr_rrp_racial_tension_increase.2 } }
-						}
-					}
-				}
-			}
-			else_if = {
-				limit = { NOT = { owns_state = 1293 } }
-				1293 = {
-					OWNER = { 
-						country_event = { id = csa.36 } 
-						custom_effect_tooltip = afr_colonial_effect_tooltip
-						every_owned_state = {
-							limit = {
-								OR = {
-									state = 1281
-									state = 1280
-									state = 1293
-								}
-							}
-							custom_effect_tooltip = AFR_Racial_Tension_plus_2
-							hidden_effect = { state_event = { id = afr_rrp_racial_tension_increase.2 } }
-						}
-					} 
-				}
-			}
-		}
-	}
-	focus = {
-		id = CSA_postwar_international_recognition_apache
-		icon = GFX_goal_anschluss
-		cost = 50
-		x = 40
-		y = 4
-		prerequisite = {
-			focus = CSA_postwar_international_recognition_natives
-		}
-		available = {
-			owns_state = 1285
-			owns_state = 377
-		}
-		bypass = {
-			owns_state = 1301
-			owns_state = 1286
-		}
-		completion_reward = {
-			if = {
-				limit = { NOT = { owns_state = 1301 } }
-				1301 = {
-					OWNER = { 
-						country_event = { id = csa.38 } 
-						custom_effect_tooltip = afr_colonial_effect_tooltip
-						every_owned_state = {
-							limit = {
-								OR = {
-									state = 1301
-									state = 1286
-								}
-							}
-							custom_effect_tooltip = AFR_Racial_Tension_plus_2
-							hidden_effect = { state_event = { id = afr_rrp_racial_tension_increase.2 } }
-						}
-					}
-				}
-			}
-			else_if = {
-				limit = { NOT = { owns_state = 1286 } }
-				1286 = {
-					OWNER = { 
-						country_event = { id = csa.38 } 
-						custom_effect_tooltip = afr_colonial_effect_tooltip
-						every_owned_state = {
-							limit = {
-								OR = {
-									state = 1301
-									state = 1286
-								}
-							}
-							custom_effect_tooltip = AFR_Racial_Tension_plus_2
-							hidden_effect = { state_event = { id = afr_rrp_racial_tension_increase.2 } }
-						}
-					}
-				}
-			}
-		}
-	}
-	focus = {
-		id = CSA_postwar_international_recognition_europe
-		icon = GFX_Focus_Continent_West_Europe
-		cost = 50
-		x = 42
-		y = 2
-		prerequisite = {
-			focus = CSA_postwar_international_recognition
-		}
-		completion_reward = {
-		}
-	}
-	focus = {
-		id = CSA_postwar_international_recognition_france
-		icon = GFX_Focus_Diplomatic_Ally_FRA
-		cost = 50
-		x = 41
-		y = 3
-		prerequisite = {
-			focus = CSA_postwar_international_recognition_europe
-		}
-		completion_reward = {
-			FRA = {
-				add_opinion_modifier = {
-					target = CSA
-					modifier = CSA_embassy
-				}
-			}
-		}
-	}
-	focus = {
-		id = CSA_postwar_international_recognition_uk
-		icon = GFX_Focus_Diplomatic_Ally_ENG
-		cost = 50
-		x = 43
-		y = 3
-		prerequisite = {
-			focus = CSA_postwar_international_recognition_europe
-		}
-		completion_reward = {
-			ENG = {
-				add_opinion_modifier = {
-					target = CSA
-					modifier = CSA_embassy
-				}
-			}
-		}
-	}
-	focus = {
-		id = CSA_postwar_international_recognition_prussia
-		icon = GFX_Focus_Diplomatic_Ally_PRS
-		cost = 50
-		x = 42
-		y = 4
-		prerequisite = {
-			focus = CSA_postwar_international_recognition_uk
-		}
-		prerequisite = {
-			focus = CSA_postwar_international_recognition_france
-		}
-		completion_reward = {
-			PRS = {
-				add_opinion_modifier = {
-					target = CSA
-					modifier = CSA_embassy
-				}
-			}
-		}
-	}
-	focus = {
-		id = CSA_postwar_international_recognition_cotton_trade
-		icon = GFX_Focus_confederate_cotton_trade
-		cost = 50
-		x = 41
-		y = 5
-		prerequisite = {
-			focus = CSA_postwar_international_recognition_prussia
-		}
-		completion_reward = {
-			FRA = {
-				add_opinion_modifier = {
-					target = CSA
-					modifier = CSA_king_cotton
-				}
-			}
-			ENG = {
-				add_opinion_modifier = {
-					target = CSA
-					modifier = CSA_king_cotton
-				}
-			}
-			PRS = {
-				add_opinion_modifier = {
-					target = CSA
-					modifier = CSA_king_cotton
-				}
-			}
-		}
-	}
-	focus = {
-		id = CSA_postwar_international_recognition_repay_loans
-		icon = GFX_Focus_banks
-		cost = 50
-		x = 43
-		y = 5
-		prerequisite = {
-			focus = CSA_postwar_international_recognition_prussia
-		}
-		completion_reward = {
-			add_timed_idea = {
-				idea = CSA_paying_civilwar_debt
-				days = 100
-			}
-		}
-	}
-	focus = {
-		id = CSA_postwar_international_recognition_purchase_cuba
-		icon = GFX_Focus_Economy_Increase_Wages
-		cost = 50
-		x = 43
-		y = 6
-		prerequisite = {
-			focus = CSA_postwar_international_recognition_repay_loans
-		}
-		available = {
-			NOT = { has_idea = CSA_paying_civilwar_debt }
-			NOT = { has_idea = CSA_payment_for_states }
-		}
-		completion_reward = {
-			SPR = {
-				country_event = { id = csa.33 }
-			}
-		}
-	}
-	focus = {
-		id = CSA_postwar_land_of_two_giants
-		icon = GFX_Focus_Continent_North_America
-		cost = 50
-		x = 46
-		y = 1
-		prerequisite = {
-			focus = CSA_postwar_in_dixies_land
-		}
-		available = {
-			USA = { exists = yes }
-		}
-		completion_reward = {
-			add_political_power = 20
-		}
-	}
-	focus = {
-		id = CSA_postwar_giants_traitor_democrats
-		icon = GFX_goal_focus_us_republican_democrat_agree
-		cost = 50
-		x = 46
-		y = 2
-		prerequisite = {
-			focus = CSA_postwar_land_of_two_giants
-		}
-		available = {
-			USA = { exists = yes }
-		}
-		completion_reward = {
-			country_event = { id = csa.23 }
-		}
-	}
-	focus = {
-		id = CSA_postwar_giants_begin_reapproach
-		icon = GFX_Focus_Diplomacy_CSA
-		cost = 50
-		x = 46
-		y = 3
-		prerequisite = {
-			focus = CSA_postwar_giants_traitor_democrats
-		}
-		available = {
-			NOT = { has_war_with = USA }
-			USA = { exists = yes }
-		}
-		completion_reward = {
-			USA = { country_event = { id = csa.40 } }
-		}
-	}
-	focus = {
-		id = CSA_postwar_giants_trade
-		icon = GFX_goal_generic_positive_trade_relations
-		cost = 50
-		x = 45
-		y = 4
-		prerequisite = {
-			focus = CSA_postwar_giants_begin_reapproach
-		}
-		available = {
-			NOT = { has_war_with = USA }
-			has_country_flag = CSA_USA_reapproach
-		}
-		mutually_exclusive = {
-			focus = CSA_postwar_giants_no_trade
-		}
-		completion_reward = {
-			USA = {
-				add_opinion_modifier = {
-					target = CSA
-					modifier = CSA_reapproach_trade
-				}
-			}
-			add_opinion_modifier = {
-				target = USA
-				modifier = CSA_reapproach_trade
-			}
-		}
-	}
-	focus = {
-		id = CSA_postwar_giants_cool_relations
-		icon = GFX_focus_generic_diplomatic_treaty
-		cost = 50
-		x = 45
-		y = 5
-		prerequisite = {
-			focus = CSA_postwar_giants_trade
-		}
-		available = {
-			NOT = { has_war_with = USA }
-		}
-		completion_reward = {
-			USA = {
-				add_opinion_modifier = {
-					target = CSA
-					modifier = CSA_reapproach
-				}
-			}
-			add_opinion_modifier = {
-				target = USA
-				modifier = CSA_reapproach
-			}
-		}
-	}
-	focus = {
-		id = CSA_postwar_giants_no_trade
-		icon = GFX_goal_generic_trade
-		cost = 50
-		x = 47
-		y = 4
-		prerequisite = {
-			focus = CSA_postwar_giants_begin_reapproach
-		}
-		available = {
-			NOT = { has_war_with = USA }
-			has_country_flag = CSA_USA_no_reapproach
-		}
-		mutually_exclusive = {
-			focus = CSA_postwar_giants_trade
-		}
-		completion_reward = {
-			USA = {
-				add_opinion_modifier = {
-					target = CSA
-					modifier = CSA_reapproach_no_trade
-				}
-			}
-			add_opinion_modifier = {
-				target = USA
-				modifier = CSA_reapproach_no_trade
-			}
-		}
-	}
-	focus = {
-		id = CSA_postwar_giants_hostile_relations
-		icon = GFX_goal_generic_dangerous_deal
-		cost = 50
-		x = 47
-		y = 5
-		prerequisite = {
-			focus = CSA_postwar_giants_no_trade
-		}
-		available = {
-			NOT = { has_war_with = USA }
-		}
-		completion_reward = {
-			USA = {
-				add_opinion_modifier = {
-					target = CSA
-					modifier = CSA_reapproach_no
-				}
-			}
-			add_opinion_modifier = {
-				target = USA
-				modifier = CSA_reapproach_no
-			}
-		}
-	}
-	focus = {
-		id = CSA_postwar_internal_politics
-		icon = GFX_focus_generic_self_management
-		cost = 50
-		x = 54
-		y = 1
-		prerequisite = {
-			focus = CSA_postwar_in_dixies_land
-		}
-		completion_reward = {
-			add_political_power = 20
-		}
-	}
-	focus = {
-		id = CSA_postwar_internal_whig_rebirth
-		icon = GFX_Focus_Ideology_Support_Democracy
-		cost = 50
-		x = 50
-		y = 2
-		prerequisite = {
-			focus = CSA_postwar_internal_politics
-		}
-		available = {
-			has_country_flag = CSA_whig_party_flag
-		}
-		bypass = {
-			has_country_flag = CSA_whig_party_flag
-		}
-		completion_reward = {
-		}
-	}
-	focus = {
-		id = CSA_postwar_internal_whig_symbol
-		icon = GFX_focus_us_whig_party
-		cost = 50
-		x = 49
-		y = 3
-		prerequisite = {
-			focus = CSA_postwar_internal_whig_rebirth
-		}
-		completion_reward = {
-			add_popularity = {
-				ideology = centrism
-				popularity = 0.02
-			}
-		}
-	}
-	focus = {
-		id = CSA_postwar_internal_whig_popular
-		icon = GFX_Focus_Partisans_Popularize
-		cost = 50
-		x = 51
-		y = 3
-		prerequisite = {
-			focus = CSA_postwar_internal_whig_rebirth
-		}
-		completion_reward = {
-			add_popularity = {
-				ideology = centrism
-				popularity = 0.02
-			}
-		}
-	}
-	focus = {
-		id = CSA_postwar_internal_whig_politics
-		icon = GFX_Focus_Government_Reform_Administration
-		cost = 100
-		x = 50
-		y = 4
-		prerequisite = {
-			focus = CSA_postwar_internal_whig_popular
-		}
-		prerequisite = {
-			focus = CSA_postwar_internal_whig_symbol
-		}
-		available = {
-			has_government = centrism
-		}
-		completion_reward = {
-			add_political_power = 50
-		}
-	}
-	focus = {
-		id = CSA_postwar_internal_whig_aristocracy_reforms
-		icon = GFX_focus_rom_parties_end
-		cost = 100
-		x = 49
-		y = 5
-		prerequisite = {
-			focus = CSA_postwar_internal_whig_politics
-		}
-		available = {
-			has_government = centrism
-			OR = {
-				date > 1890.1.1
-				centrism > 0.5
-			}
-		}
-		bypass = {
-			NOT = {
-				has_idea = CSA_strong_aristocrats_3
-				has_idea = CSA_strong_aristocrats_2
-				has_idea = CSA_strong_aristocrats_1
-			}
-		}
-		completion_reward = {
-			add_popularity = {
-				ideology = centrism
-				popularity = -0.05
-			}
-		}
-	}
-	focus = {
-		id = CSA_postwar_internal_whig_central_reforms
-		icon = GFX_Focus_Law_Vote_1
-		cost = 100
-		x = 51
-		y = 5
-		prerequisite = {
-			focus = CSA_postwar_internal_whig_politics
-		}
-		available = {
-			has_government = centrism
-			OR = {
-				date > 1890.1.1
-				centrism > 0.5
-			}
-		}
-		bypass = {
-			NOT = {
-				has_idea = CSA_confederate_government
-				has_idea = CSA_federal_government
-			}
-		}
-		completion_reward = {
-			add_popularity = {
-				ideology = centrism
-				popularity = -0.05
-			}
-		}
-	}
-	focus = {
-		id = CSA_postwar_internal_whig_slavery_reforms
-		icon = GFX_Focus_Ideology_Support_Liberalism
-		cost = 100
-		x = 50
-		y = 6
-		prerequisite = {
-			focus = CSA_postwar_internal_whig_central_reforms
-		}
-		prerequisite = {
-			focus = CSA_postwar_internal_whig_aristocracy_reforms
-		}
-		available = {
-			has_government = centrism
-			OR = {
-				date > 1900.1.1
-				centrism > 0.7
-			}
-		}
-		completion_reward = {
-			add_popularity = {
-				ideology = centrism
-				popularity = -0.1
-			}
-		}
-	}
-	focus = {
-		id = CSA_postwar_internal_kgc_founding
-		icon = GFX_Focus_Catholism_Cross_Burning
-		cost = 50
-		x = 58
-		y = 2
-		prerequisite = {
-			focus = CSA_postwar_internal_politics
-		}
-		available = {
-			has_country_flag = CSA_kgc_party_flag
-		}
-		bypass = {
-			has_country_flag = CSA_kgc_party_flag
-		}
-		completion_reward = {
-		}
-	}
-	focus = {
-		id = CSA_postwar_internal_economy
-		icon = GFX_goal_generic_consumer_goods
-		cost = 50
-		x = 54
-		y = 2
-		prerequisite = {
-			focus = CSA_postwar_internal_politics
-		}
-		completion_reward = {
-			custom_effect_tooltip = CSA_internal_economy_tt
-		}
-	}
-	focus = {
-		id = CSA_postwar_internal_richmond_mint
-		icon = GFX_Focus_banks
-		cost = 50
-		x = 54
-		y = 3
-		prerequisite = {
-			focus = CSA_postwar_internal_economy
-		}
-		available = {
-			has_political_power > 25
-			has_war = no
-		}
-		completion_reward = {
-			362 = {
-				add_building_construction = {
-					type = industrial_complex
-					level = 1
-					instant_build = yes
-				}
-			}
-			add_political_power = -25
-		}
-	}
-	focus = {
-		id = CSA_postwar_internal_usa_dollar
-		icon = GFX_focus_chi_mission_to_the_us
-		cost = 50
-		x = 52
-		y = 4
-		prerequisite = {
-			focus = CSA_postwar_internal_richmond_mint
-		}
-		mutually_exclusive = {
-			focus = CSA_postwar_internal_uk_pound
-		}
-		mutually_exclusive = {
-			focus = CSA_postwar_internal_csa_dollar
-		}
-		completion_reward = {
-			USA = {
-				add_opinion_modifier = {
-					target = CSA
-					modifier = CSA_use_currency
-				}
-			}
-		}
-	}
-	focus = {
-		id = CSA_postwar_internal_uk_pound
-		icon = GFX_focus_chi_british_cooperation
-		cost = 50
-		x = 54
-		y = 4
-		prerequisite = {
-			focus = CSA_postwar_internal_richmond_mint
-		}
-		mutually_exclusive = {
-			focus = CSA_postwar_internal_csa_dollar
-		}
-		mutually_exclusive = {
-			focus = CSA_postwar_internal_usa_dollar
-		}
-		completion_reward = {
-			ENG = {
-				add_opinion_modifier = {
-					target = CSA
-					modifier = CSA_use_currency
-				}
-			}
-		}
-	}
-	focus = {
-		id = CSA_postwar_internal_csa_dollar
-		icon = GFX_Focus_Diplomatic_Ally_CSA_2
-		cost = 50
-		x = 56
-		y = 4
-		prerequisite = {
-			focus = CSA_postwar_internal_richmond_mint
-		}
-		mutually_exclusive = {
-			focus = CSA_postwar_internal_uk_pound
-		}
-		mutually_exclusive = {
-			focus = CSA_postwar_internal_usa_dollar
-		}
-		completion_reward = {
-			add_ideas = {
-				CSA_greyback_currency
-			}
-		}
-	}
-	focus = {
-		id = CSA_postwar_internal_rail
-		icon = GFX_goal_generic_construct_infrastructure
-		cost = 50
-		x = 54
-		y = 5
-		prerequisite = {
-			focus = CSA_postwar_internal_csa_dollar
-			focus = CSA_postwar_internal_usa_dollar
-			focus = CSA_postwar_internal_uk_pound
-		}
-		available = {
-			has_political_power > 25
-			has_war = no
-		}
-		completion_reward = {
-			add_political_power = -25
-			random_owned_controlled_state = {
-				add_building_construction = {
-					type = infrastructure
-					level = 1
-					instant_build = yes
-				}
-			}
-		}
-	}
-	focus = {
-		id = CSA_postwar_internal_civilian
-		icon = GFX_goal_generic_construct_civ_factory
-		cost = 50
-		x = 54
-		y = 6
-		prerequisite = {
-			focus = CSA_postwar_internal_rail
-		}
-		available = {
-			has_political_power > 25
-			has_war = no
-		}
-		completion_reward = {
-			random_owned_controlled_state = {
-				add_building_construction = {
-					type = industrial_complex
-					level = 1
-					instant_build = yes
-				}
-			}
-			add_political_power = -25
-		}
-	}
-	focus = {
-		id = CSA_73_election_results
-		icon = GFX_Focus_Diplomatic_Ally_CSA_2
-		cost = 50
-		x = 46
-		y = 0
-		available = {
-			
-		}
-		allow_branch={
-			has_country_flag = CSA_73_election
-		}
-		
-		completion_reward = {
-			add_political_power = 20
 		}
 	}
 

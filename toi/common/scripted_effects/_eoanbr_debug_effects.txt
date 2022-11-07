@@ -1,0 +1,100 @@
+d_print_variables = {
+	#SCOPE: ANY
+
+	print_variables = {
+		file = eoanbr_variables
+		append = yes
+		print_global = yes
+	}
+}
+d_print_demographics = {
+	if = {
+		limit = {
+			check_variable = {
+				args^num > 0
+			}
+		}
+		for_each_scope_loop = {
+			array = args
+			log = "[THIS.GetID] - [THIS.GetName]: ([OWNER.GetName])"
+			log = " Cultures:"
+			set_temp_variable = { pop_temp = 0 }
+			for_each_loop = {
+				array = pops_culture_array
+				value = vv
+				log = " - [?vv.GetTokenLocalizedKey] - [?percentage@var:vv|1%]"
+				add_to_temp_variable = { pop_temp = percentage@var:vv }
+			}
+			log = " Total: [?pop_temp|%]"
+			log = " Religions:"
+			set_temp_variable = { pop_temp = 0 }
+			for_each_loop = {
+				array = pops_religion_array
+				value = vv
+				log = " - [?vv.GetTokenLocalizedKey] - [?percentage@var:vv|1%]"
+				add_to_temp_variable = { pop_temp = percentage@var:vv }
+			}
+			log = " Total: [?pop_temp|%]"
+			log = " "
+		}
+	}
+	else = {
+		every_state = {
+			log = "[THIS.GetID] - [THIS.GetName]: ([?OWNER.GetName])"
+			set_variable = { culture_total = 0 }
+			log = " Cultures:"
+			for_each_loop = {
+				array = pops_culture_array
+				value = vv
+				log = " - [?vv.GetTokenLocalizedKey] - [?percentage@var:vv|1%]"
+				add_to_variable = { global.states@var:vv = 1 }
+				add_to_variable = { culture_total = percentage@var:vv }
+			}
+			log = " Total: [?culture_total|%]"
+			set_variable = { religion_total = 0 }
+			log = " Religions:"
+			for_each_loop = {
+				array = pops_religion_array
+				value = vv
+				log = " - [?vv.GetTokenLocalizedKey] - [?percentage@var:vv|1%]"
+				add_to_variable = { global.states@var:vv = 1 }
+				add_to_variable = { religion_total = percentage@var:vv }
+			}
+			log = " Total: [?religion_total|%]"
+			log = " "
+		}
+		every_state = {
+			if = {
+				limit = {
+					NOT = {
+						check_variable = {
+							culture_total = 1
+						}
+					}
+					log = "[THIS.GetName] Culture Total: [?culture_total|%]"
+				}
+			}
+			if = {
+				limit = {
+					NOT = {
+						check_variable = {
+							religion_total = 1
+						}
+					}
+					log = "[THIS.GetName] Religion Total: [?religion_total|%]"
+				}
+			}
+		}
+		# log = "Global Count:"
+		# for_each_loop = {
+		# 	array = global.culture_array
+		# 	value = vv
+		# 	log = " - [?vv.GetTokenLocalizedKey] - [?global.states@var:vv]"
+		# }
+		# for_each_loop = {
+		# 	array = global.religion_array
+		# 	value = vv
+		# 	log = " - [?vv.GetTokenLocalizedKey] - [?global.states@var:vv]"
+		# }
+	}
+}

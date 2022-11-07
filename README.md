@@ -11,7 +11,7 @@
 [patreon-link]: https://www.patreon.com/EoaNBR
 
 [steam-badge]: https://img.shields.io/static/v1?label=Steam&message=Download&color=lightgrey&logo=steam&style=for-the-badge
-[steam-link]: https://steamcommunity.com/sharedfiles/filedetails/?id=2114093692
+[steam-link]: https://steamcommunity.com/sharedfiles/filedetails/?id=2861920794
 
 [youtube-badge]: https://img.shields.io/static/v1?label=Youtube&message=Watch&color=red&logo=youtube&style=for-the-badge
 [youtube-link]: https://www.youtube.com/channel/UCR6n-pjZ4ain9hhUESuhZNw
@@ -26,8 +26,8 @@
 [github-stars]: https://img.shields.io/github/stars/team-EoaNB-Redux/EoaNBR?style=for-the-badge
 
 [github-latest]: https://img.shields.io/github/last-commit/team-EoaNB-Redux/EoaNBR?label=Latest%20Commit&color=blue&style=for-the-badge
-[github-activity]: https://img.shields.io/github/commit-activity/m/team-EoaNB-Redux/EoaNBR?label=Activity&style=for-the-badge
-[github-beta-backlog]: https://img.shields.io/github/commits-since/team-EoaNB-Redux/EoaNBR/0.2.9?label=BETA%20VER.&style=for-the-badge&color=blue
+[github-activity]: https://img.shields.io/github/commit-activity/m/team-EoaNB-Redux/EoaNBR?label=Team%20Activity&style=for-the-badge
+[github-beta-backlog]: https://img.shields.io/github/commits-since/team-EoaNB-Redux/EoaNBR/0.2.12?label=Ahead%20Of%20Steam&style=for-the-badge&color=blue
 [discord-link]: https://img.shields.io/discord/1005522629052088340?color=lightgrey&label=DISCORD&style=for-the-badge
 
 <hr>
