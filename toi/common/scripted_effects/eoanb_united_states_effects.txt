@@ -1933,6 +1933,25 @@ ACW_Weapons_Count_Use = {
 		subtract_from_variable = { ROOT.acw_weapons_count_left = 1 }
 	}
 }
+ACW_Weapons_Count_Use_5 = {
+	if = {
+		limit = {
+			OR = {
+				has_global_flag = ACW_American_Civil_War_Start
+				has_global_flag = ACW_American_Civil_War
+				has_country_flag = ACW_golden_imperium
+			}
+			OR = {
+				has_war_with = CSA
+				has_war_with = USA
+				has_war_with = CAL
+				has_war_with = NEG
+			}
+		}
+		custom_effect_tooltip = ACW_Weapons_Count_Use_5_tt
+		subtract_from_variable = { ROOT.acw_weapons_count_left = 5 }
+	}
+}
 ACW_Draft_Count_Get = {
 	if = {
 		limit = {
@@ -3375,7 +3394,7 @@ USARECON_decrease_freedmens_wellbeing_1 = {
 	custom_effect_tooltip = USARECON_decrease_freedmens_wellbeing_1_tt
 	hidden_effect = {
 		add_to_variable = {
-			var = USARECON_southern_resistance
+			var = USARECON_freedmens_wellbeing
 			value = -1
 		}
 	}
@@ -3385,7 +3404,7 @@ USARECON_decrease_freedmens_wellbeing_5 = {
 	custom_effect_tooltip = USARECON_decrease_freedmens_wellbeing_5_tt
 	hidden_effect = {
 		add_to_variable = {
-			var = USARECON_southern_resistance
+			var = USARECON_freedmens_wellbeing
 			value = -5
 		}
 	}
@@ -3395,7 +3414,7 @@ USARECON_decrease_freedmens_wellbeing_10 = {
 	custom_effect_tooltip = USARECON_decrease_freedmens_wellbeing_10_tt
 	hidden_effect = {
 		add_to_variable = {
-			var = USARECON_southern_resistance
+			var = USARECON_freedmens_wellbeing
 			value = -10
 		}
 	}
@@ -3405,7 +3424,7 @@ USARECON_decrease_freedmens_wellbeing_15 = {
 	custom_effect_tooltip = USARECON_decrease_freedmens_wellbeing_15_tt
 	hidden_effect = {
 		add_to_variable = {
-			var = USARECON_southern_resistance
+			var = USARECON_freedmens_wellbeing
 			value = -15
 		}
 	}
@@ -3415,7 +3434,7 @@ USARECON_decrease_freedmens_wellbeing_20 = {
 	custom_effect_tooltip = USARECON_decrease_freedmens_wellbeing_20_tt
 	hidden_effect = {
 		add_to_variable = {
-			var = USARECON_southern_resistance
+			var = USARECON_freedmens_wellbeing
 			value = -20
 		}
 	}
@@ -3681,12 +3700,191 @@ USARECON_federal_troop_count_decrease_2000 = {
 	}
 }
 
-USARECON_check_events = {
-	hidden_effect = {
-		if = {
-			limit = {
+USARECON_increase_state_kkk_presence = {
+	if = {
+		limit = {
+			has_dynamic_modifier = { modifier = kkk_presence_high }
+		}
+		add_resistance = 10
+	}
+	else_if = {
+		limit = {
+			has_dynamic_modifier = { modifier = kkk_presence_medium }
+		}
+		custom_effect_tooltip = USARECON_kkk_increased_to_high_tt
+		hidden_effect = {
+			remove_dynamic_modifier = { modifier = kkk_presence_medium }
+			add_dynamic_modifier = { modifier = kkk_presence_high }
+		}
+	}
+	else_if = {
+		limit = {
+			has_dynamic_modifier = { modifier = kkk_presence_low }
+		}
+		custom_effect_tooltip = USARECON_kkk_increased_to_medium_tt
+		hidden_effect = {
+			remove_dynamic_modifier = { modifier = kkk_presence_low }
+			add_dynamic_modifier = { modifier = kkk_presence_medium }
+		}
+	}
+	else = {
+		custom_effect_tooltip = USARECON_kkk_increased_to_low_tt
+		hidden_effect = {
+			add_dynamic_modifier = { modifier = kkk_presence_low }
+		}
+	}
+}
 
+USARECON_decrease_state_kkk_presence = {
+	if = {
+		limit = {
+			has_dynamic_modifier = { modifier = kkk_presence_high }
+		}
+		custom_effect_tooltip = USARECON_kkk_decreased_to_medium_tt
+		hidden_effect = {
+			remove_dynamic_modifier = { modifier = kkk_presence_high }
+			add_dynamic_modifier = { modifier = kkk_presence_medium }
+		}
+	}
+	else_if = {
+		limit = {
+			has_dynamic_modifier = { modifier = kkk_presence_medium }
+		}
+		custom_effect_tooltip = USARECON_kkk_decreased_to_low_tt
+		hidden_effect = {
+			remove_dynamic_modifier = { modifier = kkk_presence_medium }
+			add_dynamic_modifier = { modifier = kkk_presence_low }
+		}
+	}
+	else_if = {
+		limit = {
+			has_dynamic_modifier = { modifier = kkk_presence_low }
+		}
+		custom_effect_tooltip = USARECON_kkk_decreased_to_none_tt
+		hidden_effect = {
+			remove_dynamic_modifier = { modifier = kkk_presence_low }
+		}
+	}
+	else = {
+		add_compliance = 10
+	}
+}
+
+USARECON_kkk_initial_setup = {
+	custom_effect_tooltip = USARECON_kkk_initial_setup_tt
+	set_country_flag = usa_kkk_formed_flag
+	add_to_variable = {
+		var = USARECON_kkk_presence
+		value = 25
+	}
+	hidden_effect = {
+		368 = {
+			add_dynamic_modifier = { modifier = kkk_presence_high }
+		}
+		random_state = {
+			limit = {
+				AND = {
+					NOT = {
+						OR = {
+							has_dynamic_modifier = { modifier = kkk_presence_high }
+							has_dynamic_modifier = { modifier = kkk_presence_medium }
+							has_dynamic_modifier = { modifier = kkk_presence_low }
+						}
+					}
+					OR = {
+						owner = {
+							is_subject_of = ROOT
+						}
+						is_owned_by = ROOT
+					}
+					is_core_of = CSA
+				}
 			}
+			add_dynamic_modifier = { modifier = kkk_presence_medium }
+		}
+		random_state = {
+			limit = {
+				AND = {
+					NOT = {
+						OR = {
+							has_dynamic_modifier = { modifier = kkk_presence_high }
+							has_dynamic_modifier = { modifier = kkk_presence_medium }
+							has_dynamic_modifier = { modifier = kkk_presence_low }
+						}
+					}
+					OR = {
+						owner = {
+							is_subject_of = ROOT
+						}
+						is_owned_by = ROOT
+					}
+					is_core_of = CSA
+				}
+			}
+			add_dynamic_modifier = { modifier = kkk_presence_medium }
+		}
+		random_state = {
+			limit = {
+				AND = {
+					NOT = {
+						OR = {
+							has_dynamic_modifier = { modifier = kkk_presence_high }
+							has_dynamic_modifier = { modifier = kkk_presence_medium }
+							has_dynamic_modifier = { modifier = kkk_presence_low }
+						}
+					}
+					OR = {
+						owner = {
+							is_subject_of = ROOT
+						}
+						is_owned_by = ROOT
+					}
+					is_core_of = CSA
+				}
+			}
+			add_dynamic_modifier = { modifier = kkk_presence_low }
+		}
+		random_state = {
+			limit = {
+				AND = {
+					NOT = {
+						OR = {
+							has_dynamic_modifier = { modifier = kkk_presence_high }
+							has_dynamic_modifier = { modifier = kkk_presence_medium }
+							has_dynamic_modifier = { modifier = kkk_presence_low }
+						}
+					}
+					OR = {
+						owner = {
+							is_subject_of = ROOT
+						}
+						is_owned_by = ROOT
+					}
+					is_core_of = CSA
+				}
+			}
+			add_dynamic_modifier = { modifier = kkk_presence_low }
+		}
+		random_state = {
+			limit = {
+				AND = {
+					NOT = {
+						OR = {
+							has_dynamic_modifier = { modifier = kkk_presence_high }
+							has_dynamic_modifier = { modifier = kkk_presence_medium }
+							has_dynamic_modifier = { modifier = kkk_presence_low }
+						}
+					}
+					OR = {
+						owner = {
+							is_subject_of = ROOT
+						}
+						is_owned_by = ROOT
+					}
+					is_core_of = CSA
+				}
+			}
+			add_dynamic_modifier = { modifier = kkk_presence_low }
 		}
 	}
 }

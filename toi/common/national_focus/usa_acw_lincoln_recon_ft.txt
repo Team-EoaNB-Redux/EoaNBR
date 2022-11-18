@@ -249,8 +249,14 @@ focus_tree = {
 		completion_reward = {
 			USARECON_decrease_freedmens_wellbeing_5 = yes
 			add_political_power = 100
-			every_owned_state = {
+			every_state = {
 				limit = {
+					OR = {
+						is_owned_by = ROOT
+						owner = {
+							is_subject_of = ROOT
+						}
+					}
 					is_core_of = CSA
 					NOT = {
 						state = 746
@@ -295,7 +301,7 @@ focus_tree = {
 		x = 4
 		y = 1
 		completion_reward = {
-			
+			USARECON_federal_troop_count_increase_2000 = yes
 		}
 	}
 	focus = {
@@ -308,8 +314,23 @@ focus_tree = {
 		x = -1
 		y = 1
 		completion_reward = {
-			# cause event where former rebs become senators
-			# which then causes an event where Congress bans former rebs from sitting in Congress
+			USARECON_decrease_southern_unrest_5 = yes
+			every_state = {
+				limit = {
+					OR = {
+						is_owned_by = ROOT
+						owner = {
+							is_subject_of = ROOT
+						}
+					}
+					is_core_of = CSA
+					NOT = {
+						state = 746
+					}
+				}
+				add_compliance = 5
+			}
+			# cause event where former rebs become senators unless the 14th amendment focus has been taken
 		}
 	}
 	focus = {
@@ -322,13 +343,29 @@ focus_tree = {
 		x = 1
 		y = 1
 		completion_reward = {
-
+			USARECON_federal_troop_count_increase_2000 = yes
+			every_state = {
+				limit = {
+					OR = {
+						is_owned_by = ROOT
+						owner = {
+							is_subject_of = ROOT
+						}
+					}
+					is_core_of = CSA
+					NOT = {
+						state = 746
+					}
+				}
+				add_resistance = -5
+			}
 		}
 	}
 	focus = {
 		id = USA_first_enforcement_act_passes
 		icon = GFX_Focus_Law_Vote_1
-		cost = 35
+		cost = 0
+		available = { has_country_flag = usa_kkk_formed_flag }
 		prerequisite = {
 			focus = USA_extend_the_occupation
 			focus = USA_begin_appointing_provisional_governors
@@ -338,7 +375,16 @@ focus_tree = {
 		x = 0
 		y = 1
 		completion_reward = {
-
+			add_ideas = USA_first_enforcement_act
+			every_other_country = {
+				limit = {
+					AND = {
+						is_subject_of = ROOT
+						has_autonomy_state = autonomy_unintegrated_seceded_state
+					}
+					add_ideas = USA_first_enforcement_act
+				}
+			}
 		}
 	}
 	focus = {
@@ -349,10 +395,11 @@ focus_tree = {
 			focus = USA_first_enforcement_act_passes
 		}
 		relative_position_id = USA_first_enforcement_act_passes
-		x = 0
+		x = -1
 		y = 1
 		completion_reward = {
-
+			USARECON_federal_troop_count_increase_2000 = yes
+			USARECON_increase_freedmens_wellbeing_5 = yes
 		}
 	}
 	focus = {
@@ -366,12 +413,29 @@ focus_tree = {
 		x = -1
 		y = 1
 		completion_reward = {
-
+			USARECON_federal_troop_count_increase_2000 = yes
+			USARECON_increase_southern_unrest_5 = yes
+			add_stability = 0.05
+			every_state = {
+				limit = {
+					OR = {
+						is_owned_by = ROOT
+						owner = {
+							is_subject_of = ROOT
+						}
+					}
+					is_core_of = CSA
+					NOT = {
+						state = 746
+					}
+				}
+				add_resistance = -5
+			}
 		}
 	}
 	focus = {
 		id = USA_put_the_klan_to_trial
-		icon = GFX_Focus_Ideology_One_Party_State
+		icon = GFX_focus_usa_krack_down_on_the_klan
 		cost = 35
 		prerequisite = {
 			focus = USA_increase_csa_garrisons
@@ -380,7 +444,7 @@ focus_tree = {
 		x = 1
 		y = 1
 		completion_reward = {
-
+			unlock_decision_tooltip = eoanb_prosecute_klansmen
 		}
 	}
 	focus = {
@@ -393,7 +457,22 @@ focus_tree = {
 		x = 0
 		y = 2
 		completion_reward = {
-
+			swap_ideas = {
+				remove_idea = USA_first_enforcement_act
+				add_idea = USA_second_enforcement_act
+			}
+			every_other_country = {
+				limit = {
+					AND = {
+						is_subject_of = ROOT
+						has_autonomy_state = autonomy_unintegrated_seceded_state
+					}
+					swap_ideas = {
+						remove_idea = USA_first_enforcement_act
+						add_idea = USA_second_enforcement_act
+					}
+				}
+			}
 		}
 	}
 	focus = {
@@ -405,37 +484,64 @@ focus_tree = {
 		x = 0
 		y = 1
 		completion_reward = {
-
-		}
-	}
-	focus = {
-		id = USA_krack_down_on_the_klan
-		icon = GFX_focus_usa_krack_down_on_the_klan
-		cost = 35
-		prerequisite = { focus = USA_third_enforcement_act }
-		relative_position_id = USA_third_enforcement_act
-		x = 0
-		y = 1
-		completion_reward = {
-
+			swap_ideas = {
+				remove_idea = USA_second_enforcement_act
+				add_idea = USA_third_enforcement_act
+			}
+			every_other_country = {
+				limit = {
+					AND = {
+						is_subject_of = ROOT
+						has_autonomy_state = autonomy_unintegrated_seceded_state
+					}
+					swap_ideas = {
+						remove_idea = USA_second_enforcement_act
+						add_idea = USA_third_enforcement_act
+					}
+				}
+			}
 		}
 	}
 	focus = {
 		id = USA_protect_black_voters
 		icon = GFX_Focus_Police
 		cost = 35
-		prerequisite = { focus = USA_first_enforcement_act_passes }
+		prerequisite = {
+			focus = USA_first_enforcement_act_passes
+			focus = USA_first_enforcement_act_fails
+		}
 		relative_position_id = USA_first_enforcement_act_passes
-		x = 2
+		x = 1
 		y = 1
 		completion_reward = {
-
+			if = {
+				limit = {
+					has_completed_focus = USA_first_enforcement_act_fails
+				}
+				USARECON_increase_freedmens_wellbeing_5 = yes
+				add_political_power = -25
+				add_stability = -0.025
+				add_popularity = {
+					ideology = social_egalitarianism
+					popularity = 0.025
+				}
+			}
+			else = {
+				USARECON_increase_freedmens_wellbeing_10 = yes
+				add_political_power = 25
+				add_stability = 0.025
+				add_popularity = {
+					ideology = social_egalitarianism
+					popularity = 0.05
+				}
+			}
 		}
 	}
 	focus = {
 		id = USA_first_enforcement_act_fails
 		icon = GFX_Focus_Partisans_Elimination
-		cost = 35
+		cost = 0
+		available = { always = no }
 		prerequisite = {
 			focus = USA_extend_the_occupation
 			focus = USA_begin_appointing_provisional_governors
@@ -444,6 +550,62 @@ focus_tree = {
 		relative_position_id = USA_extend_the_occupation
 		x = 0
 		y = 1
+		completion_reward = {
+			USARECON_decrease_freedmens_wellbeing_10 = yes
+			USARECON_increase_southern_unrest_10 = yes
+			add_political_power = -25
+			add_stability = -0.025
+		}
+	}
+	focus = {
+		id = USA_take_matters_into_our_own_hands
+		icon = placeholder
+		cost = 35
+		available = { has_government = social_egalitarianism }
+		prerequisite = { focus = USA_first_enforcement_act_fails }
+		relative_position_id = USA_first_enforcement_act_fails
+		x = 1
+		y = 1
+		completion_reward = {
+
+		}
+	}
+	focus = {
+		id = USA_sovereignty_proclamation
+		icon = placeholder
+		cost = 35
+		available = { has_government = social_egalitarianism }
+		prerequisite = { focus = USA_take_matters_into_our_own_hands }
+		relative_position_id = USA_take_matters_into_our_own_hands
+		x = -1
+		y = 1
+		completion_reward = {
+
+		}
+	}
+	focus = {
+		id = USA_call_general_sherman
+		icon = placeholder
+		cost = 35
+		available = { has_government = social_egalitarianism }
+		prerequisite = { focus = USA_take_matters_into_our_own_hands }
+		relative_position_id = USA_take_matters_into_our_own_hands
+		x = 1
+		y = 1
+		completion_reward = {
+			# Event showing Sherman's meeting with president
+		}
+	}
+	focus = {
+		id = USA_expand_occupation_of_the_south
+		icon = placeholder
+		cost = 0
+		available = { always = no }
+		prerequisite = { focus = USA_sovereignty_proclamation }
+		prerequisite = { focus = USA_call_general_sherman }
+		relative_position_id = USA_take_matters_into_our_own_hands
+		x = 0
+		y = 2
 		completion_reward = {
 
 		}
