@@ -186,14 +186,13 @@
                         multiply_temp_variable = { prod_cap = 0.95 }
                         if = {
                             limit = {
-                                OR = {
-                                    check_variable = { prod_cap < 0 }
-                                    check_variable = { average_wage@var:om_building > prod_cap }
-                                }
+                                always = yes
                             }
                             set_temp_variable = { building_token = om_building }
-                            set_temp_variable = { wage_change_temp = -0.025 }
-                            change_building_base_wage = yes
+                            set_temp_variable = { wage_change_temp = prod_cap }
+                            subtract_from_temp_variable = { wage_change_temp = average_wage@var:om_building }
+                            divide_temp_variable = { wage_change_temp = 2 }
+                            change_building_avg_wage = yes
                             building_update_finances = yes
                         }
                         
@@ -1292,7 +1291,7 @@
                 #Spending Patterns
                     #Note: All non-food values get multiplied by e^0.07s (doubles every 10 Standard of Living)
                     set_variable = { global.pops_base_food_need = 0.2 } #Per K
-                    set_variable = { global.pops_food_need_increase = 0.02 } #Per SoL
+                    set_variable = { global.pops_food_need_increase = 0.015 } #Per SoL
 
                     set_variable = { global.pops_base_need@token:resource_consumer_goods = 0.02 }
                     set_variable = { global.pops_10_need@token:resource_consumer_goods = 0.01 } #additional at 10 SoL
@@ -1322,16 +1321,16 @@
 
                     #NEEDS AT EVERY 10 SoL (Based off above)
                     # 0: 0.2 Food, 0.02 Consumer Goods, 0.02 Energy, 0.01 Services: $0.68 per K - Starvation
-                    # 10: 0.4 Food, 0.05 Consumer Goods, 0.04 Energy, 0.05 Services: $1.73 per K - 1820s
-                    # 20: 0.6 Food, 0.2 Consumer Goods, 0.01 Luxury Goods, 0.1 Energy, 0.2 Services: $3.88 per K - 1860s
-                    # 30: 0.8 Food, 0.4 Consumer Goods, 0.03 Luxury Goods, 0.25 Energy, 0.4 Services: $6.74 per K - 1900s
-                    # 40: 1.0 Food, 1.0 Consumer Goods, 0.1 Luxury Goods, 0.65 Energy, 1.0 Services: $14.1 per K - 1940s
-                    # 50: 1.2 Food, 1.6 Consumer Goods, 0.25 Luxury Goods, 1.5 Energy, 3.0 Services: $29.0 per K - 1980s
-                    # 60: 1.4 Food, 3.0 Consumer Goods, 0.5 Luxury Goods, 3.0 Energy, 6.0 Services: $56.2 per K - 2020s
-                    # 70: 1.6 Food, 6.0 Consumer Goods, 1.0 Luxury Goods, 6.0 Energy, 12.0 Services: $108.8 per K - 2060s
-                    # 80: 1.8 Food, 12.0 Consumer Goods, 2.5 Luxury Goods, 12.0 Energy, 24.0 Services: $217.4 per K
-                    # 90: 2.0 Food, 24.0 Consumer Goods, 5.0 Luxury Goods, 24.0 Energy, 48.0 Services: $430.0 per K
-                    # 100: 2.2 Food, 48.0 Consumer Goods, 10.0 Luxury Goods, 48.0 Energy, 96.0 Services: $854.6 per K
+                    # 10: 0.35 Food, 0.05 Consumer Goods, 0.04 Energy, 0.05 Services: $1.73 per K - 1820s
+                    # 20: 0.5 Food, 0.2 Consumer Goods, 0.01 Luxury Goods, 0.1 Energy, 0.2 Services: $3.88 per K - 1860s
+                    # 30: 0.65 Food, 0.4 Consumer Goods, 0.03 Luxury Goods, 0.25 Energy, 0.4 Services: $6.74 per K - 1900s
+                    # 40: 0.8 Food, 1.0 Consumer Goods, 0.1 Luxury Goods, 0.65 Energy, 1.0 Services: $14.1 per K - 1940s
+                    # 50: 0.95 Food, 1.6 Consumer Goods, 0.25 Luxury Goods, 1.5 Energy, 3.0 Services: $29.0 per K - 1980s
+                    # 60: 1.1 Food, 3.0 Consumer Goods, 0.5 Luxury Goods, 3.0 Energy, 6.0 Services: $56.2 per K - 2020s
+                    # 70: 1.25 Food, 6.0 Consumer Goods, 1.0 Luxury Goods, 6.0 Energy, 12.0 Services: $108.8 per K - 2060s
+                    # 80: 1.4 Food, 12.0 Consumer Goods, 2.5 Luxury Goods, 12.0 Energy, 24.0 Services: $217.4 per K
+                    # 90: 1.55 Food, 24.0 Consumer Goods, 5.0 Luxury Goods, 24.0 Energy, 48.0 Services: $430.0 per K
+                    # 100: 1.7 Food, 48.0 Consumer Goods, 10.0 Luxury Goods, 48.0 Energy, 96.0 Services: $854.6 per K
                 #
             #
 
@@ -1842,6 +1841,10 @@
                                 set_variable = { production_method@token:building_infrastructure = pm_temp }
                             }
                         }
+                        else = {
+                            clear_variable = size@token:building_infrastructure
+                            clear_variable = production_method@token:building_infrastructure
+                        }
                         if = {
                             limit = {
                                 check_variable = { building_railway_size > 0 }
@@ -1858,6 +1861,10 @@
                                 get_latest_production_method = yes
                                 set_variable = { production_method@token:building_railway = pm_temp }
                             }
+                        }
+                        else = {
+                            clear_variable = size@token:building_railway
+                            clear_variable = production_method@token:building_railway
                         }
 
                         set_temp_variable = { sub_farm_size_temp = arable_land }
@@ -1881,6 +1888,10 @@
                                 set_variable = { production_method@token:building_commercial_farm = pm_temp }
                             }
                         }
+                        else = {
+                            clear_variable = size@token:building_commercial_farm
+                            clear_variable = production_method@token:building_commercial_farm
+                        }
                         if = {
                             limit = {
                                 check_variable = { building_food_plantation_size > 0 }
@@ -1899,6 +1910,10 @@
                                 get_latest_production_method = yes
                                 set_variable = { production_method@token:building_food_plantation = pm_temp }
                             }
+                        }
+                        else = {
+                            clear_variable = size@token:building_food_plantation
+                            clear_variable = production_method@token:building_food_plantation
                         }
                         if = {
                             limit = {
@@ -1919,6 +1934,10 @@
                                 set_variable = { production_method@token:building_material_plantation = pm_temp }
                             }
                         }
+                        else = {
+                            clear_variable = size@token:building_material_plantation
+                            clear_variable = production_method@token:building_material_plantation
+                        }
                         if = {
                             limit = {
                                 check_variable = { building_luxuries_plantation_size > 0 }
@@ -1938,6 +1957,10 @@
                                 set_variable = { production_method@token:building_luxuries_plantation = pm_temp }
                             }
                         }
+                        else = {
+                            clear_variable = size@token:building_luxuries_plantation
+                            clear_variable = production_method@token:building_luxuries_plantation
+                        }
 
                         if = {
                             limit = {
@@ -1952,6 +1975,10 @@
                             else = {
                                 set_variable = { size@token:building_subsistence_farm = sub_farm_size_temp }
                             }
+                        }
+                        else = {
+                            clear_variable = size@token:building_subsistence_farm
+                            clear_variable = size@token:building_rice_paddy
                         }
 
                         
@@ -1972,6 +1999,10 @@
                                 set_variable = { production_method@token:building_lumber_mill = pm_temp }
                             }
                         }
+                        else = {
+                            clear_variable = size@token:building_lumber_mill
+                            clear_variable = production_method@token:building_lumber_mill
+                        }
                         if = {
                             limit = {
                                 check_variable = { building_metals_mine_size > 0 }
@@ -1988,6 +2019,10 @@
                                 get_latest_production_method = yes
                                 set_variable = { production_method@token:building_metals_mine = pm_temp }
                             }
+                        }
+                        else = {
+                            clear_variable = size@token:building_metals_mine
+                            clear_variable = production_method@token:building_metals_mine
                         }
                         if = {
                             limit = {
@@ -2006,6 +2041,10 @@
                                 set_variable = { production_method@token:building_coal_mine = pm_temp }
                             }
                         }
+                        else = {
+                            clear_variable = size@token:building_coal_mine
+                            clear_variable = production_method@token:building_coal_mine
+                        }
                         if = {
                             limit = {
                                 check_variable = { building_oil_well_size > 0 }
@@ -2023,6 +2062,10 @@
                                 set_variable = { production_method@token:building_oil_well = pm_temp }
                             }
                         }
+                        else = {
+                            clear_variable = size@token:building_oil_well
+                            clear_variable = production_method@token:building_oil_well
+                        }
                         if = {
                             limit = {
                                 check_variable = { building_valuables_extractor_size > 0 }
@@ -2039,6 +2082,10 @@
                                 get_latest_production_method = yes
                                 set_variable = { production_method@token:building_valuables_extractor = pm_temp }
                             }
+                        }
+                        else = {
+                            clear_variable = size@token:building_valuables_extractor
+                            clear_variable = production_method@token:building_valuables_extractor
                         }
                     #
                     #Urban Buildings
@@ -7532,7 +7579,7 @@
                         check_variable = { bu_token = token:building_naval_industry }
                     }
                 }
-                set_temp_variable = { cgf = controller:modifier@consumer_goods_factor }
+                set_temp_variable = { cgf = modifier@consumer_goods_factor }
                 if = {
                     limit = {
                         check_variable = { cgf > 1 }
@@ -8679,6 +8726,10 @@
         set_variable = { building_construction_cost_factor = controller:modifier@building_construction_cost_factor }
         set_variable = { building_upgrade_speed_factor = controller:modifier@building_upgrade_speed_factor }
         set_variable = { building_upgrade_cost_factor = controller:modifier@building_upgrade_cost_factor }
+        add_to_variable = { building_construction_speed_factor = modifier@local_building_construction_speed_factor }
+        add_to_variable = { building_construction_cost_factor = modifier@local_building_construction_cost_factor }
+        add_to_variable = { building_upgrade_speed_factor = modifier@local_building_upgrade_speed_factor }
+        add_to_variable = { building_upgrade_cost_factor = modifier@local_building_upgrade_cost_factor }
         
         #Subsistence Farm
             set_variable = { building_size_factor@token:building_subsistence_farm = controller:modifier@building_subsistence_farm_size_factor }
@@ -9223,6 +9274,554 @@
             #Rice Paddy
                 add_to_variable = { building_size_factor@token:building_rice_paddy = controller:modifier@building_subsistence_agriculture_size_factor }
                 add_to_variable = { building_output_factor@token:building_rice_paddy = controller:modifier@building_subsistence_agriculture_output_factor }
+            #
+        #
+        
+        #Local
+            #Subsistence Farm
+                add_to_variable = { building_size_factor@token:building_subsistence_farm = modifier@local_building_subsistence_farm_size_factor }
+                add_to_variable = { building_output_factor@token:building_subsistence_farm = modifier@local_building_subsistence_farm_output_factor }
+            #
+            #Rice Paddy
+                add_to_variable = { building_size_factor@token:building_rice_paddy = modifier@local_building_rice_paddy_size_factor }
+                add_to_variable = { building_output_factor@token:building_rice_paddy = modifier@local_building_rice_paddy_output_factor }
+            #
+            
+            #Military_industry
+                add_to_variable = { building_input_factor@token:building_military_industry = modifier@local_building_military_industry_input_factor }
+                add_to_variable = { building_output_factor@token:building_military_industry = modifier@local_building_military_industry_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_military_industry = modifier@local_building_military_industry_throughput_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_military_industry = modifier@local_building_military_industry_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_military_industry = modifier@local_building_military_industry_attractiveness_factor }
+                add_to_variable = { building_industrial_capacity_use_factor@token:building_military_industry = modifier@local_building_military_industry_industrial_capacity_use_factor }
+            #
+            #Civilian_industry
+                add_to_variable = { building_input_factor@token:building_civilian_industry = modifier@local_building_civilian_industry_input_factor }
+                add_to_variable = { building_output_factor@token:building_civilian_industry = modifier@local_building_civilian_industry_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_civilian_industry = modifier@local_building_civilian_industry_throughput_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_civilian_industry = modifier@local_building_civilian_industry_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_civilian_industry = modifier@local_building_civilian_industry_attractiveness_factor }
+                add_to_variable = { building_industrial_capacity_use_factor@token:building_civilian_industry = modifier@local_building_civilian_industry_industrial_capacity_use_factor }
+            #
+            #Naval_industry
+                add_to_variable = { building_input_factor@token:building_naval_industry = modifier@local_building_naval_industry_input_factor }
+                add_to_variable = { building_output_factor@token:building_naval_industry = modifier@local_building_naval_industry_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_naval_industry = modifier@local_building_naval_industry_throughput_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_naval_industry = modifier@local_building_naval_industry_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_naval_industry = modifier@local_building_naval_industry_attractiveness_factor }
+                add_to_variable = { building_industrial_capacity_use_factor@token:building_naval_industry = modifier@local_building_naval_industry_industrial_capacity_use_factor }
+            #
+
+            #Infrastructure
+                add_to_variable = { building_input_factor@token:building_infrastructure = modifier@local_building_infrastructure_input_factor }
+                add_to_variable = { building_output_factor@token:building_infrastructure = modifier@local_building_infrastructure_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_infrastructure = modifier@local_building_infrastructure_throughput_factor }
+                add_to_variable = { building_industrial_capacity_factor@token:building_infrastructure = modifier@local_building_infrastructure_industrial_capacity_factor }
+                add_to_variable = { building_shipping_capacity_factor@token:building_infrastructure = modifier@local_building_infrastructure_shipping_capacity_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_infrastructure = modifier@local_building_infrastructure_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_infrastructure = modifier@local_building_infrastructure_attractiveness_factor }
+            #
+            #Railway
+                add_to_variable = { building_input_factor@token:building_railway = modifier@local_building_railway_input_factor }
+                add_to_variable = { building_output_factor@token:building_railway = modifier@local_building_railway_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_railway = modifier@local_building_railway_throughput_factor }
+                add_to_variable = { building_industrial_capacity_factor@token:building_railway = modifier@local_building_railway_industrial_capacity_factor }
+                add_to_variable = { building_shipping_capacity_factor@token:building_railway = modifier@local_building_railway_shipping_capacity_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_railway = modifier@local_building_railway_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_railway = modifier@local_building_railway_attractiveness_factor }
+            #
+            #Port
+                add_to_variable = { building_input_factor@token:building_port = modifier@local_building_port_input_factor }
+                add_to_variable = { building_output_factor@token:building_port = modifier@local_building_port_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_port = modifier@local_building_port_throughput_factor }
+                add_to_variable = { building_shipping_capacity_factor@token:building_port = modifier@local_building_port_shipping_capacity_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_port = modifier@local_building_port_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_port = modifier@local_building_port_attractiveness_factor }
+            #
+            #Airport
+                add_to_variable = { building_input_factor@token:building_airport = modifier@local_building_airport_input_factor }
+                add_to_variable = { building_output_factor@token:building_airport = modifier@local_building_airport_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_airport = modifier@local_building_airport_throughput_factor }
+                add_to_variable = { building_shipping_capacity_factor@token:building_airport = modifier@local_building_airport_shipping_capacity_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_airport = modifier@local_building_airport_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_airport = modifier@local_building_airport_attractiveness_factor }
+            #
+            
+            #Consumer_goods_factory
+                add_to_variable = { building_input_factor@token:building_consumer_goods_factory = modifier@local_building_consumer_goods_factory_input_factor }
+                add_to_variable = { building_output_factor@token:building_consumer_goods_factory = modifier@local_building_consumer_goods_factory_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_consumer_goods_factory = modifier@local_building_consumer_goods_factory_throughput_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_consumer_goods_factory = modifier@local_building_consumer_goods_factory_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_consumer_goods_factory = modifier@local_building_consumer_goods_factory_attractiveness_factor }
+                add_to_variable = { building_industrial_capacity_use_factor@token:building_consumer_goods_factory = modifier@local_building_consumer_goods_factory_industrial_capacity_use_factor }
+            #
+            #Luxury_goods_factory
+                add_to_variable = { building_input_factor@token:building_luxury_goods_factory = modifier@local_building_luxury_goods_factory_input_factor }
+                add_to_variable = { building_output_factor@token:building_luxury_goods_factory = modifier@local_building_luxury_goods_factory_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_luxury_goods_factory = modifier@local_building_luxury_goods_factory_throughput_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_luxury_goods_factory = modifier@local_building_luxury_goods_factory_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_luxury_goods_factory = modifier@local_building_luxury_goods_factory_attractiveness_factor }
+                add_to_variable = { building_industrial_capacity_use_factor@token:building_luxury_goods_factory = modifier@local_building_luxury_goods_factory_industrial_capacity_use_factor }
+            #
+            #Industrial_goods_factory
+                add_to_variable = { building_input_factor@token:building_industrial_goods_factory = modifier@local_building_industrial_goods_factory_input_factor }
+                add_to_variable = { building_output_factor@token:building_industrial_goods_factory = modifier@local_building_industrial_goods_factory_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_industrial_goods_factory = modifier@local_building_industrial_goods_factory_throughput_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_industrial_goods_factory = modifier@local_building_industrial_goods_factory_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_industrial_goods_factory = modifier@local_building_industrial_goods_factory_attractiveness_factor }
+                add_to_variable = { building_industrial_capacity_use_factor@token:building_industrial_goods_factory = modifier@local_building_industrial_goods_factory_industrial_capacity_use_factor }
+            #
+            #Services_building
+                add_to_variable = { building_input_factor@token:building_services_building = modifier@local_building_services_building_input_factor }
+                add_to_variable = { building_output_factor@token:building_services_building = modifier@local_building_services_building_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_services_building = modifier@local_building_services_building_throughput_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_services_building = modifier@local_building_services_building_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_services_building = modifier@local_building_services_building_attractiveness_factor }
+                add_to_variable = { building_industrial_capacity_use_factor@token:building_services_building = modifier@local_building_services_building_industrial_capacity_use_factor }
+            #
+            #Power_plant
+                add_to_variable = { building_input_factor@token:building_power_plant = modifier@local_building_power_plant_input_factor }
+                add_to_variable = { building_output_factor@token:building_power_plant = modifier@local_building_power_plant_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_power_plant = modifier@local_building_power_plant_throughput_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_power_plant = modifier@local_building_power_plant_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_power_plant = modifier@local_building_power_plant_attractiveness_factor }
+                add_to_variable = { building_industrial_capacity_use_factor@token:building_power_plant = modifier@local_building_power_plant_industrial_capacity_use_factor }
+            #
+            
+            #Commercial_farm
+                add_to_variable = { building_input_factor@token:building_commercial_farm = modifier@local_building_commercial_farm_input_factor }
+                add_to_variable = { building_output_factor@token:building_commercial_farm = modifier@local_building_commercial_farm_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_commercial_farm = modifier@local_building_commercial_farm_throughput_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_commercial_farm = modifier@local_building_commercial_farm_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_commercial_farm = modifier@local_building_commercial_farm_attractiveness_factor }
+                add_to_variable = { building_industrial_capacity_use_factor@token:building_commercial_farm = modifier@local_building_commercial_farm_industrial_capacity_use_factor }
+            #
+            #Food_plantation
+                add_to_variable = { building_input_factor@token:building_food_plantation = modifier@local_building_food_plantation_input_factor }
+                add_to_variable = { building_output_factor@token:building_food_plantation = modifier@local_building_food_plantation_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_food_plantation = modifier@local_building_food_plantation_throughput_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_food_plantation = modifier@local_building_food_plantation_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_food_plantation = modifier@local_building_food_plantation_attractiveness_factor }
+                add_to_variable = { building_industrial_capacity_use_factor@token:building_food_plantation = modifier@local_building_food_plantation_industrial_capacity_use_factor }
+            #
+            #Material_plantation
+                add_to_variable = { building_input_factor@token:building_material_plantation = modifier@local_building_material_plantation_input_factor }
+                add_to_variable = { building_output_factor@token:building_material_plantation = modifier@local_building_material_plantation_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_material_plantation = modifier@local_building_material_plantation_throughput_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_material_plantation = modifier@local_building_material_plantation_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_material_plantation = modifier@local_building_material_plantation_attractiveness_factor }
+                add_to_variable = { building_industrial_capacity_use_factor@token:building_material_plantation = modifier@local_building_material_plantation_industrial_capacity_use_factor }
+            #
+            #Luxuries_plantation
+                add_to_variable = { building_input_factor@token:building_luxuries_plantation = modifier@local_building_luxuries_plantation_input_factor }
+                add_to_variable = { building_output_factor@token:building_luxuries_plantation = modifier@local_building_luxuries_plantation_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_luxuries_plantation = modifier@local_building_luxuries_plantation_throughput_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_luxuries_plantation = modifier@local_building_luxuries_plantation_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_luxuries_plantation = modifier@local_building_luxuries_plantation_attractiveness_factor }
+                add_to_variable = { building_industrial_capacity_use_factor@token:building_luxuries_plantation = modifier@local_building_luxuries_plantation_industrial_capacity_use_factor }
+            #
+            #Lumber_mill
+                add_to_variable = { building_input_factor@token:building_lumber_mill = modifier@local_building_lumber_mill_input_factor }
+                add_to_variable = { building_output_factor@token:building_lumber_mill = modifier@local_building_lumber_mill_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_lumber_mill = modifier@local_building_lumber_mill_throughput_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_lumber_mill = modifier@local_building_lumber_mill_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_lumber_mill = modifier@local_building_lumber_mill_attractiveness_factor }
+                add_to_variable = { building_industrial_capacity_use_factor@token:building_lumber_mill = modifier@local_building_lumber_mill_industrial_capacity_use_factor }
+            #
+            #Metals_mine
+                add_to_variable = { building_input_factor@token:building_metals_mine = modifier@local_building_metals_mine_input_factor }
+                add_to_variable = { building_output_factor@token:building_metals_mine = modifier@local_building_metals_mine_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_metals_mine = modifier@local_building_metals_mine_throughput_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_metals_mine = modifier@local_building_metals_mine_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_metals_mine = modifier@local_building_metals_mine_attractiveness_factor }
+                add_to_variable = { building_industrial_capacity_use_factor@token:building_metals_mine = modifier@local_building_metals_mine_industrial_capacity_use_factor }
+            #
+            #Coal_mine
+                add_to_variable = { building_input_factor@token:building_coal_mine = modifier@local_building_coal_mine_input_factor }
+                add_to_variable = { building_output_factor@token:building_coal_mine = modifier@local_building_coal_mine_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_coal_mine = modifier@local_building_coal_mine_throughput_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_coal_mine = modifier@local_building_coal_mine_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_coal_mine = modifier@local_building_coal_mine_attractiveness_factor }
+                add_to_variable = { building_industrial_capacity_use_factor@token:building_coal_mine = modifier@local_building_coal_mine_industrial_capacity_use_factor }
+            #
+            #Oil_well
+                add_to_variable = { building_input_factor@token:building_oil_well = modifier@local_building_oil_well_input_factor }
+                add_to_variable = { building_output_factor@token:building_oil_well = modifier@local_building_oil_well_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_oil_well = modifier@local_building_oil_well_throughput_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_oil_well = modifier@local_building_oil_well_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_oil_well = modifier@local_building_oil_well_attractiveness_factor }
+                add_to_variable = { building_industrial_capacity_use_factor@token:building_oil_well = modifier@local_building_oil_well_industrial_capacity_use_factor }
+            #
+            #Valuables_extractor
+                add_to_variable = { building_input_factor@token:building_valuables_extractor = modifier@local_building_valuables_extractor_input_factor }
+                add_to_variable = { building_output_factor@token:building_valuables_extractor = modifier@local_building_valuables_extractor_output_factor }
+                add_to_variable = { building_throughput_factor@token:building_valuables_extractor = modifier@local_building_valuables_extractor_throughput_factor }
+                add_to_variable = { building_attractiveness_modifier@token:building_valuables_extractor = modifier@local_building_valuables_extractor_attractiveness_modifier }
+                add_to_variable = { building_attractiveness_factor@token:building_valuables_extractor = modifier@local_building_valuables_extractor_attractiveness_factor }
+                add_to_variable = { building_industrial_capacity_use_factor@token:building_valuables_extractor = modifier@local_building_valuables_extractor_industrial_capacity_use_factor }
+            #
+
+            #General
+                #Military_industry
+                    add_to_variable = { building_input_factor@token:building_military_industry = modifier@local_building_input_factor }
+                    add_to_variable = { building_output_factor@token:building_military_industry = modifier@local_building_output_factor }
+                    add_to_variable = { building_throughput_factor@token:building_military_industry = modifier@local_building_throughput_factor }
+                    add_to_variable = { building_attractiveness_modifier@token:building_military_industry = modifier@local_building_attractiveness_modifier }
+                    add_to_variable = { building_attractiveness_factor@token:building_military_industry = modifier@local_building_attractiveness_factor }
+                    add_to_variable = { building_industrial_capacity_use_factor@token:building_military_industry = modifier@local_building_industrial_capacity_use_factor }
+                #
+                #Civilian_industry
+                    add_to_variable = { building_input_factor@token:building_civilian_industry = modifier@local_building_input_factor }
+                    add_to_variable = { building_output_factor@token:building_civilian_industry = modifier@local_building_output_factor }
+                    add_to_variable = { building_throughput_factor@token:building_civilian_industry = modifier@local_building_throughput_factor }
+                    add_to_variable = { building_attractiveness_modifier@token:building_civilian_industry = modifier@local_building_attractiveness_modifier }
+                    add_to_variable = { building_attractiveness_factor@token:building_civilian_industry = modifier@local_building_attractiveness_factor }
+                    add_to_variable = { building_industrial_capacity_use_factor@token:building_civilian_industry = modifier@local_building_industrial_capacity_use_factor }
+                #
+                #Naval_industry
+                    add_to_variable = { building_input_factor@token:building_naval_industry = modifier@local_building_input_factor }
+                    add_to_variable = { building_output_factor@token:building_naval_industry = modifier@local_building_output_factor }
+                    add_to_variable = { building_throughput_factor@token:building_naval_industry = modifier@local_building_throughput_factor }
+                    add_to_variable = { building_attractiveness_modifier@token:building_naval_industry = modifier@local_building_attractiveness_modifier }
+                    add_to_variable = { building_attractiveness_factor@token:building_naval_industry = modifier@local_building_attractiveness_factor }
+                    add_to_variable = { building_industrial_capacity_use_factor@token:building_naval_industry = modifier@local_building_industrial_capacity_use_factor }
+                #
+
+                #Infrastructure
+                    add_to_variable = { building_input_factor@token:building_infrastructure = modifier@local_building_input_factor }
+                    add_to_variable = { building_output_factor@token:building_infrastructure = modifier@local_building_output_factor }
+                    add_to_variable = { building_throughput_factor@token:building_infrastructure = modifier@local_building_throughput_factor }
+                    add_to_variable = { building_attractiveness_modifier@token:building_infrastructure = modifier@local_building_attractiveness_modifier }
+                    add_to_variable = { building_attractiveness_factor@token:building_infrastructure = modifier@local_building_attractiveness_factor }
+                #
+                #Railway
+                    add_to_variable = { building_input_factor@token:building_railway = modifier@local_building_input_factor }
+                    add_to_variable = { building_output_factor@token:building_railway = modifier@local_building_output_factor }
+                    add_to_variable = { building_throughput_factor@token:building_railway = modifier@local_building_throughput_factor }
+                    add_to_variable = { building_attractiveness_modifier@token:building_railway = modifier@local_building_attractiveness_modifier }
+                    add_to_variable = { building_attractiveness_factor@token:building_railway = modifier@local_building_attractiveness_factor }
+                #
+                #Port
+                    add_to_variable = { building_input_factor@token:building_port = modifier@local_building_input_factor }
+                    add_to_variable = { building_output_factor@token:building_port = modifier@local_building_output_factor }
+                    add_to_variable = { building_throughput_factor@token:building_port = modifier@local_building_throughput_factor }
+                    add_to_variable = { building_attractiveness_modifier@token:building_port = modifier@local_building_attractiveness_modifier }
+                    add_to_variable = { building_attractiveness_factor@token:building_port = modifier@local_building_attractiveness_factor }
+                #
+                #Airport
+                    add_to_variable = { building_input_factor@token:building_airport = modifier@local_building_input_factor }
+                    add_to_variable = { building_output_factor@token:building_airport = modifier@local_building_output_factor }
+                    add_to_variable = { building_throughput_factor@token:building_airport = modifier@local_building_throughput_factor }
+                    add_to_variable = { building_attractiveness_modifier@token:building_airport = modifier@local_building_attractiveness_modifier }
+                    add_to_variable = { building_attractiveness_factor@token:building_airport = modifier@local_building_attractiveness_factor }
+                #
+                
+                #Consumer_goods_factory
+                    add_to_variable = { building_input_factor@token:building_consumer_goods_factory = modifier@local_building_input_factor }
+                    add_to_variable = { building_output_factor@token:building_consumer_goods_factory = modifier@local_building_output_factor }
+                    add_to_variable = { building_throughput_factor@token:building_consumer_goods_factory = modifier@local_building_throughput_factor }
+                    add_to_variable = { building_attractiveness_modifier@token:building_consumer_goods_factory = modifier@local_building_attractiveness_modifier }
+                    add_to_variable = { building_attractiveness_factor@token:building_consumer_goods_factory = modifier@local_building_attractiveness_factor }
+                    add_to_variable = { building_industrial_capacity_use_factor@token:building_consumer_goods_factory = modifier@local_building_industrial_capacity_use_factor }
+                #
+                #Luxury_goods_factory
+                    add_to_variable = { building_input_factor@token:building_luxury_goods_factory = modifier@local_building_input_factor }
+                    add_to_variable = { building_output_factor@token:building_luxury_goods_factory = modifier@local_building_output_factor }
+                    add_to_variable = { building_throughput_factor@token:building_luxury_goods_factory = modifier@local_building_throughput_factor }
+                    add_to_variable = { building_attractiveness_modifier@token:building_luxury_goods_factory = modifier@local_building_attractiveness_modifier }
+                    add_to_variable = { building_attractiveness_factor@token:building_luxury_goods_factory = modifier@local_building_attractiveness_factor }
+                    add_to_variable = { building_industrial_capacity_use_factor@token:building_luxury_goods_factory = modifier@local_building_industrial_capacity_use_factor }
+                #
+                #Industrial_goods_factory
+                    add_to_variable = { building_input_factor@token:building_industrial_goods_factory = modifier@local_building_input_factor }
+                    add_to_variable = { building_output_factor@token:building_industrial_goods_factory = modifier@local_building_output_factor }
+                    add_to_variable = { building_throughput_factor@token:building_industrial_goods_factory = modifier@local_building_throughput_factor }
+                    add_to_variable = { building_attractiveness_modifier@token:building_industrial_goods_factory = modifier@local_building_attractiveness_modifier }
+                    add_to_variable = { building_attractiveness_factor@token:building_industrial_goods_factory = modifier@local_building_attractiveness_factor }
+                    add_to_variable = { building_industrial_capacity_use_factor@token:building_industrial_goods_factory = modifier@local_building_industrial_capacity_use_factor }
+                #
+                #Services_building
+                    add_to_variable = { building_input_factor@token:building_services_building = modifier@local_building_input_factor }
+                    add_to_variable = { building_output_factor@token:building_services_building = modifier@local_building_output_factor }
+                    add_to_variable = { building_throughput_factor@token:building_services_building = modifier@local_building_throughput_factor }
+                    add_to_variable = { building_attractiveness_modifier@token:building_services_building = modifier@local_building_attractiveness_modifier }
+                    add_to_variable = { building_attractiveness_factor@token:building_services_building = modifier@local_building_attractiveness_factor }
+                    add_to_variable = { building_industrial_capacity_use_factor@token:building_services_building = modifier@local_building_industrial_capacity_use_factor }
+                #
+                #Power_plant
+                    add_to_variable = { building_input_factor@token:building_power_plant = modifier@local_building_input_factor }
+                    add_to_variable = { building_output_factor@token:building_power_plant = modifier@local_building_output_factor }
+                    add_to_variable = { building_throughput_factor@token:building_power_plant = modifier@local_building_throughput_factor }
+                    add_to_variable = { building_attractiveness_modifier@token:building_power_plant = modifier@local_building_attractiveness_modifier }
+                    add_to_variable = { building_attractiveness_factor@token:building_power_plant = modifier@local_building_attractiveness_factor }
+                    add_to_variable = { building_industrial_capacity_use_factor@token:building_power_plant = modifier@local_building_industrial_capacity_use_factor }
+                #
+                
+                #Commercial_farm
+                    add_to_variable = { building_input_factor@token:building_commercial_farm = modifier@local_building_input_factor }
+                    add_to_variable = { building_output_factor@token:building_commercial_farm = modifier@local_building_output_factor }
+                    add_to_variable = { building_throughput_factor@token:building_commercial_farm = modifier@local_building_throughput_factor }
+                    add_to_variable = { building_attractiveness_modifier@token:building_commercial_farm = modifier@local_building_attractiveness_modifier }
+                    add_to_variable = { building_attractiveness_factor@token:building_commercial_farm = modifier@local_building_attractiveness_factor }
+                    add_to_variable = { building_industrial_capacity_use_factor@token:building_commercial_farm = modifier@local_building_industrial_capacity_use_factor }
+                #
+                #Food_plantation
+                    add_to_variable = { building_input_factor@token:building_food_plantation = modifier@local_building_input_factor }
+                    add_to_variable = { building_output_factor@token:building_food_plantation = modifier@local_building_output_factor }
+                    add_to_variable = { building_throughput_factor@token:building_food_plantation = modifier@local_building_throughput_factor }
+                    add_to_variable = { building_attractiveness_modifier@token:building_food_plantation = modifier@local_building_attractiveness_modifier }
+                    add_to_variable = { building_attractiveness_factor@token:building_food_plantation = modifier@local_building_attractiveness_factor }
+                    add_to_variable = { building_industrial_capacity_use_factor@token:building_food_plantation = modifier@local_building_industrial_capacity_use_factor }
+                #
+                #Material_plantation
+                    add_to_variable = { building_input_factor@token:building_material_plantation = modifier@local_building_input_factor }
+                    add_to_variable = { building_output_factor@token:building_material_plantation = modifier@local_building_output_factor }
+                    add_to_variable = { building_throughput_factor@token:building_material_plantation = modifier@local_building_throughput_factor }
+                    add_to_variable = { building_attractiveness_modifier@token:building_material_plantation = modifier@local_building_attractiveness_modifier }
+                    add_to_variable = { building_attractiveness_factor@token:building_material_plantation = modifier@local_building_attractiveness_factor }
+                    add_to_variable = { building_industrial_capacity_use_factor@token:building_material_plantation = modifier@local_building_industrial_capacity_use_factor }
+                #
+                #Luxuries_plantation
+                    add_to_variable = { building_input_factor@token:building_luxuries_plantation = modifier@local_building_input_factor }
+                    add_to_variable = { building_output_factor@token:building_luxuries_plantation = modifier@local_building_output_factor }
+                    add_to_variable = { building_throughput_factor@token:building_luxuries_plantation = modifier@local_building_throughput_factor }
+                    add_to_variable = { building_attractiveness_modifier@token:building_luxuries_plantation = modifier@local_building_attractiveness_modifier }
+                    add_to_variable = { building_attractiveness_factor@token:building_luxuries_plantation = modifier@local_building_attractiveness_factor }
+                    add_to_variable = { building_industrial_capacity_use_factor@token:building_luxuries_plantation = modifier@local_building_industrial_capacity_use_factor }
+                #
+                #Lumber_mill
+                    add_to_variable = { building_input_factor@token:building_lumber_mill = modifier@local_building_input_factor }
+                    add_to_variable = { building_output_factor@token:building_lumber_mill = modifier@local_building_output_factor }
+                    add_to_variable = { building_throughput_factor@token:building_lumber_mill = modifier@local_building_throughput_factor }
+                    add_to_variable = { building_attractiveness_modifier@token:building_lumber_mill = modifier@local_building_attractiveness_modifier }
+                    add_to_variable = { building_attractiveness_factor@token:building_lumber_mill = modifier@local_building_attractiveness_factor }
+                    add_to_variable = { building_industrial_capacity_use_factor@token:building_lumber_mill = modifier@local_building_industrial_capacity_use_factor }
+                #
+                #Metals_mine
+                    add_to_variable = { building_input_factor@token:building_metals_mine = modifier@local_building_input_factor }
+                    add_to_variable = { building_output_factor@token:building_metals_mine = modifier@local_building_output_factor }
+                    add_to_variable = { building_throughput_factor@token:building_metals_mine = modifier@local_building_throughput_factor }
+                    add_to_variable = { building_attractiveness_modifier@token:building_metals_mine = modifier@local_building_attractiveness_modifier }
+                    add_to_variable = { building_attractiveness_factor@token:building_metals_mine = modifier@local_building_attractiveness_factor }
+                    add_to_variable = { building_industrial_capacity_use_factor@token:building_metals_mine = modifier@local_building_industrial_capacity_use_factor }
+                #
+                #Coal_mine
+                    add_to_variable = { building_input_factor@token:building_coal_mine = modifier@local_building_input_factor }
+                    add_to_variable = { building_output_factor@token:building_coal_mine = modifier@local_building_output_factor }
+                    add_to_variable = { building_throughput_factor@token:building_coal_mine = modifier@local_building_throughput_factor }
+                    add_to_variable = { building_attractiveness_modifier@token:building_coal_mine = modifier@local_building_attractiveness_modifier }
+                    add_to_variable = { building_attractiveness_factor@token:building_coal_mine = modifier@local_building_attractiveness_factor }
+                    add_to_variable = { building_industrial_capacity_use_factor@token:building_coal_mine = modifier@local_building_industrial_capacity_use_factor }
+                #
+                #Oil_well
+                    add_to_variable = { building_input_factor@token:building_oil_well = modifier@local_building_input_factor }
+                    add_to_variable = { building_output_factor@token:building_oil_well = modifier@local_building_output_factor }
+                    add_to_variable = { building_throughput_factor@token:building_oil_well = modifier@local_building_throughput_factor }
+                    add_to_variable = { building_attractiveness_modifier@token:building_oil_well = modifier@local_building_attractiveness_modifier }
+                    add_to_variable = { building_attractiveness_factor@token:building_oil_well = modifier@local_building_attractiveness_factor }
+                    add_to_variable = { building_industrial_capacity_use_factor@token:building_oil_well = modifier@local_building_industrial_capacity_use_factor }
+                #
+                #Valuables_extractor
+                    add_to_variable = { building_input_factor@token:building_valuables_extractor = modifier@local_building_input_factor }
+                    add_to_variable = { building_output_factor@token:building_valuables_extractor = modifier@local_building_output_factor }
+                    add_to_variable = { building_throughput_factor@token:building_valuables_extractor = modifier@local_building_throughput_factor }
+                    add_to_variable = { building_attractiveness_modifier@token:building_valuables_extractor = modifier@local_building_attractiveness_modifier }
+                    add_to_variable = { building_attractiveness_factor@token:building_valuables_extractor = modifier@local_building_attractiveness_factor }
+                    add_to_variable = { building_industrial_capacity_use_factor@token:building_valuables_extractor = modifier@local_building_industrial_capacity_use_factor }
+                #
+            #
+            #Factories
+                #Military_industry
+                    add_to_variable = { building_input_factor@token:building_military_industry = modifier@local_building_factory_input_factor }
+                    add_to_variable = { building_output_factor@token:building_military_industry = modifier@local_building_factory_output_factor }
+                    add_to_variable = { building_throughput_factor@token:building_military_industry = modifier@local_building_factory_throughput_factor }
+                    add_to_variable = { building_attractiveness_modifier@token:building_military_industry = modifier@local_building_factory_attractiveness_modifier }
+                    add_to_variable = { building_attractiveness_factor@token:building_military_industry = modifier@local_building_factory_attractiveness_factor }
+                    add_to_variable = { building_industrial_capacity_use_factor@token:building_military_industry = modifier@local_building_factory_industrial_capacity_use_factor }
+                #
+                #Civilian_industry
+                    add_to_variable = { building_input_factor@token:building_civilian_industry = modifier@local_building_factory_input_factor }
+                    add_to_variable = { building_output_factor@token:building_civilian_industry = modifier@local_building_factory_output_factor }
+                    add_to_variable = { building_throughput_factor@token:building_civilian_industry = modifier@local_building_factory_throughput_factor }
+                    add_to_variable = { building_attractiveness_modifier@token:building_civilian_industry = modifier@local_building_factory_attractiveness_modifier }
+                    add_to_variable = { building_attractiveness_factor@token:building_civilian_industry = modifier@local_building_factory_attractiveness_factor }
+                    add_to_variable = { building_industrial_capacity_use_factor@token:building_civilian_industry = modifier@local_building_factory_industrial_capacity_use_factor }
+                #
+                #Naval_industry
+                    add_to_variable = { building_input_factor@token:building_naval_industry = modifier@local_building_factory_input_factor }
+                    add_to_variable = { building_output_factor@token:building_naval_industry = modifier@local_building_factory_output_factor }
+                    add_to_variable = { building_throughput_factor@token:building_naval_industry = modifier@local_building_factory_throughput_factor }
+                    add_to_variable = { building_attractiveness_modifier@token:building_naval_industry = modifier@local_building_factory_attractiveness_modifier }
+                    add_to_variable = { building_attractiveness_factor@token:building_naval_industry = modifier@local_building_factory_attractiveness_factor }
+                    add_to_variable = { building_industrial_capacity_use_factor@token:building_naval_industry = modifier@local_building_factory_industrial_capacity_use_factor }
+                #
+                
+                #Consumer_goods_factory
+                    add_to_variable = { building_input_factor@token:building_consumer_goods_factory = modifier@local_building_factory_input_factor }
+                    add_to_variable = { building_output_factor@token:building_consumer_goods_factory = modifier@local_building_factory_output_factor }
+                    add_to_variable = { building_throughput_factor@token:building_consumer_goods_factory = modifier@local_building_factory_throughput_factor }
+                    add_to_variable = { building_attractiveness_modifier@token:building_consumer_goods_factory = modifier@local_building_factory_attractiveness_modifier }
+                    add_to_variable = { building_attractiveness_factor@token:building_consumer_goods_factory = modifier@local_building_factory_attractiveness_factor }
+                    add_to_variable = { building_industrial_capacity_use_factor@token:building_consumer_goods_factory = modifier@local_building_factory_industrial_capacity_use_factor }
+                #
+                #Luxury_goods_factory
+                    add_to_variable = { building_input_factor@token:building_luxury_goods_factory = modifier@local_building_factory_input_factor }
+                    add_to_variable = { building_output_factor@token:building_luxury_goods_factory = modifier@local_building_factory_output_factor }
+                    add_to_variable = { building_throughput_factor@token:building_luxury_goods_factory = modifier@local_building_factory_throughput_factor }
+                    add_to_variable = { building_attractiveness_modifier@token:building_luxury_goods_factory = modifier@local_building_factory_attractiveness_modifier }
+                    add_to_variable = { building_attractiveness_factor@token:building_luxury_goods_factory = modifier@local_building_factory_attractiveness_factor }
+                    add_to_variable = { building_industrial_capacity_use_factor@token:building_luxury_goods_factory = modifier@local_building_factory_industrial_capacity_use_factor }
+                #
+                #Industrial_goods_factory
+                    add_to_variable = { building_input_factor@token:building_industrial_goods_factory = modifier@local_building_factory_input_factor }
+                    add_to_variable = { building_output_factor@token:building_industrial_goods_factory = modifier@local_building_factory_output_factor }
+                    add_to_variable = { building_throughput_factor@token:building_industrial_goods_factory = modifier@local_building_factory_throughput_factor }
+                    add_to_variable = { building_attractiveness_modifier@token:building_industrial_goods_factory = modifier@local_building_factory_attractiveness_modifier }
+                    add_to_variable = { building_attractiveness_factor@token:building_industrial_goods_factory = modifier@local_building_factory_attractiveness_factor }
+                    add_to_variable = { building_industrial_capacity_use_factor@token:building_industrial_goods_factory = modifier@local_building_factory_industrial_capacity_use_factor }
+                #
+            #
+            #Agriculture
+                #Commercial_farm
+                    add_to_variable = { building_input_factor@token:building_commercial_farm = modifier@local_building_agriculture_input_factor }
+                    add_to_variable = { building_output_factor@token:building_commercial_farm = modifier@local_building_agriculture_output_factor }
+                    add_to_variable = { building_throughput_factor@token:building_commercial_farm = modifier@local_building_agriculture_throughput_factor }
+                    add_to_variable = { building_attractiveness_modifier@token:building_commercial_farm = modifier@local_building_agriculture_attractiveness_modifier }
+                    add_to_variable = { building_attractiveness_factor@token:building_commercial_farm = modifier@local_building_agriculture_attractiveness_factor }
+                    add_to_variable = { building_industrial_capacity_use_factor@token:building_commercial_farm = modifier@local_building_agriculture_industrial_capacity_use_factor }
+                #
+                #Food_plantation
+                    add_to_variable = { building_input_factor@token:building_food_plantation = modifier@local_building_agriculture_input_factor }
+                    add_to_variable = { building_output_factor@token:building_food_plantation = modifier@local_building_agriculture_output_factor }
+                    add_to_variable = { building_throughput_factor@token:building_food_plantation = modifier@local_building_agriculture_throughput_factor }
+                    add_to_variable = { building_attractiveness_modifier@token:building_food_plantation = modifier@local_building_agriculture_attractiveness_modifier }
+                    add_to_variable = { building_attractiveness_factor@token:building_food_plantation = modifier@local_building_agriculture_attractiveness_factor }
+                    add_to_variable = { building_industrial_capacity_use_factor@token:building_food_plantation = modifier@local_building_agriculture_industrial_capacity_use_factor }
+                #
+                #Material_plantation
+                    add_to_variable = { building_input_factor@token:building_material_plantation = modifier@local_building_agriculture_input_factor }
+                    add_to_variable = { building_output_factor@token:building_material_plantation = modifier@local_building_agriculture_output_factor }
+                    add_to_variable = { building_throughput_factor@token:building_material_plantation = modifier@local_building_agriculture_throughput_factor }
+                    add_to_variable = { building_attractiveness_modifier@token:building_material_plantation = modifier@local_building_agriculture_attractiveness_modifier }
+                    add_to_variable = { building_attractiveness_factor@token:building_material_plantation = modifier@local_building_agriculture_attractiveness_factor }
+                    add_to_variable = { building_industrial_capacity_use_factor@token:building_material_plantation = modifier@local_building_agriculture_industrial_capacity_use_factor }
+                #
+                #Luxuries_plantation
+                    add_to_variable = { building_input_factor@token:building_luxuries_plantation = modifier@local_building_agriculture_input_factor }
+                    add_to_variable = { building_output_factor@token:building_luxuries_plantation = modifier@local_building_agriculture_output_factor }
+                    add_to_variable = { building_throughput_factor@token:building_luxuries_plantation = modifier@local_building_agriculture_throughput_factor }
+                    add_to_variable = { building_attractiveness_modifier@token:building_luxuries_plantation = modifier@local_building_agriculture_attractiveness_modifier }
+                    add_to_variable = { building_attractiveness_factor@token:building_luxuries_plantation = modifier@local_building_agriculture_attractiveness_factor }
+                    add_to_variable = { building_industrial_capacity_use_factor@token:building_luxuries_plantation = modifier@local_building_agriculture_industrial_capacity_use_factor }
+                #
+            #
+            #Plantation
+                #Food_plantation
+                    add_to_variable = { building_input_factor@token:building_food_plantation = modifier@local_building_plantation_input_factor }
+                    add_to_variable = { building_output_factor@token:building_food_plantation = modifier@local_building_plantation_output_factor }
+                    add_to_variable = { building_throughput_factor@token:building_food_plantation = modifier@local_building_plantation_throughput_factor }
+                    add_to_variable = { building_attractiveness_modifier@token:building_food_plantation = modifier@local_building_plantation_attractiveness_modifier }
+                    add_to_variable = { building_attractiveness_factor@token:building_food_plantation = modifier@local_building_plantation_attractiveness_factor }
+                    add_to_variable = { building_industrial_capacity_use_factor@token:building_food_plantation = modifier@local_building_plantation_industrial_capacity_use_factor }
+                #
+                #Material_plantation
+                    add_to_variable = { building_input_factor@token:building_material_plantation = modifier@local_building_plantation_input_factor }
+                    add_to_variable = { building_output_factor@token:building_material_plantation = modifier@local_building_plantation_output_factor }
+                    add_to_variable = { building_throughput_factor@token:building_material_plantation = modifier@local_building_plantation_throughput_factor }
+                    add_to_variable = { building_attractiveness_modifier@token:building_material_plantation = modifier@local_building_plantation_attractiveness_modifier }
+                    add_to_variable = { building_attractiveness_factor@token:building_material_plantation = modifier@local_building_plantation_attractiveness_factor }
+                    add_to_variable = { building_industrial_capacity_use_factor@token:building_material_plantation = modifier@local_building_plantation_industrial_capacity_use_factor }
+                #
+                #Luxuries_plantation
+                    add_to_variable = { building_input_factor@token:building_luxuries_plantation = modifier@local_building_plantation_input_factor }
+                    add_to_variable = { building_output_factor@token:building_luxuries_plantation = modifier@local_building_plantation_output_factor }
+                    add_to_variable = { building_throughput_factor@token:building_luxuries_plantation = modifier@local_building_plantation_throughput_factor }
+                    add_to_variable = { building_attractiveness_modifier@token:building_luxuries_plantation = modifier@local_building_plantation_attractiveness_modifier }
+                    add_to_variable = { building_attractiveness_factor@token:building_luxuries_plantation = modifier@local_building_plantation_attractiveness_factor }
+                    add_to_variable = { building_industrial_capacity_use_factor@token:building_luxuries_plantation = modifier@local_building_plantation_industrial_capacity_use_factor }
+                #
+            #
+            #Resource
+                #Lumber_mill
+                    add_to_variable = { building_input_factor@token:building_lumber_mill = modifier@local_building_resource_input_factor }
+                    add_to_variable = { building_output_factor@token:building_lumber_mill = modifier@local_building_resource_output_factor }
+                    add_to_variable = { building_throughput_factor@token:building_lumber_mill = modifier@local_building_resource_throughput_factor }
+                    add_to_variable = { building_attractiveness_modifier@token:building_lumber_mill = modifier@local_building_resource_attractiveness_modifier }
+                    add_to_variable = { building_attractiveness_factor@token:building_lumber_mill = modifier@local_building_resource_attractiveness_factor }
+                    add_to_variable = { building_industrial_capacity_use_factor@token:building_lumber_mill = modifier@local_building_resource_industrial_capacity_use_factor }
+                #
+                #Metals_mine
+                    add_to_variable = { building_input_factor@token:building_metals_mine = modifier@local_building_resource_input_factor }
+                    add_to_variable = { building_output_factor@token:building_metals_mine = modifier@local_building_resource_output_factor }
+                    add_to_variable = { building_throughput_factor@token:building_metals_mine = modifier@local_building_resource_throughput_factor }
+                    add_to_variable = { building_attractiveness_modifier@token:building_metals_mine = modifier@local_building_resource_attractiveness_modifier }
+                    add_to_variable = { building_attractiveness_factor@token:building_metals_mine = modifier@local_building_resource_attractiveness_factor }
+                    add_to_variable = { building_industrial_capacity_use_factor@token:building_metals_mine = modifier@local_building_resource_industrial_capacity_use_factor }
+                #
+                #Coal_mine
+                    add_to_variable = { building_input_factor@token:building_coal_mine = modifier@local_building_resource_input_factor }
+                    add_to_variable = { building_output_factor@token:building_coal_mine = modifier@local_building_resource_output_factor }
+                    add_to_variable = { building_throughput_factor@token:building_coal_mine = modifier@local_building_resource_throughput_factor }
+                    add_to_variable = { building_attractiveness_modifier@token:building_coal_mine = modifier@local_building_resource_attractiveness_modifier }
+                    add_to_variable = { building_attractiveness_factor@token:building_coal_mine = modifier@local_building_resource_attractiveness_factor }
+                    add_to_variable = { building_industrial_capacity_use_factor@token:building_coal_mine = modifier@local_building_resource_industrial_capacity_use_factor }
+                #
+                #Oil_well
+                    add_to_variable = { building_input_factor@token:building_oil_well = modifier@local_building_resource_input_factor }
+                    add_to_variable = { building_output_factor@token:building_oil_well = modifier@local_building_resource_output_factor }
+                    add_to_variable = { building_throughput_factor@token:building_oil_well = modifier@local_building_resource_throughput_factor }
+                    add_to_variable = { building_attractiveness_modifier@token:building_oil_well = modifier@local_building_resource_attractiveness_modifier }
+                    add_to_variable = { building_attractiveness_factor@token:building_oil_well = modifier@local_building_resource_attractiveness_factor }
+                    add_to_variable = { building_industrial_capacity_use_factor@token:building_oil_well = modifier@local_building_resource_industrial_capacity_use_factor }
+                #
+                #Valuables_extractor
+                    add_to_variable = { building_input_factor@token:building_valuables_extractor = modifier@local_building_resource_input_factor }
+                    add_to_variable = { building_output_factor@token:building_valuables_extractor = modifier@local_building_resource_output_factor }
+                    add_to_variable = { building_throughput_factor@token:building_valuables_extractor = modifier@local_building_resource_throughput_factor }
+                    add_to_variable = { building_attractiveness_modifier@token:building_valuables_extractor = modifier@local_building_resource_attractiveness_modifier }
+                    add_to_variable = { building_attractiveness_factor@token:building_valuables_extractor = modifier@local_building_resource_attractiveness_factor }
+                    add_to_variable = { building_industrial_capacity_use_factor@token:building_valuables_extractor = modifier@local_building_resource_industrial_capacity_use_factor }
+                #
+            #
+            #Transport
+                #Infrastructure
+                    add_to_variable = { building_input_factor@token:building_infrastructure = modifier@local_building_transport_input_factor }
+                    add_to_variable = { building_output_factor@token:building_infrastructure = modifier@local_building_transport_output_factor }
+                    add_to_variable = { building_throughput_factor@token:building_infrastructure = modifier@local_building_transport_throughput_factor }
+                    add_to_variable = { building_attractiveness_modifier@token:building_infrastructure = modifier@local_building_transport_attractiveness_modifier }
+                    add_to_variable = { building_attractiveness_factor@token:building_infrastructure = modifier@local_building_transport_attractiveness_factor }
+                #
+                #Railway
+                    add_to_variable = { building_input_factor@token:building_railway = modifier@local_building_transport_input_factor }
+                    add_to_variable = { building_output_factor@token:building_railway = modifier@local_building_transport_output_factor }
+                    add_to_variable = { building_throughput_factor@token:building_railway = modifier@local_building_transport_throughput_factor }
+                    add_to_variable = { building_attractiveness_modifier@token:building_railway = modifier@local_building_transport_attractiveness_modifier }
+                    add_to_variable = { building_attractiveness_factor@token:building_railway = modifier@local_building_transport_attractiveness_factor }
+                #
+                #Port
+                    add_to_variable = { building_input_factor@token:building_port = modifier@local_building_transport_input_factor }
+                    add_to_variable = { building_output_factor@token:building_port = modifier@local_building_transport_output_factor }
+                    add_to_variable = { building_throughput_factor@token:building_port = modifier@local_building_transport_throughput_factor }
+                    add_to_variable = { building_attractiveness_modifier@token:building_port = modifier@local_building_transport_attractiveness_modifier }
+                    add_to_variable = { building_attractiveness_factor@token:building_port = modifier@local_building_transport_attractiveness_factor }
+                #
+                #Airport
+                    add_to_variable = { building_input_factor@token:building_airport = modifier@local_building_transport_input_factor }
+                    add_to_variable = { building_output_factor@token:building_airport = modifier@local_building_transport_output_factor }
+                    add_to_variable = { building_throughput_factor@token:building_airport = modifier@local_building_transport_throughput_factor }
+                    add_to_variable = { building_attractiveness_modifier@token:building_airport = modifier@local_building_transport_attractiveness_modifier }
+                    add_to_variable = { building_attractiveness_factor@token:building_airport = modifier@local_building_transport_attractiveness_factor }
+                #
+            #
+            #Subsistence Agriculture
+                #Subsistence Farm
+                    add_to_variable = { building_size_factor@token:building_subsistence_farm = modifier@local_building_subsistence_agriculture_size_factor }
+                    add_to_variable = { building_output_factor@token:building_subsistence_farm = modifier@local_building_subsistence_agriculture_output_factor }
+                #
+                #Rice Paddy
+                    add_to_variable = { building_size_factor@token:building_rice_paddy = modifier@local_building_subsistence_agriculture_size_factor }
+                    add_to_variable = { building_output_factor@token:building_rice_paddy = modifier@local_building_subsistence_agriculture_output_factor }
+                #
             #
         #
 
