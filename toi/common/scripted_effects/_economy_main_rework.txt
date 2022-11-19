@@ -114,6 +114,30 @@
                 r_update_modifiers_state_effects = yes
                 
                 #Buildings
+                    #Building Construction
+                        buildings_update_construction = yes
+
+                        for_each_loop = {
+                            array = buildings
+                            value = om_building
+
+                            if = {
+                                limit = {
+                                    check_variable = { under_construction@var:om_building > 0 }
+                                }
+                                subtract_from_variable = { construction_amount@var:om_building = construction_speed@var:om_building }
+                                if = {
+                                    limit = {
+                                        check_variable = { construction_amount@var:om_building < 0.001 }
+                                    }
+                                    set_variable = { construction_amount@var:om_building = 0 }
+                                    add_to_variable = { size@var:om_building = under_construction@var:om_building }
+                                    set_variable = { under_construction@var:om_building = 0 }
+                                }
+                            }
+                        }
+                    #
+
 			        clear_temp_array = buildings_wage_sort
                     for_each_loop = {
                         array = buildings
@@ -252,6 +276,15 @@
                             }
                             set_temp_variable = { effective_wage_om = 0 }
                         }
+                        if = {
+                            limit = {
+                                OR = {
+                                    check_variable = { vv = token:building_infrastructure }
+                                    check_variable = { vv = token:building_railway }
+                                }
+                            }
+                            multiply_temp_variable = { effective_wage_om = 2 }
+                        }
 
 
                         for_each_loop = {
@@ -269,6 +302,15 @@
                                     }
                                 }
                                 set_temp_variable = { effective_wage_vv = 0 }
+                            }
+                            if = {
+                                limit = {
+                                    OR = {
+                                        check_variable = { vv = token:building_infrastructure }
+                                        check_variable = { vv = token:building_railway }
+                                    }
+                                }
+                                multiply_temp_variable = { effective_wage_vv = 2 }
                             }
 
                             if = {
@@ -338,9 +380,10 @@
 
                 buildings_update = yes
                 pops_update = yes
+		        
+                divide_variable = { base_wage = employed_buildings }
 
                 #Pops
-
                     #Finances
                         #Earnings & Spending
                         add_to_variable = { slaves_money = slaves_earnings }
@@ -1149,8 +1192,6 @@
                         #
                     #
                 #
-		        
-                divide_variable = { base_wage = employed_buildings }
             }
 
             calc_supply = yes
@@ -1655,8 +1696,21 @@
             
             every_controlled_state = {
                 r_update_modifiers_state_effects = yes
-                set_variable = { gdp_growth = 0 }
-                clear_array = gdp_amount_array
+
+                #Clearing old variables (for debugging)
+                    set_variable = { gdp_growth = 0 }
+                    clear_array = gdp_amount_array
+
+                    for_each_loop = {
+                        array = buildings_under_construction_array
+                        value = om_building
+
+                        set_variable = { under_construction@var:om_building = 0 }
+                        set_variable = { construction_amount@var:om_building = 0 }
+                        set_variable = { construction_speed@var:om_building = 0 }
+                        set_variable = { construction_expenses@var:om_building = 0 }
+                    }
+                #
 
                 #Resource Setup
                 for_each_loop = {
@@ -4813,17 +4867,23 @@
                     add_to_variable = { laborers_workforce = change_temp }
                     add_to_variable = { laborers_unemployed = change_temp }
                 }
-
                 #Laborers have extra jobs & have higher SoL (or no laborers)
                 if = {
                     limit = {
                         check_variable = { laborers_jobs > laborers_workforce }
                         check_variable = { peasants_unemployed > 0 }
                     }
-                    
+
                     #Base amount to change
-                    set_temp_variable = { change_temp = laborers_open_jobs }
-                    subtract_from_temp_variable = { change_temp = laborers_unemployed }
+                    set_temp_variable = { change_temp = laborers_jobs }
+                    subtract_from_temp_variable = { change_temp = laborers_workforce }
+
+                    if = {
+                        limit = {
+                            state = 954
+                        }
+                        log = "[?change_temp]"
+                    }
                 
                     #Cap based on peasants
                     if = {
@@ -4853,11 +4913,11 @@
                 #Over job cap
                 if = {
                     limit = {
-                        check_variable = { workers_open_jobs < workers_unemployed }
+                        check_variable = { workers_jobs < workers_workforce }
                     }
                     
-                    set_temp_variable = { change_temp = workers_unemployed }
-                    subtract_from_temp_variable = { change_temp = workers_open_jobs }
+                    set_temp_variable = { change_temp = workers_jobs }
+                    subtract_from_temp_variable = { change_temp = workers_workforce }
 
                     subtract_from_variable = { workers_workforce = change_temp }
                     subtract_from_variable = { workers_unemployed = change_temp }
@@ -4895,11 +4955,11 @@
                 #Over job cap
                 if = {
                     limit = {
-                        check_variable = { professionals_open_jobs < professionals_unemployed }
+                        check_variable = { professionals_jobs < professionals_workforce }
                     }
                     
-                    set_temp_variable = { change_temp = professionals_unemployed }
-                    subtract_from_temp_variable = { change_temp = professionals_open_jobs }
+                    set_temp_variable = { change_temp = professionals_workforce }
+                    subtract_from_temp_variable = { change_temp = professionals_jobs }
 
                     subtract_from_variable = { professionals_workforce = change_temp }
                     subtract_from_variable = { professionals_unemployed = change_temp }
@@ -4937,11 +4997,11 @@
                 #Over job cap
                 if = {
                     limit = {
-                        check_variable = { specialists_open_jobs < specialists_unemployed }
+                        check_variable = { specialists_jobs < specialists_workforce }
                     }
                     
-                    set_temp_variable = { change_temp = specialists_unemployed }
-                    subtract_from_temp_variable = { change_temp = specialists_open_jobs }
+                    set_temp_variable = { change_temp = specialists_workforce }
+                    subtract_from_temp_variable = { change_temp = specialists_jobs }
 
                     subtract_from_variable = { specialists_workforce = change_temp }
                     subtract_from_variable = { specialists_unemployed = change_temp }
@@ -4979,11 +5039,11 @@
                 #Over job cap
                 if = {
                     limit = {
-                        check_variable = { aristocrats_open_jobs < aristocrats_unemployed }
+                        check_variable = { aristocrats_jobs < aristocrats_workforce }
                     }
                     
-                    set_temp_variable = { change_temp = aristocrats_unemployed }
-                    subtract_from_temp_variable = { change_temp = aristocrats_open_jobs }
+                    set_temp_variable = { change_temp = aristocrats_workforce }
+                    subtract_from_temp_variable = { change_temp = aristocrats_jobs }
 
                     subtract_from_variable = { aristocrats_workforce = change_temp }
                     subtract_from_variable = { aristocrats_unemployed = change_temp }
@@ -5021,11 +5081,11 @@
                 #Over job cap
                 if = {
                     limit = {
-                        check_variable = { capitalists_open_jobs < capitalists_unemployed }
+                        check_variable = { capitalists_jobs < capitalists_workforce }
                     }
                     
-                    set_temp_variable = { change_temp = capitalists_unemployed }
-                    subtract_from_temp_variable = { change_temp = capitalists_open_jobs }
+                    set_temp_variable = { change_temp = capitalists_workforce }
+                    subtract_from_temp_variable = { change_temp = capitalists_jobs }
 
                     subtract_from_variable = { capitalists_workforce = change_temp }
                     subtract_from_variable = { capitalists_unemployed = change_temp }
@@ -5500,6 +5560,130 @@
 #
 
 #Buildings
+    construct_x_buildings_no_update = {
+		# x_temp, financer_temp, building_token, production_method_temp
+		# State
+
+        round_temp_variable = x_temp #Look, people may do dumb shit and put a float in this thing.
+        round_temp_variable = production_method_temp
+
+        set_temp_variable = { pm_temp = production_method_temp }
+        if = {
+            limit = {
+                check_variable = { x_temp > 0 }
+                check_variable = { under_construction@var:building_token = 0 }
+                is_in_array = { global.building_token_array = building_token }
+                has_valid_production_method = yes
+                if = {
+                    limit = {
+                        check_variable = { financer_temp < 0 } #Corporation
+                    }
+                }
+                else_if = {
+                    limit = {
+                        check_variable = { financer_temp > 0 } #Government
+                    }
+                    country_exists = var:financer_temp
+
+                }
+                else = { #Local
+
+                }
+            }
+
+            set_variable = { under_construction@var:building_token = x_temp }
+
+            #Add building to array if it doesn't exist yet
+            if = {
+                limit = {
+                    NOT = { is_in_array = { buildings = building_token } }
+                }
+                add_to_array = { buildings = building_token }
+                set_variable = { production_method@var:building_token = production_method_temp }
+            }
+
+            #Financer
+            set_variable = { financer@var:building_token = financer_temp }
+
+            #Amount
+            if = {
+                limit = {
+                    check_variable = { production_method@var:building_token = 0 }
+                }
+                set_variable = { construction_amount@var:building_token = global.building_basic_construction_amount@var:building_token }
+            }
+            else_if = {
+                limit = {
+                    check_variable = { production_method@var:building_token = 1 }
+                }
+                set_variable = { construction_amount@var:building_token = global.building_advanced_construction_amount@var:building_token }
+            }
+            else_if = {
+                limit = {
+                    check_variable = { production_method@var:building_token = 2 }
+                }
+                set_variable = { construction_amount@var:building_token = global.building_industrialized_construction_amount@var:building_token }
+            }
+            else_if = {
+                limit = {
+                    check_variable = { production_method@var:building_token = 3 }
+                }
+                set_variable = { construction_amount@var:building_token = global.building_mechanized_construction_amount@var:building_token }
+            }
+            else_if = {
+                limit = {
+                    check_variable = { production_method@var:building_token = 4 }
+                }
+                set_variable = { construction_amount@var:building_token = global.building_electrified_construction_amount@var:building_token }
+            }
+            else_if = {
+                limit = {
+                    check_variable = { production_method@var:building_token = 5 }
+                }
+                set_variable = { construction_amount@var:building_token = global.building_motorized_construction_amount@var:building_token }
+            }
+            else_if = {
+                limit = {
+                    check_variable = { production_method@var:building_token = 6 }
+                }
+                set_variable = { construction_amount@var:building_token = global.building_modernized_construction_amount@var:building_token }
+            }
+            else_if = {
+                limit = {
+                    check_variable = { production_method@var:building_token = 7 }
+                }
+                set_variable = { construction_amount@var:building_token = global.building_roboticized_construction_amount@var:building_token }
+            }
+            else_if = {
+                limit = {
+                    check_variable = { production_method@var:building_token = 8 }
+                }
+                set_variable = { construction_amount@var:building_token = global.building_computerized_construction_amount@var:building_token }
+            }
+            else_if = {
+                limit = {
+                    check_variable = { production_method@var:building_token = 9 }
+                }
+                set_variable = { construction_amount@var:building_token = global.building_digitalized_construction_amount@var:building_token }
+            }
+            else_if = {
+                limit = {
+                    check_variable = { production_method@var:building_token = 10 }
+                }
+                set_variable = { construction_amount@var:building_token = global.building_automatized_construction_amount@var:building_token }
+            }
+            else_if = {
+                limit = {
+                    check_variable = { production_method@var:building_token = 11 }
+                }
+                set_variable = { construction_amount@var:building_token = global.building_futurized_construction_amount@var:building_token }
+            }
+            multiply_variable = { construction_amount@var:building_token = under_construction@var:building_token }
+
+            buildings_update_construction = yes
+        }
+    }
+
 	change_building_avg_wage = {
 		#wage_change_temp, building_token
 
@@ -6867,6 +7051,41 @@
             set_temp_variable = { pm_temp = 11 }
         }
     }
+    correct_production_method = {
+        # building_token. pm_temp
+        # State Scope
+        # Takes in a production method and "corrects" it. If set to -1, then latest is chosen. If not valid, then sets it to -1
+
+        if = {
+            limit = {
+                check_variable = { pm_temp = -1 }
+            }
+            get_latest_production_method = yes
+        }
+        else = {
+            set_temp_variable = { pm_correcting_temp = pm_temp }
+            log = "PM: [?pm_correcting_temp]"
+            get_latest_production_method = yes
+            log = "Latest: [?pm_temp]"
+            if = {
+                limit = {
+                    check_variable = { pm_correcting_temp > pm_temp }
+                }
+                set_temp_variable = { pm_correcting_temp = pm_temp }
+            }
+            
+            get_earliest_production_method = yes
+            log = "Earliest: [?pm_temp]"
+            if = {
+                limit = {
+                    check_variable = { pm_correcting_temp < pm_temp }
+                }
+                set_temp_variable = { pm_correcting_temp = pm_temp }
+            }
+
+            set_temp_variable = { pm_temp = pm_correcting_temp }
+        }
+    }
 
     reload_building_array = {
         clear_array = urban_buildings
@@ -7962,6 +8181,112 @@
 			divide_variable = { profitability@var:bu_token = revenue@var:bu_token }
 		#
     }
+
+    buildings_update_construction = {
+		clear_array = buildings_under_construction_array
+		set_variable = { buildings_under_construction_amount = 0 }
+		for_each_loop = {
+			array = buildings
+			value = om_building
+
+			if = {
+				limit = {
+					check_variable = { under_construction@var:om_building > 0 }
+				}
+				add_to_array = { buildings_under_construction_array = om_building }
+				add_to_variable = { buildings_under_construction_amount = under_construction@var:om_building }
+
+                if = {
+                    limit = {
+                        check_variable = { production_method@var:om_building = 0 }
+                    }
+				    set_variable = { construction_speed@var:om_building = global.building_basic_construction_speed@var:om_building }
+                }
+                else_if = {
+                    limit = {
+                        check_variable = { production_method@var:om_building = 1 }
+                    }
+				    set_variable = { construction_speed@var:om_building = global.building_advanced_construction_speed@var:om_building }
+                }
+                else_if = {
+                    limit = {
+                        check_variable = { production_method@var:om_building = 2 }
+                    }
+				    set_variable = { construction_speed@var:om_building = global.building_industrialized_construction_speed@var:om_building }
+                }
+                else_if = {
+                    limit = {
+                        check_variable = { production_method@var:om_building = 3 }
+                    }
+				    set_variable = { construction_speed@var:om_building = global.building_mechanized_construction_speed@var:om_building }
+                }
+                else_if = {
+                    limit = {
+                        check_variable = { production_method@var:om_building = 4 }
+                    }
+				    set_variable = { construction_speed@var:om_building = global.building_electrified_construction_speed@var:om_building }
+                }
+                else_if = {
+                    limit = {
+                        check_variable = { production_method@var:om_building = 5 }
+                    }
+				    set_variable = { construction_speed@var:om_building = global.building_motorized_construction_speed@var:om_building }
+                }
+                else_if = {
+                    limit = {
+                        check_variable = { production_method@var:om_building = 6 }
+                    }
+				    set_variable = { construction_speed@var:om_building = global.building_modernized_construction_speed@var:om_building }
+                }
+                else_if = {
+                    limit = {
+                        check_variable = { production_method@var:om_building = 7 }
+                    }
+				    set_variable = { construction_speed@var:om_building = global.building_roboticized_construction_speed@var:om_building }
+                }
+                else_if = {
+                    limit = {
+                        check_variable = { production_method@var:om_building = 8 }
+                    }
+				    set_variable = { construction_speed@var:om_building = global.building_computerized_construction_speed@var:om_building }
+                }
+                else_if = {
+                    limit = {
+                        check_variable = { production_method@var:om_building = 9 }
+                    }
+				    set_variable = { construction_speed@var:om_building = global.building_digitalized_construction_speed@var:om_building }
+                }
+                else_if = {
+                    limit = {
+                        check_variable = { production_method@var:om_building = 10 }
+                    }
+				    set_variable = { construction_speed@var:om_building = global.building_automatized_construction_speed@var:om_building }
+                }
+                else_if = {
+                    limit = {
+                        check_variable = { production_method@var:om_building = 11 }
+                    }
+				    set_variable = { construction_speed@var:om_building = global.building_futurized_construction_speed@var:om_building }
+                }
+				multiply_variable = { construction_speed@var:om_building = under_construction@var:om_building }
+
+				if = {
+					limit = {
+						check_variable = { construction_speed@var:om_building > construction_amount@var:om_building }
+					}
+					set_variable = { construction_speed@var:om_building = construction_amount@var:om_building }
+				}
+
+				set_variable = { construction_expenses@var:om_building = construction_speed@var:om_building }
+				multiply_variable = { construction_expenses@var:om_building = price@token:resource_industrial_goods }
+			}
+            else = {
+				set_variable = { construction_amount@var:om_building = 0 }
+                set_variable = { construction_speed@var:om_building = 0 }
+                set_variable = { construction_expenses@var:om_building = 0 }
+            }
+		}
+    }
 #
 
 #Resources
@@ -8183,6 +8508,8 @@
             for_each_loop = {
                 array = buildings
                 value = b_type
+
+                add_to_variable = { demand@token:resource_industrial_goods = construction_speed@var:b_type }
                 
                 if = { #Basic
                     limit = {
