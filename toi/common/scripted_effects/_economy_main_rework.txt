@@ -180,6 +180,22 @@
                             change_building_base_wage = yes
                             building_update_finances = yes
                         }
+
+                        #Wages are over productivity therefore cut wages
+                        set_temp_variable = { prod_cap = productivity@var:om_building }
+                        multiply_temp_variable = { prod_cap = 0.95 }
+                        if = {
+                            limit = {
+                                OR = {
+                                    check_variable = { prod_cap < 0 }
+                                    check_variable = { average_wage@var:om_building > prod_cap }
+                                }
+                            }
+                            set_temp_variable = { building_token = om_building }
+                            set_temp_variable = { wage_change_temp = -0.025 }
+                            change_building_base_wage = yes
+                            building_update_finances = yes
+                        }
                         
                         if = {
                             limit = {
@@ -214,22 +230,6 @@
                                 building_update = yes
                             }
 
-                            #Wages are over productivity therefore cut wages
-                            set_temp_variable = { prod_cap = productivity@var:om_building }
-                            multiply_temp_variable = { prod_cap = 0.95 }
-                            if = {
-                                limit = {
-                                    OR = {
-                                        check_variable = { prod_cap < 0 }
-                                        check_variable = { average_wage@var:om_building > prod_cap }
-                                    }
-                                }
-                                set_temp_variable = { building_token = om_building }
-                                set_temp_variable = { wage_change_temp = -0.025 }
-                                change_building_base_wage = yes
-                                building_update_finances = yes
-                            }
-
                             #Wages are too high
                             if = {
                                 limit = {
@@ -251,6 +251,13 @@
                                     }
                                     set_temp_variable = { wage_change_temp = -0.1 }
                                 }
+                                if = {
+                                    limit = {
+                                        state = 358
+                                        check_variable = { om_building = token:building_subsistence_farm }
+                                    }
+                                    log = "[?wage_change_temp]"
+                                }
                                 set_temp_variable = { building_token = om_building }
                                 set_temp_variable = { iu_token = building_token }
                                 change_building_avg_wage = yes
@@ -266,7 +273,7 @@
                         }
 
                         #Create a temporary array of buildings sorted by wage (highest to lowest)
-                        set_temp_variable = { effective_wage_om = base_wage@var:om_building }
+                        set_temp_variable = { effective_wage_om = average_wage@var:om_building }
                         if = {
                             limit = {
                                 OR = {
@@ -279,8 +286,8 @@
                         if = {
                             limit = {
                                 OR = {
-                                    check_variable = { vv = token:building_infrastructure }
-                                    check_variable = { vv = token:building_railway }
+                                    check_variable = { om_building = token:building_infrastructure }
+                                    check_variable = { om_building = token:building_railway }
                                 }
                             }
                             multiply_temp_variable = { effective_wage_om = 2 }
@@ -293,7 +300,7 @@
                             value = vv
                             break = bb
 
-                            set_temp_variable = { effective_wage_vv = base_wage@var:vv }
+                            set_temp_variable = { effective_wage_vv = average_wage@var:vv }
                             if = {
                                 limit = {
                                     OR = {
@@ -335,13 +342,6 @@
 
 			        pops_update_workforce = yes
 
-                    
-                    if = {
-                        limit = {
-                            state = 358
-                        }
-                        log = ""
-                    }
                     #Hiring
                     for_each_loop = {
                         array = buildings_wage_sort
@@ -377,6 +377,8 @@
                         add_to_variable = { base_wage = weighted_base_wage }
                     }
                 #
+                
+                calc_industrial_capacity = yes
 
                 buildings_update = yes
                 pops_update = yes
@@ -1247,7 +1249,17 @@
 
                     
                     create_state_gdp_graph = yes
+                    create_pie_chart_pop_type = yes
                 #
+                if = {
+                    limit = {
+                        check_variable = { pops_unemployed < 0 }
+                    }
+                    set_variable = { pops_employed_percentage = 1 }
+
+                    set_variable = { pops_unemployed = 0 }
+                    set_variable = { pops_unemployed_percentage = 0 }
+                }
             }
         }
     }
@@ -1259,7 +1271,7 @@
 
             #Pops
 				#Defined Vars Default Values
-                    set_variable = { global.pops_workforce_participation = 0.30 }
+                    set_variable = { global.pops_workforce_participation = 0.35 }
                     set_variable = { global.pops_literacy_percentage = 15 } #Unlocks Workers
                     set_variable = { global.pops_schooling_percentage = 2 } #Unlocks Professionals
                     set_variable = { global.pops_education_percentage = 1 } #Unlocks Specialists
@@ -2706,38 +2718,7 @@
 
         set_variable = { pops_workforce_participation = global.pops_workforce_participation }
         
-		#Pop Types
-			set_variable = { slaves = slaves_workforce }
-			divide_variable = { slaves = pops_workforce_participation }
-			
-			set_variable = { peasants = peasants_workforce }
-			divide_variable = { peasants = pops_workforce_participation }
-			
-			set_variable = { laborers = laborers_workforce }
-			divide_variable = { laborers = pops_workforce_participation }
-			
-			set_variable = { workers = workers_workforce }
-			divide_variable = { workers = pops_workforce_participation }
-			
-			set_variable = { professionals = professionals_workforce }
-			divide_variable = { professionals = pops_workforce_participation }
-			
-			set_variable = { specialists = professionals_workforce }
-			divide_variable = { specialists = pops_workforce_participation }
-			
-			set_variable = { aristocrats = aristocrats_workforce }
-			divide_variable = { aristocrats = pops_workforce_participation }
-			
-			set_variable = { capitalists = capitalists_workforce }
-			divide_variable = { capitalists = pops_workforce_participation }
-			
-			set_variable = { bureaucrats = bureaucrats_workforce }
-			divide_variable = { bureaucrats = pops_workforce_participation }
-			
-			set_variable = { soldiers = soldiers_workforce }
-			divide_variable = { soldiers = pops_workforce_participation }
-		#
-		#Employed Amount
+		#Workforce Amount
 			set_variable = { slaves_employed = 0 }
 			set_variable = { peasants_employed = 0 }
 			set_variable = { laborers_employed = 0 }
@@ -2783,8 +2764,7 @@
 			}
 
 			#Totals
-			set_variable = { pops_employed = 0 }
-			add_to_variable = { pops_employed = slaves_employed }
+			set_variable = { pops_employed = slaves_employed }
 			add_to_variable = { pops_employed = peasants_employed }
 			add_to_variable = { pops_employed = laborers_employed }
 			add_to_variable = { pops_employed = workers_employed }
@@ -2794,147 +2774,109 @@
 			add_to_variable = { pops_employed = capitalists_employed }
 			add_to_variable = { pops_employed = bureaucrats_employed }
 			add_to_variable = { pops_employed = soldiers_employed }
-		#
-		#Percentages:
-			#Slaves
-			set_variable = { slaves_employed_percentage = slaves_employed }
-			divide_variable = { slaves_employed_percentage = slaves_workforce }
-		
-			set_variable = { slaves_unemployed = slaves_workforce }
-			subtract_from_variable = { slaves_unemployed = slaves_employed }
-		
-			set_variable = { slaves_unemployed_percentage = slaves_unemployed }
-			divide_variable = { slaves_unemployed_percentage = slaves_workforce }
-		
-			set_variable = { slaves_percentage = slaves }
-			divide_variable = { slaves_percentage = pops }
-			
-			#Peasants
-			set_variable = { peasants_employed_percentage = peasants_employed }
-			divide_variable = { peasants_employed_percentage = peasants_workforce }
-		
-			set_variable = { peasants_unemployed = peasants_workforce }
-			subtract_from_variable = { peasants_unemployed = peasants_employed }
-		
-			set_variable = { peasants_unemployed_percentage = peasants_unemployed }
-			divide_variable = { peasants_unemployed_percentage = peasants_workforce }
-		
-			set_variable = { peasants_percentage = peasants }
-			divide_variable = { peasants_percentage = pops }
-			
-			#Laborers
-			set_variable = { laborers_employed_percentage = laborers_employed }
-			divide_variable = { laborers_employed_percentage = laborers_workforce }
-		
-			set_variable = { laborers_unemployed = laborers_workforce }
-			subtract_from_variable = { laborers_unemployed = laborers_employed }
-		
-			set_variable = { laborers_unemployed_percentage = laborers_unemployed }
-			divide_variable = { laborers_unemployed_percentage = laborers_workforce }
-		
-			set_variable = { laborers_percentage = laborers }
-			divide_variable = { laborers_percentage = pops }
-			
-			#Workers
-			set_variable = { workers_employed_percentage = workers_employed }
-			divide_variable = { workers_employed_percentage = workers_workforce }
-		
-			set_variable = { workers_unemployed = workers_workforce }
-			subtract_from_variable = { workers_unemployed = workers_employed }
-		
-			set_variable = { workers_unemployed_percentage = workers_unemployed }
-			divide_variable = { workers_unemployed_percentage = workers_workforce }
-		
-			set_variable = { workers_percentage = workers }
-			divide_variable = { workers_percentage = pops }
-			
-			#Professionals
-			set_variable = { professionals_employed_percentage = professionals_employed }
-			divide_variable = { professionals_employed_percentage = professionals_workforce }
-		
-			set_variable = { professionals_unemployed = professionals_workforce }
-			subtract_from_variable = { professionals_unemployed = professionals_employed }
-		
-			set_variable = { professionals_unemployed_percentage = professionals_unemployed }
-			divide_variable = { professionals_unemployed_percentage = professionals_workforce }
-		
-			set_variable = { professionals_percentage = professionals }
-			divide_variable = { professionals_percentage = pops }
-			
-			#Specialists
-			set_variable = { specialists_employed_percentage = specialists_employed }
-			divide_variable = { specialists_employed_percentage = specialists_workforce }
-		
-			set_variable = { specialists_unemployed = specialists_workforce }
-			subtract_from_variable = { specialists_unemployed = specialists_employed }
-		
-			set_variable = { specialists_unemployed_percentage = specialists_unemployed }
-			divide_variable = { specialists_unemployed_percentage = specialists_workforce }
-		
-			set_variable = { specialists_percentage = specialists }
-			divide_variable = { specialists_percentage = pops }
-			
-			#Aristocrats
-			set_variable = { aristocrats_employed_percentage = aristocrats_employed }
-			divide_variable = { aristocrats_employed_percentage = aristocrats_workforce }
-		
-			set_variable = { aristocrats_unemployed = aristocrats_workforce }
-			subtract_from_variable = { aristocrats_unemployed = aristocrats_employed }
-		
-			set_variable = { aristocrats_unemployed_percentage = aristocrats_unemployed }
-			divide_variable = { aristocrats_unemployed_percentage = aristocrats_workforce }
-		
-			set_variable = { aristocrats_percentage = aristocrats }
-			divide_variable = { aristocrats_percentage = pops }
-			
-			#Capitalists
-			set_variable = { capitalists_employed_percentage = capitalists_employed }
-			divide_variable = { capitalists_employed_percentage = capitalists_workforce }
-		
-			set_variable = { capitalists_unemployed = capitalists_workforce }
-			subtract_from_variable = { capitalists_unemployed = capitalists_employed }
-		
-			set_variable = { capitalists_unemployed_percentage = capitalists_unemployed }
-			divide_variable = { capitalists_unemployed_percentage = capitalists_workforce }
-		
-			set_variable = { capitalists_percentage = capitalists }
-			divide_variable = { capitalists_percentage = pops }
-			
-			#Bureaucrats
-			set_variable = { bureaucrats_employed_percentage = bureaucrats_employed }
-			divide_variable = { bureaucrats_employed_percentage = bureaucrats_workforce }
-		
-			set_variable = { bureaucrats_unemployed = bureaucrats_workforce }
-			subtract_from_variable = { bureaucrats_unemployed = bureaucrats_employed }
-		
-			set_variable = { bureaucrats_unemployed_percentage = bureaucrats_unemployed }
-			divide_variable = { bureaucrats_unemployed_percentage = bureaucrats_workforce }
-		
-			set_variable = { bureaucrats_percentage = bureaucrats }
-			divide_variable = { bureaucrats_percentage = pops }
-			
-			#Soldiers
-			set_variable = { soldiers_employed_percentage = soldiers_employed }
-			divide_variable = { soldiers_employed_percentage = soldiers_workforce }
-		
-			set_variable = { soldiers_unemployed = soldiers_workforce }
-			subtract_from_variable = { soldiers_unemployed = soldiers_employed }
-		
-			set_variable = { soldiers_unemployed_percentage = soldiers_unemployed }
-			divide_variable = { soldiers_unemployed_percentage = soldiers_workforce }
-		
-			set_variable = { soldiers_percentage = soldiers }
-			divide_variable = { soldiers_percentage = pops }
 
-			#Total
 			set_variable = { pops_employed_percentage = pops_employed }
 			divide_variable = { pops_employed_percentage = pops_workforce }
-
+            
 			set_variable = { pops_unemployed = pops_workforce }
 			subtract_from_variable = { pops_unemployed = pops_employed }
 		
 			set_variable = { pops_unemployed_percentage = pops_unemployed }
 			divide_variable = { pops_unemployed_percentage = pops_workforce }
+            
+			set_variable = { slaves_workforce = slaves_employed }
+			set_variable = { peasants_workforce = peasants_employed }
+			set_variable = { laborers_workforce = laborers_employed }
+			set_variable = { workers_workforce = workers_employed }
+			set_variable = { professionals_workforce = professionals_employed }
+			set_variable = { specialists_workforce = specialists_employed }
+			set_variable = { aristocrats_workforce = aristocrats_employed }
+			set_variable = { capitalists_workforce = capitalists_employed }
+			set_variable = { bureaucrats_workforce = bureaucrats_employed }
+			set_variable = { soldiers_workforce = soldiers_employed }
+
+			divide_variable = { slaves_workforce = pops_employed_percentage }
+			divide_variable = { peasants_workforce = pops_employed_percentage }
+			divide_variable = { laborers_workforce = pops_employed_percentage }
+			divide_variable = { workers_workforce = pops_employed_percentage }
+			divide_variable = { professionals_workforce = pops_employed_percentage }
+			divide_variable = { specialists_workforce = pops_employed_percentage }
+			divide_variable = { aristocrats_workforce = pops_employed_percentage }
+			divide_variable = { capitalists_workforce = pops_employed_percentage }
+			divide_variable = { bureaucrats_workforce = pops_employed_percentage }
+			divide_variable = { soldiers_workforce = pops_employed_percentage }
+		#
+		#Pop Types
+			set_variable = { slaves = slaves_workforce }
+			divide_variable = { slaves = pops_workforce_participation }
+			
+			set_variable = { peasants = peasants_workforce }
+			divide_variable = { peasants = pops_workforce_participation }
+			
+			set_variable = { laborers = laborers_workforce }
+			divide_variable = { laborers = pops_workforce_participation }
+			
+			set_variable = { workers = workers_workforce }
+			divide_variable = { workers = pops_workforce_participation }
+			
+			set_variable = { professionals = professionals_workforce }
+			divide_variable = { professionals = pops_workforce_participation }
+			
+			set_variable = { specialists = professionals_workforce }
+			divide_variable = { specialists = pops_workforce_participation }
+			
+			set_variable = { aristocrats = aristocrats_workforce }
+			divide_variable = { aristocrats = pops_workforce_participation }
+			
+			set_variable = { capitalists = capitalists_workforce }
+			divide_variable = { capitalists = pops_workforce_participation }
+			
+			set_variable = { bureaucrats = bureaucrats_workforce }
+			divide_variable = { bureaucrats = pops_workforce_participation }
+			
+			set_variable = { soldiers = soldiers_workforce }
+			divide_variable = { soldiers = pops_workforce_participation }
+		#
+		#Percentages:
+			#Slaves
+			set_variable = { slaves_percentage = slaves }
+			divide_variable = { slaves_percentage = pops }
+			
+			#Peasants
+			set_variable = { peasants_percentage = peasants }
+			divide_variable = { peasants_percentage = pops }
+			
+			#Laborers
+			set_variable = { laborers_percentage = laborers }
+			divide_variable = { laborers_percentage = pops }
+			
+			#Workers
+			set_variable = { workers_percentage = workers }
+			divide_variable = { workers_percentage = pops }
+			
+			#Professionals
+			set_variable = { professionals_percentage = professionals }
+			divide_variable = { professionals_percentage = pops }
+			
+			#Specialists
+			set_variable = { specialists_percentage = specialists }
+			divide_variable = { specialists_percentage = pops }
+			
+			#Aristocrats
+			set_variable = { aristocrats_percentage = aristocrats }
+			divide_variable = { aristocrats_percentage = pops }
+			
+			#Capitalists
+			set_variable = { capitalists_percentage = capitalists }
+			divide_variable = { capitalists_percentage = pops }
+			
+			#Bureaucrats
+			set_variable = { bureaucrats_percentage = bureaucrats }
+			divide_variable = { bureaucrats_percentage = pops }
+			
+			#Soldiers
+			set_variable = { soldiers_percentage = soldiers }
+			divide_variable = { soldiers_percentage = pops }
 		#
     }
     pops_update_finances = {
@@ -5689,36 +5631,36 @@
 
 		set_temp_variable = { total_wage_multiplier = 0 }
         
-		set_temp_variable = { wage_multiplier = peasants_employed@var:building_token }
+		set_temp_variable = { wage_multiplier = peasants_jobs@var:building_token }
 		multiply_temp_variable = { wage_multiplier = 1 }
 		add_to_temp_variable = { total_wage_multiplier = wage_multiplier }
 
-		set_temp_variable = { wage_multiplier = laborers_employed@var:building_token }
+		set_temp_variable = { wage_multiplier = laborers_jobs@var:building_token }
 		multiply_temp_variable = { wage_multiplier = 2 }
 		add_to_temp_variable = { total_wage_multiplier = wage_multiplier }
 
-		set_temp_variable = { wage_multiplier = workers_employed@var:building_token }
+		set_temp_variable = { wage_multiplier = workers_jobs@var:building_token }
 		multiply_temp_variable = { wage_multiplier = 5 }
 		add_to_temp_variable = { total_wage_multiplier = wage_multiplier }
 
-		set_temp_variable = { wage_multiplier = professionals_employed@var:building_token }
+		set_temp_variable = { wage_multiplier = professionals_jobs@var:building_token }
 		multiply_temp_variable = { wage_multiplier = 10 }
 		add_to_temp_variable = { total_wage_multiplier = wage_multiplier }
 
-		set_temp_variable = { wage_multiplier = specialists_employed@var:building_token }
+		set_temp_variable = { wage_multiplier = specialists_jobs@var:building_token }
 		multiply_temp_variable = { wage_multiplier = 20 }
 		add_to_temp_variable = { total_wage_multiplier = wage_multiplier }
 
-		set_temp_variable = { wage_multiplier = aristocrats_employed@var:building_token }
+		set_temp_variable = { wage_multiplier = aristocrats_jobs@var:building_token }
 		multiply_temp_variable = { wage_multiplier = 30 }
 		add_to_temp_variable = { total_wage_multiplier = wage_multiplier }
 
-		set_temp_variable = { wage_multiplier = capitalists_employed@var:building_token }
+		set_temp_variable = { wage_multiplier = capitalists_jobs@var:building_token }
 		multiply_temp_variable = { wage_multiplier = 50 }
 		add_to_temp_variable = { total_wage_multiplier = wage_multiplier }
 
 		set_temp_variable = { ciw_wage = wage_change_temp }
-		multiply_temp_variable = { ciw_wage = employed@var:building_token }
+		multiply_temp_variable = { ciw_wage = jobs@var:building_token }
 		divide_temp_variable = { ciw_wage = total_wage_multiplier }
 		
 		add_to_variable = { base_wage@var:building_token = ciw_wage }
@@ -5751,365 +5693,147 @@
 		}
 		subtract_from_temp_variable = { x_percent_temp = employment_percentage@var:building_token }
 
-		#Peasants
-		if = {
-			limit = {
-				check_variable = { x_percent_temp > 0 }
-				check_variable = { peasants_jobs@var:building_token > 0 }
-			}
-			set_temp_variable = { peasants_hiring = peasants_jobs@var:building_token }
+        if = {
+            limit = {
+                check_variable = { x_percent_temp > 0 }
+            }
+            set_temp_variable = { pops_hiring = jobs@var:building_token }
             if = {
                 limit = {
-                    check_variable = { peasants_hiring > 1000 }
+                    check_variable = { pops_hiring > 1000 }
                 }
-                divide_temp_variable = { peasants_hiring = 100 }
-                multiply_temp_variable = { peasants_hiring = x_percent_temp }
+                divide_temp_variable = { pops_hiring = 100 }
+                multiply_temp_variable = { pops_hiring = x_percent_temp }
             }
             else = {
-                multiply_temp_variable = { peasants_hiring = x_percent_temp }
-                divide_temp_variable = { peasants_hiring = 100 }
+                multiply_temp_variable = { pops_hiring = x_percent_temp }
+                divide_temp_variable = { pops_hiring = 100 }
             }
-			set_temp_variable = { peasants_employment_willingness = 1 }
-			if = {
-				limit = {
-					set_temp_variable = { w_temp = peasants_wage@var:building_token }
-					divide_temp_variable = { w_temp = peasants_col }
-					check_variable = { w_temp < global.pops_underpaid_start }
-				}
-				subtract_from_temp_variable = { w_temp = global.pops_underpaid_start }
-				divide_temp_variable = { w_temp = global.pops_underpaid_start }
-				
-				set_temp_variable = { mod_temp = 1 }
-				subtract_from_temp_variable = { mod_temp = global.pops_underpaid_min }
-				multiply_temp_variable = { w_temp = mod_temp }
 
-				add_to_temp_variable = { peasants_employment_willingness = w_temp }
-			}
-			multiply_temp_variable = { peasants_employment_willingness = peasants_workforce }
-			subtract_from_temp_variable = { peasants_employment_willingness = peasants_employed }
+            if = {
+                limit = {
+                    check_variable = { pops_hiring > pops_unemployed }
+                    check_variable = { pops_unemployed < 1000 }
+                }
+                set_temp_variable = { pops_hiring = pops_unemployed }
+                multiply_temp_variable = { pops_hiring = 100 }
 
-			if = {
-				limit = {
-					check_variable = { peasants_employment_willingness < peasants_hiring }
-					check_variable = { peasants_employment_willingness > 0 }
-				}
-				set_temp_variable = { peasants_hiring = peasants_employment_willingness }
-
-				set_temp_variable = { x_percent_temp = peasants_hiring }
-                multiply_temp_variable = { x_percent_temp = 100 }
+				set_temp_variable = { x_percent_temp = pops_hiring }
 				divide_temp_variable = { x_percent_temp = peasants_jobs@var:building_token }
-			}
-			else_if = {
-				limit = {
-					NOT = { check_variable = { peasants_employment_willingness > 0 } }
-				}
-				set_temp_variable = { x_percent_temp = 0 }
-			}
-		}
+            }
+            else_if = {
+                limit = {
+                    check_variable = { pops_hiring > pops_unemployed }
+                }
+                set_temp_variable = { pops_hiring = pops_unemployed }
 
-		#Laborers
-		if = {
-			limit = {
-				check_variable = { x_percent_temp > 0 }
-				check_variable = { laborers_jobs@var:building_token > 0 }
-			}
-			set_temp_variable = { laborers_hiring = laborers_jobs@var:building_token }
+				set_temp_variable = { x_percent_temp = pops_hiring }
+				divide_temp_variable = { x_percent_temp = peasants_jobs@var:building_token }
+                multiply_temp_variable = { x_percent_temp = 100 }
+            }
             if = {
                 limit = {
-                    check_variable = { laborers_hiring > 1000 }
+                    check_variable = { x_percent_temp < 0 }
                 }
-                divide_temp_variable = { laborers_hiring = 100 }
-                multiply_temp_variable = { laborers_hiring = x_percent_temp }
+                set_temp_variable = { x_percent_temp = 0 }
             }
-            else = {
-                multiply_temp_variable = { laborers_hiring = x_percent_temp }
-                divide_temp_variable = { laborers_hiring = 100 }
-            }
-			set_temp_variable = { laborers_employment_willingness = 1 }
-			if = {
-				limit = {
-					set_temp_variable = { w_temp = laborers_wage@var:building_token }
-					divide_temp_variable = { w_temp = laborers_col }
-					check_variable = { w_temp < global.pops_underpaid_start }
-				}
-				subtract_from_temp_variable = { w_temp = global.pops_underpaid_start }
-				divide_temp_variable = { w_temp = global.pops_underpaid_start }
+        }
+
+		#Peasants
+		# if = {
+		# 	limit = {
+		# 		check_variable = { x_percent_temp > 0 }
+		# 		check_variable = { peasants_jobs@var:building_token > 0 }
+		# 	}
+		# 	set_temp_variable = { peasants_hiring = peasants_jobs@var:building_token }
+        #     if = {
+        #         limit = {
+        #             check_variable = { peasants_hiring > 1000 }
+        #         }
+        #         divide_temp_variable = { peasants_hiring = 100 }
+        #         multiply_temp_variable = { peasants_hiring = x_percent_temp }
+        #     }
+        #     else = {
+        #         multiply_temp_variable = { peasants_hiring = x_percent_temp }
+        #         divide_temp_variable = { peasants_hiring = 100 }
+        #     }
+		# 	set_temp_variable = { peasants_employment_willingness = 1 }
+		# 	if = {
+		# 		limit = {
+		# 			set_temp_variable = { w_temp = peasants_wage@var:building_token }
+		# 			divide_temp_variable = { w_temp = peasants_col }
+		# 			check_variable = { w_temp < global.pops_underpaid_start }
+		# 		}
+		# 		subtract_from_temp_variable = { w_temp = global.pops_underpaid_start }
+		# 		divide_temp_variable = { w_temp = global.pops_underpaid_start }
 				
-				set_temp_variable = { mod_temp = 1 }
-				subtract_from_temp_variable = { mod_temp = global.pops_underpaid_min }
-				multiply_temp_variable = { w_temp = mod_temp }
+		# 		set_temp_variable = { mod_temp = 1 }
+		# 		subtract_from_temp_variable = { mod_temp = global.pops_underpaid_min }
+		# 		multiply_temp_variable = { w_temp = mod_temp }
 
-				add_to_temp_variable = { laborers_employment_willingness = w_temp }
-			}
-			multiply_temp_variable = { laborers_employment_willingness = laborers_workforce }
-			subtract_from_temp_variable = { laborers_employment_willingness = laborers_employed }
+		# 		add_to_temp_variable = { peasants_employment_willingness = w_temp }
+		# 	}
+		# 	multiply_temp_variable = { peasants_employment_willingness = peasants_workforce }
+		# 	subtract_from_temp_variable = { peasants_employment_willingness = peasants_employed }
 
-			if = {
-				limit = {
-					check_variable = { laborers_employment_willingness < laborers_hiring }
-					check_variable = { laborers_employment_willingness > 0 }
-				}
-				set_temp_variable = { laborers_hiring = laborers_employment_willingness }
+		# 	if = {
+		# 		limit = {
+		# 			check_variable = { peasants_employment_willingness < peasants_hiring }
+		# 			check_variable = { peasants_employment_willingness > 0 }
+		# 		}
+		# 		set_temp_variable = { peasants_hiring = peasants_employment_willingness }
 
-				set_temp_variable = { x_percent_temp = laborers_hiring }
-                multiply_temp_variable = { x_percent_temp = 100 }
-				divide_temp_variable = { x_percent_temp = laborers_jobs@var:building_token }
-			}
-			else_if = {
-				limit = {
-					NOT = { check_variable = { laborers_employment_willingness > 0 } }
-				}
-				set_temp_variable = { x_percent_temp = 0 }
-			}
-		}
-
-		#Workers
-		if = {
-			limit = {
-				check_variable = { x_percent_temp > 0 }
-				check_variable = { workers_jobs@var:building_token > 0 }
-			}
-			set_temp_variable = { workers_hiring = workers_jobs@var:building_token }
-            if = {
-                limit = {
-                    check_variable = { workers_hiring > 1000 }
-                }
-                divide_temp_variable = { workers_hiring = 100 }
-                multiply_temp_variable = { workers_hiring = x_percent_temp }
-            }
-            else = {
-                multiply_temp_variable = { workers_hiring = x_percent_temp }
-                divide_temp_variable = { workers_hiring = 100 }
-            }
-			set_temp_variable = { workers_employment_willingness = 1 }
-			if = {
-				limit = {
-					set_temp_variable = { w_temp = workers_wage@var:building_token }
-					divide_temp_variable = { w_temp = workers_col }
-					check_variable = { w_temp < global.pops_underpaid_start }
-				}
-				subtract_from_temp_variable = { w_temp = global.pops_underpaid_start }
-				divide_temp_variable = { w_temp = global.pops_underpaid_start }
-				
-				set_temp_variable = { mod_temp = 1 }
-				subtract_from_temp_variable = { mod_temp = global.pops_underpaid_min }
-				multiply_temp_variable = { w_temp = mod_temp }
-
-				add_to_temp_variable = { workers_employment_willingness = w_temp }
-			}
-			multiply_temp_variable = { workers_employment_willingness = workers_workforce }
-			subtract_from_temp_variable = { workers_employment_willingness = workers_employed }
-
-			if = {
-				limit = {
-					check_variable = { workers_employment_willingness < workers_hiring }
-					check_variable = { workers_employment_willingness > 0 }
-				}
-				set_temp_variable = { workers_hiring = workers_employment_willingness }
-
-				set_temp_variable = { x_percent_temp = workers_hiring }
-                multiply_temp_variable = { x_percent_temp = 100 }
-				divide_temp_variable = { x_percent_temp = workers_jobs@var:building_token }
-			}
-			else_if = {
-				limit = {
-					NOT = { check_variable = { workers_employment_willingness > 0 } }
-				}
-				set_temp_variable = { x_percent_temp = 0 }
-			}
-		}
-        
-		#Professionals
-		if = {
-			limit = {
-				check_variable = { x_percent_temp > 0 }
-				check_variable = { professionals_jobs@var:building_token > 0 }
-			}
-			set_temp_variable = { professionals_hiring = professionals_jobs@var:building_token }
-            if = {
-                limit = {
-                    check_variable = { professionals_hiring > 1000 }
-                }
-                divide_temp_variable = { professionals_hiring = 100 }
-                multiply_temp_variable = { professionals_hiring = x_percent_temp }
-            }
-            else = {
-                multiply_temp_variable = { professionals_hiring = x_percent_temp }
-                divide_temp_variable = { professionals_hiring = 100 }
-            }
-			set_temp_variable = { professionals_employment_willingness = 1 }
-			if = {
-				limit = {
-					set_temp_variable = { w_temp = professionals_wage@var:building_token }
-					divide_temp_variable = { w_temp = professionals_col }
-					check_variable = { w_temp < global.pops_underpaid_start }
-				}
-				subtract_from_temp_variable = { w_temp = global.pops_underpaid_start }
-				divide_temp_variable = { w_temp = global.pops_underpaid_start }
-				
-				set_temp_variable = { mod_temp = 1 }
-				subtract_from_temp_variable = { mod_temp = global.pops_underpaid_min }
-				multiply_temp_variable = { w_temp = mod_temp }
-
-				add_to_temp_variable = { professionals_employment_willingness = w_temp }
-			}
-			multiply_temp_variable = { professionals_employment_willingness = professionals_workforce }
-			subtract_from_temp_variable = { professionals_employment_willingness = professionals_employed }
-
-			if = {
-				limit = {
-					check_variable = { professionals_employment_willingness < professionals_hiring }
-					check_variable = { professionals_employment_willingness > 0 }
-				}
-				set_temp_variable = { professionals_hiring = professionals_employment_willingness }
-
-				set_temp_variable = { x_percent_temp = professionals_hiring }
-                multiply_temp_variable = { x_percent_temp = 100 }
-				divide_temp_variable = { x_percent_temp = professionals_jobs@var:building_token }
-			}
-			else_if = {
-				limit = {
-					NOT = { check_variable = { professionals_employment_willingness > 0 } }
-				}
-				set_temp_variable = { x_percent_temp = 0 }
-			}
-		}
-        
-		#Specialists
-		if = {
-			limit = {
-				check_variable = { x_percent_temp > 0 }
-				check_variable = { specialists_jobs@var:building_token > 0 }
-			}
-			set_temp_variable = { specialists_hiring = specialists_jobs@var:building_token }
-            if = {
-                limit = {
-                    check_variable = { specialists_hiring > 1000 }
-                }
-                divide_temp_variable = { specialists_hiring = 100 }
-                multiply_temp_variable = { specialists_hiring = x_percent_temp }
-            }
-            else = {
-                multiply_temp_variable = { specialists_hiring = x_percent_temp }
-                divide_temp_variable = { specialists_hiring = 100 }
-            }
-			set_temp_variable = { specialists_employment_willingness = 1 }
-			if = {
-				limit = {
-					set_temp_variable = { w_temp = specialists_wage@var:building_token }
-					divide_temp_variable = { w_temp = specialists_col }
-					check_variable = { w_temp < global.pops_underpaid_start }
-				}
-				subtract_from_temp_variable = { w_temp = global.pops_underpaid_start }
-				divide_temp_variable = { w_temp = global.pops_underpaid_start }
-				
-				set_temp_variable = { mod_temp = 1 }
-				subtract_from_temp_variable = { mod_temp = global.pops_underpaid_min }
-				multiply_temp_variable = { w_temp = mod_temp }
-
-				add_to_temp_variable = { specialists_employment_willingness = w_temp }
-			}
-			multiply_temp_variable = { specialists_employment_willingness = specialists_workforce }
-			subtract_from_temp_variable = { specialists_employment_willingness = specialists_employed }
-
-			if = {
-				limit = {
-					check_variable = { specialists_employment_willingness < specialists_hiring }
-					check_variable = { specialists_employment_willingness > 0 }
-				}
-				set_temp_variable = { specialists_hiring = specialists_employment_willingness }
-
-				set_temp_variable = { x_percent_temp = specialists_hiring }
-                multiply_temp_variable = { x_percent_temp = 100 }
-				divide_temp_variable = { x_percent_temp = specialists_jobs@var:building_token }
-			}
-			else_if = {
-				limit = {
-					NOT = { check_variable = { specialists_employment_willingness > 0 } }
-				}
-				set_temp_variable = { x_percent_temp = 0 }
-			}
-		}
-
-		#Aristocrats
-		if = {
-			limit = {
-				check_variable = { x_percent_temp > 0 }
-				check_variable = { aristocrats_jobs@var:building_token > 0 }
-			}
-			set_temp_variable = { aristocrats_hiring = aristocrats_jobs@var:building_token }
-            if = {
-                limit = {
-                    check_variable = { aristocrats_hiring > 1000 }
-                }
-                divide_temp_variable = { aristocrats_hiring = 100 }
-                multiply_temp_variable = { aristocrats_hiring = x_percent_temp }
-            }
-            else = {
-                multiply_temp_variable = { aristocrats_hiring = x_percent_temp }
-                divide_temp_variable = { aristocrats_hiring = 100 }
-            }
-			set_temp_variable = { aristocrats_employment_willingness = aristocrats_workforce }
-			subtract_from_temp_variable = { aristocrats_employment_willingness = aristocrats_employed }
-
-			if = {
-				limit = {
-					check_variable = { aristocrats_employment_willingness < aristocrats_hiring }
-					check_variable = { aristocrats_employment_willingness > 0 }
-				}
-				set_temp_variable = { aristocrats_hiring = aristocrats_employment_willingness }
-
-				set_temp_variable = { x_percent_temp = aristocrats_hiring }
-                multiply_temp_variable = { x_percent_temp = 100 }
-				divide_temp_variable = { x_percent_temp = aristocrats_jobs@var:building_token }
-			}
-			else_if = {
-				limit = {
-					NOT = { check_variable = { aristocrats_employment_willingness > 0 } }
-				}
-				set_temp_variable = { x_percent_temp = 0 }
-			}
-		}
+		# 		set_temp_variable = { x_percent_temp = peasants_hiring }
+        #         multiply_temp_variable = { x_percent_temp = 100 }
+		# 		divide_temp_variable = { x_percent_temp = peasants_jobs@var:building_token }
+		# 	}
+		# 	else_if = {
+		# 		limit = {
+		# 			NOT = { check_variable = { peasants_employment_willingness > 0 } }
+		# 		}
+		# 		set_temp_variable = { x_percent_temp = 0 }
+		# 	}
+		# }
 
 		#Capitalists
-		if = {
-			limit = {
-				check_variable = { x_percent_temp > 0 }
-				check_variable = { capitalists_jobs@var:building_token > 0 }
-			}
-			set_temp_variable = { capitalists_hiring = capitalists_jobs@var:building_token }
-            if = {
-                limit = {
-                    check_variable = { capitalists_hiring > 1000 }
-                }
-                divide_temp_variable = { capitalists_hiring = 100 }
-                multiply_temp_variable = { capitalists_hiring = x_percent_temp }
-            }
-            else = {
-                multiply_temp_variable = { capitalists_hiring = x_percent_temp }
-                divide_temp_variable = { capitalists_hiring = 100 }
-            }
-			set_temp_variable = { capitalists_employment_willingness = capitalists_workforce }
-			subtract_from_temp_variable = { capitalists_employment_willingness = capitalists_employed }
+		# if = {
+		# 	limit = {
+		# 		check_variable = { x_percent_temp > 0 }
+		# 		check_variable = { capitalists_jobs@var:building_token > 0 }
+		# 	}
+		# 	set_temp_variable = { capitalists_hiring = capitalists_jobs@var:building_token }
+        #     if = {
+        #         limit = {
+        #             check_variable = { capitalists_hiring > 1000 }
+        #         }
+        #         divide_temp_variable = { capitalists_hiring = 100 }
+        #         multiply_temp_variable = { capitalists_hiring = x_percent_temp }
+        #     }
+        #     else = {
+        #         multiply_temp_variable = { capitalists_hiring = x_percent_temp }
+        #         divide_temp_variable = { capitalists_hiring = 100 }
+        #     }
+		# 	set_temp_variable = { capitalists_employment_willingness = capitalists_workforce }
+		# 	subtract_from_temp_variable = { capitalists_employment_willingness = capitalists_employed }
 
-			if = {
-				limit = {
-					check_variable = { capitalists_employment_willingness < capitalists_hiring }
-					check_variable = { capitalists_employment_willingness > 0 }
-				}
-				set_temp_variable = { capitalists_hiring = capitalists_employment_willingness }
+		# 	if = {
+		# 		limit = {
+		# 			check_variable = { capitalists_employment_willingness < capitalists_hiring }
+		# 			check_variable = { capitalists_employment_willingness > 0 }
+		# 		}
+		# 		set_temp_variable = { capitalists_hiring = capitalists_employment_willingness }
 
-				set_temp_variable = { x_percent_temp = capitalists_hiring }
-                multiply_temp_variable = { x_percent_temp = 100 }
-				divide_temp_variable = { x_percent_temp = capitalists_jobs@var:building_token }
-			}
-			else_if = {
-				limit = {
-					NOT = { check_variable = { capitalists_employment_willingness > 0 } }
-				}
-				set_temp_variable = { x_percent_temp = 0 }
-			}
-		}
+		# 		set_temp_variable = { x_percent_temp = capitalists_hiring }
+        #         multiply_temp_variable = { x_percent_temp = 100 }
+		# 		divide_temp_variable = { x_percent_temp = capitalists_jobs@var:building_token }
+		# 	}
+		# 	else_if = {
+		# 		limit = {
+		# 			NOT = { check_variable = { capitalists_employment_willingness > 0 } }
+		# 		}
+		# 		set_temp_variable = { x_percent_temp = 0 }
+		# 	}
+		# }
 		
 		#Hire New Employees
 		if = {
@@ -6129,14 +5853,6 @@
 				}
 				set_variable = { employment_percentage@var:building_token = 0 }
 			}
-			
-			subtract_from_variable = { peasants_employed = peasants_employed@var:building_token }
-			subtract_from_variable = { laborers_employed = laborers_employed@var:building_token }
-			subtract_from_variable = { workers_employed = workers_employed@var:building_token }
-			subtract_from_variable = { professionals_employed = professionals_employed@var:building_token }
-			subtract_from_variable = { specialists_employed = specialists_employed@var:building_token }
-			subtract_from_variable = { aristocrats_employed = aristocrats_employed@var:building_token }
-			subtract_from_variable = { capitalists_employed = capitalists_employed@var:building_token }
 
 			set_variable = { peasants_employed@var:building_token = peasants_jobs@var:building_token }
 			set_variable = { laborers_employed@var:building_token = laborers_jobs@var:building_token }
@@ -6182,13 +5898,7 @@
                 divide_variable = { capitalists_employed@var:building_token = 100 }
             }
 
-			add_to_variable = { peasants_employed = peasants_employed@var:building_token }
-			add_to_variable = { laborers_employed = laborers_employed@var:building_token }
-			add_to_variable = { workers_employed = workers_employed@var:building_token }
-			add_to_variable = { professionals_employed = professionals_employed@var:building_token }
-			add_to_variable = { specialists_employed = specialists_employed@var:building_token }
-			add_to_variable = { aristocrats_employed = aristocrats_employed@var:building_token }
-			add_to_variable = { capitalists_employed = capitalists_employed@var:building_token }
+			pops_update_workforce = yes
 		}
 	}
 
@@ -13607,7 +13317,7 @@
                 set_variable = { global.building_basic_output_2@token:building_rice_paddy = 2 } #0.05 per K
                 set_variable = { global.building_basic_output_3@token:building_rice_paddy = 1.6 } #0.04 per K
                 
-                set_variable = { global.building_basic_peasants_employment@token:building_rice_paddy = 39.5 } #1x
+                set_variable = { global.building_basic_peasants_employment@token:building_rice_paddy = 49.5 } #1x
                 set_variable = { global.building_basic_laborers_employment@token:building_rice_paddy = 0 } #2x
                 set_variable = { global.building_basic_workers_employment@token:building_rice_paddy = 0 } #5x
                 set_variable = { global.building_basic_professionals_employment@token:building_rice_paddy = 0 } #10x
@@ -13629,7 +13339,7 @@
                 set_variable = { global.building_basic_output_2@token:building_subsistence_farm = 1 } #0.05 per K
                 set_variable = { global.building_basic_output_3@token:building_subsistence_farm = 0.8 } #0.04 per K
                 
-                set_variable = { global.building_basic_peasants_employment@token:building_subsistence_farm = 19.8 } #1x
+                set_variable = { global.building_basic_peasants_employment@token:building_subsistence_farm = 24.8 } #1x
                 set_variable = { global.building_basic_laborers_employment@token:building_subsistence_farm = 0 } #2x
                 set_variable = { global.building_basic_workers_employment@token:building_subsistence_farm = 0 } #5x
                 set_variable = { global.building_basic_professionals_employment@token:building_subsistence_farm = 0 } #10x
@@ -13657,7 +13367,7 @@
                 set_variable = { global.building_basic_output_1@token:building_commercial_farm = 12 }
                 
                 set_variable = { global.building_basic_peasants_employment@token:building_commercial_farm = 11.8 } #1x
-                set_variable = { global.building_basic_laborers_employment@token:building_commercial_farm = 8.0 } #2x
+                set_variable = { global.building_basic_laborers_employment@token:building_commercial_farm = 13.0 } #2x
                 set_variable = { global.building_basic_workers_employment@token:building_commercial_farm = 0 } #5x
                 set_variable = { global.building_basic_professionals_employment@token:building_commercial_farm = 0 } #10x
                 set_variable = { global.building_basic_specialists_employment@token:building_commercial_farm = 0 } #20x
@@ -13678,9 +13388,12 @@
 
                 set_variable = { global.building_advanced_input_resource_1@token:building_commercial_farm = token:resource_industrial_goods }
                 set_variable = { global.building_advanced_input_amount_1@token:building_commercial_farm = 0.5 }
+
+                set_variable = { global.building_advanced_input_resource_2@token:building_commercial_farm = token:resource_raw_materials } #Fertilizer
+                set_variable = { global.building_advanced_input_amount_2@token:building_commercial_farm = 0.5 }
                 
                 set_variable = { global.building_advanced_peasants_employment@token:building_commercial_farm = 9.8 } #1x
-                set_variable = { global.building_advanced_laborers_employment@token:building_commercial_farm = 10.0 } #2x
+                set_variable = { global.building_advanced_laborers_employment@token:building_commercial_farm = 15.0 } #2x
                 set_variable = { global.building_advanced_workers_employment@token:building_commercial_farm = 0 } #5x
                 set_variable = { global.building_advanced_professionals_employment@token:building_commercial_farm = 0 } #10x
                 set_variable = { global.building_advanced_specialists_employment@token:building_commercial_farm = 0 } #20x
@@ -13703,10 +13416,10 @@
                 set_variable = { global.building_industrialized_input_amount_1@token:building_commercial_farm = 1.0 }
 
                 set_variable = { global.building_industrialized_input_resource_2@token:building_commercial_farm = token:resource_raw_materials } #Fertilizer
-                set_variable = { global.building_industrialized_input_amount_2@token:building_commercial_farm = 1.0 }
+                set_variable = { global.building_industrialized_input_amount_2@token:building_commercial_farm = 2.0 }
                 
                 set_variable = { global.building_industrialized_peasants_employment@token:building_commercial_farm = 4.8 } #1x
-                set_variable = { global.building_industrialized_laborers_employment@token:building_commercial_farm = 12.0 } #2x
+                set_variable = { global.building_industrialized_laborers_employment@token:building_commercial_farm = 16.0 } #2x
                 set_variable = { global.building_industrialized_workers_employment@token:building_commercial_farm = 1.0 } #5x
                 set_variable = { global.building_industrialized_professionals_employment@token:building_commercial_farm = 0 } #10x
                 set_variable = { global.building_industrialized_specialists_employment@token:building_commercial_farm = 0 } #20x
@@ -13729,13 +13442,13 @@
                 set_variable = { global.building_mechanized_input_amount_1@token:building_commercial_farm = 2.0 }
 
                 set_variable = { global.building_mechanized_input_resource_2@token:building_commercial_farm = token:resource_raw_materials } #Fertilizer
-                set_variable = { global.building_mechanized_input_amount_2@token:building_commercial_farm = 4.0 }
+                set_variable = { global.building_mechanized_input_amount_2@token:building_commercial_farm = 8.0 }
 
                 set_variable = { global.building_mechanized_input_resource_3@token:building_commercial_farm = token:resource_energy_materials }
                 set_variable = { global.building_mechanized_input_amount_3@token:building_commercial_farm = 2.0 }
                 
                 set_variable = { global.building_mechanized_peasants_employment@token:building_commercial_farm = 0.0 } #1x
-                set_variable = { global.building_mechanized_laborers_employment@token:building_commercial_farm = 11.8 } #2x
+                set_variable = { global.building_mechanized_laborers_employment@token:building_commercial_farm = 15.8 } #2x
                 set_variable = { global.building_mechanized_workers_employment@token:building_commercial_farm = 3.0 } #5x
                 set_variable = { global.building_mechanized_professionals_employment@token:building_commercial_farm = 0 } #10x
                 set_variable = { global.building_mechanized_specialists_employment@token:building_commercial_farm = 0 } #20x
@@ -13758,13 +13471,13 @@
                 set_variable = { global.building_electrified_input_amount_1@token:building_commercial_farm = 3.0 }
 
                 set_variable = { global.building_electrified_input_resource_2@token:building_commercial_farm = token:resource_raw_materials } #Fertilizer
-                set_variable = { global.building_electrified_input_amount_2@token:building_commercial_farm = 6.0 }
+                set_variable = { global.building_electrified_input_amount_2@token:building_commercial_farm = 12.0 }
                 
                 set_variable = { global.building_electrified_input_resource_3@token:building_commercial_farm = token:resource_energy_materials }
                 set_variable = { global.building_electrified_input_amount_3@token:building_commercial_farm = 3.0 }
                 
                 set_variable = { global.building_electrified_peasants_employment@token:building_commercial_farm = 0.0 } #1x
-                set_variable = { global.building_electrified_laborers_employment@token:building_commercial_farm = 7.8 } #2x
+                set_variable = { global.building_electrified_laborers_employment@token:building_commercial_farm = 10.8 } #2x
                 set_variable = { global.building_electrified_workers_employment@token:building_commercial_farm = 5.0 } #5x
                 set_variable = { global.building_electrified_professionals_employment@token:building_commercial_farm = 0 } #10x
                 set_variable = { global.building_electrified_specialists_employment@token:building_commercial_farm = 0 } #20x
@@ -13787,13 +13500,13 @@
                 set_variable = { global.building_motorized_input_amount_1@token:building_commercial_farm = 4.0 }
 
                 set_variable = { global.building_motorized_input_resource_2@token:building_commercial_farm = token:resource_raw_materials } #Fertilizer
-                set_variable = { global.building_motorized_input_amount_2@token:building_commercial_farm = 7.0 }
+                set_variable = { global.building_motorized_input_amount_2@token:building_commercial_farm = 14.0 }
                 
                 set_variable = { global.building_motorized_input_resource_3@token:building_commercial_farm = token:resource_energy_materials }
                 set_variable = { global.building_motorized_input_amount_3@token:building_commercial_farm = 5.0 }
                 
                 set_variable = { global.building_motorized_peasants_employment@token:building_commercial_farm = 0.0 } #1x
-                set_variable = { global.building_motorized_laborers_employment@token:building_commercial_farm = 4.8 } #2x
+                set_variable = { global.building_motorized_laborers_employment@token:building_commercial_farm = 7.8 } #2x
                 set_variable = { global.building_motorized_workers_employment@token:building_commercial_farm = 7.0 } #5x
                 set_variable = { global.building_motorized_professionals_employment@token:building_commercial_farm = 0 } #10x
                 set_variable = { global.building_motorized_specialists_employment@token:building_commercial_farm = 0 } #20x
@@ -13816,7 +13529,7 @@
                 set_variable = { global.building_modernized_input_amount_1@token:building_commercial_farm = 5.0 }
 
                 set_variable = { global.building_modernized_input_resource_2@token:building_commercial_farm = token:resource_raw_materials } #Fertilizer
-                set_variable = { global.building_modernized_input_amount_2@token:building_commercial_farm = 8.0 }
+                set_variable = { global.building_modernized_input_amount_2@token:building_commercial_farm = 16.0 }
                 
                 set_variable = { global.building_modernized_input_resource_3@token:building_commercial_farm = token:resource_energy_materials }
                 set_variable = { global.building_modernized_input_amount_3@token:building_commercial_farm = 6.0 }
@@ -13825,7 +13538,7 @@
                 set_variable = { global.building_modernized_input_amount_4@token:building_commercial_farm = 1.0 }
                 
                 set_variable = { global.building_modernized_peasants_employment@token:building_commercial_farm = 0.0 } #1x
-                set_variable = { global.building_modernized_laborers_employment@token:building_commercial_farm = 2.8 } #2x
+                set_variable = { global.building_modernized_laborers_employment@token:building_commercial_farm = 4.8 } #2x
                 set_variable = { global.building_modernized_workers_employment@token:building_commercial_farm = 5.0 } #5x
                 set_variable = { global.building_modernized_professionals_employment@token:building_commercial_farm = 2.0 } #10x
                 set_variable = { global.building_modernized_specialists_employment@token:building_commercial_farm = 0 } #20x
@@ -13848,7 +13561,7 @@
                 set_variable = { global.building_roboticized_input_amount_1@token:building_commercial_farm = 6.0 }
 
                 set_variable = { global.building_roboticized_input_resource_2@token:building_commercial_farm = token:resource_raw_materials } #Fertilizer
-                set_variable = { global.building_roboticized_input_amount_2@token:building_commercial_farm = 8.0 }
+                set_variable = { global.building_roboticized_input_amount_2@token:building_commercial_farm = 16.0 }
                 
                 set_variable = { global.building_roboticized_input_resource_3@token:building_commercial_farm = token:resource_energy_materials }
                 set_variable = { global.building_roboticized_input_amount_3@token:building_commercial_farm = 7.0 }
@@ -13857,7 +13570,7 @@
                 set_variable = { global.building_roboticized_input_amount_4@token:building_commercial_farm = 4.0 }
                 
                 set_variable = { global.building_roboticized_peasants_employment@token:building_commercial_farm = 0.0 } #1x
-                set_variable = { global.building_roboticized_laborers_employment@token:building_commercial_farm = 0.0 } #2x
+                set_variable = { global.building_roboticized_laborers_employment@token:building_commercial_farm = 2.0 } #2x
                 set_variable = { global.building_roboticized_workers_employment@token:building_commercial_farm = 4.8 } #5x
                 set_variable = { global.building_roboticized_professionals_employment@token:building_commercial_farm = 4.0 } #10x
                 set_variable = { global.building_roboticized_specialists_employment@token:building_commercial_farm = 0.0 } #20x
@@ -13880,7 +13593,7 @@
                 set_variable = { global.building_computerized_input_amount_1@token:building_commercial_farm = 8.0 }
 
                 set_variable = { global.building_computerized_input_resource_2@token:building_commercial_farm = token:resource_raw_materials }
-                set_variable = { global.building_computerized_input_amount_2@token:building_commercial_farm = 10.0 }
+                set_variable = { global.building_computerized_input_amount_2@token:building_commercial_farm = 20.0 }
                 
                 set_variable = { global.building_computerized_input_resource_3@token:building_commercial_farm = token:resource_energy_materials }
                 set_variable = { global.building_computerized_input_amount_3@token:building_commercial_farm = 8.0 }
@@ -13890,7 +13603,7 @@
                 
                 set_variable = { global.building_computerized_peasants_employment@token:building_commercial_farm = 0.0 } #1x
                 set_variable = { global.building_computerized_laborers_employment@token:building_commercial_farm = 0.0 } #2x
-                set_variable = { global.building_computerized_workers_employment@token:building_commercial_farm = 0.0 } #5x
+                set_variable = { global.building_computerized_workers_employment@token:building_commercial_farm = 1.0 } #5x
                 set_variable = { global.building_computerized_professionals_employment@token:building_commercial_farm = 4.8 } #10x
                 set_variable = { global.building_computerized_specialists_employment@token:building_commercial_farm = 2.0 } #20x
                 set_variable = { global.building_computerized_aristocrats_employment@token:building_commercial_farm = 0.0 } #30x
@@ -13912,7 +13625,7 @@
                 set_variable = { global.building_digitalized_input_amount_1@token:building_commercial_farm = 10.0 }
 
                 set_variable = { global.building_digitalized_input_resource_2@token:building_commercial_farm = token:resource_raw_materials }
-                set_variable = { global.building_digitalized_input_amount_2@token:building_commercial_farm = 12.0 }
+                set_variable = { global.building_digitalized_input_amount_2@token:building_commercial_farm = 24.0 }
                 
                 set_variable = { global.building_digitalized_input_resource_3@token:building_commercial_farm = token:resource_energy_materials }
                 set_variable = { global.building_digitalized_input_amount_3@token:building_commercial_farm = 8.0 }
@@ -13922,7 +13635,7 @@
                 
                 set_variable = { global.building_digitalized_peasants_employment@token:building_commercial_farm = 0.0 } #1x
                 set_variable = { global.building_digitalized_laborers_employment@token:building_commercial_farm = 0.0 } #2x
-                set_variable = { global.building_digitalized_workers_employment@token:building_commercial_farm = 0.0 } #5x
+                set_variable = { global.building_digitalized_workers_employment@token:building_commercial_farm = 1.0 } #5x
                 set_variable = { global.building_digitalized_professionals_employment@token:building_commercial_farm = 3.8 } #10x
                 set_variable = { global.building_digitalized_specialists_employment@token:building_commercial_farm = 3.0 } #20x
                 set_variable = { global.building_digitalized_aristocrats_employment@token:building_commercial_farm = 0.0 } #30x
@@ -13944,7 +13657,7 @@
                 set_variable = { global.building_automatized_input_amount_1@token:building_commercial_farm = 12.0 }
 
                 set_variable = { global.building_automatized_input_resource_2@token:building_commercial_farm = token:resource_raw_materials }
-                set_variable = { global.building_automatized_input_amount_2@token:building_commercial_farm = 7.0 }
+                set_variable = { global.building_automatized_input_amount_2@token:building_commercial_farm = 15.0 }
                 
                 set_variable = { global.building_automatized_input_resource_3@token:building_commercial_farm = token:resource_energy_materials }
                 set_variable = { global.building_automatized_input_amount_3@token:building_commercial_farm = 12.0 }
@@ -13973,7 +13686,7 @@
                 set_variable = { global.building_futurized_input_amount_1@token:building_commercial_farm = 15.0 }
 
                 set_variable = { global.building_futurized_input_resource_2@token:building_commercial_farm = token:resource_raw_materials }
-                set_variable = { global.building_futurized_input_amount_2@token:building_commercial_farm = 16.0 }
+                set_variable = { global.building_futurized_input_amount_2@token:building_commercial_farm = 30.0 }
                 
                 set_variable = { global.building_futurized_input_resource_3@token:building_commercial_farm = token:resource_electricity }
                 set_variable = { global.building_futurized_input_amount_3@token:building_commercial_farm = 40.0 }
@@ -14007,7 +13720,7 @@
                 set_variable = { global.building_basic_output_1@token:building_food_plantation = 14 }
                 
                 set_variable = { global.building_basic_peasants_employment@token:building_food_plantation = 11.6 } #1x
-                set_variable = { global.building_basic_laborers_employment@token:building_food_plantation = 8.0 } #2x
+                set_variable = { global.building_basic_laborers_employment@token:building_food_plantation = 13.0 } #2x
                 set_variable = { global.building_basic_workers_employment@token:building_food_plantation = 0 } #5x
                 set_variable = { global.building_basic_professionals_employment@token:building_food_plantation = 0 } #10x
                 set_variable = { global.building_basic_specialists_employment@token:building_food_plantation = 0 } #20x
@@ -14028,9 +13741,12 @@
 
                 set_variable = { global.building_advanced_input_resource_1@token:building_food_plantation = token:resource_industrial_goods }
                 set_variable = { global.building_advanced_input_amount_1@token:building_food_plantation = 0.5 }
+
+                set_variable = { global.building_advanced_input_resource_2@token:building_food_plantation = token:resource_raw_materials }
+                set_variable = { global.building_advanced_input_amount_2@token:building_food_plantation = 1.0 }
                 
                 set_variable = { global.building_advanced_peasants_employment@token:building_food_plantation = 9.6 } #1x
-                set_variable = { global.building_advanced_laborers_employment@token:building_food_plantation = 10.0 } #2x
+                set_variable = { global.building_advanced_laborers_employment@token:building_food_plantation = 15.0 } #2x
                 set_variable = { global.building_advanced_workers_employment@token:building_food_plantation = 0 } #5x
                 set_variable = { global.building_advanced_professionals_employment@token:building_food_plantation = 0 } #10x
                 set_variable = { global.building_advanced_specialists_employment@token:building_food_plantation = 0 } #20x
@@ -14053,10 +13769,10 @@
                 set_variable = { global.building_industrialized_input_amount_1@token:building_food_plantation = 1.0 }
 
                 set_variable = { global.building_industrialized_input_resource_2@token:building_food_plantation = token:resource_raw_materials } #Fertilizer
-                set_variable = { global.building_industrialized_input_amount_2@token:building_food_plantation = 1.0 }
+                set_variable = { global.building_industrialized_input_amount_2@token:building_food_plantation = 2.0 }
                 
                 set_variable = { global.building_industrialized_peasants_employment@token:building_food_plantation = 7.6 } #1x
-                set_variable = { global.building_industrialized_laborers_employment@token:building_food_plantation = 12.0 } #2x
+                set_variable = { global.building_industrialized_laborers_employment@token:building_food_plantation = 16.0 } #2x
                 set_variable = { global.building_industrialized_workers_employment@token:building_food_plantation = 0.0 } #5x
                 set_variable = { global.building_industrialized_professionals_employment@token:building_food_plantation = 0 } #10x
                 set_variable = { global.building_industrialized_specialists_employment@token:building_food_plantation = 0 } #20x
@@ -14079,10 +13795,10 @@
                 set_variable = { global.building_mechanized_input_amount_1@token:building_food_plantation = 1.0 }
 
                 set_variable = { global.building_mechanized_input_resource_2@token:building_food_plantation = token:resource_raw_materials } #Fertilizer
-                set_variable = { global.building_mechanized_input_amount_2@token:building_food_plantation = 4.0 }
+                set_variable = { global.building_mechanized_input_amount_2@token:building_food_plantation = 8.0 }
                 
                 set_variable = { global.building_mechanized_peasants_employment@token:building_food_plantation = 3.6 } #1x
-                set_variable = { global.building_mechanized_laborers_employment@token:building_food_plantation = 16.0 } #2x
+                set_variable = { global.building_mechanized_laborers_employment@token:building_food_plantation = 20.0 } #2x
                 set_variable = { global.building_mechanized_workers_employment@token:building_food_plantation = 0.0 } #5x
                 set_variable = { global.building_mechanized_professionals_employment@token:building_food_plantation = 0 } #10x
                 set_variable = { global.building_mechanized_specialists_employment@token:building_food_plantation = 0 } #20x
@@ -14105,13 +13821,13 @@
                 set_variable = { global.building_electrified_input_amount_1@token:building_food_plantation = 2.0 }
 
                 set_variable = { global.building_electrified_input_resource_2@token:building_food_plantation = token:resource_raw_materials } #Fertilizer
-                set_variable = { global.building_electrified_input_amount_2@token:building_food_plantation = 6.0 }
+                set_variable = { global.building_electrified_input_amount_2@token:building_food_plantation = 12.0 }
                 
                 set_variable = { global.building_electrified_input_resource_3@token:building_food_plantation = token:resource_energy_materials }
                 set_variable = { global.building_electrified_input_amount_3@token:building_food_plantation = 1.0 }
                 
                 set_variable = { global.building_electrified_peasants_employment@token:building_food_plantation = 0.0 } #1x
-                set_variable = { global.building_electrified_laborers_employment@token:building_food_plantation = 15.7 } #2x
+                set_variable = { global.building_electrified_laborers_employment@token:building_food_plantation = 18.7 } #2x
                 set_variable = { global.building_electrified_workers_employment@token:building_food_plantation = 2.0 } #5x
                 set_variable = { global.building_electrified_professionals_employment@token:building_food_plantation = 0 } #10x
                 set_variable = { global.building_electrified_specialists_employment@token:building_food_plantation = 0 } #20x
@@ -14134,13 +13850,13 @@
                 set_variable = { global.building_motorized_input_amount_1@token:building_food_plantation = 3.0 }
 
                 set_variable = { global.building_motorized_input_resource_2@token:building_food_plantation = token:resource_raw_materials } #Fertilizer
-                set_variable = { global.building_motorized_input_amount_2@token:building_food_plantation = 7.0 }
+                set_variable = { global.building_motorized_input_amount_2@token:building_food_plantation = 14.0 }
                 
                 set_variable = { global.building_motorized_input_resource_3@token:building_food_plantation = token:resource_energy_materials }
                 set_variable = { global.building_motorized_input_amount_3@token:building_food_plantation = 3.0 }
                 
                 set_variable = { global.building_motorized_peasants_employment@token:building_food_plantation = 0.0 } #1x
-                set_variable = { global.building_motorized_laborers_employment@token:building_food_plantation = 10.7 } #2x
+                set_variable = { global.building_motorized_laborers_employment@token:building_food_plantation = 13.7 } #2x
                 set_variable = { global.building_motorized_workers_employment@token:building_food_plantation = 5.0 } #5x
                 set_variable = { global.building_motorized_professionals_employment@token:building_food_plantation = 0 } #10x
                 set_variable = { global.building_motorized_specialists_employment@token:building_food_plantation = 0 } #20x
@@ -14163,7 +13879,7 @@
                 set_variable = { global.building_modernized_input_amount_1@token:building_food_plantation = 5.0 }
 
                 set_variable = { global.building_modernized_input_resource_2@token:building_food_plantation = token:resource_raw_materials } #Fertilizer
-                set_variable = { global.building_modernized_input_amount_2@token:building_food_plantation = 8.0 }
+                set_variable = { global.building_modernized_input_amount_2@token:building_food_plantation = 16.0 }
                 
                 set_variable = { global.building_modernized_input_resource_3@token:building_food_plantation = token:resource_energy_materials }
                 set_variable = { global.building_modernized_input_amount_3@token:building_food_plantation = 6.0 }
@@ -14172,7 +13888,7 @@
                 set_variable = { global.building_modernized_input_amount_4@token:building_food_plantation = 1.0 }
                 
                 set_variable = { global.building_modernized_peasants_employment@token:building_food_plantation = 0.0 } #1x
-                set_variable = { global.building_modernized_laborers_employment@token:building_food_plantation = 6.8 } #2x
+                set_variable = { global.building_modernized_laborers_employment@token:building_food_plantation = 8.8 } #2x
                 set_variable = { global.building_modernized_workers_employment@token:building_food_plantation = 6.0 } #5x
                 set_variable = { global.building_modernized_professionals_employment@token:building_food_plantation = 1.0 } #10x
                 set_variable = { global.building_modernized_specialists_employment@token:building_food_plantation = 0 } #20x
@@ -14195,7 +13911,7 @@
                 set_variable = { global.building_roboticized_input_amount_1@token:building_food_plantation = 6.0 }
 
                 set_variable = { global.building_roboticized_input_resource_2@token:building_food_plantation = token:resource_raw_materials } #Fertilizer
-                set_variable = { global.building_roboticized_input_amount_2@token:building_food_plantation = 8.0 }
+                set_variable = { global.building_roboticized_input_amount_2@token:building_food_plantation = 20.0 }
                 
                 set_variable = { global.building_roboticized_input_resource_3@token:building_food_plantation = token:resource_energy_materials }
                 set_variable = { global.building_roboticized_input_amount_3@token:building_food_plantation = 7.0 }
@@ -14204,7 +13920,7 @@
                 set_variable = { global.building_roboticized_input_amount_4@token:building_food_plantation = 4.0 }
                 
                 set_variable = { global.building_roboticized_peasants_employment@token:building_food_plantation = 0.0 } #1x
-                set_variable = { global.building_roboticized_laborers_employment@token:building_food_plantation = 2.8 } #2x
+                set_variable = { global.building_roboticized_laborers_employment@token:building_food_plantation = 4.8 } #2x
                 set_variable = { global.building_roboticized_workers_employment@token:building_food_plantation = 6.0 } #5x
                 set_variable = { global.building_roboticized_professionals_employment@token:building_food_plantation = 3.0 } #10x
                 set_variable = { global.building_roboticized_specialists_employment@token:building_food_plantation = 0.0 } #20x
@@ -14227,7 +13943,7 @@
                 set_variable = { global.building_computerized_input_amount_1@token:building_food_plantation = 9.0 }
 
                 set_variable = { global.building_computerized_input_resource_2@token:building_food_plantation = token:resource_raw_materials }
-                set_variable = { global.building_computerized_input_amount_2@token:building_food_plantation = 10.0 }
+                set_variable = { global.building_computerized_input_amount_2@token:building_food_plantation = 22.0 }
                 
                 set_variable = { global.building_computerized_input_resource_3@token:building_food_plantation = token:resource_energy_materials }
                 set_variable = { global.building_computerized_input_amount_3@token:building_food_plantation = 8.0 }
@@ -14237,7 +13953,7 @@
                 
                 set_variable = { global.building_computerized_peasants_employment@token:building_food_plantation = 0.0 } #1x
                 set_variable = { global.building_computerized_laborers_employment@token:building_food_plantation = 0.0 } #2x
-                set_variable = { global.building_computerized_workers_employment@token:building_food_plantation = 5.8 } #5x
+                set_variable = { global.building_computerized_workers_employment@token:building_food_plantation = 6.8 } #5x
                 set_variable = { global.building_computerized_professionals_employment@token:building_food_plantation = 4.0 } #10x
                 set_variable = { global.building_computerized_specialists_employment@token:building_food_plantation = 0.0 } #20x
                 set_variable = { global.building_computerized_aristocrats_employment@token:building_food_plantation = 0.0 } #30x
@@ -14259,7 +13975,7 @@
                 set_variable = { global.building_digitalized_input_amount_1@token:building_food_plantation = 12.0 }
 
                 set_variable = { global.building_digitalized_input_resource_2@token:building_food_plantation = token:resource_raw_materials }
-                set_variable = { global.building_digitalized_input_amount_2@token:building_food_plantation = 12.0 }
+                set_variable = { global.building_digitalized_input_amount_2@token:building_food_plantation = 24.0 }
                 
                 set_variable = { global.building_digitalized_input_resource_3@token:building_food_plantation = token:resource_energy_materials }
                 set_variable = { global.building_digitalized_input_amount_3@token:building_food_plantation = 8.0 }
@@ -14269,7 +13985,7 @@
                 
                 set_variable = { global.building_digitalized_peasants_employment@token:building_food_plantation = 0.0 } #1x
                 set_variable = { global.building_digitalized_laborers_employment@token:building_food_plantation = 0.0 } #2x
-                set_variable = { global.building_digitalized_workers_employment@token:building_food_plantation = 3.8 } #5x
+                set_variable = { global.building_digitalized_workers_employment@token:building_food_plantation = 4.8 } #5x
                 set_variable = { global.building_digitalized_professionals_employment@token:building_food_plantation = 3.0 } #10x
                 set_variable = { global.building_digitalized_specialists_employment@token:building_food_plantation = 1.0 } #20x
                 set_variable = { global.building_digitalized_aristocrats_employment@token:building_food_plantation = 0.0 } #30x
@@ -14291,7 +14007,7 @@
                 set_variable = { global.building_automatized_input_amount_1@token:building_food_plantation = 15.0 }
 
                 set_variable = { global.building_automatized_input_resource_2@token:building_food_plantation = token:resource_raw_materials }
-                set_variable = { global.building_automatized_input_amount_2@token:building_food_plantation = 10.0 }
+                set_variable = { global.building_automatized_input_amount_2@token:building_food_plantation = 20.0 }
                 
                 set_variable = { global.building_automatized_input_resource_3@token:building_food_plantation = token:resource_energy_materials }
                 set_variable = { global.building_automatized_input_amount_3@token:building_food_plantation = 12.0 }
@@ -14320,7 +14036,7 @@
                 set_variable = { global.building_futurized_input_amount_1@token:building_food_plantation = 20.0 }
 
                 set_variable = { global.building_futurized_input_resource_2@token:building_food_plantation = token:resource_raw_materials }
-                set_variable = { global.building_futurized_input_amount_2@token:building_food_plantation = 15.0 }
+                set_variable = { global.building_futurized_input_amount_2@token:building_food_plantation = 30.0 }
                 
                 set_variable = { global.building_futurized_input_resource_3@token:building_food_plantation = token:resource_electricity }
                 set_variable = { global.building_futurized_input_amount_3@token:building_food_plantation = 50.0 }
@@ -14354,7 +14070,7 @@
                 set_variable = { global.building_basic_output_1@token:building_material_plantation = 20 }
                 
                 set_variable = { global.building_basic_peasants_employment@token:building_material_plantation = 11.6 } #1x
-                set_variable = { global.building_basic_laborers_employment@token:building_material_plantation = 8.0 } #2x
+                set_variable = { global.building_basic_laborers_employment@token:building_material_plantation = 13.0 } #2x
                 set_variable = { global.building_basic_workers_employment@token:building_material_plantation = 0 } #5x
                 set_variable = { global.building_basic_professionals_employment@token:building_material_plantation = 0 } #10x
                 set_variable = { global.building_basic_specialists_employment@token:building_material_plantation = 0 } #20x
@@ -14375,9 +14091,12 @@
 
                 set_variable = { global.building_advanced_input_resource_1@token:building_material_plantation = token:resource_industrial_goods }
                 set_variable = { global.building_advanced_input_amount_1@token:building_material_plantation = 0.5 }
+
+                set_variable = { global.building_advanced_input_resource_2@token:building_material_plantation = token:resource_raw_materials }
+                set_variable = { global.building_advanced_input_amount_2@token:building_material_plantation = 1.0 }
                 
                 set_variable = { global.building_advanced_peasants_employment@token:building_material_plantation = 9.6 } #1x
-                set_variable = { global.building_advanced_laborers_employment@token:building_material_plantation = 10.0 } #2x
+                set_variable = { global.building_advanced_laborers_employment@token:building_material_plantation = 15.0 } #2x
                 set_variable = { global.building_advanced_workers_employment@token:building_material_plantation = 0 } #5x
                 set_variable = { global.building_advanced_professionals_employment@token:building_material_plantation = 0 } #10x
                 set_variable = { global.building_advanced_specialists_employment@token:building_material_plantation = 0 } #20x
@@ -14400,10 +14119,10 @@
                 set_variable = { global.building_industrialized_input_amount_1@token:building_material_plantation = 1.0 }
 
                 set_variable = { global.building_industrialized_input_resource_2@token:building_material_plantation = token:resource_raw_materials } #Fertilizer
-                set_variable = { global.building_industrialized_input_amount_2@token:building_material_plantation = 1.0 }
+                set_variable = { global.building_industrialized_input_amount_2@token:building_material_plantation = 2.0 }
                 
                 set_variable = { global.building_industrialized_peasants_employment@token:building_material_plantation = 7.6 } #1x
-                set_variable = { global.building_industrialized_laborers_employment@token:building_material_plantation = 12.0 } #2x
+                set_variable = { global.building_industrialized_laborers_employment@token:building_material_plantation = 16.0 } #2x
                 set_variable = { global.building_industrialized_workers_employment@token:building_material_plantation = 0.0 } #5x
                 set_variable = { global.building_industrialized_professionals_employment@token:building_material_plantation = 0 } #10x
                 set_variable = { global.building_industrialized_specialists_employment@token:building_material_plantation = 0 } #20x
@@ -14426,10 +14145,10 @@
                 set_variable = { global.building_mechanized_input_amount_1@token:building_material_plantation = 1.0 }
 
                 set_variable = { global.building_mechanized_input_resource_2@token:building_material_plantation = token:resource_raw_materials } #Fertilizer
-                set_variable = { global.building_mechanized_input_amount_2@token:building_material_plantation = 4.0 }
+                set_variable = { global.building_mechanized_input_amount_2@token:building_material_plantation = 8.0 }
                 
                 set_variable = { global.building_mechanized_peasants_employment@token:building_material_plantation = 3.6 } #1x
-                set_variable = { global.building_mechanized_laborers_employment@token:building_material_plantation = 16.0 } #2x
+                set_variable = { global.building_mechanized_laborers_employment@token:building_material_plantation = 20.0 } #2x
                 set_variable = { global.building_mechanized_workers_employment@token:building_material_plantation = 0.0 } #5x
                 set_variable = { global.building_mechanized_professionals_employment@token:building_material_plantation = 0 } #10x
                 set_variable = { global.building_mechanized_specialists_employment@token:building_material_plantation = 0 } #20x
@@ -14452,13 +14171,13 @@
                 set_variable = { global.building_electrified_input_amount_1@token:building_material_plantation = 2.0 }
 
                 set_variable = { global.building_electrified_input_resource_2@token:building_material_plantation = token:resource_raw_materials } #Fertilizer
-                set_variable = { global.building_electrified_input_amount_2@token:building_material_plantation = 6.0 }
+                set_variable = { global.building_electrified_input_amount_2@token:building_material_plantation = 12.0 }
                 
                 set_variable = { global.building_electrified_input_resource_3@token:building_material_plantation = token:resource_energy_materials }
                 set_variable = { global.building_electrified_input_amount_3@token:building_material_plantation = 1.0 }
                 
                 set_variable = { global.building_electrified_peasants_employment@token:building_material_plantation = 0.0 } #1x
-                set_variable = { global.building_electrified_laborers_employment@token:building_material_plantation = 15.7 } #2x
+                set_variable = { global.building_electrified_laborers_employment@token:building_material_plantation = 18.7 } #2x
                 set_variable = { global.building_electrified_workers_employment@token:building_material_plantation = 2.0 } #5x
                 set_variable = { global.building_electrified_professionals_employment@token:building_material_plantation = 0 } #10x
                 set_variable = { global.building_electrified_specialists_employment@token:building_material_plantation = 0 } #20x
@@ -14481,13 +14200,13 @@
                 set_variable = { global.building_motorized_input_amount_1@token:building_material_plantation = 3.0 }
 
                 set_variable = { global.building_motorized_input_resource_2@token:building_material_plantation = token:resource_raw_materials } #Fertilizer
-                set_variable = { global.building_motorized_input_amount_2@token:building_material_plantation = 7.0 }
+                set_variable = { global.building_motorized_input_amount_2@token:building_material_plantation = 14.0 }
                 
                 set_variable = { global.building_motorized_input_resource_3@token:building_material_plantation = token:resource_energy_materials }
                 set_variable = { global.building_motorized_input_amount_3@token:building_material_plantation = 3.0 }
                 
                 set_variable = { global.building_motorized_peasants_employment@token:building_material_plantation = 0.0 } #1x
-                set_variable = { global.building_motorized_laborers_employment@token:building_material_plantation = 10.7 } #2x
+                set_variable = { global.building_motorized_laborers_employment@token:building_material_plantation = 13.7 } #2x
                 set_variable = { global.building_motorized_workers_employment@token:building_material_plantation = 5.0 } #5x
                 set_variable = { global.building_motorized_professionals_employment@token:building_material_plantation = 0 } #10x
                 set_variable = { global.building_motorized_specialists_employment@token:building_material_plantation = 0 } #20x
@@ -14510,7 +14229,7 @@
                 set_variable = { global.building_modernized_input_amount_1@token:building_material_plantation = 5.0 }
 
                 set_variable = { global.building_modernized_input_resource_2@token:building_material_plantation = token:resource_raw_materials } #Fertilizer
-                set_variable = { global.building_modernized_input_amount_2@token:building_material_plantation = 8.0 }
+                set_variable = { global.building_modernized_input_amount_2@token:building_material_plantation = 16.0 }
                 
                 set_variable = { global.building_modernized_input_resource_3@token:building_material_plantation = token:resource_energy_materials }
                 set_variable = { global.building_modernized_input_amount_3@token:building_material_plantation = 6.0 }
@@ -14519,7 +14238,7 @@
                 set_variable = { global.building_modernized_input_amount_4@token:building_material_plantation = 1.0 }
                 
                 set_variable = { global.building_modernized_peasants_employment@token:building_material_plantation = 0.0 } #1x
-                set_variable = { global.building_modernized_laborers_employment@token:building_material_plantation = 6.8 } #2x
+                set_variable = { global.building_modernized_laborers_employment@token:building_material_plantation = 8.8 } #2x
                 set_variable = { global.building_modernized_workers_employment@token:building_material_plantation = 6.0 } #5x
                 set_variable = { global.building_modernized_professionals_employment@token:building_material_plantation = 1.0 } #10x
                 set_variable = { global.building_modernized_specialists_employment@token:building_material_plantation = 0 } #20x
@@ -14542,7 +14261,7 @@
                 set_variable = { global.building_roboticized_input_amount_1@token:building_material_plantation = 6.0 }
 
                 set_variable = { global.building_roboticized_input_resource_2@token:building_material_plantation = token:resource_raw_materials } #Fertilizer
-                set_variable = { global.building_roboticized_input_amount_2@token:building_material_plantation = 8.0 }
+                set_variable = { global.building_roboticized_input_amount_2@token:building_material_plantation = 18.0 }
                 
                 set_variable = { global.building_roboticized_input_resource_3@token:building_material_plantation = token:resource_energy_materials }
                 set_variable = { global.building_roboticized_input_amount_3@token:building_material_plantation = 7.0 }
@@ -14551,7 +14270,7 @@
                 set_variable = { global.building_roboticized_input_amount_4@token:building_material_plantation = 4.0 }
                 
                 set_variable = { global.building_roboticized_peasants_employment@token:building_material_plantation = 0.0 } #1x
-                set_variable = { global.building_roboticized_laborers_employment@token:building_material_plantation = 2.8 } #2x
+                set_variable = { global.building_roboticized_laborers_employment@token:building_material_plantation = 4.8 } #2x
                 set_variable = { global.building_roboticized_workers_employment@token:building_material_plantation = 6.0 } #5x
                 set_variable = { global.building_roboticized_professionals_employment@token:building_material_plantation = 3.0 } #10x
                 set_variable = { global.building_roboticized_specialists_employment@token:building_material_plantation = 0.0 } #20x
@@ -14574,7 +14293,7 @@
                 set_variable = { global.building_computerized_input_amount_1@token:building_material_plantation = 9.0 }
 
                 set_variable = { global.building_computerized_input_resource_2@token:building_material_plantation = token:resource_raw_materials }
-                set_variable = { global.building_computerized_input_amount_2@token:building_material_plantation = 10.0 }
+                set_variable = { global.building_computerized_input_amount_2@token:building_material_plantation = 20.0 }
                 
                 set_variable = { global.building_computerized_input_resource_3@token:building_material_plantation = token:resource_energy_materials }
                 set_variable = { global.building_computerized_input_amount_3@token:building_material_plantation = 8.0 }
@@ -14584,7 +14303,7 @@
                 
                 set_variable = { global.building_computerized_peasants_employment@token:building_material_plantation = 0.0 } #1x
                 set_variable = { global.building_computerized_laborers_employment@token:building_material_plantation = 0.0 } #2x
-                set_variable = { global.building_computerized_workers_employment@token:building_material_plantation = 5.8 } #5x
+                set_variable = { global.building_computerized_workers_employment@token:building_material_plantation = 6.8 } #5x
                 set_variable = { global.building_computerized_professionals_employment@token:building_material_plantation = 4.0 } #10x
                 set_variable = { global.building_computerized_specialists_employment@token:building_material_plantation = 0.0 } #20x
                 set_variable = { global.building_computerized_aristocrats_employment@token:building_material_plantation = 0.0 } #30x
@@ -14606,7 +14325,7 @@
                 set_variable = { global.building_digitalized_input_amount_1@token:building_material_plantation = 12.0 }
 
                 set_variable = { global.building_digitalized_input_resource_2@token:building_material_plantation = token:resource_raw_materials }
-                set_variable = { global.building_digitalized_input_amount_2@token:building_material_plantation = 12.0 }
+                set_variable = { global.building_digitalized_input_amount_2@token:building_material_plantation = 24.0 }
                 
                 set_variable = { global.building_digitalized_input_resource_3@token:building_material_plantation = token:resource_energy_materials }
                 set_variable = { global.building_digitalized_input_amount_3@token:building_material_plantation = 8.0 }
@@ -14616,7 +14335,7 @@
                 
                 set_variable = { global.building_digitalized_peasants_employment@token:building_material_plantation = 0.0 } #1x
                 set_variable = { global.building_digitalized_laborers_employment@token:building_material_plantation = 0.0 } #2x
-                set_variable = { global.building_digitalized_workers_employment@token:building_material_plantation = 3.8 } #5x
+                set_variable = { global.building_digitalized_workers_employment@token:building_material_plantation = 4.8 } #5x
                 set_variable = { global.building_digitalized_professionals_employment@token:building_material_plantation = 3.0 } #10x
                 set_variable = { global.building_digitalized_specialists_employment@token:building_material_plantation = 1.0 } #20x
                 set_variable = { global.building_digitalized_aristocrats_employment@token:building_material_plantation = 0.0 } #30x
@@ -14638,7 +14357,7 @@
                 set_variable = { global.building_automatized_input_amount_1@token:building_material_plantation = 15.0 }
 
                 set_variable = { global.building_automatized_input_resource_2@token:building_material_plantation = token:resource_raw_materials }
-                set_variable = { global.building_automatized_input_amount_2@token:building_material_plantation = 10.0 }
+                set_variable = { global.building_automatized_input_amount_2@token:building_material_plantation = 20.0 }
                 
                 set_variable = { global.building_automatized_input_resource_3@token:building_material_plantation = token:resource_energy_materials }
                 set_variable = { global.building_automatized_input_amount_3@token:building_material_plantation = 12.0 }
@@ -14667,7 +14386,7 @@
                 set_variable = { global.building_futurized_input_amount_1@token:building_material_plantation = 20.0 }
 
                 set_variable = { global.building_futurized_input_resource_2@token:building_material_plantation = token:resource_raw_materials }
-                set_variable = { global.building_futurized_input_amount_2@token:building_material_plantation = 15.0 }
+                set_variable = { global.building_futurized_input_amount_2@token:building_material_plantation = 30.0 }
                 
                 set_variable = { global.building_futurized_input_resource_3@token:building_material_plantation = token:resource_electricity }
                 set_variable = { global.building_futurized_input_amount_3@token:building_material_plantation = 50.0 }
@@ -14701,7 +14420,7 @@
                 set_variable = { global.building_basic_output_1@token:building_luxuries_plantation = 7 }
                 
                 set_variable = { global.building_basic_peasants_employment@token:building_luxuries_plantation = 11.6 } #1x
-                set_variable = { global.building_basic_laborers_employment@token:building_luxuries_plantation = 8.0 } #2x
+                set_variable = { global.building_basic_laborers_employment@token:building_luxuries_plantation = 13.0 } #2x
                 set_variable = { global.building_basic_workers_employment@token:building_luxuries_plantation = 0 } #5x
                 set_variable = { global.building_basic_professionals_employment@token:building_luxuries_plantation = 0 } #10x
                 set_variable = { global.building_basic_specialists_employment@token:building_luxuries_plantation = 0 } #20x
@@ -14722,9 +14441,12 @@
 
                 set_variable = { global.building_advanced_input_resource_1@token:building_luxuries_plantation = token:resource_industrial_goods }
                 set_variable = { global.building_advanced_input_amount_1@token:building_luxuries_plantation = 0.5 }
+
+                set_variable = { global.building_advanced_input_resource_2@token:building_luxuries_plantation = token:resource_raw_materials }
+                set_variable = { global.building_advanced_input_amount_2@token:building_luxuries_plantation = 1.0 }
                 
                 set_variable = { global.building_advanced_peasants_employment@token:building_luxuries_plantation = 9.6 } #1x
-                set_variable = { global.building_advanced_laborers_employment@token:building_luxuries_plantation = 10.0 } #2x
+                set_variable = { global.building_advanced_laborers_employment@token:building_luxuries_plantation = 15.0 } #2x
                 set_variable = { global.building_advanced_workers_employment@token:building_luxuries_plantation = 0 } #5x
                 set_variable = { global.building_advanced_professionals_employment@token:building_luxuries_plantation = 0 } #10x
                 set_variable = { global.building_advanced_specialists_employment@token:building_luxuries_plantation = 0 } #20x
@@ -14747,10 +14469,10 @@
                 set_variable = { global.building_industrialized_input_amount_1@token:building_luxuries_plantation = 1.0 }
 
                 set_variable = { global.building_industrialized_input_resource_2@token:building_luxuries_plantation = token:resource_raw_materials } #Fertilizer
-                set_variable = { global.building_industrialized_input_amount_2@token:building_luxuries_plantation = 1.0 }
+                set_variable = { global.building_industrialized_input_amount_2@token:building_luxuries_plantation = 2.0 }
                 
                 set_variable = { global.building_industrialized_peasants_employment@token:building_luxuries_plantation = 7.6 } #1x
-                set_variable = { global.building_industrialized_laborers_employment@token:building_luxuries_plantation = 12.0 } #2x
+                set_variable = { global.building_industrialized_laborers_employment@token:building_luxuries_plantation = 16.0 } #2x
                 set_variable = { global.building_industrialized_workers_employment@token:building_luxuries_plantation = 0.0 } #5x
                 set_variable = { global.building_industrialized_professionals_employment@token:building_luxuries_plantation = 0 } #10x
                 set_variable = { global.building_industrialized_specialists_employment@token:building_luxuries_plantation = 0 } #20x
@@ -14773,10 +14495,10 @@
                 set_variable = { global.building_mechanized_input_amount_1@token:building_luxuries_plantation = 1.0 }
 
                 set_variable = { global.building_mechanized_input_resource_2@token:building_luxuries_plantation = token:resource_raw_materials } #Fertilizer
-                set_variable = { global.building_mechanized_input_amount_2@token:building_luxuries_plantation = 4.0 }
+                set_variable = { global.building_mechanized_input_amount_2@token:building_luxuries_plantation = 8.0 }
                 
                 set_variable = { global.building_mechanized_peasants_employment@token:building_luxuries_plantation = 3.6 } #1x
-                set_variable = { global.building_mechanized_laborers_employment@token:building_luxuries_plantation = 16.0 } #2x
+                set_variable = { global.building_mechanized_laborers_employment@token:building_luxuries_plantation = 20.0 } #2x
                 set_variable = { global.building_mechanized_workers_employment@token:building_luxuries_plantation = 0.0 } #5x
                 set_variable = { global.building_mechanized_professionals_employment@token:building_luxuries_plantation = 0 } #10x
                 set_variable = { global.building_mechanized_specialists_employment@token:building_luxuries_plantation = 0 } #20x
@@ -14799,13 +14521,13 @@
                 set_variable = { global.building_electrified_input_amount_1@token:building_luxuries_plantation = 2.0 }
 
                 set_variable = { global.building_electrified_input_resource_2@token:building_luxuries_plantation = token:resource_raw_materials } #Fertilizer
-                set_variable = { global.building_electrified_input_amount_2@token:building_luxuries_plantation = 6.0 }
+                set_variable = { global.building_electrified_input_amount_2@token:building_luxuries_plantation = 12.0 }
                 
                 set_variable = { global.building_electrified_input_resource_3@token:building_luxuries_plantation = token:resource_energy_materials }
                 set_variable = { global.building_electrified_input_amount_3@token:building_luxuries_plantation = 1.0 }
                 
                 set_variable = { global.building_electrified_peasants_employment@token:building_luxuries_plantation = 0.0 } #1x
-                set_variable = { global.building_electrified_laborers_employment@token:building_luxuries_plantation = 15.7 } #2x
+                set_variable = { global.building_electrified_laborers_employment@token:building_luxuries_plantation = 18.7 } #2x
                 set_variable = { global.building_electrified_workers_employment@token:building_luxuries_plantation = 2.0 } #5x
                 set_variable = { global.building_electrified_professionals_employment@token:building_luxuries_plantation = 0 } #10x
                 set_variable = { global.building_electrified_specialists_employment@token:building_luxuries_plantation = 0 } #20x
@@ -14828,13 +14550,13 @@
                 set_variable = { global.building_motorized_input_amount_1@token:building_luxuries_plantation = 3.0 }
 
                 set_variable = { global.building_motorized_input_resource_2@token:building_luxuries_plantation = token:resource_raw_materials } #Fertilizer
-                set_variable = { global.building_motorized_input_amount_2@token:building_luxuries_plantation = 7.0 }
+                set_variable = { global.building_motorized_input_amount_2@token:building_luxuries_plantation = 14.0 }
                 
                 set_variable = { global.building_motorized_input_resource_3@token:building_luxuries_plantation = token:resource_energy_materials }
                 set_variable = { global.building_motorized_input_amount_3@token:building_luxuries_plantation = 3.0 }
                 
                 set_variable = { global.building_motorized_peasants_employment@token:building_luxuries_plantation = 0.0 } #1x
-                set_variable = { global.building_motorized_laborers_employment@token:building_luxuries_plantation = 10.7 } #2x
+                set_variable = { global.building_motorized_laborers_employment@token:building_luxuries_plantation = 13.7 } #2x
                 set_variable = { global.building_motorized_workers_employment@token:building_luxuries_plantation = 5.0 } #5x
                 set_variable = { global.building_motorized_professionals_employment@token:building_luxuries_plantation = 0 } #10x
                 set_variable = { global.building_motorized_specialists_employment@token:building_luxuries_plantation = 0 } #20x
@@ -14857,7 +14579,7 @@
                 set_variable = { global.building_modernized_input_amount_1@token:building_luxuries_plantation = 5.0 }
 
                 set_variable = { global.building_modernized_input_resource_2@token:building_luxuries_plantation = token:resource_raw_materials } #Fertilizer
-                set_variable = { global.building_modernized_input_amount_2@token:building_luxuries_plantation = 8.0 }
+                set_variable = { global.building_modernized_input_amount_2@token:building_luxuries_plantation = 16.0 }
                 
                 set_variable = { global.building_modernized_input_resource_3@token:building_luxuries_plantation = token:resource_energy_materials }
                 set_variable = { global.building_modernized_input_amount_3@token:building_luxuries_plantation = 6.0 }
@@ -14866,7 +14588,7 @@
                 set_variable = { global.building_modernized_input_amount_4@token:building_luxuries_plantation = 1.0 }
                 
                 set_variable = { global.building_modernized_peasants_employment@token:building_luxuries_plantation = 0.0 } #1x
-                set_variable = { global.building_modernized_laborers_employment@token:building_luxuries_plantation = 6.8 } #2x
+                set_variable = { global.building_modernized_laborers_employment@token:building_luxuries_plantation = 8.8 } #2x
                 set_variable = { global.building_modernized_workers_employment@token:building_luxuries_plantation = 6.0 } #5x
                 set_variable = { global.building_modernized_professionals_employment@token:building_luxuries_plantation = 1.0 } #10x
                 set_variable = { global.building_modernized_specialists_employment@token:building_luxuries_plantation = 0 } #20x
@@ -14889,7 +14611,7 @@
                 set_variable = { global.building_roboticized_input_amount_1@token:building_luxuries_plantation = 6.0 }
 
                 set_variable = { global.building_roboticized_input_resource_2@token:building_luxuries_plantation = token:resource_raw_materials } #Fertilizer
-                set_variable = { global.building_roboticized_input_amount_2@token:building_luxuries_plantation = 8.0 }
+                set_variable = { global.building_roboticized_input_amount_2@token:building_luxuries_plantation = 18.0 }
                 
                 set_variable = { global.building_roboticized_input_resource_3@token:building_luxuries_plantation = token:resource_energy_materials }
                 set_variable = { global.building_roboticized_input_amount_3@token:building_luxuries_plantation = 7.0 }
@@ -14898,7 +14620,7 @@
                 set_variable = { global.building_roboticized_input_amount_4@token:building_luxuries_plantation = 4.0 }
                 
                 set_variable = { global.building_roboticized_peasants_employment@token:building_luxuries_plantation = 0.0 } #1x
-                set_variable = { global.building_roboticized_laborers_employment@token:building_luxuries_plantation = 2.8 } #2x
+                set_variable = { global.building_roboticized_laborers_employment@token:building_luxuries_plantation = 4.8 } #2x
                 set_variable = { global.building_roboticized_workers_employment@token:building_luxuries_plantation = 6.0 } #5x
                 set_variable = { global.building_roboticized_professionals_employment@token:building_luxuries_plantation = 3.0 } #10x
                 set_variable = { global.building_roboticized_specialists_employment@token:building_luxuries_plantation = 0.0 } #20x
@@ -14921,7 +14643,7 @@
                 set_variable = { global.building_computerized_input_amount_1@token:building_luxuries_plantation = 9.0 }
 
                 set_variable = { global.building_computerized_input_resource_2@token:building_luxuries_plantation = token:resource_raw_materials }
-                set_variable = { global.building_computerized_input_amount_2@token:building_luxuries_plantation = 10.0 }
+                set_variable = { global.building_computerized_input_amount_2@token:building_luxuries_plantation = 20.0 }
                 
                 set_variable = { global.building_computerized_input_resource_3@token:building_luxuries_plantation = token:resource_energy_materials }
                 set_variable = { global.building_computerized_input_amount_3@token:building_luxuries_plantation = 8.0 }
@@ -14931,7 +14653,7 @@
                 
                 set_variable = { global.building_computerized_peasants_employment@token:building_luxuries_plantation = 0.0 } #1x
                 set_variable = { global.building_computerized_laborers_employment@token:building_luxuries_plantation = 0.0 } #2x
-                set_variable = { global.building_computerized_workers_employment@token:building_luxuries_plantation = 5.8 } #5x
+                set_variable = { global.building_computerized_workers_employment@token:building_luxuries_plantation = 6.8 } #5x
                 set_variable = { global.building_computerized_professionals_employment@token:building_luxuries_plantation = 4.0 } #10x
                 set_variable = { global.building_computerized_specialists_employment@token:building_luxuries_plantation = 0.0 } #20x
                 set_variable = { global.building_computerized_aristocrats_employment@token:building_luxuries_plantation = 0.0 } #30x
@@ -14953,7 +14675,7 @@
                 set_variable = { global.building_digitalized_input_amount_1@token:building_luxuries_plantation = 12.0 }
 
                 set_variable = { global.building_digitalized_input_resource_2@token:building_luxuries_plantation = token:resource_raw_materials }
-                set_variable = { global.building_digitalized_input_amount_2@token:building_luxuries_plantation = 12.0 }
+                set_variable = { global.building_digitalized_input_amount_2@token:building_luxuries_plantation = 24.0 }
                 
                 set_variable = { global.building_digitalized_input_resource_3@token:building_luxuries_plantation = token:resource_energy_materials }
                 set_variable = { global.building_digitalized_input_amount_3@token:building_luxuries_plantation = 8.0 }
@@ -14963,7 +14685,7 @@
                 
                 set_variable = { global.building_digitalized_peasants_employment@token:building_luxuries_plantation = 0.0 } #1x
                 set_variable = { global.building_digitalized_laborers_employment@token:building_luxuries_plantation = 0.0 } #2x
-                set_variable = { global.building_digitalized_workers_employment@token:building_luxuries_plantation = 3.8 } #5x
+                set_variable = { global.building_digitalized_workers_employment@token:building_luxuries_plantation = 4.8 } #5x
                 set_variable = { global.building_digitalized_professionals_employment@token:building_luxuries_plantation = 3.0 } #10x
                 set_variable = { global.building_digitalized_specialists_employment@token:building_luxuries_plantation = 1.0 } #20x
                 set_variable = { global.building_digitalized_aristocrats_employment@token:building_luxuries_plantation = 0.0 } #30x
@@ -14985,7 +14707,7 @@
                 set_variable = { global.building_automatized_input_amount_1@token:building_luxuries_plantation = 15.0 }
 
                 set_variable = { global.building_automatized_input_resource_2@token:building_luxuries_plantation = token:resource_raw_materials }
-                set_variable = { global.building_automatized_input_amount_2@token:building_luxuries_plantation = 10.0 }
+                set_variable = { global.building_automatized_input_amount_2@token:building_luxuries_plantation = 20.0 }
                 
                 set_variable = { global.building_automatized_input_resource_3@token:building_luxuries_plantation = token:resource_energy_materials }
                 set_variable = { global.building_automatized_input_amount_3@token:building_luxuries_plantation = 12.0 }
@@ -15014,7 +14736,7 @@
                 set_variable = { global.building_futurized_input_amount_1@token:building_luxuries_plantation = 20.0 }
 
                 set_variable = { global.building_futurized_input_resource_2@token:building_luxuries_plantation = token:resource_raw_materials }
-                set_variable = { global.building_futurized_input_amount_2@token:building_luxuries_plantation = 15.0 }
+                set_variable = { global.building_futurized_input_amount_2@token:building_luxuries_plantation = 30.0 }
                 
                 set_variable = { global.building_futurized_input_resource_3@token:building_luxuries_plantation = token:resource_electricity }
                 set_variable = { global.building_futurized_input_amount_3@token:building_luxuries_plantation = 50.0 }
