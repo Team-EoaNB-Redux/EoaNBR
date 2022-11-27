@@ -1,5 +1,5 @@
 name="End of a New Beginning Redux ~ GitHub Edition"
-version="0.2.13 Ver Tersus"
+version="0.3.0 Ars Bellica"
 tags={
 	"Alternative History"
 	"Events"
@@ -58,4 +58,4 @@ replace_path="history/general"
 replace_path="history/states"
 replace_path="map/strategicregions"
 supported_version="1.12.*"
-path="mod/EoaNB/toi"
+path="mod/EoaNBR/toi"
