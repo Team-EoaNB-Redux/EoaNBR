@@ -267,7 +267,7 @@ scripted_gui = {
 
 			urban_building_pm_button_click = {
 				set_temp_variable = { building_token = urban_buildings^i }
-				return_latest_production_method = yes
+				get_latest_production_method = yes
 				log = "[?pm_temp]"
 				log = "[?production_method@var:building_token]"
 				if = {
@@ -327,7 +327,7 @@ scripted_gui = {
 
 			rural_building_pm_button_click = {
 				set_temp_variable = { building_token = rural_buildings^i }
-				return_latest_production_method = yes
+				get_latest_production_method = yes
 				log = "[?pm_temp]"
 				log = "[?production_method@var:building_token]"
 				if = {
@@ -588,6 +588,26 @@ scripted_gui = {
 		window_name = "country_trade_window_container"
 		parent_window_token = trade_tab
 		context_type = player_context
+
+		triggers = {
+			
+			shipping_convoys_add_click_enabled = {
+				OR = {
+					has_equipment = {
+						convoy_1 > 0
+					}
+					has_equipment = {
+						convoy_2 > 0
+					}
+					has_equipment = {
+						convoy_3 > 0
+					}
+				}
+			}
+			shipping_convoys_subtract_click_enabled = {
+				check_variable = { shipping_convoys > 0 }
+			}
+		}
 
 		effects ={
 			resource_oil_button_click = {
@@ -947,9 +967,174 @@ scripted_gui = {
 				country_update_new_route_list = yes
 			}
 
-			#Trade Routes
+			shipping_convoys_add_click = {
+				if = {
+					limit = {
+						has_equipment = {
+							convoy_1 > 0
+						}
+					}
+					add_equipment_to_stockpile = {
+						type = convoy_1
+						amount = -1
+					}
+				}
+				else_if = {
+					limit = {
+						has_equipment = {
+							convoy_2 > 0
+						}
+					}
+					add_equipment_to_stockpile = {
+						type = convoy_2
+						amount = -1
+					}
+				}
+				else_if = {
+					limit = {
+						has_equipment = {
+							convoy_3 > 0
+						}
+					}
+					add_equipment_to_stockpile = {
+						type = convoy_3
+						amount = -1
+					}
+				}
+				add_to_variable = { shipping_convoys = 1 }
 
-			#
+				calc_shipping_capacity = yes
+				calc_trade_values = yes
+			}
+			shipping_convoys_add_shift_click = {
+				if = {
+					limit = {
+						has_equipment = {
+							convoy_1 > 9
+						}
+					}
+					add_equipment_to_stockpile = {
+						type = convoy_1
+						amount = -10
+					}
+					add_to_variable = { shipping_convoys = 10 }
+					calc_shipping_capacity = yes
+					calc_trade_values = yes
+				}
+				else_if = {
+					limit = {
+						has_equipment = {
+							convoy_2 > 9
+						}
+					}
+					add_equipment_to_stockpile = {
+						type = convoy_2
+						amount = -10
+					}
+					add_to_variable = { shipping_convoys = 10 }
+					calc_shipping_capacity = yes
+					calc_trade_values = yes
+				}
+				else_if = {
+					limit = {
+						has_equipment = {
+							convoy_3 > 9
+						}
+					}
+					add_equipment_to_stockpile = {
+						type = convoy_3
+						amount = -10
+					}
+					add_to_variable = { shipping_convoys = 10 }
+					calc_shipping_capacity = yes
+					calc_trade_values = yes
+				}
+			}
+			shipping_convoys_add_control_click = {
+				if = {
+					limit = {
+						has_equipment = {
+							convoy_1 > 99
+						}
+					}
+					add_equipment_to_stockpile = {
+						type = convoy_1
+						amount = -100
+					}
+					add_to_variable = { shipping_convoys = 100 }
+					calc_shipping_capacity = yes
+					calc_trade_values = yes
+				}
+				else_if = {
+					limit = {
+						has_equipment = {
+							convoy_2 > 99
+						}
+					}
+					add_equipment_to_stockpile = {
+						type = convoy_2
+						amount = -100
+					}
+					add_to_variable = { shipping_convoys = 100 }
+					calc_shipping_capacity = yes
+					calc_trade_values = yes
+				}
+				else_if = {
+					limit = {
+						has_equipment = {
+							convoy_3 > 99
+						}
+					}
+					add_equipment_to_stockpile = {
+						type = convoy_3
+						amount = -100
+					}
+					add_to_variable = { shipping_convoys = 100 }
+					calc_shipping_capacity = yes
+					calc_trade_values = yes
+				}
+			}
+			shipping_convoys_subtract_click = {
+				add_equipment_to_stockpile = {
+					type = convoy
+					amount = 1
+				}
+				subtract_from_variable = { shipping_convoys = 1 }
+
+				calc_shipping_capacity = yes
+				calc_trade_values = yes
+			}
+			shipping_convoys_subtract_shift_click = {
+				if = {
+					limit = {
+						check_variable = { shipping_convoys > 9 }
+					}
+					add_equipment_to_stockpile = {
+						type = convoy
+						amount = 10
+					}
+					subtract_from_variable = { shipping_convoys = 10 }
+
+					calc_shipping_capacity = yes
+					calc_trade_values = yes
+				}
+			}
+			shipping_convoys_subtract_control_click = {
+				if = {
+					limit = {
+						check_variable = { shipping_convoys > 99 }
+					}
+					add_equipment_to_stockpile = {
+						type = convoy
+						amount = 100
+					}
+					subtract_from_variable = { shipping_convoys = 100 }
+
+					calc_shipping_capacity = yes
+					calc_trade_values = yes
+				}
+			}
+
 			new_import_route_button_click = {
 				if = {
 					limit = {
@@ -1083,6 +1268,7 @@ scripted_gui = {
 				}
 				clr_country_flag = new_trade_route_view_open
 				clr_country_flag = new_route_export
+				clear_variable = selected_resource
 				add_trade_route = yes
 			}
 		}

@@ -1209,10 +1209,13 @@
             calc_demand = yes
             get_resource_prices = yes
 
+            update_country_pop_stats = yes
+
             every_controlled_state = {
                 buildings_update = yes
                 pops_update = yes
                 #Statistics
+                    #GDP
                     set_variable = { prev_gdp_amount = gdp_amount }
                     gdp_update = yes
 						
@@ -1529,6 +1532,7 @@
 
 
                 set_variable = { global.base_shipping_cost_divisor = 1000 }
+                set_variable = { global.shipping_capacity_per_convoy = 2 }
 
                 set_variable = { global.shipping_cost@token:resource_food = 1 } # 0.1K per route size
                 set_variable = { global.shipping_cost@token:resource_raw_materials = 1 }
@@ -1770,6 +1774,13 @@
 					#SD - An obligor has failed to pay one or more of its financial obligations (rated or unrated) when it became due. Sovereign Default / Bankruptcy
 					set_variable = { global.credit_rating_SD_base_interest_rate = 10.0 }
                 #
+            #
+
+            #AI
+                #Trade
+                set_variable = { global.ai_trade_relative_price_condition = 0.05 } # Price difference requirement from base price to be considered
+                set_variable = { global.ai_trade_balance_tolerance = 0.8 } # Multiplied against the trade per route size value to check if trading additional goods of that will tip the balance to the other side. Lower values are more tolerant.
+
             #
 
             UCT = {
@@ -2872,6 +2883,8 @@
                 clear_array = gdp_graph_color_array
                 clear_array = gdp_graph_y_array
             }
+
+            update_country_pop_stats = yes
         }
 
     }
@@ -5589,6 +5602,28 @@
         #
 
         pops_update = yes
+    }
+
+    update_country_pop_stats = {
+        set_variable = { pops = 0 }
+        set_variable = { pops_col = 0 }
+        set_variable = { pops_sol = 0 }
+
+        every_controlled_state = {
+            #Pops
+            add_to_variable = { PREV.pops = pops }
+
+            set_temp_variable = { stat_temp = pops_col }
+            multiply_temp_variable = { stat_temp = pops }
+            add_to_variable = { PREV.pops_col = stat_temp }
+            
+            set_temp_variable = { stat_temp = pops_sol }
+            multiply_temp_variable = { stat_temp = pops }
+            add_to_variable = { PREV.pops_sol = stat_temp }
+        }
+
+        divide_variable = { pops_sol = pops }
+        divide_variable = { pops_col = pops }
     }
 
 
@@ -8335,8 +8370,13 @@
             }
         }
 
+		set_variable = { price_compared_to_base@var:r_type = price@var:r_type }
+		divide_variable = { price_compared_to_base@var:r_type = global.base_price@var:r_type }
+		subtract_from_variable = { price_compared_to_base@var:r_type = 1 }
+
         every_controlled_state = {
             set_variable = { price@var:r_type = PREV.price@var:r_type }
+			set_variable = { price_compared_to_base@var:r_type = PREV.price_compared_to_base@var:r_type }
         }
     }
     get_resource_prices = {
@@ -8411,6 +8451,10 @@
                     multiply_variable = { price@var:r_type = grp_multiplier } #P = B * ( (D/S + 1) / 2)
                 }
             }
+
+            set_variable = { price_compared_to_base@var:r_type = price@var:r_type }
+            divide_variable = { price_compared_to_base@var:r_type = global.base_price@var:r_type }
+            subtract_from_variable = { price_compared_to_base@var:r_type = 1 }
         }
 
         every_controlled_state = {
@@ -8419,6 +8463,7 @@
                 value = r_type
                 
                 set_variable = { price@var:r_type = PREV.price@var:r_type }
+			    set_variable = { price_compared_to_base@var:r_type = PREV.price_compared_to_base@var:r_type }
             }
         }
     }
@@ -8509,8 +8554,10 @@
         }
     }
     calc_shipping_capacity = {
-        set_variable = { shipping_capacity = 0 }
+        set_variable = { shipping_capacity_convoys = shipping_convoys }
+        multiply_variable = { shipping_capacity_convoys = global.shipping_capacity_per_convoy }
 
+        set_variable = { shipping_capacity = shipping_capacity_convoys }
         every_controlled_state = {
             for_each_loop = {
                 array = buildings
@@ -8884,6 +8931,40 @@
 		}
 	}
 
+	calc_trade_routes = {
+        clear_temp_array = tr_countries_temp
+        for_each_loop = {
+            array = trade_route_country
+			value = tr_country
+            if = {
+                limit = {
+                    NOT = { is_in_array = { tr_countries_temp = tr_country } }
+                }
+                add_to_temp_array = { tr_countries_temp = tr_country }
+            }
+        }
+        
+        #Update trade routes
+        calc_trade_routes_supply = yes
+
+        for_each_loop = {
+            array = tr_countries_temp
+			value = tr_country
+            var:tr_country = {
+                calc_foreign_routes_supply = yes
+            }
+        }
+        
+        calc_trade_routes_value = yes
+
+        for_each_loop = {
+            array = tr_countries_temp
+			value = tr_country
+            var:tr_country = {
+                calc_foreign_routes_value = yes
+            }
+        }
+	}
 	calc_trade_routes_supply = {
 		#Calculates all proper arrays of international trade routes
 		#NOTE: Do calc_trade_routes_value after this & calculating foreign trade supply
@@ -8932,7 +9013,16 @@
 		}
 		clear_variable = shipping_distance
 
-		#TODO - Shipping Efficiency
+        if = {
+            limit = {
+                check_variable = { shipping_capacity_use > shipping_capacity }
+            }
+            set_variable = { shipping_efficiency = shipping_capacity }
+            divide_variable = { shipping_efficiency = shipping_capacity_use }
+        }
+        else = {
+            set_variable = { shipping_efficiency = 1 }
+        }
 		
 		#Amount
 		for_each_loop = {
@@ -8946,6 +9036,7 @@
 			add_to_array = { trade_route_amount = trade_route_size^tr_i }
 			multiply_variable = { trade_route_amount^tr_i = global.shipping_amount@var:tr_resource }
 			multiply_variable = { trade_route_amount^tr_i = trade_route_type^tr_i }
+            multiply_variable = { trade_route_amount^tr_i = shipping_efficiency }
 
             if = {
                 limit = {
@@ -9207,61 +9298,6 @@
 				}
 			}
 		}
-	}
-	calc_trade_values = {
-
-		#Trade Center stuff
-		set_variable = { trade_size = 0 }
-		set_variable = { trade_profit = 0 }
-		set_variable = { trade_productivity = 0 }
-
-		for_each_loop = {
-			array = global.resource_token_array
-			value = ts_resource
-
-			set_variable = { supply_trade@var:ts_resource = 0 }
-			set_variable = { demand_trade@var:ts_resource = 0 }
-		}
-		for_each_loop = {
-			array = trade_route_amount
-			value = tr_a
-			index = tr_i
-
-			set_temp_variable = { tr_resource = trade_route_resource^tr_i }
-			if = {
-				limit = {
-					check_variable = { tr_a > 0 }
-				}
-				add_to_variable = { supply_trade@var:tr_resource = tr_a }
-			}
-			else = {
-				subtract_from_variable = { demand_trade@var:tr_resource = tr_a }
-			}
-
-			set_temp_variable = { profit_temp = trade_route_productivity^tr_i }
-			multiply_temp_variable = { profit_temp = trade_route_size^tr_i }
-			add_to_variable = { trade_profit = profit_temp }
-			add_to_variable = { trade_size = trade_route_size^tr_i }
-		}
-		for_each_loop = {
-			array = foreign_route_amount
-			value = tr_a
-			index = tr_i
-
-			set_temp_variable = { tr_resource = foreign_route_resource^tr_i }
-			if = {
-				limit = {
-					check_variable = { tr_a > 0 }
-				}
-				add_to_variable = { supply_trade@var:tr_resource = tr_a }
-			}
-			else = {
-				subtract_from_variable = { demand_trade@var:tr_resource = tr_a }
-			}
-		}
-
-		set_variable = { trade_productivity = trade_profit }
-		divide_variable = { trade_productivity = trade_size }
 	}
 	verify_trade_routes = {
 		set_temp_variable = { tr_i = trade_route_country^num }
@@ -10353,6 +10389,270 @@
 				}
 			}
 		}
+	}
+
+
+    
+	ai_trade_calculation = {
+		#The AI uses this calculation to do trade
+
+		# AI needs to consider ADDING/UPGRADING and DOWNGRADING/REMOVING routes
+
+		# When adding or removing a new route, consider the following (resource side):
+		#	Relative Price (priority 2)
+		#	Balance
+		#	Good Type (Raw & Intermediates first)
+
+		# When adding or removing a route, consider the following (route side):
+		#	Diplomatic Status
+		#		Allied Country (only if at war) ++
+		#		Friendly (+50 relations) +
+		#		Neutral
+		#		Unfriendly (-50 relations) --
+		#		At War (Can't trade at all)
+		#	Productivity (second priority)
+		#	Shipping Use (wrapped into productivity)
+
+		# When a nation starts to approach its shipping capacity, also consider downgrading less productive routes (above size 1 for total trade of that resource and/or native supply)
+        
+        clear_temp_array = ai_trade_route_array
+        #   SORT    #
+            for_each_loop = {
+                array = trade_route_country
+                value = tr_country
+                index = tr_i
+
+                set_temp_variable = { new_element_value = trade_route_productivity^tr_i }
+
+                for_each_loop = {
+                    array = ai_trade_route_array
+                    index = ii
+                    value = current_element_value
+                    break = bb
+
+                    if = {
+                        limit = {
+                            check_variable = { new_element_value > current_element_value }
+                        }
+                        add_to_temp_array = { 
+                            array = ai_trade_route_array
+                            value = tr_i
+                            index = ii
+                        }
+                        set_temp_variable = { bb = 1 }
+                    }
+                }
+                if = {
+                    limit = {
+                        check_variable = { bb = 0 }
+                    }
+                    add_to_temp_array = { ai_trade_route_array = tr_i }
+                }
+            }
+        #
+
+        # Adjust Existing Routes
+        set_temp_variable = { pops_col_temp = pops_col }
+        multiply_temp_variable = { pops_col_temp = 1.33 }
+        for_each_loop = {
+            array = ai_trade_route_array
+            value = tr_i
+            break = tr_brk
+            set_temp_variable = { tr_country = trade_route_country^tr_i }
+            set_temp_variable = { tr_resource = trade_route_resource^tr_i }
+
+            if = {
+                limit = {
+                    check_variable = { trade_route_productivity^tr_i > pops_col_temp }
+                }
+                if = {
+                    limit = {
+                        check_variable = { trade_route_type^tri_i = 1 } #Import
+                    }
+                    set_temp_variable = { size_temp = demand@var:tr_resource }
+                    divide_temp_variable = { size_temp = 1.1 }
+                    subtract_from_temp_variable = { size_temp = supply@var:tr_resource }
+                    
+                    set_temp_variable = { size2_temp = tr_country:supply@var:tr_resource }
+                    multiply_temp_variable = { size2_temp = 0.9 }
+                    subtract_from_temp_variable = { size2_temp = tr_country:demand@var:tr_resource }
+
+                    if = {
+                        limit = {
+                            check_variable = { size_temp > size2_temp }
+                        }
+                        set_temp_variable = { size_temp = size2_temp }
+                    }
+                    divide_temp_variable = { size_temp = 2 }
+                    round_temp_variable = size_temp
+                    if = {
+                        limit = {
+                            check_variable = { size_temp > 1 }
+                        }
+                        add_to_variable = { trade_route_size^tr_i = size_temp }
+                        calc_trade_routes_supply = yes
+                        var:tr_country = {
+                            calc_foreign_routes_supply = yes
+                        }
+                        calc_trade_routes_value = yes
+                        var:tr_country = {
+                            calc_foreign_routes_value = yes
+                        }
+                    }
+                    else = {
+                        set_temp_variable = { i_temp = tr_i }
+                        upgrade_trade_route_at_index = yes
+                    }
+                }
+                else = {
+                    set_temp_variable = { size_temp = tr_country:demand@var:tr_resource }
+                    divide_temp_variable = { size_temp = 1.1 }
+                    subtract_from_temp_variable = { size_temp = tr_country:supply@var:tr_resource }
+                    
+                    set_temp_variable = { size2_temp = supply@var:tr_resource }
+                    multiply_temp_variable = { size2_temp = 0.9 }
+                    subtract_from_temp_variable = { size2_temp = demand@var:tr_resource }
+
+                    if = {
+                        limit = {
+                            check_variable = { size_temp > size2_temp }
+                        }
+                        set_temp_variable = { size_temp = size2_temp }
+                    }
+                    divide_temp_variable = { size_temp = 2 }
+                    round_temp_variable = size_temp
+                    if = {
+                        limit = {
+                            check_variable = { size_temp > 1 }
+                        }
+                        add_to_variable = { trade_route_size^tr_i = size_temp }
+                        calc_trade_routes_supply = yes
+                        var:tr_country = {
+                            calc_foreign_routes_supply = yes
+                        }
+                        calc_trade_routes_value = yes
+                        var:tr_country = {
+                            calc_foreign_routes_value = yes
+                        }
+                    }
+                    else = {
+                        set_temp_variable = { i_temp = tr_i }
+                        upgrade_trade_route_at_index = yes
+                    }
+                }
+            }
+            else_if = {
+                limit = {
+                    check_variable = { trade_route_productivity^tr_i < pops_col }
+                }
+                if = {
+                    limit = {
+                        check_variable = { trade_route_productivity^tr_i < 0 }
+                    }
+                    set_temp_variable = { size_temp = trade_route_size^tr_i }
+                    divide_temp_variable = { size_temp = 5 }
+                    round_temp_variable = size_temp
+                    add_to_temp_variable = { size_temp = 1 }
+                }
+                else = {
+                    set_temp_variable = { size_temp = trade_route_size^tr_i }
+                    divide_temp_variable = { size_temp = 10 }
+                    round_temp_variable = size_temp
+                    add_to_temp_variable = { size_temp = 1 }
+                }
+                
+                if = {
+                    limit = {
+                        check_variable = { size_temp < trade_route_size^tr_i }
+                    }
+                    subtract_from_variable = { trade_route_size^tr_i = size_temp }
+                    calc_trade_routes_supply = yes
+                    var:tr_country = {
+                        calc_foreign_routes_supply = yes
+                    }
+                    calc_trade_routes_value = yes
+                    var:tr_country = {
+                        calc_foreign_routes_value = yes
+                    }
+                }
+                else = {
+                    set_temp_variable = { i_temp = tr_i }
+                    remove_trade_route_at_index = yes
+                }
+            }
+        }
+
+		# TODO - turn arrays into temp arrays 
+		clear_array = ai_import_additions_under_consideration
+		clear_array = ai_export_additions_under_consideration
+		
+		clear_array = ai_import_reductions_under_consideration
+		clear_array = ai_export_reductions_under_consideration
+
+		#Imports
+            #Finding Resources for Export
+            for_each_loop = {
+                array = global.resource_token_array # D&T: resources_token_array
+                value = ai_r_token
+
+                if = {
+                    limit = {
+                        NOT = { is_in_array = { global.non_tradeable_resources = ai_r_token } } # D&T: untradeable_resources_token_array
+
+                        #Good is expensive
+                        check_variable = { price_compared_to_base@var:ai_r_token > 0 }
+
+                        # Relative Price Filter
+                        check_variable = { price_compared_to_base@var:ai_r_token > global.ai_trade_relative_price_condition }
+
+                        # Balance Filter
+                        set_temp_variable = { ai_tmp = global.shipping_amount@var:ai_r_token }
+                        multiply_temp_variable = { ai_tmp = global.ai_trade_balance_tolerance }
+                        multiply_temp_variable = { ai_tmp = -1 } #Importing
+                        check_variable = { balance@var:ai_r_token < ai_tmp }
+                    }
+
+                    add_to_array = { ai_import_additions_under_consideration = ai_r_token }
+                }
+            }
+
+            for_each_loop = {
+                array = ai_import_additions_under_consideration
+                value = ai_r_token
+                #Establishing New Routes (If necessary)
+
+            }
+
+        #
+
+		#Exports
+		for_each_loop = {
+			array = global.resource_token_array # D&T: resources_token_array
+			value = ai_r_token
+		
+			if = {
+				limit = {
+					NOT = { is_in_array = { global.non_tradeable_resources = ai_r_token } } # D&T: untradeable_resources_token_array
+
+					#Good is cheap
+					check_variable = { price_compared_to_base@var:ai_r_token < 0 }
+
+					# Relative Price Filter
+					set_temp_variable = { ai_tmp = 1 }
+					subtract_from_temp_variable = { ai_tmp = global.ai_trade_relative_price_condition }
+					check_variable = { price_compared_to_base@var:ai_r_token < ai_tmp }
+
+					# Balance Filter
+					set_temp_variable = { ai_tmp = global.shipping_amount@var:ai_r_token }
+					multiply_temp_variable = { ai_tmp = global.ai_trade_balance_tolerance }
+					check_variable = { balance@var:ai_r_token > ai_tmp }
+				}
+
+				add_to_array = { ai_export_additions_under_consideration = ai_r_token }
+			}
+		}
+
+        calc_trade_routes = yes
 	}
 #
 
