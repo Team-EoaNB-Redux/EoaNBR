@@ -9176,6 +9176,8 @@
 			multiply_variable = { trade_route_productivity^tr_i = 10 }
 			divide_variable = { trade_route_productivity^tr_i = trade_route_size^tr_i }
 		}
+
+        calc_trade_route_totals = yes
 	}
 	calc_foreign_routes_supply = {
 		#Calculates all proper arrays of foreign trade routes
@@ -9298,6 +9300,8 @@
 				}
 			}
 		}
+
+        calc_trade_route_totals = yes
 	}
 	verify_trade_routes = {
 		set_temp_variable = { tr_i = trade_route_country^num }
@@ -9377,6 +9381,22 @@
 			subtract_from_temp_variable = { tr_i = 1 }
 		}
 	}
+    calc_trade_route_totals = {
+		for_each_loop = {
+			array = global.resource_token_array
+			value = ts_resource
+
+			set_variable = { trade@var:ts_resource = supply_trade@var:ts_resource }
+            subtract_from_variable = { trade@var:ts_resource = demand_trade@var:ts_resource }
+		}
+		for_each_loop = {
+			array = global.military_resource_token_array
+			value = ts_resource
+
+			set_variable = { trade@var:ts_resource = supply_trade@var:ts_resource }
+            subtract_from_variable = { trade@var:ts_resource = demand_trade@var:ts_resource }
+		}
+    }
 	
 	add_trade_route = {
 		#Adds a country to a country's trade routes
@@ -9520,7 +9540,6 @@
 			}
 		}
 
-		country_update_trade = yes
 		country_update_trade_display = yes
 	}
 	upgrade_trade_route = {
@@ -9669,7 +9688,6 @@
 				limit = {
 					is_ai = no
 				}
-				country_update_trade = yes
 				country_update_trade_display = yes
 			}
 		}
@@ -9729,7 +9747,6 @@
 				limit = {
 					is_ai = no
 				}
-				country_update_trade = yes
 				country_update_trade_display = yes
 			}
 		}
@@ -9797,7 +9814,6 @@
 				limit = {
 					is_ai = no
 				}
-				country_update_trade = yes
 				country_update_trade_display = yes
 			}
 		}
@@ -9837,7 +9853,6 @@
 				limit = {
 					is_ai = no
 				}
-				country_update_trade = yes
 				country_update_trade_display = yes
 			}
 		}
@@ -9877,7 +9892,6 @@
 				limit = {
 					is_ai = no
 				}
-				country_update_trade = yes
 				country_update_trade_display = yes
 			}
 		}
@@ -9959,7 +9973,6 @@
 			limit = {
 				is_ai = no
 			}
-			country_update_trade = yes
 			country_update_trade_display = yes
 		}
 	}
@@ -10589,8 +10602,13 @@
 		clear_array = ai_import_reductions_under_consideration
 		clear_array = ai_export_reductions_under_consideration
 
+        set_temp_variable = { selected_resource_temp = selected_resource }
+        set_temp_variable = { pops_col_temp = pops_col }
+        multiply_temp_variable = { pops_col_temp = 1.5 }
+
 		#Imports
-            #Finding Resources for Export
+            #Finding Resources for Import
+            clr_country_flag = new_route_export
             for_each_loop = {
                 array = global.resource_token_array # D&T: resources_token_array
                 value = ai_r_token
@@ -10612,7 +10630,26 @@
                         check_variable = { balance@var:ai_r_token < ai_tmp }
                     }
 
-                    add_to_array = { ai_import_additions_under_consideration = ai_r_token }
+                    if = {
+                        limit = {
+                            OR = {
+                                check_variable = { trade_route_country^num = 0 }
+
+                                #Only add if all (relevant) routes are below productivity threshhold 
+                                all_of = {
+                                    array = trade_route_country
+                                    value = tr_country
+                                    index = tr_i
+
+                                    OR = {
+                                        check_variable = { trade_route_productivity^tr_i < pops_col_temp }
+                                        NOT = { check_variable = { trade_route_resource^tr_i = ai_r_token } }
+                                    }
+                                }
+                            }
+                        }
+                        add_to_array = { ai_import_additions_under_consideration = ai_r_token }
+                    }
                 }
             }
 
@@ -10621,38 +10658,288 @@
                 value = ai_r_token
                 #Establishing New Routes (If necessary)
 
+                #Selecting Top Productivity Route
+                set_temp_variable = { highest_productivity_temp = 0 }
+                set_temp_variable = { highest_productivity_country_temp = 0 }
+                every_other_country = {
+                    limit = {
+                        NOT = { has_variable = has_afr_empire_mechanic_system }
+                        PREV = {
+                            check_variable = { price@var:ai_r_token > PREV.price@var:ai_r_token }
+                            NOT = {
+                                any_of = {
+                                    array = trade_route_country
+                                    value = tr_country
+                                    index = tr_index
+                                    
+                                    check_variable = { tr_country = PREV }
+                                    check_variable = { trade_route_resource^tr_index = ai_r_token }
+                                    check_variable = { trade_route_type^tr_index = 1 }
+                                }
+                            }
+                        }
+                    }
+
+                    if = {
+                        limit = {
+                            set_temp_variable = { demand_temp = PREV.demand@var:ai_r_token }
+                            multiply_temp_variable = { demand_temp = 0.1 }
+                            check_variable = { supply@var:ai_r_token > demand_temp }
+                        }
+
+                        #Shipping Use
+                            if = {
+                                limit = {
+                                    is_in_array = { neighbors = PREV }
+                                }
+                                set_temp_variable = { new_element_shipping_use = 0 }
+                                #log = "[THIS.GetName] is a neighbor"
+                            }
+                            else = {
+                                set_temp_variable = { new_element_shipping_use = global.shipping_cost@var:ai_r_token }
+                                
+                                set_temp_variable = { exporter_capital = PREV.capital }
+                                var:exporter_capital = {
+                                    set_variable = { PREV.shipping_distance = distance_to@PREV.capital } #This needs to be a normal variable
+                                }
+                                divide_variable = { shipping_distance = global.base_shipping_cost_divisor }
+                                set_temp_variable = { modifier_temp = modifier@shipping_cost_modifier }
+                                add_to_temp_variable = { modifier_temp = 1 }
+                                multiply_variable = { shipping_distance = modifier_temp }
+
+                                multiply_temp_variable = { new_element_shipping_use = shipping_distance }
+                                #log = "[THIS.GetName] is not a neighbor: distance - [?shipping_distance], S.U. - [?new_element_shipping_use]"
+                            }
+                        #
+                        #Prices
+                            ## ROOT COUNTRY ##
+                            set_temp_variable = { r_type = ai_r_token }
+                            set_temp_variable = { s_temp = PREV.supply@var:ai_r_token }
+                            set_temp_variable = { d_temp = PREV.demand@var:ai_r_token }
+                            add_to_temp_variable = { s_temp = global.shipping_amount@var:ai_r_token }
+                            get_price = yes # r_type, s_temp, d_temp -> p_return_temp
+                            set_temp_variable = { root_price_temp = p_return_temp }
+                            #log = "r_type: [?r_type.GetTokenLocalizedKey] | s_temp: [?s_temp] | d_temp: [?d_temp]"
+                            #log = "ROOT Price Before: [?PREV.price@var:ai_r_token] | ROOT Price After: [?root_price_temp]"
+                            
+                            ## FOREIGN COUNTRY ##
+                            set_temp_variable = { r_type = ai_r_token }
+                            set_temp_variable = { s_temp = supply@var:ai_r_token }
+                            set_temp_variable = { d_temp = demand@var:ai_r_token }
+                            add_to_temp_variable = { d_temp = global.shipping_amount@var:ai_r_token }
+                            get_price = yes # r_type, s_temp, d_temp -> p_return_temp
+                            set_temp_variable = { this_price_temp = p_return_temp }
+                            #log = "r_type: [?r_type.GetTokenLocalizedKey] | s_temp: [?s_temp] | d_temp: [?d_temp]"
+                            #log = "FOREIGN Price Before: [?price@var:ai_r_token] | FOREIGN Price After: [?this_price_temp]"
+                        #
+                        #Productivity
+                            set_temp_variable = { new_element_value = root_price_temp }
+
+                            set_temp_variable = { p_temp = this_price_temp }
+                            
+                            set_temp_variable = { tariffs_mult_temp = 1 }
+                            add_to_temp_variable = { tariffs_mult_temp = PREV.tariffs }
+                            multiply_temp_variable = { p_temp = tariffs_mult_temp }
+
+                            subtract_from_temp_variable = { new_element_value = p_temp }
+                            multiply_temp_variable = { new_element_value = global.shipping_amount@var:ai_r_token }
+                            multiply_temp_variable = { new_element_value = 10 }
+                        #
+                        
+                        if = {
+                            limit = {
+                                check_variable = { new_element_value > highest_productivity_temp }
+                            }
+                            set_temp_variable = { highest_productivity_temp = new_element_value }
+                            set_temp_variable = { highest_productivity_country_temp = THIS }
+                        }
+                    }
+                }
+
+                if = {
+                    limit = {
+                        check_variable = { highest_productivity_temp > pops_col_temp }
+                    }
+                    log = "CONSIDERING IMPORT: [?highest_productivity_country_temp.GetName] - [?ai_r_token.GetTokenLocalizedKey]"
+
+                    set_temp_variable = { resource_temp = ai_r_token }
+                    set_temp_variable = { country_temp = highest_productivity_country_temp }
+                    set_temp_variable = { trade_type_temp = 1 }
+                    add_trade_route = yes
+                }
             }
 
         #
 
 		#Exports
-		for_each_loop = {
-			array = global.resource_token_array # D&T: resources_token_array
-			value = ai_r_token
-		
-			if = {
-				limit = {
-					NOT = { is_in_array = { global.non_tradeable_resources = ai_r_token } } # D&T: untradeable_resources_token_array
+            for_each_loop = {
+                array = global.resource_token_array # D&T: resources_token_array
+                value = ai_r_token
+            
+                if = {
+                    limit = {
+                        NOT = { is_in_array = { global.non_tradeable_resources = ai_r_token } } # D&T: untradeable_resources_token_array
 
-					#Good is cheap
-					check_variable = { price_compared_to_base@var:ai_r_token < 0 }
+                        #Good is cheap
+                        check_variable = { price_compared_to_base@var:ai_r_token < 0 }
 
-					# Relative Price Filter
-					set_temp_variable = { ai_tmp = 1 }
-					subtract_from_temp_variable = { ai_tmp = global.ai_trade_relative_price_condition }
-					check_variable = { price_compared_to_base@var:ai_r_token < ai_tmp }
+                        # Relative Price Filter
+                        set_temp_variable = { ai_tmp = 1 }
+                        subtract_from_temp_variable = { ai_tmp = global.ai_trade_relative_price_condition }
+                        check_variable = { price_compared_to_base@var:ai_r_token < ai_tmp }
 
-					# Balance Filter
-					set_temp_variable = { ai_tmp = global.shipping_amount@var:ai_r_token }
-					multiply_temp_variable = { ai_tmp = global.ai_trade_balance_tolerance }
-					check_variable = { balance@var:ai_r_token > ai_tmp }
-				}
+                        # Balance Filter
+                        set_temp_variable = { ai_tmp = global.shipping_amount@var:ai_r_token }
+                        multiply_temp_variable = { ai_tmp = global.ai_trade_balance_tolerance }
+                        check_variable = { balance@var:ai_r_token > ai_tmp }
+                    }
 
-				add_to_array = { ai_export_additions_under_consideration = ai_r_token }
-			}
-		}
+                    if = {
+                        limit = {
+                            OR = {
+                                check_variable = { trade_route_country^num = 0 }
+
+                                #Only add if all (relevant) routes are below productivity threshhold 
+                                all_of = {
+                                    array = trade_route_country
+                                    value = tr_country
+                                    index = tr_i
+
+                                    OR = {
+                                        check_variable = { trade_route_productivity^tr_i < pops_col_temp }
+                                        NOT = { check_variable = { trade_route_resource^tr_i = ai_r_token } }
+                                    }
+                                }
+                            }
+                        }
+                        add_to_array = { ai_export_additions_under_consideration = ai_r_token }
+                    }
+                }
+            }
+            
+
+            for_each_loop = {
+                array = ai_export_additions_under_consideration
+                value = ai_r_token
+                #Establishing New Routes (If necessary)
+
+                #Selecting Top Productivity Route
+                set_temp_variable = { highest_productivity_temp = 0 }
+                set_temp_variable = { highest_productivity_country_temp = 0 }
+                every_other_country = {
+                    limit = {
+                        NOT = { has_variable = has_afr_empire_mechanic_system }
+                        PREV = {
+                            check_variable = { price@var:ai_r_token < PREV.price@var:ai_r_token }
+                            NOT = {
+                                any_of = {
+                                    array = trade_route_country
+                                    value = tr_country
+                                    index = tr_index
+                                    
+                                    check_variable = { tr_country = PREV }
+                                    check_variable = { trade_route_resource^tr_index = ai_r_token }
+                                    check_variable = { trade_route_type^tr_index = -1 }
+                                }
+                            }
+                        }
+                    }
+
+                    if = {
+                        limit = {
+                            set_temp_variable = { supply_temp = PREV.supply@var:ai_r_token }
+                            multiply_temp_variable = { supply_temp = 0.1 }
+                            check_variable = { demand@var:ai_r_token > supply_temp }
+                        }
+
+                        #Shipping Use
+                            if = {
+                                limit = {
+                                    is_in_array = { neighbors = PREV }
+                                }
+                                set_temp_variable = { new_element_shipping_use = 0 }
+                                #log = "[THIS.GetName] is a neighbor"
+                            }
+                            else = {
+                                set_temp_variable = { new_element_shipping_use = global.shipping_cost@var:ai_r_token }
+                                
+                                set_temp_variable = { exporter_capital = PREV.capital }
+                                var:exporter_capital = {
+                                    set_variable = { PREV.shipping_distance = distance_to@PREV.capital } #This needs to be a normal variable
+                                }
+                                divide_variable = { shipping_distance = global.base_shipping_cost_divisor }
+                                set_temp_variable = { modifier_temp = modifier@shipping_cost_modifier }
+                                add_to_temp_variable = { modifier_temp = 1 }
+                                multiply_variable = { shipping_distance = modifier_temp }
+
+                                multiply_temp_variable = { new_element_shipping_use = shipping_distance }
+                                #log = "[THIS.GetName] is not a neighbor: distance - [?shipping_distance], S.U. - [?new_element_shipping_use]"
+                            }
+                        #
+                        #Prices
+                            ## ROOT COUNTRY ##
+                            set_temp_variable = { r_type = ai_r_token }
+                            set_temp_variable = { s_temp = PREV.supply@var:ai_r_token }
+                            set_temp_variable = { d_temp = PREV.demand@var:ai_r_token }
+                            add_to_temp_variable = { d_temp = global.shipping_amount@var:ai_r_token }
+
+                            get_price = yes # r_type, s_temp, d_temp -> p_return_temp
+                            set_temp_variable = { root_price_temp = p_return_temp }
+                            #log = "r_type: [?r_type.GetTokenLocalizedKey] | s_temp: [?s_temp] | d_temp: [?d_temp]"
+                            #log = "ROOT Price Before: [?PREV.price@var:ai_r_token] | ROOT Price After: [?root_price_temp]"
+                            
+                            ## FOREIGN COUNTRY ##
+                            set_temp_variable = { r_type = ai_r_token }
+                            set_temp_variable = { s_temp = supply@var:ai_r_token }
+                            set_temp_variable = { d_temp = demand@var:ai_r_token }
+                            add_to_temp_variable = { s_temp = global.shipping_amount@var:ai_r_token }
+
+                            get_price = yes # r_type, s_temp, d_temp -> p_return_temp
+                            set_temp_variable = { this_price_temp = p_return_temp }
+                            #log = "r_type: [?r_type.GetTokenLocalizedKey] | s_temp: [?s_temp] | d_temp: [?d_temp]"
+                            #log = "FOREIGN Price Before: [?price@var:ai_r_token] | FOREIGN Price After: [?this_price_temp]"
+                        #
+                        #Productivity
+                            set_temp_variable = { new_element_value = this_price_temp }
+
+                            set_temp_variable = { p_temp = root_price_temp }
+                            
+                            set_temp_variable = { tariffs_mult_temp = 1 }
+                            add_to_temp_variable = { tariffs_mult_temp = tariffs }
+                            multiply_temp_variable = { p_temp = tariffs_mult_temp }
+
+                            subtract_from_temp_variable = { new_element_value = p_temp }
+                            multiply_temp_variable = { new_element_value = global.shipping_amount@var:ai_r_token }
+                            multiply_temp_variable = { new_element_value = 10 }
+                        #
+                        
+                        if = {
+                            limit = {
+                                check_variable = { new_element_value > highest_productivity_temp }
+                            }
+                            set_temp_variable = { highest_productivity_temp = new_element_value }
+                            set_temp_variable = { highest_productivity_country_temp = THIS }
+                        }
+                    }
+                }
+
+                if = {
+                    limit = {
+                        check_variable = { highest_productivity_temp > pops_col_temp }
+                    }
+                    log = "CONSIDERING EXPORT: [?highest_productivity_country_temp.GetName] - [?ai_r_token.GetTokenLocalizedKey]"
+
+                    set_temp_variable = { resource_temp = ai_r_token }
+                    set_temp_variable = { country_temp = highest_productivity_country_temp }
+                    set_temp_variable = { trade_type_temp = -1 }
+                    add_trade_route = yes
+                }
+            }
+        #
 
         calc_trade_routes = yes
+
+        set_variable = { selected_resource = selected_resource_temp }
 	}
 #
 
