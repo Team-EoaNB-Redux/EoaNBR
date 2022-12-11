@@ -1,5 +1,6 @@
 NDefines.NGame.START_DATE = "1857.5.10.24" -- "1936.1.1.12"
 NDefines.NGame.END_DATE = "2100.1.1.1" -- "1949.1.1.1"
+NDefines.NGame.MAX_SCRIPTED_LOC_RECURSION = 60 -- 30
 NDefines.NGame.HANDS_OFF_START_TAG = "UCT" --URG
 
 NDefines.NDiplomacy.MAX_TRUST_VALUE = 80 -- 100
