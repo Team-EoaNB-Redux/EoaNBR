@@ -78,7 +78,7 @@
 					value = cc
 				}
 				clear_variable = percentage@var:cc
-				clear_variable = population@var:cc
+				clear_variable = population_k@var:cc
 			}
 			clear_variable = type_temp
 			clear_variable = percentage_temp
@@ -130,6 +130,11 @@
 		}
 	}
 	eoanbr_pops_state_sort_culture = {
+		clear_variable = state_primary_culture_population_k
+		clear_variable = state_promoted_culture_population_k
+		clear_variable = state_normal_culture_population_k
+		clear_variable = state_marginalized_culture_population_k
+
 		#Note: First index is the largest, last index is the smallest
 		add_to_temp_array = { pops_culture_temp = pops_culture_array^0 }
 
@@ -164,7 +169,7 @@
 			}
 			else = {
 				clear_variable = percentage@var:cc
-				clear_variable = population@var:cc
+				clear_variable = population_k@var:cc
 			}
 		}
 
@@ -173,7 +178,54 @@
 		for_each_loop = {
 			array = pops_culture_array_temp
 			value = cc
-			add_to_array = { pops_culture_array = cc }
+			add_to_array = {
+				array = pops_culture_array
+				value = cc
+			}
+			set_variable = {
+				var = population_k@var:cc
+				value = percentage@var:cc
+			}
+			multiply_variable = {
+				var = population_k@var:cc
+				value = state_population_k
+			}
+			if = {
+				limit = {
+					set_temp_variable = { culture_temp = cc }
+					is_owner_primary_culture = yes
+				}
+				add_to_variable = {
+					var = state_primary_culture_population_k
+					value = population_k@var:cc
+				}
+			}
+			else_if = {
+				limit = {
+					set_temp_variable = { culture_temp = cc }
+					is_promoted_primary_culture = yes
+				}
+				add_to_variable = {
+					var = state_promoted_culture_population_k
+					value = population_k@var:cc
+				}
+			}
+			else_if = {
+				limit = {
+					set_temp_variable = { culture_temp = cc }
+					is_owner_marginalized_culture = yes
+				}
+				add_to_variable = {
+					var = state_marginalized_culture_population_k
+					value = population_k@var:cc
+				}
+			}
+			else = {
+				add_to_variable = {
+					var = state_normal_culture_population_k
+					value = population_k@var:cc
+				}
+			}
 		}
 
 		clear_array = pops_culture_array_temp
@@ -259,7 +311,7 @@
 					value = rr
 				}
 				clear_variable = percentage@var:rr
-				clear_variable = population@var:rr
+				clear_variable = population_k@var:rr
 			}
 			clear_variable = type_temp
 			clear_variable = percentage_temp
@@ -311,6 +363,11 @@
 		}
 	}
 	eoanbr_pops_state_sort_religion = {
+		clear_variable = population_k@token:religion_primary
+		clear_variable = population_k@token:religion_promoted
+		clear_variable = state_normal_religion_population_k
+		clear_variable = state_marginalized_religion_population_k
+
 		#Note: First index is the largest, last index is the smallest
 		add_to_temp_array = { pops_religion_temp = pops_religion_array^0 }
 
@@ -327,16 +384,16 @@
 				}
 				for_each_loop = {
 					array = pops_religion_array_temp
-					value = rrr
+					value = rrc
 					index = iii
 					break = bbb
 					if = {
 						limit = {
-							check_variable = { percentage@var:rrr < percentage@var:rr }
+							check_variable = { percentage@var:rrc < percentage@var:rr }
 						}
 						add_to_array = {
 							array = pops_religion_array_temp
-							value = rrr
+							value = rrc
 							index = iii
 						}
 						set_temp_variable = { bbb = 1 }
@@ -345,7 +402,7 @@
 			}
 			else = {
 				clear_variable = percentage@var:rr
-				clear_variable = population@var:rr
+				clear_variable = population_k@var:rr
 			}
 		}
 
@@ -354,11 +411,56 @@
 		for_each_loop = {
 			array = pops_religion_array_temp
 			value = rr
-			add_to_array = { pops_religion_array = rr }
+			add_to_array = {
+				array = pops_religion_array
+				value = rr
+			}
+			set_variable = {
+				var = population_k@var:rr
+				value = percentage@var:rr
+			}
+			multiply_variable = {
+				var = population_k@var:rr
+				value = state_population_k
+			}
+			if = {
+				limit = {
+					set_temp_variable = { religion_temp = rr }
+					is_owner_primary_religion = yes
+				}
+				add_to_variable = {
+					var = population_k@token:religion_primary
+					value = population_k@var:rr
+				}
+			}
+			else_if = {
+				limit = {
+					set_temp_variable = { religion_temp = rr }
+					is_promoted_primary_religion = yes
+				}
+				add_to_variable = {
+					var = population_k@token:religion_promoted
+					value = population_k@var:rr
+				}
+			}
+			else_if = {
+				limit = {
+					set_temp_variable = { religion_temp = rr }
+					is_owner_marginalized_religion = yes
+				}
+				add_to_variable = {
+					var = state_marginalized_religion_population_k
+					value = population_k@var:rr
+				}
+			}
+			else = {
+				add_to_variable = {
+					var = state_normal_religion_population_k
+					value = population_k@var:rr
+				}
+			}
 		}
 
 		clear_array = pops_religion_array_temp
-
-		#pops_update_religion_amount = yes #Update the religion amount
 	}
 #

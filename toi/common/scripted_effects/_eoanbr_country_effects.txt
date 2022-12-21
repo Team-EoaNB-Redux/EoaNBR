@@ -17,7 +17,7 @@
 					var = progress@token:institution_industrialization
 					value = 100
 				}
-			}
+			} 
 			if = {
 				limit = { has_idea = institution_mechanization }
 				add_to_array = {
@@ -674,7 +674,7 @@
 				check_variable = { type_temp > 0 }
 				NOT = {
 					OR = {
-						check_variable = { pops_primary_culture = type_temp }
+						is_in_array = { pops_primary_culture_array = type_temp }
 						is_in_array = { pops_promoted_culture_array = type_temp }
 					}
 				}
@@ -703,7 +703,7 @@
 				check_variable = { type_temp > 0 }
 				NOT = {
 					OR = {
-						check_variable = { pops_primary_culture = type_temp }
+						is_in_array = { pops_primary_culture_array = type_temp }
 						is_in_array = { pops_marginalized_culture_array = type_temp }
 					}
 				}
@@ -732,56 +732,241 @@
 				check_variable = { type_temp > 0 }
 				NOT = {
 					OR = {
-						check_variable = { pops_primary_demote = type_temp }
-						is_in_array = { pops_promoted_demote_array = type_temp }
+						is_in_array = { pops_primary_religion_array = type_temp }
+						is_in_array = { pops_promoted_religion_array = type_temp }
 					}
 				}
 			}
-			custom_effect_tooltip = eoanbr_pops_country_promote_demote_tt
+			custom_effect_tooltip = eoanbr_pops_country_promote_religion_tt
 
 			if = {
-				limit = { is_in_array = { pops_marginalized_demote_array = type_temp } }
+				limit = { is_in_array = { pops_marginalized_religion_array = type_temp } }
 				remove_from_array = {
-					array = pops_marginalized_demote_array
+					array = pops_marginalized_religion_array
 					value = type_temp
 				}
 			}
 			else = {
 				add_to_array = {
-					array = pops_promoted_demote_array
+					array = pops_promoted_religion_array
 					value = type_temp
 				}
 			}
 		}
 	}
 	eoanbr_pops_country_demote_religion = {
-		# type_temp : demote to be promoted
+		# type_temp : religion to be demoted
 		if = {
 			limit = {
 				check_variable = { type_temp > 0 }
 				NOT = {
 					OR = {
-						check_variable = { pops_primary_demote = type_temp }
-						is_in_array = { pops_marginalized_demote_array = type_temp }
+						is_in_array = { pops_primary_religion_array = type_temp }
+						is_in_array = { pops_marginalized_religion_array = type_temp }
 					}
 				}
 			}
-			custom_effect_tooltip = eoanbr_pops_country_demote_demote_tt
+			custom_effect_tooltip = eoanbr_pops_country_demote_religion_tt
 
 			if = {
-				limit = { is_in_array = { pops_promoted_demote_array = type_temp } }
+				limit = { is_in_array = { pops_promoted_religion_array = type_temp } }
 				remove_from_array = {
-					array = pops_promoted_demote_array
+					array = pops_promoted_religion_array
 					value = type_temp
 				}
 			}
 			else = {
 				add_to_array = {
-					array = pops_marginalized_demote_array
+					array = pops_marginalized_religion_array
 					value = type_temp
 				}
 			}
 		}
+	}
+
+	eoanbr_pops_country_update = {
+		#clear_variable = pops
+		clear_variable = national_core_population_k
+
+		clear_variable = population_k@token:culture_type_primary
+		clear_variable = population_k@token:culture_type_promoted
+		clear_variable = population_k@token:culture_type_normal
+		clear_variable = population_k@token:culture_type_marginalized
+
+		clear_variable = population_k@token:religion_type_primary
+		clear_variable = population_k@token:religion_type_promoted
+		clear_variable = population_k@token:religion_type_normal
+		clear_variable = population_k@token:religion_type_marginalized
+
+		for_each_loop = {
+			array = pops_culture_array
+			value = cc
+
+			clear_variable = percentage@var:cc
+			clear_variable = population_k@var:cc
+		}
+		clear_array = pops_culture_array
+
+		for_each_loop = {
+			array = pops_religion_array
+			value = rr
+
+			clear_variable = percentage@var:rr
+			clear_variable = population_k@var:rr
+		}
+		clear_array = pops_religion_array
+
+
+		every_owned_state = {
+			for_each_loop = {
+				array = pops_culture_array
+				if = {
+					limit = {
+						NOT = {
+							is_in_array = {
+								array = PREV.pops_culture_array
+								value = cc
+							}
+						}
+					}
+					add_to_array = {
+						array = PREV.pops_culture_array
+						value = cc
+					}
+				}
+				add_to_variable = {
+					var = PREV.population_k@var:cc
+					value = population_k@var:cc
+				}
+			}
+			for_each_loop = {
+				array = pops_religion_array
+				if = {
+					limit = {
+						NOT = {
+							is_in_array = {
+								array = PREV.pops_religion_array
+								value = rr
+							}
+						}
+					}
+					add_to_array = {
+						array = PREV.pops_religion_array
+						value = rr
+					}
+				}
+				add_to_variable = {
+					var = PREV.population_k@var:rr
+					value = population_k@var:rr
+				}
+			}
+			if = {
+				limit = { is_core_of = PREV }
+				add_to_variable = {
+					var = PREV.national_core_population_k
+					value = state_population_k
+				}
+			}
+			add_to_variable = {
+				var = PREV.population_k@token:culture_type_primary
+				value = population_k@token:culture_type_primary
+			}
+			add_to_variable = {
+				var = PREV.population_k@token:culture_type_promoted
+				value = population_k@token:culture_type_promoted
+			}
+			add_to_variable = {
+				var = PREV.population_k@token:culture_type_normal
+				value = population_k@token:culture_type_normal
+			}
+			add_to_variable = {
+				var = PREV.population_k@token:culture_type_marginalized
+				value = population_k@token:culture_type_marginalized
+			}
+			add_to_variable = {
+				var = PREV.population_k@token:religion_type_primary
+				value = population_k@token:religion_type_primary
+			}
+			add_to_variable = {
+				var = PREV.population_k@token:religion_type_promoted
+				value = population_k@token:religion_type_promoted
+			}
+			add_to_variable = {
+				var = PREV.population_k@token:religion_type_normal
+				value = population_k@token:religion_type_normal
+			}
+			add_to_variable = {
+				var = PREV.population_k@token:religion_marginalized
+				value = population_k@token:religion_type_marginalized
+			}
+		}
+
+		add_to_variable = {
+			var = percentage@token:culture_type_primary
+			value = population_k@token:culture_type_primary
+		}
+		divide_variable = {
+			var = percentage@token:culture_type_primary
+			value = pops
+		}
+		add_to_variable = {
+			var = percentage@token:culture_type_promoted
+			value = population_k@token:culture_type_promoted
+		}
+		divide_variable = {
+			var = percentage@token:culture_type_promoted
+			value = pops
+		}
+		add_to_variable = {
+			var = percentage@token:culture_type_normal
+			value = population_k@token:culture_type_normal
+		}
+		divide_variable = {
+			var = percentage@token:culture_type_normal
+			value = pops
+		}
+		add_to_variable = {
+			var = percentage@token:culture_type_marginalized
+			value = population_k@token:culture_type_marginalized
+		}
+		divide_variable = {
+			var = percentage@token:culture_type_marginalized
+			value = pops
+		}
+		add_to_variable = {
+			var = percentage@token:religion_type_primary
+			value = population_k@token:religion_type_primary
+		}
+		divide_variable = {
+			var = percentage@token:religion_type_primary
+			value = pops
+		}
+		add_to_variable = {
+			var = percentage@token:religion_type_promoted
+			value = population_k@token:religion_type_promoted
+		}
+		divide_variable = {
+			var = percentage@token:religion_type_promoted
+			value = pops
+		}
+		add_to_variable = {
+			var = percentage@token:religion_type_normal
+			value = population_k@token:religion_type_normal
+		}
+		divide_variable = {
+			var = percentage@token:religion_type_normal
+			value = pops
+		}
+		add_to_variable = {
+			var = percentage@token:religion_type_marginalized
+			value = population_k@token:religion_type_marginalized
+		}
+		divide_variable = {
+			var = percentage@token:religion_type_marginalized
+			value = pops
+		}
+
+		eoanbr_pops_country_sort = yes
 	}
 #
 #Other
@@ -790,15 +975,15 @@
 			array = pops_culture_array
 			value = culture_temp
 
-			set_variable = { population@var:culture_temp = percentage@var:culture_temp }
-			multiply_variable = { population@var:culture_temp = state_population_k }
+			set_variable = { population_k@var:culture_temp = percentage@var:culture_temp }
+			multiply_variable = { population_k@var:culture_temp = state_population_k }
 		}
 		for_each_loop = {
 			array = pops_religion_array
 			value = culture_temp
 
-			set_variable = { population@var:culture_temp = percentage@var:culture_temp }
-			multiply_variable = { population@var:culture_temp = state_population_k }
+			set_variable = { population_k@var:culture_temp = percentage@var:culture_temp }
+			multiply_variable = { population_k@var:culture_temp = state_population_k }
 		}
 	}
 	eoanbr_demographic_bookmark_adjustment = {
