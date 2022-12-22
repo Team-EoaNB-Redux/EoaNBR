@@ -1233,9 +1233,9 @@ eoanb_category_war_measures = {
 
 		icon = generic_prepare_civil_war
 
-        allowed = {
-            tag = ENG
-        }
+		allowed = {
+				tag = ENG
+		}
 
 		available = {
 			controls_state = 952
@@ -1266,7 +1266,106 @@ eoanb_category_war_measures = {
 			base = 1000
 		}
 	}
+	eoanb_decision_ENG_zulu_war = {
+		icon = generic_prepare_civil_war
 
+		allowed = { tag = ENG }
+
+		activation = { always = no }
+
+		available = {
+			OR = {
+				ZUL = {
+					OR = {
+						has_war_with = NAT
+						has_war_with = SAF
+					}
+					surrender_progress > 0.5
+				}
+				date > 1883.1.1
+			}
+		}
+
+		days_mission_timeout = 360
+
+		complete_effect = {
+			if = {
+				limit = { tag = ZUL }
+				if = {
+					limit = {
+						has_war_with = ENG
+						date > 1883.1.1
+					}
+					white_peace = {
+						tag = ENG
+						message = eoanb_decision_ENG_zulu_war_zul_win
+					}
+					if = {
+						limit = {
+							1144 = { eoanb_owner_is_at_war_with_us = yes }
+						}
+						1444 = {
+							transfer_state_to = ZUL
+						}
+					}
+					if = {
+						limit = {
+							719 = { eoanb_owner_is_at_war_with_us = yes }
+						}
+						719 = {
+							transfer_state_to = ZUL
+						}
+					}
+				}
+			}
+			else = {
+				if = {
+					limit = {
+						ZUL = {
+							OR = {
+								has_war_with = NAT
+								has_war_with = SAF
+							}
+							surrender_progress > 0.5
+						}
+					}
+					ZUL = {
+						white_peace = {
+							tag = ENG
+							message = eoanb_decision_ENG_zulu_war_eng_win
+						}
+						store_current_ideologies = yes
+					}
+					ENG = {
+						if = {
+							limit = {
+								OR = {
+									has_dlc = "Together for Victory"
+									has_dlc = "Waking the Tiger"
+									has_dlc = "Death or Dishonor"
+								}
+							}
+							set_autonomy = {
+								target = ZUL
+								autonomy_state = autonomy_dominion
+							}
+						}
+						else = {
+							puppet = ZUL
+						}
+					}
+				}
+			}
+		}
+		timeout_effect = {
+			if = {
+				limit = {
+					ENG = { has_war_with = ZUL }
+				}
+				activate_mission = eoanb_decision_ENG_zulu_war
+			}
+		}
+	}
 }
 
 eoanb_category_military = {
