@@ -20,6 +20,9 @@ NDefines.NDiplomacy.BASE_IMPROVE_RELATION_COST = 20 -- 10
 NDefines.NDiplomacy.BASE_IMPROVE_RELATION_SAME_IDEOLOGY_GROUP_MAINTAIN_COST = 0.15 -- 0.20
 NDefines.NDiplomacy.BASE_IMPROVE_RELATION_DIFFERENT_IDEOLOGY_GROUP_MAINTAIN_COST = 0.3 --0.4
 NDefines.NDiplomacy.PEACE_SCORE_SCALE_FACTOR = 1.25 -- 1.35
+
+NDefines.NCountry.BASE_RESEARCH_SLOTS = 1
+NDefines.NCountry.POPULATION_YEARLY_GROWTH_BASE = 0.010
 NDefines.NCountry.STATE_VALUE_MANPOWER_FACTOR = 0.15 --0.1
 NDefines.NCountry.AIR_SUPPLY_CONVERSION_SCALE = 0.001 -- 0.002
 
@@ -38,6 +41,8 @@ NDefines.NProduction.CAPITULATE_FUEL_RATIO = 0.25 -- How much fuel will be trans
 NDefines.NProduction.PRODUCTION_RESOURCE_LACK_PENALTY = -0.5			-- Penalty decrease while lack of resource per factory --.05
 
 NDefines.NTechnology.BASE_TECH_COST = 1000 -- 100
+
+NDefines.NPolitics.BASE_POLITICAL_POWER_INCREASE = 1.0
 
 NDefines.NBuildings.MAX_SHARED_SLOTS = 81 -- 25
 
