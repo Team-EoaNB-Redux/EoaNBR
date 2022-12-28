@@ -324,6 +324,10 @@
 			# set_temp_variable = { institution_progress_temp = <value> }
 			# eoanbr_institutions_innovative_change = yes
 			if = {
+				limit = { NOT = { has_idea = institution_rationalism } }
+				eoanbr_institutions_rationalism_change = yes
+			}
+			else_if = {
 				limit = { NOT = { has_idea = institution_industrialization } }
 				eoanbr_institutions_industrialization_change = yes
 			}
@@ -363,6 +367,23 @@
 				limit = { NOT = { has_idea = institution_automation } }
 				eoanbr_institutions_automation_change = yes
 			}
+		}
+		eoanbr_institutions_rationalism_change = {
+			# SCOPE: COUNTRY
+			# <value>: -100 to 100 (Integer Recommended)
+			# set_temp_variable = { institution_progress_temp = <value> }
+			# eoanbr_institutions_rationalism_change = yes
+			add_to_variable = {
+				var = progress@token:institution_rationalism
+				value = institution_progress_temp
+				tooltip = eoanbr_institutions_rationalism_change_tt
+			}
+			clamp_variable = {
+				var = progress@token:institution_rationalism
+				min = 0
+				max = 100
+			}
+			clear_variable = institution_progress_temp
 		}
 		eoanbr_institutions_industrialization_change = {
 			# SCOPE: COUNTRY
@@ -542,8 +563,12 @@
 			# set_temp_variable = { institution_progress_temp = <value> }
 			# eoanbr_institutions_humanitive_change = yes
 			if = {
-				limit = { NOT = { has_idea = institution_rationalism } }
-				eoanbr_institutions_rationalism_change = yes
+				limit = { NOT = { has_idea = institution_settlement } }
+				eoanbr_institutions_settlement_change = yes
+			}
+			else_if = {
+				limit = { NOT = { has_idea = institution_centralization } }
+				eoanbr_institutions_centralization_change = yes
 			}
 			else_if = {
 				limit = { NOT = { has_idea = institution_nationalism } }
@@ -582,18 +607,35 @@
 				eoanbr_institutions_space_colonialism_change = yes
 			}
 		}
-		eoanbr_institutions_rationalism_change = {
+		eoanbr_institutions_settlement_change = {
 			# SCOPE: COUNTRY
 			# <value>: -100 to 100 (Integer Recommended)
 			# set_temp_variable = { institution_progress_temp = <value> }
-			# eoanbr_institutions_rationalism_change = yes
+			# eoanbr_institutions_settlement_change = yes
 			add_to_variable = {
-				var = progress@token:institution_rationalism
+				var = progress@token:institution_settlement
 				value = institution_progress_temp
-				tooltip = eoanbr_institutions_rationalism_change_tt
+				tooltip = eoanbr_institutions_settlement_change_tt
 			}
 			clamp_variable = {
-				var = progress@token:institution_rationalism
+				var = progress@token:institution_settlement
+				min = 0
+				max = 100
+			}
+			clear_variable = institution_progress_temp
+		}
+		eoanbr_institutions_centralization_change = {
+			# SCOPE: COUNTRY
+			# <value>: -100 to 100 (Integer Recommended)
+			# set_temp_variable = { institution_progress_temp = <value> }
+			# eoanbr_institutions_centralization_change = yes
+			add_to_variable = {
+				var = progress@token:institution_centralization
+				value = institution_progress_temp
+				tooltip = eoanbr_institutions_centralization_change_tt
+			}
+			clamp_variable = {
+				var = progress@token:institution_centralization
 				min = 0
 				max = 100
 			}
@@ -874,24 +916,32 @@
 
 	eoanbr_pops_country_update = {
 		#clear_variable = pops
-		clear_variable = national_core_population_k
+		clear_variable = core_population_k
 
 		clear_variable = population_k@token:culture_type_primary
+		clear_variable = core_population_k@token:culture_type_primary
 		clear_variable = population_k@token:culture_type_promoted
+		clear_variable = core_population_k@token:culture_type_promoted
 		clear_variable = population_k@token:culture_type_normal
+		clear_variable = core_population_k@token:culture_type_normal
 		clear_variable = population_k@token:culture_type_marginalized
+		clear_variable = core_population_k@token:culture_type_marginalized
 
 		clear_variable = population_k@token:religion_type_primary
+		clear_variable = core_population_k@token:religion_type_primary
 		clear_variable = population_k@token:religion_type_promoted
+		clear_variable = core_population_k@token:religion_type_promoted
 		clear_variable = population_k@token:religion_type_normal
+		clear_variable = core_population_k@token:religion_type_normal
 		clear_variable = population_k@token:religion_type_marginalized
+		clear_variable = core_population_k@token:religion_type_marginalized
 
 		for_each_loop = {
 			array = pops_culture_array
 			value = cc
 
-			clear_variable = percentage@var:cc
 			clear_variable = population_k@var:cc
+			clear_variable = core_population_k@var:cc
 		}
 		clear_array = pops_culture_array
 
@@ -899,8 +949,8 @@
 			array = pops_religion_array
 			value = rr
 
-			clear_variable = percentage@var:rr
 			clear_variable = population_k@var:rr
+			clear_variable = core_population_k@var:rr
 		}
 		clear_array = pops_religion_array
 
@@ -951,7 +1001,7 @@
 			if = {
 				limit = { is_core_of = PREV }
 				add_to_variable = {
-					var = PREV.national_core_population_k
+					var = PREV.core_population_k
 					value = state_population_k
 				}
 			}
