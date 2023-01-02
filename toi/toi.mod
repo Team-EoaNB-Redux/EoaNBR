@@ -1,4 +1,4 @@
-name="End of a New Beginning Redux ~ Steam Edition"
+name="End of a New Beginning Redux ~ Official Edition"
 version="0.2.15 Ver Tersus"
 tags={
 	"Alternative History"
@@ -59,4 +59,4 @@ replace_path="history/states"
 replace_path="map/strategicregions"
 supported_version="1.12.*"
 path="D:/Documents/Paradox Interactive/Hearts of Iron IV/mod/EoaNBR/toi"
-remote_file_id="2911134089"
+remote_file_id="2861920794"
