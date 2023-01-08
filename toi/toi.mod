@@ -1,5 +1,5 @@
 name="End of a New Beginning Redux ~ GitHub Edition"
-version="0.3.0 Ars Bellica"
+version="0.2.15 Ver Tersus"
 tags={
 	"Alternative History"
 	"Events"
@@ -58,4 +58,5 @@ replace_path="history/general"
 replace_path="history/states"
 replace_path="map/strategicregions"
 supported_version="1.12.*"
-path="mod/EoaNBR/toi"
+path="D:/Documents/Paradox Interactive/Hearts of Iron IV/mod/EoaNBR/toi"
+remote_file_id="2861920794"
