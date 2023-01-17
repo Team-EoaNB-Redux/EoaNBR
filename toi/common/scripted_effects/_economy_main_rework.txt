@@ -1209,8 +1209,29 @@
             calc_supply = yes
             calc_demand = yes
             get_resource_prices = yes
+        }
 
-            #ai_trade_calculation = yes
+		for_each_scope_loop = {
+			array = global.econ_order_array
+
+            ai_trade_calculation = yes
+
+            calc_trade_routes_supply = yes
+        }
+
+		for_each_scope_loop = {
+			array = global.econ_order_array
+            calc_foreign_routes_supply = yes
+        }
+
+		for_each_scope_loop = {
+			array = global.econ_order_array
+            calc_trade_routes_value = yes
+        }
+
+		for_each_scope_loop = {
+			array = global.econ_order_array
+            calc_foreign_routes_value = yes
 
             update_country_pop_stats = yes
 
@@ -8472,6 +8493,59 @@
         }
     }
 
+    calc_military_resource = {
+        # r_type
+        #log = "[?r_type.GetTokenLocalizedKey]: [?resource@var:r_type]"
+        set_variable = { supply@var:r_type = monthly_resource_produced@var:r_type }
+
+        set_variable = { supply_trade@var:r_type = supply_national_trade@var:r_type }
+        add_to_variable = { supply_trade@var:r_type = supply_foreign_trade@var:r_type }
+        set_variable = { demand_trade@var:r_type = demand_national_trade@var:r_type }
+        add_to_variable = { demand_trade@var:r_type = demand_foreign_trade@var:r_type }
+
+        set_variable = { resource_cost@var:r_type = demand_trade@var:r_type }
+        subtract_from_variable = { resource_cost@var:r_type = supply_trade@var:r_type }
+        round_variable = resource_cost@var:r_type
+
+        add_to_variable = { supply@var:r_type = monthly_resource_cost@var:r_type }
+        subtract_from_variable = { supply@var:r_type = resource_cost@var:r_type }
+        
+        set_variable = { demand@var:r_type = supply@var:r_type }
+        subtract_from_variable = { demand@var:r_type = monthly_resource@var:r_type }
+        add_to_variable = { demand@var:r_type = resource_cost@var:r_type }
+        subtract_from_variable = { demand@var:r_type = monthly_resource_cost@var:r_type }
+        
+
+        set_variable = { price@var:r_type = global.base_price@var:r_type }
+        if = {
+            limit = {
+                NOT = { check_variable = { r_type = token:resource_valuable_materials } }
+                #NOT = { check_variable = { r_type = token:resource_finance } }
+            }
+            set_temp_variable = { grp_multiplier = demand@var:r_type }
+            if = {
+                limit = {
+                    check_variable = { supply@var:r_type > 0 }
+                }
+                divide_temp_variable = { grp_multiplier = supply@var:r_type }
+            }
+            add_to_temp_variable = { grp_multiplier = 1 }
+            if = {
+                limit = {
+                    check_variable = { grp_multiplier > 3.0 }
+                }
+                set_temp_variable = { grp_multiplier = 3.0 }
+            }
+            if = {
+                limit = {
+                    check_variable = { grp_multiplier < 1.0 }
+                }
+                set_temp_variable = { grp_multiplier = 1.0 }
+            }
+
+            multiply_variable = { price@var:r_type = grp_multiplier }
+        }
+    }
     calc_military_resources = {
         
         for_each_loop = {
@@ -8479,55 +8553,7 @@
             value = r_type
 
             #log = "[?r_type.GetTokenLocalizedKey]: [?resource@var:r_type]"
-            set_variable = { supply@var:r_type = monthly_resource_produced@var:r_type }
-
-			set_variable = { supply_trade@var:r_type = supply_national_trade@var:r_type }
-			add_to_variable = { supply_trade@var:r_type = supply_foreign_trade@var:r_type }
-			set_variable = { demand_trade@var:r_type = demand_national_trade@var:r_type }
-			add_to_variable = { demand_trade@var:r_type = demand_foreign_trade@var:r_type }
-
-            set_variable = { resource_cost@var:r_type = demand_trade@var:r_type }
-            subtract_from_variable = { resource_cost@var:r_type = supply_trade@var:r_type }
-            round_variable = resource_cost@var:r_type
-
-            add_to_variable = { supply@var:r_type = monthly_resource_cost@var:r_type }
-            subtract_from_variable = { supply@var:r_type = resource_cost@var:r_type }
-            
-            set_variable = { demand@var:r_type = supply@var:r_type }
-            subtract_from_variable = { demand@var:r_type = monthly_resource@var:r_type }
-            add_to_variable = { demand@var:r_type = resource_cost@var:r_type }
-            subtract_from_variable = { demand@var:r_type = monthly_resource_cost@var:r_type }
-            
-
-            set_variable = { price@var:r_type = global.base_price@var:r_type }
-            if = {
-                limit = {
-                    NOT = { check_variable = { r_type = token:resource_valuable_materials } }
-                    #NOT = { check_variable = { r_type = token:resource_finance } }
-                }
-                set_temp_variable = { grp_multiplier = demand@var:r_type }
-                if = {
-                    limit = {
-                        check_variable = { supply@var:r_type > 0 }
-                    }
-                    divide_temp_variable = { grp_multiplier = supply@var:r_type }
-                }
-                add_to_temp_variable = { grp_multiplier = 1 }
-                if = {
-                    limit = {
-                        check_variable = { grp_multiplier > 3.0 }
-                    }
-                    set_temp_variable = { grp_multiplier = 3.0 }
-                }
-                if = {
-                    limit = {
-                        check_variable = { grp_multiplier < 1.0 }
-                    }
-                    set_temp_variable = { grp_multiplier = 1.0 }
-                }
-
-                multiply_variable = { price@var:r_type = grp_multiplier }
-            }
+            calc_military_resource = yes
         }
     }
     
@@ -8905,11 +8931,21 @@
 			add_to_array = { trade_route_resource = resource_temp }
 			add_to_array = { trade_route_size = size_temp }
 			add_to_array = { trade_route_type = trade_type_temp }
+            add_to_array = { trade_route_amount = 0 }
+            add_to_array = { trade_route_value = 0 }
+            add_to_array = { trade_route_shipping_use = 0 }
+            add_to_array = { trade_route_tariffs = 0 }
+            add_to_array = { trade_route_productivity = 0 }
 
 			var:country_temp = {
 				add_to_array = { foreign_route_country = PREV }
 				add_to_array = { foreign_route_resource = resource_temp }
-				add_to_array = { trade_route_size = size_temp }
+				add_to_array = { foreign_route_size = size_temp }
+                add_to_array = { foreign_route_amount = 0 }
+                add_to_array = { foreign_route_value = 0 }
+                add_to_array = { foreign_route_shipping_use = 0 }
+                add_to_array = { foreign_route_tariffs = 0 }
+                add_to_array = { foreign_route_productivity = 0 }
 				set_temp_variable = { tt_t = trade_type_temp }
 				multiply_temp_variable = { tt_t = -1 }
 				add_to_array = { foreign_route_type = tt_t }
@@ -8917,6 +8953,308 @@
 		}
 	}
 
+    calc_trade_route = {
+        # NOTE: This assumes that correct data has been inputted. This is for performance reasons so DO NOT INPUT A BAD VALUE.
+
+        # Calculates the proper values for a specific trade route and updates the foreign trade route of the foreign country
+        # NEEDED: all the proper arrays for this country & foreign country
+		# resource_temp - resource token
+		# country_temp - country being traded with
+		# trade_type_temp - 1 = Import, -1 = Export
+
+        set_temp_variable = { tri_temp = 0 }
+
+        for_each_loop = {
+            array = trade_route_country
+            value = tr_country
+            index = tr_i
+            break = tr_b
+
+            if = {
+                limit = {
+                    check_variable = { tr_country = country_temp }
+                    check_variable = { trade_route_resource^tr_i = resource_temp }
+                    check_variable = { trade_route_type^tr_i = trade_type_temp }
+                }
+
+                set_temp_variable = { tri_temp = tr_i }
+                set_temp_variable = { tr_b = 1 }
+            }
+        }
+        if = {
+            limit = {
+                check_variable = { tri_temp > 0 }
+            }
+            set_temp_variable = { i_temp = tr_i }
+            calc_trade_route_at_index = yes
+        }
+    }
+    calc_trade_route_at_index = {
+        # Calculates the proper values for a specific trade route and updates the foreign trade route of the foreign country
+        # NEEDED: all the proper arrays for this country & foreign country
+		# i_temp - index within the trade route array
+
+		set_temp_variable = { tr_country = trade_route_country^i_temp }
+		set_temp_variable = { tr_resource = trade_route_resource^i_temp }
+		set_temp_variable = { tr_type = trade_route_type^i_temp }
+
+        #Shipping Use & Efficiency
+            subtract_from_variable = { shipping_capacity_use = trade_route_shipping_use^i_temp }
+
+            if = {
+                limit = {
+                    is_in_array = { neighbors = tr_country }
+                }
+                set_variable = { trade_route_shipping_use^i_temp = 0 }
+            }
+            else = {
+                set_variable = { trade_route_shipping_use^i_temp = trade_route_size^i_temp }
+                multiply_variable = { trade_route_shipping_use^i_temp = global.shipping_cost@var:tr_resource }
+                
+                set_temp_variable = { exporter_capital = tr_country:capital }
+                var:exporter_capital = {
+                    set_variable = { PREV.shipping_distance = distance_to@PREV.capital } #This needs to be a normal variable
+                }
+                divide_variable = { shipping_distance = global.base_shipping_cost_divisor }
+                set_temp_variable = { modifier_temp = modifier@shipping_cost_modifier }
+                add_to_temp_variable = { modifier_temp = 1 }
+                multiply_variable = { shipping_distance = modifier_temp }
+
+                multiply_variable = { trade_route_shipping_use^i_temp = shipping_distance }
+            }
+		    clear_variable = shipping_distance
+
+            #Shipping Efficiency
+            add_to_variable = { shipping_capacity_use = trade_route_shipping_use^i_temp }
+            if = {
+                limit = {
+                    check_variable = { shipping_capacity_use > shipping_capacity }
+                }
+                set_variable = { shipping_efficiency = shipping_capacity }
+                divide_variable = { shipping_efficiency = shipping_capacity_use }
+            }
+            else = {
+                set_variable = { shipping_efficiency = 1 }
+            }
+        #
+
+        #Supply Readjust
+			if = {
+				limit = {
+					check_variable = { trade_route_amount^i_temp > 0 }
+				}
+				subtract_from_variable = { supply_national_trade@var:tr_resource = trade_route_amount^i_temp }
+			    subtract_from_variable = { supply_trade@var:tr_resource = trade_route_amount^i_temp }
+			    subtract_from_variable = { supply@var:tr_resource = trade_route_amount^i_temp }
+			}
+			else = {
+				add_to_variable = { demand_national_trade@var:tr_resource = trade_route_amount^i_temp }
+			    add_to_variable = { demand_trade@var:tr_resource = trade_route_amount^i_temp }
+			    add_to_variable = { demand@var:tr_resource = trade_route_amount^i_temp }
+			}
+        #
+
+        #Amount
+			set_variable = { trade_route_amount^i_temp = trade_route_size^i_temp }
+			multiply_variable = { trade_route_amount^i_temp = global.shipping_amount@var:tr_resource }
+			multiply_variable = { trade_route_amount^i_temp = trade_route_type^i_temp }
+            multiply_variable = { trade_route_amount^i_temp = shipping_efficiency }
+
+            if = {
+                limit = {
+                    is_in_array = { global.resource_token_array = tr_resource }
+                }
+                set_temp_variable = { tr_eff = trade_route_size^i_temp }
+                divide_temp_variable = { tr_eff = 100 }
+                add_to_temp_variable = { tr_eff = 0.99 }
+                multiply_variable = { trade_route_amount^i_temp = tr_eff }
+            }
+        #
+
+        #Supply
+			if = {
+				limit = {
+					check_variable = { trade_route_amount^i_temp > 0 }
+				}
+				add_to_variable = { supply_national_trade@var:tr_resource = trade_route_amount^i_temp }
+			    add_to_variable = { supply_trade@var:tr_resource = trade_route_amount^i_temp }
+			    add_to_variable = { supply@var:tr_resource = trade_route_amount^i_temp }
+			}
+			else = {
+				subtract_from_variable = { demand_national_trade@var:tr_resource = trade_route_amount^i_temp }
+			    subtract_from_variable = { demand_trade@var:tr_resource = trade_route_amount^i_temp }
+			    subtract_from_variable = { demand@var:tr_resource = trade_route_amount^i_temp }
+			}
+
+			set_variable = { balance@var:tr_resource = supply@var:tr_resource }
+			subtract_from_variable = { balance@var:tr_resource = demand@var:tr_resource }
+            set_variable = { trade@var:tr_resource = supply_trade@var:tr_resource }
+            subtract_from_variable = { trade@var:tr_resource = demand_trade@var:tr_resource }
+        #
+
+        #Prices
+            set_temp_variable = { r_type = tr_resource }
+            if = {
+                limit = {
+                    is_in_array = { global.resource_token_array = tr_resource }
+                }
+                get_resource_price = yes
+            }
+            else = {
+                calc_military_resource = yes
+            }
+        #
+
+        # Foreign Route Supply & Foreign Country Price
+            var:tr_country = {
+                for_each_loop = {
+                    array = foreign_route_country
+                    value = fr_country
+                    index = fr_i
+                    break = fr_b
+
+                    if = {
+                        limit = {
+                            check_variable = { fr_country = PREV }
+                            check_variable = { foreign_route_resource^fr_i = tr_resource }
+                            NOT = { check_variable = { foreign_route_type^fr_i = tr_type } }
+                        }
+
+                        set_temp_variable = { fr_b = 1 }
+                    }
+                }
+
+                if = {
+                    limit = {
+                        check_variable = { fr_b = 1 }
+                    }
+
+                    #Supply Readjust
+                    if = {
+                        limit = {
+                            check_variable = { foreign_route_amount^fr_i > 0 }
+                        }
+                        subtract_from_variable = { supply_foreign_trade@var:tr_resource = foreign_route_amount^fr_i }
+                        subtract_from_variable = { supply_trade@var:tr_resource = foreign_route_amount^fr_i }
+                        subtract_from_variable = { supply@var:tr_resource = foreign_route_amount^fr_i }
+                    }
+                    else = {
+                        add_to_variable = { demand_foreign_trade@var:tr_resource = foreign_route_amount^fr_i }
+                        add_to_variable = { demand_trade@var:tr_resource = foreign_route_amount^fr_i }
+                        add_to_variable = { demand@var:tr_resource = foreign_route_amount^fr_i }
+                    }
+
+                    #Amount, Size, Shipping Use
+                    set_variable = { foreign_route_amount^fr_i = PREV.trade_route_amount^i_temp }
+                    set_variable = { foreign_route_shipping_use^fr_i = PREV.trade_route_shipping_use^i_temp }
+                    
+                    multiply_variable = { foreign_route_amount^fr_i = -1 }
+                    set_variable = { foreign_route_size^fr_i = PREV.trade_route_size^i_temp}
+
+                    #Supply
+                    if = {
+                        limit = {
+                            check_variable = { foreign_route_amount^fr_i > 0 }
+                        }
+                        add_to_variable = { supply_foreign_trade@var:tr_resource = foreign_route_amount^fr_i }
+                        add_to_variable = { supply_trade@var:tr_resource = foreign_route_amount^fr_i }
+                        add_to_variable = { supply@var:tr_resource = foreign_route_amount^fr_i }
+                    }
+                    else = {
+                        subtract_from_variable = { demand_foreign_trade@var:tr_resource = foreign_route_amount^fr_i }
+                        subtract_from_variable = { demand_trade@var:tr_resource = foreign_route_amount^fr_i }
+                        subtract_from_variable = { demand@var:tr_resource = foreign_route_amount^fr_i }
+                    }
+
+                    set_variable = { balance@var:tr_resource = supply@var:tr_resource }
+                    subtract_from_variable = { balance@var:tr_resource = demand@var:tr_resource }
+                    set_variable = { trade@var:tr_resource = supply_trade@var:tr_resource }
+                    subtract_from_variable = { trade@var:tr_resource = demand_trade@var:tr_resource }
+                    
+                    #Prices
+                    set_temp_variable = { r_type = tr_resource }
+                    if = {
+                        limit = {
+                            is_in_array = { global.resource_token_array = tr_resource }
+                        }
+                        get_resource_price = yes
+                    }
+                    else = {
+                        calc_military_resource = yes
+                    }
+                }
+            }
+        #
+
+        #Trade Value & Tariffs
+			#Value
+			set_variable = { trade_route_value^i_temp = trade_route_amount^i_temp }
+			if = { #Import
+				limit = {
+					check_variable = { trade_route_type^i_temp = 1 }
+				}
+				multiply_variable = { trade_route_value^i_temp = price@var:tr_resource }
+			}
+			else = { #Export
+				multiply_variable = { trade_route_value^i_temp = tr_country:price@var:tr_resource }
+			}
+
+			#Tariffs
+			set_variable = { trade_route_tariffs^i_temp = trade_route_value^i_temp }
+			if = { #Import
+				limit = {
+					check_variable = { trade_route_type^i_temp = 1 }
+				}
+				multiply_variable = { trade_route_tariffs^i_temp = tariffs }
+			}
+			else = { #Export
+				multiply_variable = { trade_route_tariffs^i_temp = tr_country:tariffs }
+			}
+
+			#Productivity
+			#	Productivity = ( revenue - goods cost - tariffs - shipping cost ) / size
+			if = { #Import
+				limit = {
+					check_variable = { trade_route_type^i_temp = 1 }
+				}
+
+				set_temp_variable = { tr_rev_temp = price@var:tr_resource }
+				multiply_temp_variable = { tr_rev_temp = trade_route_amount^i_temp }
+				
+				set_temp_variable = { tr_goods_cost_temp = tr_country:price@var:tr_resource }
+				multiply_temp_variable = { tr_goods_cost_temp = trade_route_amount^i_temp }
+				
+				set_temp_variable = { tr_tariffs_temp = tariffs }
+				multiply_temp_variable = { tr_tariffs_temp = tr_goods_cost_temp }
+			}
+			else = { #Export
+				set_temp_variable = { tr_rev_temp = tr_country:price@var:tr_resource }
+				multiply_temp_variable = { tr_rev_temp = trade_route_amount^i_temp }
+				multiply_temp_variable = { tr_rev_temp = -1 }
+				
+				set_temp_variable = { tr_goods_cost_temp = price@var:tr_resource }
+				multiply_temp_variable = { tr_goods_cost_temp = trade_route_amount^i_temp }
+				multiply_temp_variable = { tr_goods_cost_temp = -1 }
+				
+				set_temp_variable = { tr_tariffs_temp = tr_country:tariffs }
+				multiply_temp_variable = { tr_tariffs_temp = tr_goods_cost_temp }
+			}
+
+			set_variable = { trade_route_productivity^i_temp = tr_rev_temp }
+			subtract_from_variable = { trade_route_productivity^i_temp = tr_goods_cost_temp }
+			subtract_from_variable = { trade_route_productivity^i_temp = tr_tariffs_temp }
+			multiply_variable = { trade_route_productivity^i_temp = 10 }
+			divide_variable = { trade_route_productivity^i_temp = trade_route_size^i_temp }
+        #
+
+        # Foreign Route Values
+            set_variable = { tr_country:foreign_route_value^fr_i = trade_route_value^i_temp }
+            multiply_variable = { tr_country:foreign_route_value^fr_i = -1 }
+            
+            set_variable = { tr_country:foreign_route_tariffs^fr_i = trade_route_tariffs^i_temp }
+            set_variable = { tr_country:foreign_route_productivity^fr_i = trade_route_productivity^i_temp }
+        #
+    }
 	calc_trade_routes = {
         clear_temp_array = tr_countries_temp
         for_each_loop = {
@@ -9421,26 +9759,33 @@
 			limit = {
 				can_establish_new_route_with = yes
 			}
+            set_temp_variable = { i_temp = trade_route_country^num }
+
 			add_to_array = { trade_route_country = country_temp }
 			add_to_array = { trade_route_resource = resource_temp }
 			add_to_array = { trade_route_size = size_temp }
 			add_to_array = { trade_route_type = trade_type_temp }
-			calc_trade_routes_supply = yes
+            add_to_array = { trade_route_amount = 0 }
+            add_to_array = { trade_route_value = 0 }
+            add_to_array = { trade_route_shipping_use = 0 }
+            add_to_array = { trade_route_tariffs = 0 }
+            add_to_array = { trade_route_productivity = 0 }
 
 			var:country_temp = {
 				add_to_array = { foreign_route_country = PREV }
 				add_to_array = { foreign_route_resource = resource_temp }
-				add_to_array = { trade_route_size = size_temp }
+				add_to_array = { foreign_route_size = size_temp }
+                add_to_array = { foreign_route_amount = 0 }
+                add_to_array = { foreign_route_value = 0 }
+                add_to_array = { foreign_route_shipping_use = 0 }
+                add_to_array = { foreign_route_tariffs = 0 }
+                add_to_array = { foreign_route_productivity = 0 }
 				set_temp_variable = { tt_t = trade_type_temp }
 				multiply_temp_variable = { tt_t = -1 }
 				add_to_array = { foreign_route_type = tt_t }
-				calc_foreign_routes_supply = yes
 			}
 
-			calc_trade_routes_value = yes
-			var:country_temp = {
-				calc_foreign_routes_value = yes
-			}
+			calc_trade_route_at_index = yes
 
             if = {
                 limit = {
@@ -9500,14 +9845,7 @@
                 }
 
                 add_to_variable = { trade_route_size^i_temp = size_temp }
-                calc_trade_routes_supply = yes
-                var:trade_route_country^i_temp = {
-                    calc_foreign_routes_supply = yes
-                }
-                calc_trade_routes_value = yes
-                var:trade_route_country^i_temp = {
-                    calc_foreign_routes_value = yes
-                }
+			    calc_trade_route_at_index = yes
 
                 if = {
                     limit = {
@@ -9530,14 +9868,7 @@
 					remove_trade_route_at_index = yes
 				}
 				else = {
-					calc_trade_routes_supply = yes
-					var:trade_route_country^i_temp = {
-						calc_foreign_routes_supply = yes
-					}
-					calc_trade_routes_value = yes
-					var:trade_route_country^i_temp = {
-						calc_foreign_routes_value = yes
-					}
+			        calc_trade_route_at_index = yes
 				}
 
                 if = {
@@ -9557,6 +9888,7 @@
 
 		set_temp_variable = { size_temp = 1 }
         change_trade_route = yes
+		calc_trade_routes = yes
 	}
 	upgrade_trade_route = {
 		# Increases the size of a trade route by 1
@@ -9568,6 +9900,7 @@
 
 		set_temp_variable = { size_temp = 1 }
         change_trade_route = yes
+		calc_trade_routes = yes
 	}
 	upgrade_trade_route_at_index = {
 		# Increases the size of a trade route by 1
@@ -9577,6 +9910,7 @@
         hidden_effect = {
             set_temp_variable = { size_temp = 1 }
             change_trade_route_at_index = yes
+		    calc_trade_routes = yes
         }
 	}
 	upgrade_trade_route_at_index_by_10 = {
@@ -9587,6 +9921,7 @@
         hidden_effect = {
             set_temp_variable = { size_temp = 10 }
             change_trade_route_at_index = yes
+		    calc_trade_routes = yes
         }
 	}
 	upgrade_trade_route_at_index_by_50 = {
@@ -9597,6 +9932,7 @@
         hidden_effect = {
             set_temp_variable = { size_temp = 50 }
             change_trade_route_at_index = yes
+		    calc_trade_routes = yes
         }
 	}
 	downgrade_trade_route = {
@@ -9609,6 +9945,7 @@
 
 		set_temp_variable = { size_temp = -1 }
         change_trade_route = yes
+		calc_trade_routes = yes
 	}
 	downgrade_trade_route_at_index = {
 		# Decrease the size of a trade route by 1
@@ -9619,6 +9956,7 @@
         hidden_effect = {
             set_temp_variable = { size_temp = -1 }
             change_trade_route_at_index = yes
+		    calc_trade_routes = yes
         }
 	}
 	downgrade_trade_route_at_index_by_10 = {
@@ -9630,6 +9968,7 @@
         hidden_effect = {
             set_temp_variable = { size_temp = -10 }
             change_trade_route_at_index = yes
+		    calc_trade_routes = yes
         }
 	}
 	downgrade_trade_route_at_index_by_50 = {
@@ -9641,6 +9980,7 @@
         hidden_effect = {
             set_temp_variable = { size_temp = -50 }
             change_trade_route_at_index = yes
+		    calc_trade_routes = yes
         }
 	}
 	remove_trade_route = {
@@ -9679,6 +10019,9 @@
 				check_variable = { i_temp > -1 }
 				check_variable = { i_temp < trade_route_country^num }
 			}
+            set_variable = { trade_route_size^i_temp = 0 }
+			calc_trade_route_at_index = yes
+
 			set_temp_variable = { trc_temp = trade_route_country^i_temp }
 			var:trc_temp = {
 				for_each_loop = {
@@ -9697,6 +10040,11 @@
 						remove_from_array = { array = foreign_route_size index = ftr_i }
 						remove_from_array = { array = foreign_route_resource index = ftr_i }
 						remove_from_array = { array = foreign_route_type index = ftr_i }
+						remove_from_array = { array = foreign_route_amount index = ftr_i }
+						remove_from_array = { array = foreign_route_value index = ftr_i }
+						remove_from_array = { array = foreign_route_shipping_use index = ftr_i }
+						remove_from_array = { array = foreign_route_tariffs index = ftr_i }
+						remove_from_array = { array = foreign_route_productivity index = ftr_i }
 
 						set_temp_variable = { ftr_b = 1 }
 					}
@@ -9707,13 +10055,11 @@
 			remove_from_array = { array = trade_route_size index = i_temp }
 			remove_from_array = { array = trade_route_resource index = i_temp }
 			remove_from_array = { array = trade_route_type index = i_temp }
-
-			calc_trade_routes_supply = yes
-			calc_trade_routes_value = yes
-			var:trc_temp = {
-				calc_foreign_routes_supply = yes
-				calc_foreign_routes_value = yes
-			}
+            remove_from_array = { array = trade_route_amount index = i_temp }
+            remove_from_array = { array = trade_route_value index = i_temp }
+            remove_from_array = { array = trade_route_shipping_use index = i_temp }
+            remove_from_array = { array = trade_route_tariffs index = i_temp }
+            remove_from_array = { array = trade_route_productivity index = i_temp }
 		}
 
 		if = {
@@ -10210,19 +10556,13 @@
                         limit = {
                             check_variable = { size_temp > 1 }
                         }
-                        add_to_variable = { trade_route_size^tr_i = size_temp }
-                        calc_trade_routes_supply = yes
-                        var:tr_country = {
-                            calc_foreign_routes_supply = yes
-                        }
-                        calc_trade_routes_value = yes
-                        var:tr_country = {
-                            calc_foreign_routes_value = yes
-                        }
+                        set_temp_variable = { i_temp = tr_i }
+                        change_trade_route_at_index = yes
                     }
                     else = {
                         set_temp_variable = { i_temp = tr_i }
-                        upgrade_trade_route_at_index = yes
+                        set_temp_variable = { size_temp = 1 }
+                        change_trade_route_at_index = yes
                     }
                 }
                 else = {
@@ -10246,19 +10586,13 @@
                         limit = {
                             check_variable = { size_temp > 1 }
                         }
-                        add_to_variable = { trade_route_size^tr_i = size_temp }
-                        calc_trade_routes_supply = yes
-                        var:tr_country = {
-                            calc_foreign_routes_supply = yes
-                        }
-                        calc_trade_routes_value = yes
-                        var:tr_country = {
-                            calc_foreign_routes_value = yes
-                        }
+                        set_temp_variable = { i_temp = tr_i }
+                        change_trade_route_at_index = yes
                     }
                     else = {
                         set_temp_variable = { i_temp = tr_i }
-                        upgrade_trade_route_at_index = yes
+                        set_temp_variable = { size_temp = 1 }
+                        change_trade_route_at_index = yes
                     }
                 }
             }
@@ -10267,6 +10601,7 @@
                     check_variable = { trade_ai@var:tr_resource = 0 }
                     check_variable = { trade_route_productivity^tr_i < pops_col }
                 }
+                log = "DECREASE: [?tr_country.GetName]"
                 if = {
                     limit = {
                         check_variable = { trade_route_productivity^tr_i < 0 }
@@ -10283,24 +10618,9 @@
                     add_to_temp_variable = { size_temp = 1 }
                 }
                 
-                if = {
-                    limit = {
-                        check_variable = { size_temp < trade_route_size^tr_i }
-                    }
-                    subtract_from_variable = { trade_route_size^tr_i = size_temp }
-                    calc_trade_routes_supply = yes
-                    var:tr_country = {
-                        calc_foreign_routes_supply = yes
-                    }
-                    calc_trade_routes_value = yes
-                    var:tr_country = {
-                        calc_foreign_routes_value = yes
-                    }
-                }
-                else = {
-                    set_temp_variable = { i_temp = tr_i }
-                    remove_trade_route_at_index = yes
-                }
+                multiply_temp_variable = { size_temp = -1 }
+                set_temp_variable = { i_temp = tr_i }
+                change_trade_route_at_index = yes
             }
         }
 
@@ -10369,6 +10689,7 @@
                 set_temp_variable = { highest_productivity_country_temp = 0 }
                 every_other_country = {
                     limit = {
+                        is_in_array = { global.econ_order_array = THIS }
                         PREV = {
                             check_variable = { price@var:ai_r_token > PREV.price@var:ai_r_token }
                             set_temp_variable = { country_temp = PREV }
@@ -10458,7 +10779,8 @@
                     set_temp_variable = { resource_temp = ai_r_token }
                     set_temp_variable = { country_temp = highest_productivity_country_temp }
                     set_temp_variable = { trade_type_temp = 1 }
-                    add_trade_route = yes
+                    set_temp_variable = { size_temp = 1 }
+                    change_trade_route = yes
 
                     set_temp_variable = { i_temp = trade_route_country^num }
                     subtract_from_temp_variable = { i_temp = 1 }
@@ -10588,6 +10910,7 @@
                 set_temp_variable = { highest_productivity_country_temp = 0 }
                 every_other_country = {
                     limit = {
+                        is_in_array = { global.econ_order_array = THIS }
                         PREV = {
                             check_variable = { price@var:ai_r_token < PREV.price@var:ai_r_token }
                             set_temp_variable = { country_temp = PREV }
@@ -10679,7 +11002,8 @@
                     set_temp_variable = { resource_temp = ai_r_token }
                     set_temp_variable = { country_temp = highest_productivity_country_temp }
                     set_temp_variable = { trade_type_temp = -1 }
-                    add_trade_route = yes
+                    set_temp_variable = { size_temp = 1 }
+                    change_trade_route = yes
 
                     set_temp_variable = { i_temp = trade_route_country^num }
                     subtract_from_temp_variable = { i_temp = 1 }
@@ -10750,7 +11074,6 @@
             }
         #
 
-        calc_trade_routes = yes
 
         set_variable = { selected_resource = selected_resource_temp }
 	}
@@ -12089,16 +12412,16 @@
 	# XII  Futurized (2050s)            $100.0      +100% output needed
 
     # 00: $0.68 per K - Starvation
-    # 10: $1.73 per K - 1820s
-    # 20: $3.88 per K - 1860s
-    # 30: $6.74 per K - 1900s
-    # 40: $14.1 per K - 1940s
-    # 50: $29.0 per K - 1980s
-    # 60: $56.2 per K - 2020s
-    # 70: $108.8 per K - 2060s
-    # 80: $217.4 per K - 2100s
-    # 90: $430.0 per K - 2140s
-    # 100: $854.6 per K - 2180s
+    # 10: $1.73 per K - Pre-Industrial
+    # 20: $3.88 per K - 1800
+    # 30: $6.74 per K - 1850s
+    # 40: $14.1 per K - 1900s
+    # 50: $29.0 per K - 1950s
+    # 60: $56.2 per K - 1990s
+    # 70: $108.8 per K - 2020s
+    # 80: $217.4 per K - 2050s
+    # 90: $430.0 per K - 2080s
+    # 100: $854.6 per K - 2100s
 
     # Tech Unlocks:
     # 1 is always unlocked, 0 is never unlocked, token:technology for which tech it is unlocked at
