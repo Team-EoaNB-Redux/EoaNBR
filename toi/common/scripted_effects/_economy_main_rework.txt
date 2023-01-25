@@ -5633,6 +5633,8 @@
         set_variable = { pops = 0 }
         set_variable = { pops_col = 0 }
         set_variable = { pops_sol = 0 }
+        set_variable = { pops_earnings = 0 }
+
 
         every_controlled_state = {
             #Pops
@@ -5645,10 +5647,15 @@
             set_temp_variable = { stat_temp = pops_sol }
             multiply_temp_variable = { stat_temp = pops }
             add_to_variable = { PREV.pops_sol = stat_temp }
+            
+            add_to_variable = { PREV.pops_earnings = pops_earnings }
         }
 
         divide_variable = { pops_sol = pops }
         divide_variable = { pops_col = pops }
+
+        set_variable = { pops_earnings_avg = pops_earnings }
+        divide_variable = { pops_earnings_avg = pops }
     }
 
 
@@ -11076,6 +11083,764 @@
 
 
         set_variable = { selected_resource = selected_resource_temp }
+	}
+#
+
+#Budget
+	r_taxes_update = {
+		#Country Scope
+
+		#Income Taxes
+		set_variable = { income_tax_upper_strata_revenue = 0 }
+		set_variable = { income_tax_middle_strata_revenue = 0 }
+		set_variable = { income_tax_lower_strata_revenue = 0 }
+
+        set_temp_variable = { upper_earnings_limit = pops_earnings_avg }
+        multiply_temp_variable = { upper_earnings_limit = 2 }
+        set_temp_variable = { lower_earnings_limit = pops_earnings_avg }
+
+		every_controlled_state = {
+            set_temp_variable = { upper_income_earnings = 0 }
+            set_temp_variable = { middle_income_earnings = 0 }
+            set_temp_variable = { lower_income_earnings = 0 }
+
+            #Adding to Earnings
+                set_temp_variable = { avg_earnings_temp = slaves_earnings }
+                divide_temp_variable = { avg_earnings_temp = slaves }
+                if = {
+                    limit = {
+                        check_variable = { slaves_earnings < lower_earnings_limit }
+                    }
+                    add_to_temp_variable = { lower_income_earnings = slaves_earnings }
+                }
+                else_if = {
+                    limit = {
+                        check_variable = { slaves_earnings < upper_earnings_limit }
+                    }
+                    add_to_temp_variable = { middle_income_earnings = slaves_earnings }
+                }
+                else = {
+                    add_to_temp_variable = { upper_income_earnings = slaves_earnings }
+                }
+                
+                set_temp_variable = { avg_earnings_temp = peasants_earnings }
+                divide_temp_variable = { avg_earnings_temp = peasants }
+                if = {
+                    limit = {
+                        check_variable = { peasants_earnings < lower_earnings_limit }
+                    }
+                    add_to_temp_variable = { lower_income_earnings = peasants_earnings }
+                }
+                else_if = {
+                    limit = {
+                        check_variable = { peasants_earnings < upper_earnings_limit }
+                    }
+                    add_to_temp_variable = { middle_income_earnings = peasants_earnings }
+                }
+                else = {
+                    add_to_temp_variable = { upper_income_earnings = peasants_earnings }
+                }
+                
+                set_temp_variable = { avg_earnings_temp = laborers_earnings }
+                divide_temp_variable = { avg_earnings_temp = laborers }
+                if = {
+                    limit = {
+                        check_variable = { laborers_earnings < lower_earnings_limit }
+                    }
+                    add_to_temp_variable = { lower_income_earnings = laborers_earnings }
+                }
+                else_if = {
+                    limit = {
+                        check_variable = { laborers_earnings < upper_earnings_limit }
+                    }
+                    add_to_temp_variable = { middle_income_earnings = laborers_earnings }
+                }
+                else = {
+                    add_to_temp_variable = { upper_income_earnings = laborers_earnings }
+                }
+                
+                set_temp_variable = { avg_earnings_temp = workers_earnings }
+                divide_temp_variable = { avg_earnings_temp = workers }
+                if = {
+                    limit = {
+                        check_variable = { workers_earnings < lower_earnings_limit }
+                    }
+                    add_to_temp_variable = { lower_income_earnings = workers_earnings }
+                }
+                else_if = {
+                    limit = {
+                        check_variable = { workers_earnings < upper_earnings_limit }
+                    }
+                    add_to_temp_variable = { middle_income_earnings = workers_earnings }
+                }
+                else = {
+                    add_to_temp_variable = { upper_income_earnings = workers_earnings }
+                }
+                
+                set_temp_variable = { avg_earnings_temp = professionals_earnings }
+                divide_temp_variable = { avg_earnings_temp = professionals }
+                if = {
+                    limit = {
+                        check_variable = { professionals_earnings < lower_earnings_limit }
+                    }
+                    add_to_temp_variable = { lower_income_earnings = professionals_earnings }
+                }
+                else_if = {
+                    limit = {
+                        check_variable = { professionals_earnings < upper_earnings_limit }
+                    }
+                    add_to_temp_variable = { middle_income_earnings = professionals_earnings }
+                }
+                else = {
+                    add_to_temp_variable = { upper_income_earnings = professionals_earnings }
+                }
+                
+                set_temp_variable = { avg_earnings_temp = specialists_earnings }
+                divide_temp_variable = { avg_earnings_temp = specialists }
+                if = {
+                    limit = {
+                        check_variable = { specialists_earnings < lower_earnings_limit }
+                    }
+                    add_to_temp_variable = { lower_income_earnings = specialists_earnings }
+                }
+                else_if = {
+                    limit = {
+                        check_variable = { specialists_earnings < upper_earnings_limit }
+                    }
+                    add_to_temp_variable = { middle_income_earnings = specialists_earnings }
+                }
+                else = {
+                    add_to_temp_variable = { upper_income_earnings = specialists_earnings }
+                }
+                
+                set_temp_variable = { avg_earnings_temp = capitalists_earnings }
+                divide_temp_variable = { avg_earnings_temp = capitalists }
+                if = {
+                    limit = {
+                        check_variable = { capitalists_earnings < lower_earnings_limit }
+                    }
+                    add_to_temp_variable = { lower_income_earnings = capitalists_earnings }
+                }
+                else_if = {
+                    limit = {
+                        check_variable = { capitalists_earnings < upper_earnings_limit }
+                    }
+                    add_to_temp_variable = { middle_income_earnings = capitalists_earnings }
+                }
+                else = {
+                    add_to_temp_variable = { upper_income_earnings = capitalists_earnings }
+                }
+                
+                set_temp_variable = { avg_earnings_temp = aristocrats_earnings }
+                divide_temp_variable = { avg_earnings_temp = aristocrats }
+                if = {
+                    limit = {
+                        check_variable = { aristocrats_earnings < lower_earnings_limit }
+                    }
+                    add_to_temp_variable = { lower_income_earnings = aristocrats_earnings }
+                }
+                else_if = {
+                    limit = {
+                        check_variable = { aristocrats_earnings < upper_earnings_limit }
+                    }
+                    add_to_temp_variable = { middle_income_earnings = aristocrats_earnings }
+                }
+                else = {
+                    add_to_temp_variable = { upper_income_earnings = aristocrats_earnings }
+                }
+                
+                set_temp_variable = { avg_earnings_temp = bureaucrats_earnings }
+                divide_temp_variable = { avg_earnings_temp = bureaucrats }
+                if = {
+                    limit = {
+                        check_variable = { bureaucrats_earnings < lower_earnings_limit }
+                    }
+                    add_to_temp_variable = { lower_income_earnings = bureaucrats_earnings }
+                }
+                else_if = {
+                    limit = {
+                        check_variable = { bureaucrats_earnings < upper_earnings_limit }
+                    }
+                    add_to_temp_variable = { middle_income_earnings = bureaucrats_earnings }
+                }
+                else = {
+                    add_to_temp_variable = { upper_income_earnings = bureaucrats_earnings }
+                }
+                
+                set_temp_variable = { avg_earnings_temp = soldiers_earnings }
+                divide_temp_variable = { avg_earnings_temp = soldiers }
+                if = {
+                    limit = {
+                        check_variable = { soldiers_earnings < lower_earnings_limit }
+                    }
+                    add_to_temp_variable = { lower_income_earnings = soldiers_earnings }
+                }
+                else_if = {
+                    limit = {
+                        check_variable = { soldiers_earnings < upper_earnings_limit }
+                    }
+                    add_to_temp_variable = { middle_income_earnings = soldiers_earnings }
+                }
+                else = {
+                    add_to_temp_variable = { upper_income_earnings = soldiers_earnings }
+                }
+            #
+
+			#Upper Strata
+			multiply_temp_variable = { upper_income_earnings = PREV.income_tax_upper_strata_percentage }
+			add_to_variable = { PREV.income_tax_upper_strata_revenue = tax_temp }
+
+			#Middle Strata
+			multiply_temp_variable = { middle_income_earnings = PREV.income_tax_middle_strata_percentage }
+			add_to_variable = { PREV.income_tax_middle_strata_revenue = tax_temp }
+
+			#Lower Strata
+			multiply_temp_variable = { lower_income_earnings = PREV.income_tax_lower_strata_percentage }
+			add_to_variable = { PREV.income_tax_lower_strata_revenue = tax_temp }
+		}
+		divide_variable = { income_tax_upper_strata_revenue = 100 }
+		divide_variable = { income_tax_middle_strata_revenue = 100 }
+		divide_variable = { income_tax_lower_strata_revenue = 100 }
+
+		set_variable = { income_tax_revenue = income_tax_upper_strata_revenue }
+		add_to_variable = { income_tax_revenue = income_tax_middle_strata_revenue }
+		add_to_variable = { income_tax_revenue = income_tax_lower_strata_revenue }
+
+		#Sales Tax
+			set_variable = { sales_tax_revenue = life_goods_bought_value }
+			add_to_variable = { sales_tax_revenue = everyday_goods_bought_value }
+			add_to_variable = { sales_tax_revenue = luxury_goods_bought_value }
+			add_to_variable = { sales_tax_revenue = services_bought_value }
+			add_to_variable = { sales_tax_revenue = raw_goods_bought_value }
+			add_to_variable = { sales_tax_revenue = industrial_goods_bought_value }
+			multiply_variable = { sales_tax_revenue = sales_tax_percentage }
+			divide_variable = { sales_tax_revenue = 100 }
+		#
+
+		#Corporate
+		#
+
+		#Tariffs
+			set_variable = { export_tariff_revenue = 0 }
+			set_variable = { import_tariff_revenue = 0 }
+			#life_goods
+				if = {
+					limit = {
+						check_variable = { life_goods_global_trade_actual_value < 0 }
+					}
+					set_temp_variable = { tax_temp = life_goods_global_trade_actual_value }
+					multiply_temp_variable = { tax_temp = -1 }
+					multiply_temp_variable = { tax_temp = import_tariff_percentage }
+					add_to_variable = { import_tariff_revenue = tax_temp }
+				}
+				else_if = {
+					limit = {
+						check_variable = { life_goods_global_trade_actual_value > 0 }
+					}
+					set_temp_variable = { tax_temp = life_goods_global_trade_actual_value }
+					multiply_temp_variable = { tax_temp = export_tariff_percentage }
+					add_to_variable = { export_tariff_revenue = tax_temp }
+				}
+			#
+			#everyday_goods
+				if = {
+					limit = {
+						check_variable = { everyday_goods_global_trade_actual_value < 0 }
+					}
+					set_temp_variable = { tax_temp = everyday_goods_global_trade_actual_value }
+					multiply_temp_variable = { tax_temp = -1 }
+					multiply_temp_variable = { tax_temp = import_tariff_percentage }
+					add_to_variable = { import_tariff_revenue = tax_temp }
+				}
+				else_if = {
+					limit = {
+						check_variable = { everyday_goods_global_trade_actual_value > 0 }
+					}
+					set_temp_variable = { tax_temp = everyday_goods_global_trade_actual_value }
+					multiply_temp_variable = { tax_temp = export_tariff_percentage }
+					add_to_variable = { export_tariff_revenue = tax_temp }
+				}
+			#
+			#luxury_goods
+				if = {
+					limit = {
+						check_variable = { luxury_goods_global_trade_actual_value < 0 }
+					}
+					set_temp_variable = { tax_temp = luxury_goods_global_trade_actual_value }
+					multiply_temp_variable = { tax_temp = -1 }
+					multiply_temp_variable = { tax_temp = import_tariff_percentage }
+					add_to_variable = { import_tariff_revenue = tax_temp }
+				}
+				else_if = {
+					limit = {
+						check_variable = { luxury_goods_global_trade_actual_value > 0 }
+					}
+					set_temp_variable = { tax_temp = luxury_goods_global_trade_actual_value }
+					multiply_temp_variable = { tax_temp = export_tariff_percentage }
+					add_to_variable = { export_tariff_revenue = tax_temp }
+				}
+			#
+			#services
+				if = {
+					limit = {
+						check_variable = { services_global_trade_actual_value < 0 }
+					}
+					set_temp_variable = { tax_temp = services_global_trade_actual_value }
+					multiply_temp_variable = { tax_temp = -1 }
+					multiply_temp_variable = { tax_temp = import_tariff_percentage }
+					add_to_variable = { import_tariff_revenue = tax_temp }
+				}
+				else_if = {
+					limit = {
+						check_variable = { services_global_trade_actual_value > 0 }
+					}
+					set_temp_variable = { tax_temp = services_global_trade_actual_value }
+					multiply_temp_variable = { tax_temp = export_tariff_percentage }
+					add_to_variable = { export_tariff_revenue = tax_temp }
+				}
+			#
+			#raw_goods
+				if = {
+					limit = {
+						check_variable = { raw_goods_global_trade_actual_value < 0 }
+					}
+					set_temp_variable = { tax_temp = raw_goods_global_trade_actual_value }
+					multiply_temp_variable = { tax_temp = -1 }
+					multiply_temp_variable = { tax_temp = import_tariff_percentage }
+					add_to_variable = { import_tariff_revenue = tax_temp }
+				}
+				else_if = {
+					limit = {
+						check_variable = { raw_goods_global_trade_actual_value > 0 }
+					}
+					set_temp_variable = { tax_temp = raw_goods_global_trade_actual_value }
+					multiply_temp_variable = { tax_temp = export_tariff_percentage }
+					add_to_variable = { export_tariff_revenue = tax_temp }
+				}
+			#
+			#industrial_goods
+				if = {
+					limit = {
+						check_variable = { industrial_goods_global_trade_actual_value < 0 }
+					}
+					set_temp_variable = { tax_temp = industrial_goods_global_trade_actual_value }
+					multiply_temp_variable = { tax_temp = -1 }
+					multiply_temp_variable = { tax_temp = import_tariff_percentage }
+					add_to_variable = { import_tariff_revenue = tax_temp }
+				}
+				else_if = {
+					limit = {
+						check_variable = { industrial_goods_global_trade_actual_value > 0 }
+					}
+					set_temp_variable = { tax_temp = industrial_goods_global_trade_actual_value }
+					multiply_temp_variable = { tax_temp = export_tariff_percentage }
+					add_to_variable = { export_tariff_revenue = tax_temp }
+				}
+			#
+			divide_variable = { import_tariff_revenue = 100 }
+			divide_variable = { export_tariff_revenue = 100 }
+
+			set_variable = { tariff_revenue = import_tariff_revenue }
+			add_to_variable = { tariff_revenue = export_tariff_revenue }
+		#
+
+		set_variable = { revenue = income_tax_revenue }
+		add_to_variable = { revenue = sales_tax_revenue }
+		add_to_variable = { revenue = import_tariff_revenue }
+		add_to_variable = { revenue = export_tariff_revenue }
+
+		net_budget_update = yes
+	}
+	r_spending_update = {
+		proj_update = yes
+		
+		set_variable = { construction_spending_expense = 0 }
+		set_variable = { project_spending_expense = 0 }
+		set_variable = { industrial_subsidy_expense = 0 }
+		set_variable = { infrastructure_subsidy_expense = 0 }
+
+		set_variable = { administration_spending_expense = 0 }
+		set_variable = { military_payroll_spending_expense = 0 }
+		every_controlled_state = {
+			#Administration
+			set_temp_variable = { admin_temp = pops_earnings }
+			multiply_temp_variable = { admin_temp = global.administration_base_expense }
+			divide_temp_variable = { admin_temp = 100 }
+			if = {
+				limit = {
+					check_variable = { pops_amount < global.administration_population_expense }
+				}
+				set_temp_variable = { modifier_temp = global.administration_population_expense }
+				subtract_from_temp_variable = { modifier_temp = pops_amount }
+				divide_temp_variable = { modifier_temp = global.administration_population_expense }
+				multiply_temp_variable = { modifier_temp = global.administration_population_expense_modifier }
+				add_to_temp_variable = { modifier_temp = 1 }
+				multiply_temp_variable = { admin_temp = modifier_temp }
+			}
+			add_to_variable = { PREV.administration_spending_expense = admin_temp }
+
+			#Industrial
+			set_temp_variable = { raw_goods_temp = factory_raw_goods_need }
+			multiply_temp_variable = { raw_goods_temp = raw_goods_price }
+			set_temp_variable = { industrial_goods_temp = factory_industrial_goods_need }
+			multiply_temp_variable = { industrial_goods_temp = industrial_goods_price }
+
+			set_temp_variable = { industrial_spending_temp = raw_goods_temp }
+			add_to_temp_variable = { industrial_spending_temp = industrial_goods_temp }
+			multiply_temp_variable = { industrial_spending_temp = PREV.industrial_subsidy_percentage }
+			divide_temp_variable = { industrial_spending_temp = 100 }
+			add_to_variable = { PREV.industrial_subsidy_expense = industrial_spending_temp }
+
+			set_temp_variable = { infrastructure_money_temp = infrastructure_industrial_goods_demand }
+			multiply_temp_variable = { infrastructure_money_temp = industrial_goods_price }
+			multiply_temp_variable = { infrastructure_money_temp = PREV.infrastructure_subsidy_percentage }
+			divide_temp_variable = { infrastructure_money_temp = 100 }
+			add_to_variable = { PREV.infrastructure_subsidy_expense = infrastructure_money_temp }
+
+			#Military Payroll
+			set_temp_variable = { conscripts = PREV.max_available_manpower_k }
+			multiply_temp_variable = { conscripts = 10 }
+			divide_temp_variable = { conscripts = PREV.max_manpower_k }
+			multiply_temp_variable = { conscripts = pops_amount }
+			divide_temp_variable = { conscripts = 10 }
+
+			set_temp_variable = { need_temp = global.conscripted_base_life_goods_need }
+			multiply_temp_variable = { need_temp = conscripts }
+			divide_temp_variable = { need_temp = 100 }
+			multiply_temp_variable = { need_temp = life_goods_price }
+			add_to_variable = { PREV.military_payroll_spending_expense = need_temp }
+
+			set_temp_variable = { need_temp = global.conscripted_base_everyday_goods_need }
+			multiply_temp_variable = { need_temp = conscripts }
+			divide_temp_variable = { need_temp = 100 }
+			multiply_temp_variable = { need_temp = everyday_goods_price }
+			add_to_variable = { PREV.military_payroll_spending_expense = need_temp }
+			
+			set_temp_variable = { need_temp = global.conscripted_base_luxury_goods_need }
+			multiply_temp_variable = { need_temp = conscripts }
+			divide_temp_variable = { need_temp = 100 }
+			multiply_temp_variable = { need_temp = luxury_goods_price }
+			add_to_variable = { PREV.military_payroll_spending_expense = need_temp }
+
+
+			#Infra & Construction
+				if = {
+					limit = {
+						has_state_flag = infrastructure_construction_government_subsidized
+					}
+					set_temp_variable = { infra_construction_funds_temp = global.infrastructure_construction_base_speed }
+					multiply_temp_variable = { infra_construction_funds_temp = industrial_goods_price }
+					multiply_temp_variable = { infra_construction_funds_temp = PREV.construction_spending_percentage }
+					divide_temp_variable = { infra_construction_funds_temp = 100 }
+					subtract_from_temp_variable = { infra_construction_funds_temp = infrastructure_construction_investment_money }
+					if = {
+						limit = {
+							check_variable = { infra_construction_funds_temp > 0 }
+						}
+						add_to_variable = { PREV.construction_spending_expense = infra_construction_funds_temp }
+					}
+				}
+				if = {
+					limit = {
+						has_state_flag = factory_everyday_goods_construction_government_subsidized
+					}
+					set_temp_variable = { infra_construction_funds_temp = global.factory_everyday_goods_construction_base_speed }
+					multiply_temp_variable = { infra_construction_funds_temp = industrial_goods_price }
+					multiply_temp_variable = { infra_construction_funds_temp = PREV.construction_spending_percentage }
+					divide_temp_variable = { infra_construction_funds_temp = 100 }
+					subtract_from_temp_variable = { infra_construction_funds_temp = factory_everyday_goods_construction_investment_money }
+					if = {
+						limit = {
+							check_variable = { infra_construction_funds_temp > 0 }
+						}
+						add_to_variable = { PREV.construction_spending_expense = infra_construction_funds_temp }
+					}
+				}
+				if = {
+					limit = {
+						has_state_flag = factory_luxury_goods_construction_government_subsidized
+					}
+					set_temp_variable = { infra_construction_funds_temp = global.factory_luxury_goods_construction_base_speed }
+					multiply_temp_variable = { infra_construction_funds_temp = industrial_goods_price }
+					multiply_temp_variable = { infra_construction_funds_temp = PREV.construction_spending_percentage }
+					divide_temp_variable = { infra_construction_funds_temp = 100 }
+					subtract_from_temp_variable = { infra_construction_funds_temp = factory_luxury_goods_construction_investment_money }
+					if = {
+						limit = {
+							check_variable = { infra_construction_funds_temp > 0 }
+						}
+						add_to_variable = { PREV.construction_spending_expense = infra_construction_funds_temp }
+					}
+				}
+				if = {
+					limit = {
+						has_state_flag = factory_industrial_goods_construction_government_subsidized
+					}
+					set_temp_variable = { infra_construction_funds_temp = global.factory_industrial_goods_construction_base_speed }
+					multiply_temp_variable = { infra_construction_funds_temp = industrial_goods_price }
+					multiply_temp_variable = { infra_construction_funds_temp = PREV.construction_spending_percentage }
+					divide_temp_variable = { infra_construction_funds_temp = 100 }
+					subtract_from_temp_variable = { infra_construction_funds_temp = factory_industrial_goods_construction_investment_money }
+					if = {
+						limit = {
+							check_variable = { infra_construction_funds_temp > 0 }
+						}
+						add_to_variable = { PREV.construction_spending_expense = infra_construction_funds_temp }
+					}
+				}
+			#
+		}
+
+		#Military Payroll
+		multiply_variable = { military_payroll_spending_expense = global.conscripted_payroll_multiplier }
+
+		set_temp_variable = { need_temp = conscripted_life_goods_demand }
+		multiply_temp_variable = { need_temp = life_goods_price }
+		add_to_variable = { military_payroll_spending_expense = need_temp }
+
+		set_temp_variable = { need_temp = conscripted_everyday_goods_demand }
+		multiply_temp_variable = { need_temp = everyday_goods_price }
+		add_to_variable = { military_payroll_spending_expense = need_temp }
+
+		set_temp_variable = { need_temp = conscripted_luxury_goods_demand }
+		multiply_temp_variable = { need_temp = luxury_goods_price }
+		add_to_variable = { military_payroll_spending_expense = need_temp }
+
+		#Military
+			#Army
+			set_variable = { military_life_expense = 0 }
+			set_variable = { military_everday_expense = 0 }
+			set_variable = { military_luxury_expense = 0 }
+			set_variable = { military_industrial_expense = 0 }
+
+			set_variable = { military_army_spending_expense = 0 }
+			set_temp_variable = { cost_temp = military_army_life_goods_demand }
+			multiply_temp_variable = { cost_temp = life_goods_price }
+			add_to_variable = { military_army_spending_expense = cost_temp }
+			add_to_variable = { military_life_expense = cost_temp }
+			
+			set_temp_variable = { cost_temp = military_army_everyday_goods_demand }
+			multiply_temp_variable = { cost_temp = everyday_goods_price }
+			add_to_variable = { military_army_spending_expense = cost_temp }
+			add_to_variable = { military_everday_expense = cost_temp }
+			
+			set_temp_variable = { cost_temp = military_army_luxury_goods_demand }
+			multiply_temp_variable = { cost_temp = luxury_goods_price }
+			add_to_variable = { military_army_spending_expense = cost_temp }
+			add_to_variable = { military_luxury_expense = cost_temp }
+			
+			set_temp_variable = { cost_temp = military_army_industrial_goods_demand }
+			multiply_temp_variable = { cost_temp = industrial_goods_price }
+			add_to_variable = { military_army_spending_expense = cost_temp }
+			add_to_variable = { military_industrial_expense = cost_temp }
+			
+			#Navy
+			set_variable = { military_navy_spending_expense = 0 }
+			set_temp_variable = { cost_temp = military_navy_life_goods_demand }
+			multiply_temp_variable = { cost_temp = life_goods_price }
+			add_to_variable = { military_navy_spending_expense = cost_temp }
+			add_to_variable = { military_life_expense = cost_temp }
+			
+			set_temp_variable = { cost_temp = military_navy_everyday_goods_demand }
+			multiply_temp_variable = { cost_temp = everyday_goods_price }
+			add_to_variable = { military_navy_spending_expense = cost_temp }
+			add_to_variable = { military_everday_expense = cost_temp }
+			
+			set_temp_variable = { cost_temp = military_navy_luxury_goods_demand }
+			multiply_temp_variable = { cost_temp = luxury_goods_price }
+			add_to_variable = { military_navy_spending_expense = cost_temp }
+			add_to_variable = { military_luxury_expense = cost_temp }
+			
+			set_temp_variable = { cost_temp = military_navy_industrial_goods_demand }
+			multiply_temp_variable = { cost_temp = industrial_goods_price }
+			add_to_variable = { military_navy_spending_expense = cost_temp }
+			add_to_variable = { military_industrial_expense = cost_temp }
+			
+			#Airforce
+			set_variable = { military_airforce_spending_expense = 0 }
+			set_temp_variable = { cost_temp = military_airforce_life_goods_demand }
+			multiply_temp_variable = { cost_temp = life_goods_price }
+			add_to_variable = { military_airforce_spending_expense = cost_temp }
+			add_to_variable = { military_life_expense = cost_temp }
+			
+			set_temp_variable = { cost_temp = military_airforce_everyday_goods_demand }
+			multiply_temp_variable = { cost_temp = everyday_goods_price }
+			add_to_variable = { military_airforce_spending_expense = cost_temp }
+			add_to_variable = { military_everday_expense = cost_temp }
+			
+			set_temp_variable = { cost_temp = military_airforce_luxury_goods_demand }
+			multiply_temp_variable = { cost_temp = luxury_goods_price }
+			add_to_variable = { military_airforce_spending_expense = cost_temp }
+			add_to_variable = { military_luxury_expense = cost_temp }
+			
+			set_temp_variable = { cost_temp = military_airforce_industrial_goods_demand }
+			multiply_temp_variable = { cost_temp = industrial_goods_price }
+			add_to_variable = { military_airforce_spending_expense = cost_temp }
+			add_to_variable = { military_industrial_expense = cost_temp }
+
+			set_variable = { military_spending_expense = military_army_spending_expense }
+			add_to_variable = { military_spending_expense = military_navy_spending_expense }
+			add_to_variable = { military_spending_expense = military_airforce_spending_expense }
+		#
+	
+		#Projects
+			
+			for_each_loop = {
+				array = proj_id
+				index = pi
+				value = pv
+				break = pb
+
+				add_to_variable = { project_spending_expense = proj_estimated_monthly_cost^pi }
+			}
+			add_to_variable = { construction_spending_expense = project_spending_expense }
+		#
+
+		#Trade Subsidies
+			set_variable = { export_subsidy_expense = 0 }
+			set_variable = { import_subsidy_expense = 0 }
+			#life_goods
+				if = {
+					limit = {
+						check_variable = { life_goods_global_trade_actual_value < 0 }
+					}
+					set_temp_variable = { subsidy_temp = life_goods_global_trade_actual_value }
+					multiply_temp_variable = { subsidy_temp = -1 }
+					multiply_temp_variable = { subsidy_temp = import_subsidy_percentage }
+					add_to_variable = { import_subsidy_expense = subsidy_temp }
+				}
+				else_if = {
+					limit = {
+						check_variable = { life_goods_global_trade_actual_value > 0 }
+					}
+					set_temp_variable = { subsidy_temp = life_goods_global_trade_actual_value }
+					multiply_temp_variable = { subsidy_temp = export_subsidy_percentage }
+					add_to_variable = { export_subsidy_expense = subsidy_temp }
+				}
+			#
+			#everyday_goods
+				if = {
+					limit = {
+						check_variable = { everyday_goods_global_trade_actual_value < 0 }
+					}
+					set_temp_variable = { subsidy_temp = everyday_goods_global_trade_actual_value }
+					multiply_temp_variable = { subsidy_temp = -1 }
+					multiply_temp_variable = { subsidy_temp = import_subsidy_percentage }
+					add_to_variable = { import_subsidy_expense = subsidy_temp }
+				}
+				else_if = {
+					limit = {
+						check_variable = { everyday_goods_global_trade_actual_value > 0 }
+					}
+					set_temp_variable = { subsidy_temp = everyday_goods_global_trade_actual_value }
+					multiply_temp_variable = { subsidy_temp = export_subsidy_percentage }
+					add_to_variable = { export_subsidy_expense = subsidy_temp }
+				}
+			#
+			#luxury_goods
+				if = {
+					limit = {
+						check_variable = { luxury_goods_global_trade_actual_value < 0 }
+					}
+					set_temp_variable = { subsidy_temp = luxury_goods_global_trade_actual_value }
+					multiply_temp_variable = { subsidy_temp = -1 }
+					multiply_temp_variable = { subsidy_temp = import_subsidy_percentage }
+					add_to_variable = { import_subsidy_expense = subsidy_temp }
+				}
+				else_if = {
+					limit = {
+						check_variable = { luxury_goods_global_trade_actual_value > 0 }
+					}
+					set_temp_variable = { subsidy_temp = luxury_goods_global_trade_actual_value }
+					multiply_temp_variable = { subsidy_temp = export_subsidy_percentage }
+					add_to_variable = { export_subsidy_expense = subsidy_temp }
+				}
+			#
+			#services
+				if = {
+					limit = {
+						check_variable = { services_global_trade_actual_value < 0 }
+					}
+					set_temp_variable = { subsidy_temp = services_global_trade_actual_value }
+					multiply_temp_variable = { subsidy_temp = -1 }
+					multiply_temp_variable = { subsidy_temp = import_subsidy_percentage }
+					add_to_variable = { import_subsidy_expense = subsidy_temp }
+				}
+				else_if = {
+					limit = {
+						check_variable = { services_global_trade_actual_value > 0 }
+					}
+					set_temp_variable = { subsidy_temp = services_global_trade_actual_value }
+					multiply_temp_variable = { subsidy_temp = export_subsidy_percentage }
+					add_to_variable = { export_subsidy_expense = subsidy_temp }
+				}
+			#
+			#raw_goods
+				if = {
+					limit = {
+						check_variable = { raw_goods_global_trade_actual_value < 0 }
+					}
+					set_temp_variable = { subsidy_temp = raw_goods_global_trade_actual_value }
+					multiply_temp_variable = { subsidy_temp = -1 }
+					multiply_temp_variable = { subsidy_temp = import_subsidy_percentage }
+					add_to_variable = { import_subsidy_expense = subsidy_temp }
+				}
+				else_if = {
+					limit = {
+						check_variable = { raw_goods_global_trade_actual_value > 0 }
+					}
+					set_temp_variable = { subsidy_temp = raw_goods_global_trade_actual_value }
+					multiply_temp_variable = { subsidy_temp = export_subsidy_percentage }
+					add_to_variable = { export_subsidy_expense = subsidy_temp }
+				}
+			#
+			#industrial_goods
+				if = {
+					limit = {
+						check_variable = { industrial_goods_global_trade_actual_value < 0 }
+					}
+					set_temp_variable = { subsidy_temp = industrial_goods_global_trade_actual_value }
+					multiply_temp_variable = { subsidy_temp = -1 }
+					multiply_temp_variable = { subsidy_temp = import_subsidy_percentage }
+					add_to_variable = { import_subsidy_expense = subsidy_temp }
+				}
+				else_if = {
+					limit = {
+						check_variable = { industrial_goods_global_trade_actual_value > 0 }
+					}
+					set_temp_variable = { subsidy_temp = industrial_goods_global_trade_actual_value }
+					multiply_temp_variable = { subsidy_temp = export_subsidy_percentage }
+					add_to_variable = { export_subsidy_expense = subsidy_temp }
+				}
+			#
+			divide_variable = { import_subsidy_expense = 100 }
+			divide_variable = { export_subsidy_expense = 100 }
+
+			set_variable = { subsidy_expense = import_subsidy_expense }
+			add_to_variable = { subsidy_expense = export_subsidy_expense }
+		#
+
+		set_variable = { subsidy_expense = infrastructure_subsidy_expense }
+		add_to_variable = { subsidy_expense = industrial_subsidy_expense }
+		add_to_variable = { subsidy_expense = export_subsidy_expense }
+		add_to_variable = { subsidy_expense = import_subsidy_expense }
+
+		set_variable = { discretionary_spending = subsidy_expense }
+		add_to_variable = { discretionary_spending = construction_spending_expense }
+		add_to_variable = { discretionary_spending = military_spending_expense }
+
+		set_variable = { mandatory_spending = national_debt_interest }
+		add_to_variable = { mandatory_spending = administration_spending_expense }
+		add_to_variable = { mandatory_spending = military_payroll_spending_expense }
+
+		net_budget_update = yes
+	}
+	r_net_budget_update = {
+		#Literally three lines
+
+		set_variable = { predicted_net_budget = revenue }
+		subtract_from_variable = { predicted_net_budget = discretionary_spending }
+		subtract_from_variable = { predicted_net_budget = mandatory_spending }
 	}
 #
 
