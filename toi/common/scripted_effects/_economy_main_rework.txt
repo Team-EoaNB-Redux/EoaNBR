@@ -8454,6 +8454,22 @@
 					set_variable = { construction_speed@var:om_building = construction_amount@var:om_building }
 				}
 
+                set_temp_variable = { financer_temp = financer@var:om_building }
+                if = {
+                    limit = {
+                        check_variable = { financer_temp < 0 } # Corporation
+                    }
+                }
+                else_if = {
+                    limit = {
+                        check_variable = { financer_temp > 0 } # Government
+                    }
+                    multiply_variable = { construction_speed@var:om_building = financer_temp:construction_spending_percentage }
+                    divide_variable = { construction_speed@var:om_building = 100 }
+                }
+                else = { # Local
+                }
+
 				set_variable = { construction_expenses@var:om_building = construction_speed@var:om_building }
 				multiply_variable = { construction_expenses@var:om_building = price@token:resource_industrial_goods }
 			}
@@ -11932,91 +11948,23 @@
 			}
 			add_to_variable = { PREV.administration_spending_expense = admin_temp }
 
-			#Industrial
-			set_temp_variable = { raw_goods_temp = factory_raw_goods_need }
-			multiply_temp_variable = { raw_goods_temp = raw_goods_price }
-			set_temp_variable = { industrial_goods_temp = factory_need@token:resource_industrial_goods }
-			multiply_temp_variable = { industrial_goods_temp = industrial_goods_price }
+            for_each_loop = {
+                array = buildings
+                index = sp_token
 
-			set_temp_variable = { industrial_spending_temp = raw_goods_temp }
-			add_to_temp_variable = { industrial_spending_temp = industrial_goods_temp }
-			multiply_temp_variable = { industrial_spending_temp = PREV.industrial_subsidy_percentage }
-			divide_temp_variable = { industrial_spending_temp = 100 }
-			add_to_variable = { PREV.industrial_subsidy_expense = industrial_spending_temp }
+                #Industrial
 
-			set_temp_variable = { infrastructure_money_temp = infrastructure_demand@token:resource_industrial_goods }
-			multiply_temp_variable = { infrastructure_money_temp = industrial_goods_price }
-			multiply_temp_variable = { infrastructure_money_temp = PREV.infrastructure_subsidy_percentage }
-			divide_temp_variable = { infrastructure_money_temp = 100 }
-			add_to_variable = { PREV.infrastructure_subsidy_expense = infrastructure_money_temp }
+                #Construction
+                if = {
+                    limit = {
+                        check_variable = { under_construction@var:om_building > 0 }
+                        check_variable = { financer@var:om_building = PREV }
+                    }
+                    add_to_variable = { PREV.construction_spending_expense = construction_expenses@var:om_building }
+                }
 
-
-			#Infra & Construction
-				if = {
-					limit = {
-						has_state_flag = infrastructure_construction_government_subsidized
-					}
-					set_temp_variable = { infra_construction_funds_temp = global.infrastructure_construction_base_speed }
-					multiply_temp_variable = { infra_construction_funds_temp = industrial_goods_price }
-					multiply_temp_variable = { infra_construction_funds_temp = PREV.construction_spending_percentage }
-					divide_temp_variable = { infra_construction_funds_temp = 100 }
-					subtract_from_temp_variable = { infra_construction_funds_temp = infrastructure_construction_investment_money }
-					if = {
-						limit = {
-							check_variable = { infra_construction_funds_temp > 0 }
-						}
-						add_to_variable = { PREV.construction_spending_expense = infra_construction_funds_temp }
-					}
-				}
-				if = {
-					limit = {
-						has_state_flag = factory_everyday_goods_construction_government_subsidized
-					}
-					set_temp_variable = { infra_construction_funds_temp = global.factory_everyday_goods_construction_base_speed }
-					multiply_temp_variable = { infra_construction_funds_temp = industrial_goods_price }
-					multiply_temp_variable = { infra_construction_funds_temp = PREV.construction_spending_percentage }
-					divide_temp_variable = { infra_construction_funds_temp = 100 }
-					subtract_from_temp_variable = { infra_construction_funds_temp = factory_everyday_goods_construction_investment_money }
-					if = {
-						limit = {
-							check_variable = { infra_construction_funds_temp > 0 }
-						}
-						add_to_variable = { PREV.construction_spending_expense = infra_construction_funds_temp }
-					}
-				}
-				if = {
-					limit = {
-						has_state_flag = factory_luxury_goods_construction_government_subsidized
-					}
-					set_temp_variable = { infra_construction_funds_temp = global.factory_luxury_goods_construction_base_speed }
-					multiply_temp_variable = { infra_construction_funds_temp = industrial_goods_price }
-					multiply_temp_variable = { infra_construction_funds_temp = PREV.construction_spending_percentage }
-					divide_temp_variable = { infra_construction_funds_temp = 100 }
-					subtract_from_temp_variable = { infra_construction_funds_temp = factory_luxury_goods_construction_investment_money }
-					if = {
-						limit = {
-							check_variable = { infra_construction_funds_temp > 0 }
-						}
-						add_to_variable = { PREV.construction_spending_expense = infra_construction_funds_temp }
-					}
-				}
-				if = {
-					limit = {
-						has_state_flag = factory_industrial_goods_construction_government_subsidized
-					}
-					set_temp_variable = { infra_construction_funds_temp = global.factory_industrial_goods_construction_base_speed }
-					multiply_temp_variable = { infra_construction_funds_temp = industrial_goods_price }
-					multiply_temp_variable = { infra_construction_funds_temp = PREV.construction_spending_percentage }
-					divide_temp_variable = { infra_construction_funds_temp = 100 }
-					subtract_from_temp_variable = { infra_construction_funds_temp = factory_industrial_goods_construction_investment_money }
-					if = {
-						limit = {
-							check_variable = { infra_construction_funds_temp > 0 }
-						}
-						add_to_variable = { PREV.construction_spending_expense = infra_construction_funds_temp }
-					}
-				}
-			#
+                #Infrastructure
+            }
 		}
 
         #Military Payroll
@@ -12569,6 +12517,10 @@
 				set_variable = { construction_spending_percentage = 0 }
 			}
 		}
+
+        every_controlled_state = {
+            buildings_update_construction = yes
+        }
 		spending_update = yes
 	}
 	change_import_subsidy = {
