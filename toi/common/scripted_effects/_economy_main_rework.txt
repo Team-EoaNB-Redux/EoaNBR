@@ -108,6 +108,25 @@
 		for_each_scope_loop = {
 			array = global.econ_order_array
 
+            #Budget
+                add_to_variable = { treasury = net_budget }
+                
+                set_variable = { actual_revenue = revenue }
+                set_variable = { actual_income_tax_revenue = income_tax_revenue }
+                set_variable = { actual_spending = spending }
+                set_variable = { actual_infrastructure_spending = infrastructure_subsidy_expense }
+                set_variable = { actual_construction_spending = construction_spending_expense }
+                set_variable = { actual_industrial_spending = industrial_subsidy_expense }
+                set_variable = { actual_tariff_revenue = tariff_revenue }
+                set_variable = { actual_sales_tax_revenue = sales_tax_revenue }
+                set_variable = { actual_trade_subsidy_spending = import_subsidy_expense }
+                add_to_variable = { actual_trade_subsidy_spending = export_subsidy_expense }
+                set_variable = { actual_administration_spending = administration_spending_expense }
+                set_variable = { actual_military_spending = military_spending_expense }
+                set_variable = { actual_project_spending = project_spending_expense }
+                set_variabl = { actual_net_budget = net_budget }
+            #
+
             set_temp_variable = { upper_earnings_limit = pops_earnings_avg }
             multiply_temp_variable = { upper_earnings_limit = 3 }
             set_temp_variable = { lower_earnings_limit = pops_earnings_avg }
@@ -1593,6 +1612,9 @@
                     set_variable = { pops_unemployed_percentage = 0 }
                 }
             }
+
+            taxes_update = yes
+            spending_update = yes
         }
     }
 
@@ -3139,6 +3161,9 @@
             }
 
             update_country_pop_stats = yes
+
+            taxes_update = yes
+            spending_update = yes
         }
 
     }
@@ -8860,6 +8885,32 @@
             set_variable = { demand_input@var:r_type = 0 }
         }
 
+		set_variable = { projects_food_demand = 0 }
+		set_variable = { projects_everyday_goods_demand = 0 }
+		set_variable = { projects_luxury_goods_demand = 0 }
+		set_variable = { projects_services_demand = 0 }
+		set_variable = { projects_raw_materials_demand = 0 }
+		set_variable = { projects_energy_materials_demand = 0 }
+		set_variable = { projects_industrial_goods_demand = 0 }
+		set_variable = { projects_electricity_demand = 0 }
+		#Projects
+		for_each_loop = {
+			array = proj_id
+			index = pi
+			value = pv
+			break = pb
+
+			add_to_variable = { projects_food_demand = proj_food_demand^pi }
+			add_to_variable = { projects_everyday_goods_demand = proj_everyday_goods_demand^pi }
+			add_to_variable = { projects_luxury_goods_demand = proj_luxury_goods_demand^pi }
+			add_to_variable = { projects_services_demand = proj_services_demand^pi }
+			add_to_variable = { projects_raw_materials_demand = proj_raw_materials_demand^pi }
+			add_to_variable = { projects_energy_materials_demand = proj_energy_materials_demand^pi }
+			add_to_variable = { projects_industrial_goods_demand = proj_industrial_goods_demand^pi }
+			add_to_variable = { projects_electricity_demand = proj_electricity_demand^pi }
+
+		}
+
         every_controlled_state = {
             for_each_loop = {
                 array = global.resource_token_array
@@ -11950,17 +12001,18 @@
 
             for_each_loop = {
                 array = buildings
-                index = sp_token
+                index = sp_i
+                value = sp_token
 
                 #Industrial
 
                 #Construction
                 if = {
                     limit = {
-                        check_variable = { under_construction@var:om_building > 0 }
-                        check_variable = { financer@var:om_building = PREV }
+                        check_variable = { under_construction@var:sp_token > 0 }
+                        check_variable = { financer@var:sp_token = PREV }
                     }
-                    add_to_variable = { PREV.construction_spending_expense = construction_expenses@var:om_building }
+                    add_to_variable = { PREV.construction_spending_expense = construction_expenses@var:sp_token }
                 }
 
                 #Infrastructure
@@ -12160,9 +12212,9 @@
 	net_budget_update = {
 		#Literally three lines
 
-		set_variable = { predicted_net_budget = revenue }
-		subtract_from_variable = { predicted_net_budget = discretionary_spending }
-		subtract_from_variable = { predicted_net_budget = mandatory_spending }
+		set_variable = { net_budget = revenue }
+		subtract_from_variable = { net_budget = discretionary_spending }
+		subtract_from_variable = { net_budget = mandatory_spending }
 	}
 
 	change_upper_strata_income_tax = {
