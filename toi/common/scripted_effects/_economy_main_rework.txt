@@ -124,7 +124,7 @@
                 set_variable = { actual_administration_spending = administration_spending_expense }
                 set_variable = { actual_military_spending = military_spending_expense }
                 set_variable = { actual_project_spending = project_spending_expense }
-                set_variabl = { actual_net_budget = net_budget }
+                set_variable = { actual_net_budget = net_budget }
             #
 
             set_temp_variable = { upper_earnings_limit = pops_earnings_avg }
@@ -8504,6 +8504,636 @@
                 set_variable = { construction_expenses@var:om_building = 0 }
             }
 		}
+    }
+
+    buildings_update_predicted_vals = {
+        # First Step: Figure out revenues & expenses -> productivity of each industry  
+
+        #State scope
+        # Needs production method set
+
+        for_each_loop = {
+            array = global.building_token_array
+            value = ba_token
+            # predicted_production_method@token:ba_token
+
+            #Jobs Amount
+                if = { #Basic
+                    limit = {
+                        check_variable = { predicted_production_method@var:ba_token = 0 }
+                    }
+                    set_variable = { predicted_peasants_jobs@var:ba_token = global.building_basic_peasants_employment@var:ba_token }
+                    set_variable = { predicted_laborers_jobs@var:ba_token = global.building_basic_laborers_employment@var:ba_token }
+                    set_variable = { predicted_workers_jobs@var:ba_token = global.building_basic_workers_employment@var:ba_token }
+                    set_variable = { predicted_professionals_jobs@var:ba_token = global.building_basic_professionals_employment@var:ba_token }
+                    set_variable = { predicted_specialists_jobs@var:ba_token = global.building_basic_specialists_employment@var:ba_token }
+                    set_variable = { predicted_aristocrats_jobs@var:ba_token = global.building_basic_aristocrats_employment@var:ba_token }
+                    set_variable = { predicted_capitalists_jobs@var:ba_token = global.building_basic_capitalists_employment@var:ba_token }
+                }
+                else_if = { #Advanced
+                    limit = {
+                        check_variable = { predicted_production_method@var:ba_token = 1 }
+                    }
+                    set_variable = { predicted_peasants_jobs@var:ba_token = global.building_advanced_peasants_employment@var:ba_token }
+                    set_variable = { predicted_laborers_jobs@var:ba_token = global.building_advanced_laborers_employment@var:ba_token }
+                    set_variable = { predicted_workers_jobs@var:ba_token = global.building_advanced_workers_employment@var:ba_token }
+                    set_variable = { predicted_professionals_jobs@var:ba_token = global.building_advanced_professionals_employment@var:ba_token }
+                    set_variable = { predicted_specialists_jobs@var:ba_token = global.building_advanced_specialists_employment@var:ba_token }
+                    set_variable = { predicted_aristocrats_jobs@var:ba_token = global.building_advanced_aristocrats_employment@var:ba_token }
+                    set_variable = { predicted_capitalists_jobs@var:ba_token = global.building_advanced_capitalists_employment@var:ba_token }
+                }
+                else_if = { #Industrialized
+                    limit = {
+                        check_variable = { predicted_production_method@var:ba_token = 2 }
+                    }
+                    set_variable = { predicted_peasants_jobs@var:ba_token = global.building_industrialized_peasants_employment@var:ba_token }
+                    set_variable = { predicted_laborers_jobs@var:ba_token = global.building_industrialized_laborers_employment@var:ba_token }
+                    set_variable = { predicted_workers_jobs@var:ba_token = global.building_industrialized_workers_employment@var:ba_token }
+                    set_variable = { predicted_professionals_jobs@var:ba_token = global.building_industrialized_professionals_employment@var:ba_token }
+                    set_variable = { predicted_specialists_jobs@var:ba_token = global.building_industrialized_specialists_employment@var:ba_token }
+                    set_variable = { predicted_aristocrats_jobs@var:ba_token = global.building_industrialized_aristocrats_employment@var:ba_token }
+                    set_variable = { predicted_capitalists_jobs@var:ba_token = global.building_industrialized_capitalists_employment@var:ba_token }
+                }
+                else_if = { #Mechanized
+                    limit = {
+                        check_variable = { predicted_production_method@var:ba_token = 3 }
+                    }
+                    set_variable = { predicted_peasants_jobs@var:ba_token = global.building_mechanized_peasants_employment@var:ba_token }
+                    set_variable = { predicted_laborers_jobs@var:ba_token = global.building_mechanized_laborers_employment@var:ba_token }
+                    set_variable = { predicted_workers_jobs@var:ba_token = global.building_mechanized_workers_employment@var:ba_token }
+                    set_variable = { predicted_professionals_jobs@var:ba_token = global.building_mechanized_professionals_employment@var:ba_token }
+                    set_variable = { predicted_specialists_jobs@var:ba_token = global.building_mechanized_specialists_employment@var:ba_token }
+                    set_variable = { predicted_aristocrats_jobs@var:ba_token = global.building_mechanized_aristocrats_employment@var:ba_token }
+                    set_variable = { predicted_capitalists_jobs@var:ba_token = global.building_mechanized_capitalists_employment@var:ba_token }
+                }
+                else_if = { #Electrified
+                    limit = {
+                        check_variable = { predicted_production_method@var:ba_token = 4 }
+                    }
+                    set_variable = { predicted_peasants_jobs@var:ba_token = global.building_electrified_peasants_employment@var:ba_token }
+                    set_variable = { predicted_laborers_jobs@var:ba_token = global.building_electrified_laborers_employment@var:ba_token }
+                    set_variable = { predicted_workers_jobs@var:ba_token = global.building_electrified_workers_employment@var:ba_token }
+                    set_variable = { predicted_professionals_jobs@var:ba_token = global.building_electrified_professionals_employment@var:ba_token }
+                    set_variable = { predicted_specialists_jobs@var:ba_token = global.building_electrified_specialists_employment@var:ba_token }
+                    set_variable = { predicted_aristocrats_jobs@var:ba_token = global.building_electrified_aristocrats_employment@var:ba_token }
+                    set_variable = { predicted_capitalists_jobs@var:ba_token = global.building_electrified_capitalists_employment@var:ba_token }
+                }
+                else_if = { #Motorized
+                    limit = {
+                        check_variable = { predicted_production_method@var:ba_token = 5 }
+                    }
+                    set_variable = { predicted_peasants_jobs@var:ba_token = global.building_motorized_peasants_employment@var:ba_token }
+                    set_variable = { predicted_laborers_jobs@var:ba_token = global.building_motorized_laborers_employment@var:ba_token }
+                    set_variable = { predicted_workers_jobs@var:ba_token = global.building_motorized_workers_employment@var:ba_token }
+                    set_variable = { predicted_professionals_jobs@var:ba_token = global.building_motorized_professionals_employment@var:ba_token }
+                    set_variable = { predicted_specialists_jobs@var:ba_token = global.building_motorized_specialists_employment@var:ba_token }
+                    set_variable = { predicted_aristocrats_jobs@var:ba_token = global.building_motorized_aristocrats_employment@var:ba_token }
+                    set_variable = { predicted_capitalists_jobs@var:ba_token = global.building_motorized_capitalists_employment@var:ba_token }
+                }
+                else_if = { #Modernized
+                    limit = {
+                        check_variable = { predicted_production_method@var:ba_token = 6 }
+                    }
+                    set_variable = { predicted_peasants_jobs@var:ba_token = global.building_modernized_peasants_employment@var:ba_token }
+                    set_variable = { predicted_laborers_jobs@var:ba_token = global.building_modernized_laborers_employment@var:ba_token }
+                    set_variable = { predicted_workers_jobs@var:ba_token = global.building_modernized_workers_employment@var:ba_token }
+                    set_variable = { predicted_professionals_jobs@var:ba_token = global.building_modernized_professionals_employment@var:ba_token }
+                    set_variable = { predicted_specialists_jobs@var:ba_token = global.building_modernized_specialists_employment@var:ba_token }
+                    set_variable = { predicted_aristocrats_jobs@var:ba_token = global.building_modernized_aristocrats_employment@var:ba_token }
+                    set_variable = { predicted_capitalists_jobs@var:ba_token = global.building_modernized_capitalists_employment@var:ba_token }
+                }
+                else_if = { #Roboticized
+                    limit = {
+                        check_variable = { predicted_production_method@var:ba_token = 7 }
+                    }
+                    set_variable = { predicted_peasants_jobs@var:ba_token = global.building_roboticized_peasants_employment@var:ba_token }
+                    set_variable = { predicted_laborers_jobs@var:ba_token = global.building_roboticized_laborers_employment@var:ba_token }
+                    set_variable = { predicted_workers_jobs@var:ba_token = global.building_roboticized_workers_employment@var:ba_token }
+                    set_variable = { predicted_professionals_jobs@var:ba_token = global.building_roboticized_professionals_employment@var:ba_token }
+                    set_variable = { predicted_specialists_jobs@var:ba_token = global.building_roboticized_specialists_employment@var:ba_token }
+                    set_variable = { predicted_aristocrats_jobs@var:ba_token = global.building_roboticized_aristocrats_employment@var:ba_token }
+                    set_variable = { predicted_capitalists_jobs@var:ba_token = global.building_roboticized_capitalists_employment@var:ba_token }
+                }
+                else_if = { #Computerized
+                    limit = {
+                        check_variable = { predicted_production_method@var:ba_token = 8 }
+                    }
+                    set_variable = { predicted_peasants_jobs@var:ba_token = global.building_computerized_peasants_employment@var:ba_token }
+                    set_variable = { predicted_laborers_jobs@var:ba_token = global.building_computerized_laborers_employment@var:ba_token }
+                    set_variable = { predicted_workers_jobs@var:ba_token = global.building_computerized_workers_employment@var:ba_token }
+                    set_variable = { predicted_professionals_jobs@var:ba_token = global.building_computerized_professionals_employment@var:ba_token }
+                    set_variable = { predicted_specialists_jobs@var:ba_token = global.building_computerized_specialists_employment@var:ba_token }
+                    set_variable = { predicted_aristocrats_jobs@var:ba_token = global.building_computerized_aristocrats_employment@var:ba_token }
+                    set_variable = { predicted_capitalists_jobs@var:ba_token = global.building_computerized_capitalists_employment@var:ba_token }
+                }
+                else_if = { #Digitalized
+                    limit = {
+                        check_variable = { predicted_production_method@var:ba_token = 9 }
+                    }
+                    set_variable = { predicted_peasants_jobs@var:ba_token = global.building_digitalized_peasants_employment@var:ba_token }
+                    set_variable = { predicted_laborers_jobs@var:ba_token = global.building_digitalized_laborers_employment@var:ba_token }
+                    set_variable = { predicted_workers_jobs@var:ba_token = global.building_digitalized_workers_employment@var:ba_token }
+                    set_variable = { predicted_professionals_jobs@var:ba_token = global.building_digitalized_professionals_employment@var:ba_token }
+                    set_variable = { predicted_specialists_jobs@var:ba_token = global.building_digitalized_specialists_employment@var:ba_token }
+                    set_variable = { predicted_aristocrats_jobs@var:ba_token = global.building_digitalized_aristocrats_employment@var:ba_token }
+                    set_variable = { predicted_capitalists_jobs@var:ba_token = global.building_digitalized_capitalists_employment@var:ba_token }
+                }
+                else_if = { #Automatized
+                    limit = {
+                        check_variable = { predicted_production_method@var:ba_token = 10 }
+                    }
+                    set_variable = { predicted_peasants_jobs@var:ba_token = global.building_automatized_peasants_employment@var:ba_token }
+                    set_variable = { predicted_laborers_jobs@var:ba_token = global.building_automatized_laborers_employment@var:ba_token }
+                    set_variable = { predicted_workers_jobs@var:ba_token = global.building_automatized_workers_employment@var:ba_token }
+                    set_variable = { predicted_professionals_jobs@var:ba_token = global.building_automatized_professionals_employment@var:ba_token }
+                    set_variable = { predicted_specialists_jobs@var:ba_token = global.building_automatized_specialists_employment@var:ba_token }
+                    set_variable = { predicted_aristocrats_jobs@var:ba_token = global.building_automatized_aristocrats_employment@var:ba_token }
+                    set_variable = { predicted_capitalists_jobs@var:ba_token = global.building_automatized_capitalists_employment@var:ba_token }
+                }
+                else_if = { #Futurized
+                    limit = {
+                        check_variable = { predicted_production_method@var:ba_token = 11 }
+                    }
+                    set_variable = { predicted_peasants_jobs@var:ba_token = global.building_futurized_peasants_employment@var:ba_token }
+                    set_variable = { predicted_laborers_jobs@var:ba_token = global.building_futurized_laborers_employment@var:ba_token }
+                    set_variable = { predicted_workers_jobs@var:ba_token = global.building_futurized_workers_employment@var:ba_token }
+                    set_variable = { predicted_professionals_jobs@var:ba_token = global.building_futurized_professionals_employment@var:ba_token }
+                    set_variable = { predicted_specialists_jobs@var:ba_token = global.building_futurized_specialists_employment@var:ba_token }
+                    set_variable = { predicted_aristocrats_jobs@var:ba_token = global.building_futurized_aristocrats_employment@var:ba_token }
+                    set_variable = { predicted_capitalists_jobs@var:ba_token = global.building_futurized_capitalists_employment@var:ba_token }
+                }
+
+                set_temp_variable = { size_modifier_temp = building_size_factor@var:ba_token }
+                add_to_temp_variable = { size_modifier_temp = 1 }
+                multiply_variable = { predicted_peasants_jobs@var:ba_token = size_modifier_temp }
+                multiply_variable = { predicted_laborers_jobs@var:ba_token = size_modifier_temp }
+                multiply_variable = { predicted_workers_jobs@var:ba_token =  size_modifier_temp }
+                multiply_variable = { predicted_professionals_jobs@var:ba_token = size_modifier_temp }
+                multiply_variable = { predicted_specialists_jobs@var:ba_token =  size_modifier_temp }
+                multiply_variable = { predicted_aristocrats_jobs@var:ba_token =  size_modifier_temp }
+                multiply_variable = { predicted_capitalists_jobs@var:ba_token =  size_modifier_temp }
+
+                set_variable = { predicted_jobs@var:ba_token = predicted_peasants_jobs@var:ba_token }
+                add_to_variable = { predicted_jobs@var:ba_token = predicted_laborers_jobs@var:ba_token }
+                add_to_variable = { predicted_jobs@var:ba_token = predicted_workers_jobs@var:ba_token }
+                add_to_variable = { predicted_jobs@var:ba_token = predicted_professionals_jobs@var:ba_token }
+                add_to_variable = { predicted_jobs@var:ba_token = predicted_specialists_jobs@var:ba_token }
+                add_to_variable = { predicted_jobs@var:ba_token = predicted_aristocrats_jobs@var:ba_token }
+                add_to_variable = { predicted_jobs@var:ba_token = predicted_capitalists_jobs@var:ba_token }
+            #
+
+            #Production Modifiers
+                set_temp_variable = { output_modifier_temp = building_output_factor@var:ba_token }
+                add_to_temp_variable = { output_modifier_temp = 1 }
+
+                set_temp_variable = { throughput_modifier_temp = building_throughput_factor@var:ba_token }
+                add_to_temp_variable = { throughput_modifier_temp = 1 }
+
+                set_temp_variable = { input_modifier_temp = building_input_factor@var:ba_token }
+                add_to_temp_variable = { input_modifier_temp = 1 }
+            #
+            
+            #Production
+                set_variable = { predicted_production_1@var:ba_token = size@var:ba_token }
+                set_variable = { predicted_production_2@var:ba_token = size@var:ba_token }
+                set_variable = { predicted_production_3@var:ba_token = size@var:ba_token }
+                set_variable = { predicted_production_4@var:ba_token = size@var:ba_token }
+                set_variable = { predicted_production_5@var:ba_token = size@var:ba_token }
+                if = { #Basic
+                    limit = {
+                        check_variable = { production_method@var:ba_token = 0 }
+                    }
+                    set_temp_variable = { predicted_production_1_temp = global.building_basic_output_1@var:ba_token }
+                    set_temp_variable = { predicted_production_2_temp = global.building_basic_output_2@var:ba_token }
+                    set_temp_variable = { predicted_production_3_temp = global.building_basic_output_3@var:ba_token }
+                    set_temp_variable = { predicted_production_4_temp = global.building_basic_output_4@var:ba_token }
+                    set_temp_variable = { predicted_production_5_temp = global.building_basic_output_5@var:ba_token }
+                }
+                else_if = { #Advanced
+                    limit = {
+                        check_variable = { production_method@var:ba_token = 1 }
+                    }
+                    set_temp_variable = { predicted_production_1_temp = global.building_advanced_output_1@var:ba_token }
+                    set_temp_variable = { predicted_production_2_temp = global.building_advanced_output_2@var:ba_token }
+                    set_temp_variable = { predicted_production_3_temp = global.building_advanced_output_3@var:ba_token }
+                    set_temp_variable = { predicted_production_4_temp = global.building_advanced_output_4@var:ba_token }
+                    set_temp_variable = { predicted_production_5_temp = global.building_advanced_output_5@var:ba_token }
+                }
+                else_if = { #Industrialized
+                    limit = {
+                        check_variable = { production_method@var:ba_token = 2 }
+                    }
+                    set_temp_variable = { predicted_production_1_temp = global.building_industrialized_output_1@var:ba_token }
+                    set_temp_variable = { predicted_production_2_temp = global.building_industrialized_output_2@var:ba_token }
+                    set_temp_variable = { predicted_production_3_temp = global.building_industrialized_output_3@var:ba_token }
+                    set_temp_variable = { predicted_production_4_temp = global.building_industrialized_output_4@var:ba_token }
+                    set_temp_variable = { predicted_production_5_temp = global.building_industrialized_output_5@var:ba_token }
+                }
+                else_if = { #Mechanized
+                    limit = {
+                        check_variable = { production_method@var:ba_token = 3 }
+                    }
+                    set_temp_variable = { predicted_production_1_temp = global.building_mechanized_output_1@var:ba_token }
+                    set_temp_variable = { predicted_production_2_temp = global.building_mechanized_output_2@var:ba_token }
+                    set_temp_variable = { predicted_production_3_temp = global.building_mechanized_output_3@var:ba_token }
+                    set_temp_variable = { predicted_production_4_temp = global.building_mechanized_output_4@var:ba_token }
+                    set_temp_variable = { predicted_production_5_temp = global.building_mechanized_output_5@var:ba_token }
+                }
+                else_if = { #Electrified
+                    limit = {
+                        check_variable = { production_method@var:ba_token = 4 }
+                    }
+                    set_temp_variable = { predicted_production_1_temp = global.building_electrified_output_1@var:ba_token }
+                    set_temp_variable = { predicted_production_2_temp = global.building_electrified_output_2@var:ba_token }
+                    set_temp_variable = { predicted_production_3_temp = global.building_electrified_output_3@var:ba_token }
+                    set_temp_variable = { predicted_production_4_temp = global.building_electrified_output_4@var:ba_token }
+                    set_temp_variable = { predicted_production_5_temp = global.building_electrified_output_5@var:ba_token }
+                }
+                else_if = { #Motorized
+                    limit = {
+                        check_variable = { production_method@var:ba_token = 5 }
+                    }
+                    set_temp_variable = { predicted_production_1_temp = global.building_motorized_output_1@var:ba_token }
+                    set_temp_variable = { predicted_production_2_temp = global.building_motorized_output_2@var:ba_token }
+                    set_temp_variable = { predicted_production_3_temp = global.building_motorized_output_3@var:ba_token }
+                    set_temp_variable = { predicted_production_4_temp = global.building_motorized_output_4@var:ba_token }
+                    set_temp_variable = { predicted_production_5_temp = global.building_motorized_output_5@var:ba_token }
+                }
+                else_if = { #Modernized
+                    limit = {
+                        check_variable = { production_method@var:ba_token = 6 }
+                    }
+                    set_temp_variable = { predicted_production_1_temp = global.building_modernized_output_1@var:ba_token }
+                    set_temp_variable = { predicted_production_2_temp = global.building_modernized_output_2@var:ba_token }
+                    set_temp_variable = { predicted_production_3_temp = global.building_modernized_output_3@var:ba_token }
+                    set_temp_variable = { predicted_production_4_temp = global.building_modernized_output_4@var:ba_token }
+                    set_temp_variable = { predicted_production_5_temp = global.building_modernized_output_5@var:ba_token }
+                }
+                else_if = { #Roboticized
+                    limit = {
+                        check_variable = { production_method@var:ba_token = 7 }
+                    }
+                    set_temp_variable = { predicted_production_1_temp = global.building_roboticized_output_1@var:ba_token }
+                    set_temp_variable = { predicted_production_2_temp = global.building_roboticized_output_2@var:ba_token }
+                    set_temp_variable = { predicted_production_3_temp = global.building_roboticized_output_3@var:ba_token }
+                    set_temp_variable = { predicted_production_4_temp = global.building_roboticized_output_4@var:ba_token }
+                    set_temp_variable = { predicted_production_5_temp = global.building_roboticized_output_5@var:ba_token }
+                }
+                else_if = { #Computerized
+                    limit = {
+                        check_variable = { production_method@var:ba_token = 8 }
+                    }
+                    set_temp_variable = { predicted_production_1_temp = global.building_computerized_output_1@var:ba_token }
+                    set_temp_variable = { predicted_production_2_temp = global.building_computerized_output_2@var:ba_token }
+                    set_temp_variable = { predicted_production_3_temp = global.building_computerized_output_3@var:ba_token }
+                    set_temp_variable = { predicted_production_4_temp = global.building_computerized_output_4@var:ba_token }
+                    set_temp_variable = { predicted_production_5_temp = global.building_computerized_output_5@var:ba_token }
+                }
+                else_if = { #Digitalized
+                    limit = {
+                        check_variable = { production_method@var:ba_token = 9 }
+                    }
+                    set_temp_variable = { predicted_production_1_temp = global.building_digitalized_output_1@var:ba_token }
+                    set_temp_variable = { predicted_production_2_temp = global.building_digitalized_output_2@var:ba_token }
+                    set_temp_variable = { predicted_production_3_temp = global.building_digitalized_output_3@var:ba_token }
+                    set_temp_variable = { predicted_production_4_temp = global.building_digitalized_output_4@var:ba_token }
+                    set_temp_variable = { predicted_production_5_temp = global.building_digitalized_output_5@var:ba_token }
+                }
+                else_if = { #Automatized
+                    limit = {
+                        check_variable = { production_method@var:ba_token = 10 }
+                    }
+                    set_temp_variable = { predicted_production_1_temp = global.building_automatized_output_1@var:ba_token }
+                    set_temp_variable = { predicted_production_2_temp = global.building_automatized_output_2@var:ba_token }
+                    set_temp_variable = { predicted_production_3_temp = global.building_automatized_output_3@var:ba_token }
+                    set_temp_variable = { predicted_production_4_temp = global.building_automatized_output_4@var:ba_token }
+                    set_temp_variable = { predicted_production_5_temp = global.building_automatized_output_5@var:ba_token }
+                }
+                else_if = { #Futurized
+                    limit = {
+                        check_variable = { production_method@var:ba_token = 11 }
+                    }
+                    set_temp_variable = { predicted_production_1_temp = global.building_futurized_output_1@var:ba_token }
+                    set_temp_variable = { predicted_production_2_temp = global.building_futurized_output_2@var:ba_token }
+                    set_temp_variable = { predicted_production_3_temp = global.building_futurized_output_3@var:ba_token }
+                    set_temp_variable = { predicted_production_4_temp = global.building_futurized_output_4@var:ba_token }
+                    set_temp_variable = { predicted_production_5_temp = global.building_futurized_output_5@var:ba_token }
+                }
+
+                #Modifiers
+                multiply_temp_variable = { predicted_production_1_temp = output_modifier_temp }
+                multiply_temp_variable = { predicted_production_1_temp = throughput_modifier_temp }
+                multiply_temp_variable = { predicted_production_2_temp = output_modifier_temp }
+                multiply_temp_variable = { predicted_production_2_temp = throughput_modifier_temp }
+                multiply_temp_variable = { predicted_production_3_temp = output_modifier_temp }
+                multiply_temp_variable = { predicted_production_3_temp = throughput_modifier_temp }
+                multiply_temp_variable = { predicted_production_4_temp = output_modifier_temp }
+                multiply_temp_variable = { predicted_production_4_temp = throughput_modifier_temp }
+                multiply_temp_variable = { predicted_production_5_temp = output_modifier_temp }
+                multiply_temp_variable = { predicted_production_5_temp = throughput_modifier_temp }
+
+                multiply_variable = { predicted_production_1@var:ba_token = predicted_production_1_temp }
+                multiply_variable = { predicted_production_2@var:ba_token = predicted_production_2_temp }
+                multiply_variable = { predicted_production_3@var:ba_token = predicted_production_3_temp }
+                multiply_variable = { predicted_production_4@var:ba_token = predicted_production_4_temp }
+                multiply_variable = { predicted_production_5@var:ba_token = predicted_production_5_temp }
+            #
+
+            #Input
+                if = { #Basic
+                    limit = {
+                        check_variable = { production_method@var:ba_token = 0 }
+                    }
+                    set_temp_variable = { input_r_1 = global.building_basic_input_resource_1@var:ba_token }
+                    set_variable = { predicted_input_1_amount@var:ba_token = global.building_basic_input_amount_1@var:ba_token }
+                    
+                    set_temp_variable = { input_r_2 = global.building_basic_input_resource_2@var:ba_token }
+                    set_variable = { predicted_input_2_amount@var:ba_token = global.building_basic_input_amount_2@var:ba_token }
+                    
+                    set_temp_variable = { input_r_3 = global.building_basic_input_resource_3@var:ba_token }
+                    set_variable = { predicted_input_3_amount@var:ba_token = global.building_basic_input_amount_3@var:ba_token }
+                    
+                    set_temp_variable = { input_r_4 = global.building_basic_input_resource_4@var:ba_token }
+                    set_variable = { predicted_input_4_amount@var:ba_token = global.building_basic_input_amount_4@var:ba_token }
+                    
+                    set_temp_variable = { input_r_5 = global.building_basic_input_resource_5@var:ba_token }
+                    set_variable = { predicted_input_5_amount@var:ba_token = global.building_basic_input_amount_5@var:ba_token }
+                }
+                else_if = { #Advanced
+                    limit = {
+                        check_variable = { production_method@var:ba_token = 1 }
+                    }
+                    set_temp_variable = { input_r_1 = global.building_advanced_input_resource_1@var:ba_token }
+                    set_variable = { predicted_input_1_amount@var:ba_token = global.building_advanced_input_amount_1@var:ba_token }
+                    
+                    set_temp_variable = { input_r_2 = global.building_advanced_input_resource_2@var:ba_token }
+                    set_variable = { predicted_input_2_amount@var:ba_token = global.building_advanced_input_amount_2@var:ba_token }
+                    
+                    set_temp_variable = { input_r_3 = global.building_advanced_input_resource_3@var:ba_token }
+                    set_variable = { predicted_input_3_amount@var:ba_token = global.building_advanced_input_amount_3@var:ba_token }
+                    
+                    set_temp_variable = { input_r_4 = global.building_advanced_input_resource_4@var:ba_token }
+                    set_variable = { predicted_input_4_amount@var:ba_token = global.building_advanced_input_amount_4@var:ba_token }
+                    
+                    set_temp_variable = { input_r_5 = global.building_advanced_input_resource_5@var:ba_token }
+                    set_variable = { predicted_input_5_amount@var:ba_token = global.building_advanced_input_amount_5@var:ba_token }
+                }
+                else_if = { #Industrialized
+                    limit = {
+                        check_variable = { production_method@var:ba_token = 2 }
+                    }
+                    set_temp_variable = { input_r_1 = global.building_industrialized_input_resource_1@var:ba_token }
+                    set_variable = { predicted_input_1_amount@var:ba_token = global.building_industrialized_input_amount_1@var:ba_token }
+                    
+                    set_temp_variable = { input_r_2 = global.building_industrialized_input_resource_2@var:ba_token }
+                    set_variable = { predicted_input_2_amount@var:ba_token = global.building_industrialized_input_amount_2@var:ba_token }
+                    
+                    set_temp_variable = { input_r_3 = global.building_industrialized_input_resource_3@var:ba_token }
+                    set_variable = { predicted_input_3_amount@var:ba_token = global.building_industrialized_input_amount_3@var:ba_token }
+                    
+                    set_temp_variable = { input_r_4 = global.building_industrialized_input_resource_4@var:ba_token }
+                    set_variable = { predicted_input_4_amount@var:ba_token = global.building_industrialized_input_amount_4@var:ba_token }
+                    
+                    set_temp_variable = { input_r_5 = global.building_industrialized_input_resource_5@var:ba_token }
+                    set_variable = { predicted_input_5_amount@var:ba_token = global.building_industrialized_input_amount_5@var:ba_token }
+                }
+                else_if = { #Mechanized
+                    limit = {
+                        check_variable = { production_method@var:ba_token = 3 }
+                    }
+                    set_temp_variable = { input_r_1 = global.building_mechanized_input_resource_1@var:ba_token }
+                    set_variable = { predicted_input_1_amount@var:ba_token = global.building_mechanized_input_amount_1@var:ba_token }
+                    
+                    set_temp_variable = { input_r_2 = global.building_mechanized_input_resource_2@var:ba_token }
+                    set_variable = { predicted_input_2_amount@var:ba_token = global.building_mechanized_input_amount_2@var:ba_token }
+                    
+                    set_temp_variable = { input_r_3 = global.building_mechanized_input_resource_3@var:ba_token }
+                    set_variable = { predicted_input_3_amount@var:ba_token = global.building_mechanized_input_amount_3@var:ba_token }
+                    
+                    set_temp_variable = { input_r_4 = global.building_mechanized_input_resource_4@var:ba_token }
+                    set_variable = { predicted_input_4_amount@var:ba_token = global.building_mechanized_input_amount_4@var:ba_token }
+                    
+                    set_temp_variable = { input_r_5 = global.building_mechanized_input_resource_5@var:ba_token }
+                    set_variable = { predicted_input_5_amount@var:ba_token = global.building_mechanized_input_amount_5@var:ba_token }
+                }
+                else_if = { #Electrified
+                    limit = {
+                        check_variable = { production_method@var:ba_token = 4 }
+                    }
+                    set_temp_variable = { input_r_1 = global.building_electrified_input_resource_1@var:ba_token }
+                    set_variable = { predicted_input_1_amount@var:ba_token = global.building_electrified_input_amount_1@var:ba_token }
+                    
+                    set_temp_variable = { input_r_2 = global.building_electrified_input_resource_2@var:ba_token }
+                    set_variable = { predicted_input_2_amount@var:ba_token = global.building_electrified_input_amount_2@var:ba_token }
+                    
+                    set_temp_variable = { input_r_3 = global.building_electrified_input_resource_3@var:ba_token }
+                    set_variable = { predicted_input_3_amount@var:ba_token = global.building_electrified_input_amount_3@var:ba_token }
+                    
+                    set_temp_variable = { input_r_4 = global.building_electrified_input_resource_4@var:ba_token }
+                    set_variable = { predicted_input_4_amount@var:ba_token = global.building_electrified_input_amount_4@var:ba_token }
+                    
+                    set_temp_variable = { input_r_5 = global.building_electrified_input_resource_5@var:ba_token }
+                    set_variable = { predicted_input_5_amount@var:ba_token = global.building_electrified_input_amount_5@var:ba_token }
+                }
+                else_if = { #Motorized
+                    limit = {
+                        check_variable = { production_method@var:ba_token = 5 }
+                    }
+                    set_temp_variable = { input_r_1 = global.building_motorized_input_resource_1@var:ba_token }
+                    set_variable = { predicted_input_1_amount@var:ba_token = global.building_motorized_input_amount_1@var:ba_token }
+                    
+                    set_temp_variable = { input_r_2 = global.building_motorized_input_resource_2@var:ba_token }
+                    set_variable = { predicted_input_2_amount@var:ba_token = global.building_motorized_input_amount_2@var:ba_token }
+                    
+                    set_temp_variable = { input_r_3 = global.building_motorized_input_resource_3@var:ba_token }
+                    set_variable = { predicted_input_3_amount@var:ba_token = global.building_motorized_input_amount_3@var:ba_token }
+                    
+                    set_temp_variable = { input_r_4 = global.building_motorized_input_resource_4@var:ba_token }
+                    set_variable = { predicted_input_4_amount@var:ba_token = global.building_motorized_input_amount_4@var:ba_token }
+                    
+                    set_temp_variable = { input_r_5 = global.building_motorized_input_resource_5@var:ba_token }
+                    set_variable = { predicted_input_5_amount@var:ba_token = global.building_motorized_input_amount_5@var:ba_token }
+                }
+                else_if = { #Modernized
+                    limit = {
+                        check_variable = { production_method@var:ba_token = 6 }
+                    }
+                    set_temp_variable = { input_r_1 = global.building_modernized_input_resource_1@var:ba_token }
+                    set_variable = { predicted_input_1_amount@var:ba_token = global.building_modernized_input_amount_1@var:ba_token }
+                    
+                    set_temp_variable = { input_r_2 = global.building_modernized_input_resource_2@var:ba_token }
+                    set_variable = { predicted_input_2_amount@var:ba_token = global.building_modernized_input_amount_2@var:ba_token }
+                    
+                    set_temp_variable = { input_r_3 = global.building_modernized_input_resource_3@var:ba_token }
+                    set_variable = { predicted_input_3_amount@var:ba_token = global.building_modernized_input_amount_3@var:ba_token }
+                    
+                    set_temp_variable = { input_r_4 = global.building_modernized_input_resource_4@var:ba_token }
+                    set_variable = { predicted_input_4_amount@var:ba_token = global.building_modernized_input_amount_4@var:ba_token }
+                    
+                    set_temp_variable = { input_r_5 = global.building_modernized_input_resource_5@var:ba_token }
+                    set_variable = { predicted_input_5_amount@var:ba_token = global.building_modernized_input_amount_5@var:ba_token }
+                }
+                else_if = { #Roboticized
+                    limit = {
+                        check_variable = { production_method@var:ba_token = 7 }
+                    }
+                    set_temp_variable = { input_r_1 = global.building_roboticized_input_resource_1@var:ba_token }
+                    set_variable = { predicted_input_1_amount@var:ba_token = global.building_roboticized_input_amount_1@var:ba_token }
+                    
+                    set_temp_variable = { input_r_2 = global.building_roboticized_input_resource_2@var:ba_token }
+                    set_variable = { predicted_input_2_amount@var:ba_token = global.building_roboticized_input_amount_2@var:ba_token }
+                    
+                    set_temp_variable = { input_r_3 = global.building_roboticized_input_resource_3@var:ba_token }
+                    set_variable = { predicted_input_3_amount@var:ba_token = global.building_roboticized_input_amount_3@var:ba_token }
+                    
+                    set_temp_variable = { input_r_4 = global.building_roboticized_input_resource_4@var:ba_token }
+                    set_variable = { predicted_input_4_amount@var:ba_token = global.building_roboticized_input_amount_4@var:ba_token }
+                    
+                    set_temp_variable = { input_r_5 = global.building_roboticized_input_resource_5@var:ba_token }
+                    set_variable = { predicted_input_5_amount@var:ba_token = global.building_roboticized_input_amount_5@var:ba_token }
+                }
+                else_if = { #Computerized
+                    limit = {
+                        check_variable = { production_method@var:ba_token = 8 }
+                    }
+                    set_temp_variable = { input_r_1 = global.building_computerized_input_resource_1@var:ba_token }
+                    set_variable = { predicted_input_1_amount@var:ba_token = global.building_computerized_input_amount_1@var:ba_token }
+                    
+                    set_temp_variable = { input_r_2 = global.building_computerized_input_resource_2@var:ba_token }
+                    set_variable = { predicted_input_2_amount@var:ba_token = global.building_computerized_input_amount_2@var:ba_token }
+                    
+                    set_temp_variable = { input_r_3 = global.building_computerized_input_resource_3@var:ba_token }
+                    set_variable = { predicted_input_3_amount@var:ba_token = global.building_computerized_input_amount_3@var:ba_token }
+                    
+                    set_temp_variable = { input_r_4 = global.building_computerized_input_resource_4@var:ba_token }
+                    set_variable = { predicted_input_4_amount@var:ba_token = global.building_computerized_input_amount_4@var:ba_token }
+                    
+                    set_temp_variable = { input_r_5 = global.building_computerized_input_resource_5@var:ba_token }
+                    set_variable = { predicted_input_5_amount@var:ba_token = global.building_computerized_input_amount_5@var:ba_token }
+                }
+                else_if = { #Digitalized
+                    limit = {
+                        check_variable = { production_method@var:ba_token = 9 }
+                    }
+                    set_temp_variable = { input_r_1 = global.building_digitalized_input_resource_1@var:ba_token }
+                    set_variable = { predicted_input_1_amount@var:ba_token = global.building_digitalized_input_amount_1@var:ba_token }
+                    
+                    set_temp_variable = { input_r_2 = global.building_digitalized_input_resource_2@var:ba_token }
+                    set_variable = { predicted_input_2_amount@var:ba_token = global.building_digitalized_input_amount_2@var:ba_token }
+                    
+                    set_temp_variable = { input_r_3 = global.building_digitalized_input_resource_3@var:ba_token }
+                    set_variable = { predicted_input_3_amount@var:ba_token = global.building_digitalized_input_amount_3@var:ba_token }
+                    
+                    set_temp_variable = { input_r_4 = global.building_digitalized_input_resource_4@var:ba_token }
+                    set_variable = { predicted_input_4_amount@var:ba_token = global.building_digitalized_input_amount_4@var:ba_token }
+                    
+                    set_temp_variable = { input_r_5 = global.building_digitalized_input_resource_5@var:ba_token }
+                    set_variable = { predicted_input_5_amount@var:ba_token = global.building_digitalized_input_amount_5@var:ba_token }
+                }
+                else_if = { #Automatized
+                    limit = {
+                        check_variable = { production_method@var:ba_token = 10 }
+                    }
+                    set_temp_variable = { input_r_1 = global.building_automatized_input_resource_1@var:ba_token }
+                    set_variable = { predicted_input_1_amount@var:ba_token = global.building_automatized_input_amount_1@var:ba_token }
+                    
+                    set_temp_variable = { input_r_2 = global.building_automatized_input_resource_2@var:ba_token }
+                    set_variable = { predicted_input_2_amount@var:ba_token = global.building_automatized_input_amount_2@var:ba_token }
+                    
+                    set_temp_variable = { input_r_3 = global.building_automatized_input_resource_3@var:ba_token }
+                    set_variable = { predicted_input_3_amount@var:ba_token = global.building_automatized_input_amount_3@var:ba_token }
+                    
+                    set_temp_variable = { input_r_4 = global.building_automatized_input_resource_4@var:ba_token }
+                    set_variable = { predicted_input_4_amount@var:ba_token = global.building_automatized_input_amount_4@var:ba_token }
+                    
+                    set_temp_variable = { input_r_5 = global.building_automatized_input_resource_5@var:ba_token }
+                    set_variable = { predicted_input_5_amount@var:ba_token = global.building_automatized_input_amount_5@var:ba_token }
+                }
+                else_if = { #Futurized
+                    limit = {
+                        check_variable = { production_method@var:ba_token = 11 }
+                    }
+                    set_temp_variable = { input_r_1 = global.building_futurized_input_resource_1@var:ba_token }
+                    set_variable = { predicted_input_1_amount@var:ba_token = global.building_futurized_input_amount_1@var:ba_token }
+                    
+                    set_temp_variable = { input_r_2 = global.building_futurized_input_resource_2@var:ba_token }
+                    set_variable = { predicted_input_2_amount@var:ba_token = global.building_futurized_input_amount_2@var:ba_token }
+                    
+                    set_temp_variable = { input_r_3 = global.building_futurized_input_resource_3@var:ba_token }
+                    set_variable = { predicted_input_3_amount@var:ba_token = global.building_futurized_input_amount_3@var:ba_token }
+                    
+                    set_temp_variable = { input_r_4 = global.building_futurized_input_resource_4@var:ba_token }
+                    set_variable = { predicted_input_4_amount@var:ba_token = global.building_futurized_input_amount_4@var:ba_token }
+                    
+                    set_temp_variable = { input_r_5 = global.building_futurized_input_resource_5@var:ba_token }
+                    set_variable = { predicted_input_5_amount@var:ba_token = global.building_futurized_input_amount_5@var:ba_token }
+                }
+
+                #Amount
+                multiply_variable = { predicted_input_1_amount@var:ba_token = throughput_modifier_temp }
+                multiply_variable = { predicted_input_1_amount@var:ba_token = input_modifier_temp }
+
+                multiply_variable = { predicted_input_2_amount@var:ba_token = throughput_modifier_temp }
+                multiply_variable = { predicted_input_2_amount@var:ba_token = input_modifier_temp }
+                
+                multiply_variable = { predicted_input_3_amount@var:ba_token = throughput_modifier_temp }
+                multiply_variable = { predicted_input_3_amount@var:ba_token = input_modifier_temp }
+
+                multiply_variable = { predicted_input_4_amount@var:ba_token = throughput_modifier_temp }
+                multiply_variable = { predicted_input_4_amount@var:ba_token = input_modifier_temp }
+                
+                multiply_variable = { predicted_input_5_amount@var:ba_token = throughput_modifier_temp }
+                multiply_variable = { predicted_input_5_amount@var:ba_token = input_modifier_temp }
+                
+                #Expenses
+                set_variable = { predicted_input_1_expenses@var:ba_token = predicted_input_1_amount@var:ba_token }
+                multiply_variable = { predicted_input_1_expenses@var:ba_token = price@var:input_r_1 }
+                set_variable = { predicted_input_2_expenses@var:ba_token = predicted_input_2_amount@var:ba_token }
+                multiply_variable = { predicted_input_2_expenses@var:ba_token = price@var:input_r_2 }
+                set_variable = { predicted_input_3_expenses@var:ba_token = predicted_input_3_amount@var:ba_token }
+                multiply_variable = { predicted_input_3_expenses@var:ba_token = price@var:input_r_3 }
+                set_variable = { predicted_input_4_expenses@var:ba_token = predicted_input_4_amount@var:ba_token }
+                multiply_variable = { predicted_input_4_expenses@var:ba_token = price@var:input_r_4 }
+                set_variable = { predicted_input_5_expenses@var:ba_token = predicted_input_5_amount@var:ba_token }
+                multiply_variable = { predicted_input_5_expenses@var:ba_token = price@var:input_r_5 }
+            #
+
+            set_temp_variable = { bu_resource_1 = global.building_output_resource_1@var:ba_token }
+            set_temp_variable = { bu_resource_2 = global.building_output_resource_2@var:ba_token }
+            set_temp_variable = { bu_resource_3 = global.building_output_resource_3@var:ba_token }
+            set_temp_variable = { bu_resource_4 = global.building_output_resource_4@var:ba_token }
+            set_temp_variable = { bu_resource_5 = global.building_output_resource_5@var:ba_token }
+            
+            #Productivity
+                set_temp_variable = { revenue_temp = 0 }
+                set_temp_variable = { rev_g_temp = predicted_production_1@var:ba_token }
+                multiply_temp_variable = { rev_g_temp = price@var:bu_resource_1 }
+                add_to_temp_variable = { revenue_temp = rev_g_temp }
+                set_temp_variable = { rev_g_temp = predicted_production_2@var:ba_token }
+                multiply_temp_variable = { rev_g_temp = price@var:bu_resource_2 }
+                add_to_temp_variable = { revenue_temp = rev_g_temp }
+                set_temp_variable = { rev_g_temp = predicted_production_3@var:ba_token }
+                multiply_temp_variable = { rev_g_temp = price@var:bu_resource_3 }
+                add_to_temp_variable = { revenue_temp = rev_g_temp }
+                set_temp_variable = { rev_g_temp = predicted_production_4@var:ba_token }
+                multiply_temp_variable = { rev_g_temp = price@var:bu_resource_4 }
+                add_to_temp_variable = { revenue_temp = rev_g_temp }
+                set_temp_variable = { rev_g_temp = predicted_production_5@var:ba_token }
+                multiply_temp_variable = { rev_g_temp = price@var:bu_resource_5 }
+                add_to_temp_variable = { revenue_temp = rev_g_temp }
+                
+                set_temp_variable = { expenses_temp = 0 }
+                add_to_temp_variable = { expenses_temp = predicted_input_1_expenses@var:ba_token }
+                add_to_temp_variable = { expenses_temp = predicted_input_2_expenses@var:ba_token }
+                add_to_temp_variable = { expenses_temp = predicted_input_3_expenses@var:ba_token }
+                add_to_temp_variable = { expenses_temp = predicted_input_4_expenses@var:ba_token }
+                add_to_temp_variable = { expenses_temp = predicted_input_5_expenses@var:ba_token }
+
+                set_variable = { productivity@var:ba_token = revenue_temp }
+                subtract_from_variable = { productivity@var:ba_token = expenses_temp }
+                divide_variable = { productivity@var:ba_token = predicted_jobs@var:ba_token }
+            #
+        }
     }
 #
 
