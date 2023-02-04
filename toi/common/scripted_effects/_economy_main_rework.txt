@@ -127,6 +127,87 @@
                 set_variable = { actual_net_budget = net_budget }
             #
 
+            #Projects
+                for_each_loop = {
+                    array = proj_id
+                    value = proj_token
+
+                    #food
+                    add_to_variable = { proj_food_fulfilled@var:proj_token = proj_food_demand@var:proj_token }
+                    if = {
+                        limit = {
+                            check_variable = { proj_food_fulfilled@var:proj_token > proj_food_need@var:proj_token }
+                        }
+                        set_variable = { proj_food_fulfilled@var:proj_token = proj_food_need@var:proj_token }
+                    }
+                    
+                    #consumer_goods
+                    add_to_variable = { proj_consumer_goods_fulfilled@var:proj_token = proj_consumer_goods_demand@var:proj_token }
+                    if = {
+                        limit = {
+                            check_variable = { proj_consumer_goods_fulfilled@var:proj_token > proj_consumer_goods_need@var:proj_token }
+                        }
+                        set_variable = { proj_consumer_goods_fulfilled@var:proj_token = proj_consumer_goods_need@var:proj_token }
+                    }
+                    
+                    #luxury_goods
+                    add_to_variable = { proj_luxury_goods_fulfilled@var:proj_token = proj_luxury_goods_demand@var:proj_token }
+                    if = {
+                        limit = {
+                            check_variable = { proj_luxury_goods_fulfilled@var:proj_token > proj_luxury_goods_need@var:proj_token }
+                        }
+                        set_variable = { proj_luxury_goods_fulfilled@var:proj_token = proj_luxury_goods_need@var:proj_token }
+                    }
+                    
+                    #services
+                    add_to_variable = { proj_services_fulfilled@var:proj_token = proj_services_demand@var:proj_token }
+                    if = {
+                        limit = {
+                            check_variable = { proj_services_fulfilled@var:proj_token > proj_services_need@var:proj_token }
+                        }
+                        set_variable = { proj_services_fulfilled@var:proj_token = proj_services_need@var:proj_token }
+                    }
+                    
+                    #raw_materials
+                    add_to_variable = { proj_raw_materials_fulfilled@var:proj_token = proj_raw_materials_demand@var:proj_token }
+                    if = {
+                        limit = {
+                            check_variable = { proj_raw_materials_fulfilled@var:proj_token > proj_raw_materials_need@var:proj_token }
+                        }
+                        set_variable = { proj_raw_materials_fulfilled@var:proj_token = proj_raw_materials_need@var:proj_token }
+                    }
+                    
+                    #energy_materials
+                    add_to_variable = { proj_energy_materials_fulfilled@var:proj_token = proj_energy_materials_demand@var:proj_token }
+                    if = {
+                        limit = {
+                            check_variable = { proj_energy_materials_fulfilled@var:proj_token > proj_energy_materials_need@var:proj_token }
+                        }
+                        set_variable = { proj_energy_materials_fulfilled@var:proj_token = proj_energy_materials_need@var:proj_token }
+                    }
+                    
+                    #industrial_goods
+                    add_to_variable = { proj_industrial_goods_fulfilled@var:proj_token = proj_industrial_goods_demand@var:proj_token }
+                    if = {
+                        limit = {
+                            check_variable = { proj_industrial_goods_fulfilled@var:proj_token > proj_industrial_goods_need@var:proj_token }
+                        }
+                        set_variable = { proj_industrial_goods_fulfilled@var:proj_token = proj_industrial_goods_need@var:proj_token }
+                    }
+                    
+                    #electricity
+                    add_to_variable = { proj_electricity_fulfilled@var:proj_token = proj_electricity_demand@var:proj_token }
+                    if = {
+                        limit = {
+                            check_variable = { proj_electricity_fulfilled@var:proj_token > proj_electricity_need@var:proj_token }
+                        }
+                        set_variable = { proj_electricity_fulfilled@var:proj_token = proj_electricity_need@var:proj_token }
+                    }
+
+					add_to_variable = { proj_time_elapsed@var:proj_token = 1 }
+                }
+            #
+
             set_temp_variable = { upper_earnings_limit = pops_earnings_avg }
             multiply_temp_variable = { upper_earnings_limit = 3 }
             set_temp_variable = { lower_earnings_limit = pops_earnings_avg }
@@ -1550,6 +1631,8 @@
 
             update_country_pop_stats = yes
 
+            set_variable = { gdp_amount = 0 }
+
             every_controlled_state = {
                 buildings_update = yes
                 pops_update = yes
@@ -1598,6 +1681,8 @@
                     }
                     subtract_from_variable = { gdp_growth = 100 }
 
+                    add_to_variable = { PREV.gdp_amount = gdp_amount }
+
                     
                     create_state_gdp_graph = yes
                     create_pie_chart_pop_type = yes
@@ -1612,6 +1697,34 @@
                     set_variable = { pops_unemployed_percentage = 0 }
                 }
             }
+
+            #Completing Projects
+            for_loop_effect = {
+                start = 0
+                end = proj_id^num
+                value = proj_index_temp
+
+                set_temp_variable = { project_token_temp = proj_id^project_token_temp }
+
+                # Check if done
+                if = {
+                    limit = {
+                        check_variable = { proj_food_fulfilled@var:project_token_temp = proj_food_need@var:project_token_temp }
+                        check_variable = { proj_consumer_goods_fulfilled@var:project_token_temp = proj_consumer_goods_need@var:project_token_temp }
+                        check_variable = { proj_luxury_goods_fulfilled@var:project_token_temp = proj_luxury_goods_need@var:project_token_temp }
+                        check_variable = { proj_services_fulfilled@var:project_token_temp = proj_services_need@var:project_token_temp }
+                        check_variable = { proj_raw_materials_fulfilled@var:project_token_temp = proj_raw_materials_need@var:project_token_temp }
+                        check_variable = { proj_energy_materials_fulfilled@var:project_token_temp = proj_energy_materials_need@var:project_token_temp }
+                        check_variable = { proj_industrial_goods_fulfilled@var:project_token_temp = proj_industrial_goods_need@var:project_token_temp }
+                        check_variable = { proj_electricity_fulfilled@var:project_token_temp = proj_electricity_need@var:project_token_temp }
+                    }
+                    proj_done = yes
+                }
+            }
+            proj_update = yes
+
+            calc_demand = yes
+            get_resource_prices = yes
 
             taxes_update = yes
             spending_update = yes
@@ -1978,36 +2091,44 @@
 					set_variable = { global.deployed_planes_need@token:resource_industrial_goods = 0.003 }
 				#
 				#Projects
-					clear_array = proj_id
-					clear_array = proj_relative
-					clear_array = proj_estimated_cost
-					clear_array = proj_estimated_monthly_cost
-					clear_array = proj_estimated_complete_time
-					clear_array = proj_time_elapsed
-					clear_array = proj_need@token:resource_food
-					clear_array = proj_life_goods_fulfilled
-					clear_array = proj_demand@token:resource_food
-					clear_array = proj_life_goods_build_speed
-					clear_array = proj_need@token:resource_consumer_goods
-					clear_array = proj_everyday_goods_fulfilled
-					clear_array = proj_demand@token:resource_consumer_goods
-					clear_array = proj_everyday_goods_build_speed
-					clear_array = proj_need@token:resource_luxury_goods
-					clear_array = proj_luxury_goods_fulfilled
-					clear_array = proj_demand@token:resource_luxury_goods
-					clear_array = proj_luxury_goods_build_speed
-					clear_array = proj_services_need
-					clear_array = proj_services_fulfilled
-					clear_array = proj_services_demand
-					clear_array = proj_services_build_speed
-					clear_array = proj_raw_goods_need
-					clear_array = proj_raw_goods_fulfilled
-					clear_array = proj_raw_goods_demand
-					clear_array = proj_raw_goods_build_speed
-					clear_array = proj_need@token:resource_industrial_goods
-					clear_array = proj_industrial_goods_fulfilled
-					clear_array = proj_demand@token:resource_industrial_goods
-					clear_array = proj_industrial_goods_build_speed
+                    clear_array = proj_id
+                    clear_array = proj_relative
+                    clear_array = proj_estimated_cost
+                    clear_array = proj_estimated_monthly_cost
+                    clear_array = proj_estimated_complete_time
+                    clear_array = proj_time_elapsed
+                    clear_array = proj_food_need
+                    clear_array = proj_food_fulfilled
+                    clear_array = proj_food_demand
+                    clear_array = proj_food_build_speed
+                    clear_array = proj_consumer_goods_need
+                    clear_array = proj_consumer_goods_fulfilled
+                    clear_array = proj_consumer_goods_demand
+                    clear_array = proj_consumer_goods_build_speed
+                    clear_array = proj_luxury_goods_need
+                    clear_array = proj_luxury_goods_fulfilled
+                    clear_array = proj_luxury_goods_demand
+                    clear_array = proj_luxury_goods_build_speed
+                    clear_array = proj_services_need
+                    clear_array = proj_services_fulfilled
+                    clear_array = proj_services_demand
+                    clear_array = proj_services_build_speed
+                    clear_array = proj_raw_materials_need
+                    clear_array = proj_raw_materials_fulfilled
+                    clear_array = proj_raw_materials_demand
+                    clear_array = proj_raw_materials_build_speed
+                    clear_array = proj_industrial_goods_need
+                    clear_array = proj_industrial_goods_fulfilled
+                    clear_array = proj_industrial_goods_demand
+                    clear_array = proj_industrial_goods_build_speed
+                    clear_array = proj_electricity_need
+                    clear_array = proj_electricity_fulfilled
+                    clear_array = proj_electricity_demand
+                    clear_array = proj_electricity_build_speed
+                    clear_array = proj_energy_materials_need
+                    clear_array = proj_energy_materials_fulfilled
+                    clear_array = proj_energy_materials_demand
+                    clear_array = proj_energy_materials_build_speed
 				#
 
 				set_variable = { global.administration_base_expense = 0.5 } #Percentage (from 0.0 to 100.0) of pop earnings that are needed for basic administration
@@ -2074,18 +2195,22 @@
 
 		#Setup Projects
 			clear_array = global.proj_id
-			clear_array = global.proj_life_goods_base_need
-			clear_array = global.proj_life_goods_base_build_speed
-			clear_array = global.proj_everyday_goods_base_need
-			clear_array = global.proj_everyday_goods_base_build_speed
+			clear_array = global.proj_food_base_need
+			clear_array = global.proj_food_base_build_speed
+			clear_array = global.proj_consumer_goods_base_need
+			clear_array = global.proj_consumer_goods_base_build_speed
 			clear_array = global.proj_luxury_goods_base_need
 			clear_array = global.proj_luxury_goods_base_build_speed
 			clear_array = global.proj_services_base_need
 			clear_array = global.proj_services_base_build_speed
-			clear_array = global.proj_raw_goods_base_need
-			clear_array = global.proj_raw_goods_base_build_speed
+			clear_array = global.proj_raw_materials_base_need
+			clear_array = global.proj_raw_materials_base_build_speed
+			clear_array = global.proj_energy_materials_base_need
+			clear_array = global.proj_energy_materials_base_build_speed
 			clear_array = global.proj_industrial_goods_base_need
 			clear_array = global.proj_industrial_goods_base_build_speed
+			clear_array = global.proj_electricity_base_need
+			clear_array = global.proj_electricity_base_build_speed
 			clear_array = global.proj_repeatable
 			clear_array = global.proj_relative
 			proj_setup = yes
@@ -2096,6 +2221,47 @@
         set_historical_state_deposits = yes
         set_historical_state_buildings = yes
         every_country = {
+            #Clear Projects
+                clear_array = proj_id
+                clear_array = proj_relative
+                clear_array = proj_estimated_cost
+                clear_array = proj_estimated_monthly_cost
+                clear_array = proj_estimated_complete_time
+                clear_array = proj_time_elapsed
+                clear_array = proj_food_need
+                clear_array = proj_food_fulfilled
+                clear_array = proj_food_demand
+                clear_array = proj_food_build_speed
+                clear_array = proj_consumer_goods_need
+                clear_array = proj_consumer_goods_fulfilled
+                clear_array = proj_consumer_goods_demand
+                clear_array = proj_consumer_goods_build_speed
+                clear_array = proj_luxury_goods_need
+                clear_array = proj_luxury_goods_fulfilled
+                clear_array = proj_luxury_goods_demand
+                clear_array = proj_luxury_goods_build_speed
+                clear_array = proj_services_need
+                clear_array = proj_services_fulfilled
+                clear_array = proj_services_demand
+                clear_array = proj_services_build_speed
+                clear_array = proj_raw_materials_need
+                clear_array = proj_raw_materials_fulfilled
+                clear_array = proj_raw_materials_demand
+                clear_array = proj_raw_materials_build_speed
+                clear_array = proj_industrial_goods_need
+                clear_array = proj_industrial_goods_fulfilled
+                clear_array = proj_industrial_goods_demand
+                clear_array = proj_industrial_goods_build_speed
+                clear_array = proj_electricity_need
+                clear_array = proj_electricity_fulfilled
+                clear_array = proj_electricity_demand
+                clear_array = proj_electricity_build_speed
+                clear_array = proj_energy_materials_need
+                clear_array = proj_energy_materials_fulfilled
+                clear_array = proj_energy_materials_demand
+                clear_array = proj_energy_materials_build_speed
+            #
+
 			add_dynamic_modifier = { modifier = resource_trade }
 
             set_variable = { income_tax_upper_strata_percentage = 0 }
@@ -3138,7 +3304,8 @@
             calc_demand = yes
             calc_supply = yes
             get_resource_prices = yes
-
+            
+            set_variable = { gdp_amount = 0 }
             every_controlled_state = {
                 for_each_loop = {
                     array = global.resource_token_array
@@ -3155,6 +3322,7 @@
                 buildings_update = yes
                 create_pie_chart_pop_type = yes
                 gdp_update = yes
+                add_to_variable = { PREV.gdp_amount = gdp_amount }
                 clear_array = gdp_graph_amount_array
                 clear_array = gdp_graph_color_array
                 clear_array = gdp_graph_y_array
@@ -9515,30 +9683,19 @@
             set_variable = { demand_input@var:r_type = 0 }
         }
 
-		set_variable = { projects_food_demand = 0 }
-		set_variable = { projects_everyday_goods_demand = 0 }
-		set_variable = { projects_luxury_goods_demand = 0 }
-		set_variable = { projects_services_demand = 0 }
-		set_variable = { projects_raw_materials_demand = 0 }
-		set_variable = { projects_energy_materials_demand = 0 }
-		set_variable = { projects_industrial_goods_demand = 0 }
-		set_variable = { projects_electricity_demand = 0 }
 		#Projects
 		for_each_loop = {
 			array = proj_id
-			index = pi
-			value = pv
-			break = pb
+			value = proj_token
 
-			add_to_variable = { projects_food_demand = proj_food_demand^pi }
-			add_to_variable = { projects_everyday_goods_demand = proj_everyday_goods_demand^pi }
-			add_to_variable = { projects_luxury_goods_demand = proj_luxury_goods_demand^pi }
-			add_to_variable = { projects_services_demand = proj_services_demand^pi }
-			add_to_variable = { projects_raw_materials_demand = proj_raw_materials_demand^pi }
-			add_to_variable = { projects_energy_materials_demand = proj_energy_materials_demand^pi }
-			add_to_variable = { projects_industrial_goods_demand = proj_industrial_goods_demand^pi }
-			add_to_variable = { projects_electricity_demand = proj_electricity_demand^pi }
-
+			add_to_variable = { demand@token:resource_food  = proj_food_demand@var:proj_token }
+			add_to_variable = { demand@token:resource_consumer_goods = proj_consumer_goods_demand@var:proj_token }
+			add_to_variable = { demand@token:resource_luxury_goods = proj_luxury_goods_demand@var:proj_token }
+			add_to_variable = { demand@token:resource_services = proj_services_demand@var:proj_token }
+			add_to_variable = { demand@token:resource_raw_materials = proj_raw_materials_demand@var:proj_token }
+			add_to_variable = { demand@token:resource_energy_materials = proj_energy_materials_demand@var:proj_token }
+			add_to_variable = { demand@token:resource_industrial_goods = proj_industrial_goods_demand@var:proj_token }
+			add_to_variable = { demand@token:resource_electricity = proj_electricity_demand@var:proj_token }
 		}
 
         every_controlled_state = {
@@ -12691,11 +12848,9 @@
 			
 			for_each_loop = {
 				array = proj_id
-				index = pi
-				value = pv
-				break = pb
+				value = project_token_temp
 
-				add_to_variable = { project_spending_expense = proj_estimated_monthly_cost^pi }
+				add_to_variable = { project_spending_expense = proj_estimated_monthly_cost@var:project_token_temp }
 			}
 			add_to_variable = { construction_spending_expense = project_spending_expense }
 		#
@@ -13203,6 +13358,9 @@
         every_controlled_state = {
             buildings_update_construction = yes
         }
+        proj_update = yes
+		calc_demand = yes
+        get_resource_prices = yes
 		spending_update = yes
 	}
 	change_import_subsidy = {
