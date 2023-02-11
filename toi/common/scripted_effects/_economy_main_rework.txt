@@ -60,7 +60,7 @@
 			clear_array = global.econ_value_array
 			
 			for_each_scope_loop = {
-				array = global.econ_gp_list_array #global.score_tag_array
+				array = global.score_tag_array #global.score_tag_array
 
 				if = {
 					limit = {
@@ -368,7 +368,6 @@
                                         state = 358
                                         check_variable = { om_building = token:building_subsistence_farm }
                                     }
-                                    log = "[?wage_change_temp]"
                                 }
                                 set_temp_variable = { building_token = om_building }
                                 set_temp_variable = { iu_token = building_token }
@@ -5513,7 +5512,6 @@
                         limit = {
                             state = 954
                         }
-                        log = "[?change_temp]"
                     }
                 
                     #Cap based on peasants
@@ -7137,8 +7135,6 @@
         
         buildings_update = yes
         pops_update = yes
-        log = "[?employment_percentage@var:building_token]"
-
     }
     set_latest_production_method = {
         #building_token
@@ -7492,9 +7488,7 @@
         }
         else = {
             set_temp_variable = { pm_correcting_temp = pm_temp }
-            log = "PM: [?pm_correcting_temp]"
             get_latest_production_method = yes
-            log = "Latest: [?pm_temp]"
             if = {
                 limit = {
                     check_variable = { pm_correcting_temp > pm_temp }
@@ -7503,7 +7497,6 @@
             }
             
             get_earliest_production_method = yes
-            log = "Earliest: [?pm_temp]"
             if = {
                 limit = {
                     check_variable = { pm_correcting_temp < pm_temp }
@@ -9628,7 +9621,6 @@
 
     calc_military_resource = {
         # r_type
-        #log = "[?r_type.GetTokenLocalizedKey]: [?resource@var:r_type]"
         set_variable = { supply@var:r_type = monthly_resource_produced@var:r_type }
 
         set_variable = { supply_trade@var:r_type = supply_national_trade@var:r_type }
@@ -9685,7 +9677,6 @@
             array = global.military_resource_token_array
             value = r_type
 
-            #log = "[?r_type.GetTokenLocalizedKey]: [?resource@var:r_type]"
             calc_military_resource = yes
         }
     }
@@ -11125,11 +11116,6 @@
 			set_temp_variable = { tr_t = foreign_route_type^tr_i }
 			multiply_temp_variable = { tr_t = -1 }
 
-			log = "ROUTE:"
-			log = "  - C: [?tr_c.GetName]"
-			log = "  - R: [?tr_r.GetTokenLocalizedKey]"
-			log = "  - T: [?tr_t]"
-
 			if = {
 				limit = {
                     set_temp_variable = { country_temp = tr_c }
@@ -11156,13 +11142,11 @@
 					}
 				}
 
-				log = "   REMOVED"
 				remove_from_array = { array = foreign_route_country index = tr_i }
 				remove_from_array = { array = foreign_route_size index = tr_i }
 				remove_from_array = { array = foreign_route_resource index = tr_i }
 				remove_from_array = { array = foreign_route_type index = tr_i }
 			}
-			log = ""
 			subtract_from_temp_variable = { tr_i = 1 }
 		}
 	}
@@ -11575,7 +11559,6 @@
                             is_in_array = { neighbors = PREV }
                         }
                         set_temp_variable = { new_element_shipping_use = 0 }
-                        #log = "[THIS.GetName] is a neighbor"
                     }
                     else = {
                         set_temp_variable = { new_element_shipping_use = global.shipping_cost@var:nrr }
@@ -11590,7 +11573,6 @@
                         multiply_variable = { shipping_distance = modifier_temp }
 
                         multiply_temp_variable = { new_element_shipping_use = shipping_distance }
-                        #log = "[THIS.GetName] is not a neighbor: distance - [?shipping_distance], S.U. - [?new_element_shipping_use]"
                     }
                 #
                 #Prices
@@ -11625,8 +11607,6 @@
                     }
                     get_price = yes # r_type, s_temp, d_temp -> p_return_temp
                     set_temp_variable = { root_price_temp = p_return_temp }
-                    #log = "r_type: [?r_type.GetTokenLocalizedKey] | s_temp: [?s_temp] | d_temp: [?d_temp]"
-                    #log = "ROOT Price Before: [?PREV.price@var:nrr] | ROOT Price After: [?root_price_temp]"
                     
                     ## FOREIGN COUNTRY ##
                     set_temp_variable = { r_type = nrr }
@@ -11659,8 +11639,6 @@
                     }
                     get_price = yes # r_type, s_temp, d_temp -> p_return_temp
                     set_temp_variable = { this_price_temp = p_return_temp }
-                    #log = "r_type: [?r_type.GetTokenLocalizedKey] | s_temp: [?s_temp] | d_temp: [?d_temp]"
-                    #log = "FOREIGN Price Before: [?price@var:nrr] | FOREIGN Price After: [?this_price_temp]"
                 #
                 #Productivity
                     if = { #Import
@@ -11677,9 +11655,6 @@
 
                         subtract_from_temp_variable = { new_element_value = p_temp }
                         multiply_temp_variable = { new_element_value = global.shipping_amount@var:nrr }
-                        
-                        #log = "Import Productivity: [?new_element_value]"
-                        #log = "Shipping Cost: [?shipping_cost_temp]"
                     }
                     else = { #Export
                         set_temp_variable = { new_element_value = this_price_temp }
@@ -11692,9 +11667,6 @@
 
                         subtract_from_temp_variable = { new_element_value = p_temp }
                         multiply_temp_variable = { new_element_value = global.shipping_amount@var:nrr }
-                        
-                        #log = "Export Productivity: [?new_element_value]"
-                        #log = "Shipping Cost: [?shipping_cost_temp]"
                     }
                     multiply_temp_variable = { new_element_value = 10 }
                 #
@@ -12060,7 +12032,6 @@
                     check_variable = { trade_ai@var:tr_resource = 0 }
                     check_variable = { trade_route_productivity^tr_i < pops_col }
                 }
-                log = "DECREASE: [?tr_country.GetName]"
                 if = {
                     limit = {
                         check_variable = { trade_route_productivity^tr_i < 0 }
@@ -12167,7 +12138,6 @@
                                 is_in_array = { neighbors = PREV }
                             }
                             set_temp_variable = { new_element_shipping_use = 0 }
-                            #log = "[THIS.GetName] is a neighbor"
                         }
                         else = {
                             set_temp_variable = { new_element_shipping_use = global.shipping_cost@var:ai_r_token }
@@ -12182,7 +12152,6 @@
                             multiply_variable = { shipping_distance = modifier_temp }
 
                             multiply_temp_variable = { new_element_shipping_use = shipping_distance }
-                            #log = "[THIS.GetName] is not a neighbor: distance - [?shipping_distance], S.U. - [?new_element_shipping_use]"
                         }
                     #
                     #Prices
@@ -12193,8 +12162,6 @@
                         add_to_temp_variable = { s_temp = global.shipping_amount@var:ai_r_token }
                         get_price = yes # r_type, s_temp, d_temp -> p_return_temp
                         set_temp_variable = { root_price_temp = p_return_temp }
-                        #log = "r_type: [?r_type.GetTokenLocalizedKey] | s_temp: [?s_temp] | d_temp: [?d_temp]"
-                        #log = "ROOT Price Before: [?PREV.price@var:ai_r_token] | ROOT Price After: [?root_price_temp]"
                         
                         ## FOREIGN COUNTRY ##
                         set_temp_variable = { r_type = ai_r_token }
@@ -12203,8 +12170,6 @@
                         add_to_temp_variable = { d_temp = global.shipping_amount@var:ai_r_token }
                         get_price = yes # r_type, s_temp, d_temp -> p_return_temp
                         set_temp_variable = { this_price_temp = p_return_temp }
-                        #log = "r_type: [?r_type.GetTokenLocalizedKey] | s_temp: [?s_temp] | d_temp: [?d_temp]"
-                        #log = "FOREIGN Price Before: [?price@var:ai_r_token] | FOREIGN Price After: [?this_price_temp]"
                     #
                     #Productivity
                         set_temp_variable = { new_element_value = root_price_temp }
@@ -12229,7 +12194,6 @@
                     }
                 }
 
-                log = "CONSIDERING IMPORT: [?highest_productivity_country_temp.GetName] - [?ai_r_token.GetTokenLocalizedKey] - [?highest_productivity_temp]"
                 if = {
                     limit = {
                         check_variable = { highest_productivity_temp > pops_col_temp }
@@ -12388,7 +12352,6 @@
                                 is_in_array = { neighbors = PREV }
                             }
                             set_temp_variable = { new_element_shipping_use = 0 }
-                            #log = "[THIS.GetName] is a neighbor"
                         }
                         else = {
                             set_temp_variable = { new_element_shipping_use = global.shipping_cost@var:ai_r_token }
@@ -12403,7 +12366,6 @@
                             multiply_variable = { shipping_distance = modifier_temp }
 
                             multiply_temp_variable = { new_element_shipping_use = shipping_distance }
-                            #log = "[THIS.GetName] is not a neighbor: distance - [?shipping_distance], S.U. - [?new_element_shipping_use]"
                         }
                     #
                     #Prices
@@ -12415,8 +12377,6 @@
 
                         get_price = yes # r_type, s_temp, d_temp -> p_return_temp
                         set_temp_variable = { root_price_temp = p_return_temp }
-                        #log = "r_type: [?r_type.GetTokenLocalizedKey] | s_temp: [?s_temp] | d_temp: [?d_temp]"
-                        #log = "ROOT Price Before: [?PREV.price@var:ai_r_token] | ROOT Price After: [?root_price_temp]"
                         
                         ## FOREIGN COUNTRY ##
                         set_temp_variable = { r_type = ai_r_token }
@@ -12426,8 +12386,6 @@
 
                         get_price = yes # r_type, s_temp, d_temp -> p_return_temp
                         set_temp_variable = { this_price_temp = p_return_temp }
-                        #log = "r_type: [?r_type.GetTokenLocalizedKey] | s_temp: [?s_temp] | d_temp: [?d_temp]"
-                        #log = "FOREIGN Price Before: [?price@var:ai_r_token] | FOREIGN Price After: [?this_price_temp]"
                     #
                     #Productivity
                         set_temp_variable = { new_element_value = this_price_temp }
@@ -12452,7 +12410,6 @@
                     }
                 }
 
-                log = "CONSIDERING EXPORT: [?highest_productivity_country_temp.GetName] - [?ai_r_token.GetTokenLocalizedKey] - [?highest_productivity_temp]"
                 if = {
                     limit = {
                         check_variable = { highest_productivity_temp > pops_col_temp }
