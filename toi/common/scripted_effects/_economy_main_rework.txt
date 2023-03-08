@@ -60,7 +60,7 @@
 			clear_array = global.econ_value_array
 			
 			for_each_scope_loop = {
-				array = global.score_tag_array #global.econ_gp_list_array #global.score_tag_array
+				array = global.econ_gp_list_array #global.econ_gp_list_array #global.score_tag_array
 
 				if = {
 					limit = {
@@ -10150,7 +10150,7 @@
             array = global.resource_token_array
             value = r_type
 
-            set_variable = { demand@var:r_type = military_demand@var:r_type }
+            set_variable = { need@var:r_type = military_demand@var:r_type }
             set_variable = { demand_input@var:r_type = 0 }
         }
 
@@ -10390,9 +10390,9 @@
             set_variable = { demand@var:r_type = need@var:r_type }
             if = {
                 limit = {
-                    check_variable = { net_trade@var:r_type < 0 }
+                    check_variable = { trade@var:r_type < 0 }
                 }
-                subtract_from_variable = { demand@var:r_type = net_trade@var:r_type }
+                subtract_from_variable = { demand@var:r_type = trade@var:r_type }
             }
             set_variable = { balance@var:r_type = supply@var:r_type }
             subtract_from_variable = { balance@var:r_type = demand@var:r_type }
@@ -10452,9 +10452,9 @@
             set_variable = { supply@var:r_type = production@var:r_type }
             if = {
                 limit = {
-                    check_variable = { net_trade@var:r_type > 0 }
+                    check_variable = { trade@var:r_type > 0 }
                 }
-                add_to_variable = { supply@var:r_type = net_trade@var:r_type }
+                add_to_variable = { supply@var:r_type = trade@var:r_type }
             }
 
             set_variable = { balance@var:r_type = supply@var:r_type }
@@ -10794,41 +10794,50 @@
         
         if = { # IMPORTING
             limit = {
-                check_variable = { net_trade@var:resource_temp > 0 }
+                check_variable = { offers@var:resource_temp > 0 }
             }
-            add_to_variable = { net_trade@var:resource_temp = amount_temp }
+            add_to_variable = { offers@var:resource_temp = amount_temp }
             if = {
                 limit = {
                     check_variable = { stop_at_zero_temp = 0 }
-                    check_variable = { net_trade@var:resource_temp < 0 }
+                    check_variable = { offers@var:resource_temp < 0 }
                 }
-                set_variable = { net_trade@var:resource_temp = 0 }
+                set_variable = { offers@var:resource_temp = 0 }
             }
         }
         else_if = { # EXPORTING
             limit = {
-                check_variable = { net_trade@var:resource_temp < 0 }
+                check_variable = { offers@var:resource_temp < 0 }
             }
-            add_to_variable = { net_trade@var:resource_temp = amount_temp }
+            add_to_variable = { offers@var:resource_temp = amount_temp }
             if = {
                 limit = {
                     check_variable = { stop_at_zero_temp = 0 }
-                    check_variable = { net_trade@var:resource_temp > 0 }
+                    check_variable = { offers@var:resource_temp > 0 }
                 }
-                set_variable = { net_trade@var:resource_temp = 0 }
+                set_variable = { offers@var:resource_temp = 0 }
             }
         }
         else = { # NEW TRADE
-            add_to_variable = { net_trade@var:resource_temp = amount_temp }
+            add_to_variable = { offers@var:resource_temp = amount_temp }
         }
 
-        trade_update = yes
+        set_temp_variable = { r_type = resource_temp }
+        available_trade_update_resource = yes
+        trade_update_resource = yes
     }
     trade_update = {
         set_variable = { shipping_capacity_use = 0 }
 
         for_each_loop = {
             array = global.resource_token_array
+            value = r_type
+            
+            add_to_variable = { shipping_capacity_use = shipping_use@var:r_type } #Offsets the subtraction in the update script below
+            trade_update_resource = yes
+        }
+        for_each_loop = {
+            array = global.military_resource_token_array
             value = r_type
             
             add_to_variable = { shipping_capacity_use = shipping_use@var:r_type } #Offsets the subtraction in the update script below
@@ -10841,7 +10850,7 @@
         #Shipping Capacity
             subtract_from_variable = { shipping_capacity_use = shipping_use@var:r_type }
             
-            set_variable = { shipping_use@var:r_type = net_trade@var:r_type }
+            set_variable = { shipping_use@var:r_type = offers@var:r_type }
             if = {
                 limit = {
                     check_variable = { shipping_use@var:r_type < 0 }
@@ -10856,18 +10865,41 @@
             add_to_variable = { shipping_capacity_use = shipping_use@var:r_type }
         #
 
+        # Actual Trade
+            set_variable = { trade@var:r_type = offers@var:r_type }
+
+            if = {
+                limit = {
+                    check_variable = { offers@var:r_type > 0 } # Importing
+                    check_variable = { available_imports@var:r_type < available_exports@var:r_type } # Not enough countries to buy from
+                }
+                set_temp_variable = { trade_portion_temp = available_imports@var:r_type }
+                divide_temp_variable = { trade_portion_temp = available_exports@var:r_type }
+                multiply_variable = { trade@var:r_type = trade_portion_temp }
+            }
+            else_if = {
+                limit = {
+                    check_variable = { offers@var:r_type < 0 } # Exporting
+                    check_variable = { available_exports@var:r_type < available_imports@var:r_type } # Not enough countries to sell to
+                }
+                set_temp_variable = { trade_portion_temp = available_exports@var:r_type }
+                divide_temp_variable = { trade_portion_temp = available_imports@var:r_type }
+                multiply_variable = { trade@var:r_type = trade_portion_temp }
+            }
+        #
+
         # Supply & Demand
             set_variable = { supply@var:r_type = production@var:r_type }
             set_variable = { demand@var:r_type = need@var:r_type }
 
             if = {
                 limit = {
-                    check_variable = { net_trade@var:r_type < 0 }
+                    check_variable = { trade@var:r_type < 0 }
                 }
-                subtract_from_variable = { demand@var:r_type = net_trade@var:r_type }
+                subtract_from_variable = { demand@var:r_type = trade@var:r_type }
             }
             else = {
-                add_to_variable = { supply@var:r_type = net_trade@var:r_type }
+                add_to_variable = { supply@var:r_type = trade@var:r_type }
             }
 
             set_temp_variable = { supply_ratio = supply@var:r_type }
@@ -10898,6 +10930,120 @@
         else = {
             calc_military_resource = yes
         }
+    }
+    available_trade_update = {
+        for_each_loop = {
+            array = global.resource_token_array
+            value = r_type
+            set_variable = { available_exports@var:r_type = 0 }
+            set_variable = { available_imports@var:r_type = 0 }
+            
+            if = { # This country is importing
+                limit = {
+                    check_variable = { offers@var:r_type > 0 }
+                }
+                add_to_variable = { available_exports@var:r_type = offers@var:r_type }
+            }
+            else = { # This country is exporting
+                subtract_from_variable = { available_imports@var:r_type = offers@var:r_type }
+            }
+        }
+        for_each_loop = {
+            array = global.military_resource_token_array
+            value = r_type
+            set_variable = { available_exports@var:r_type = 0 }
+            set_variable = { available_imports@var:r_type = 0 }
+            
+            if = { # This country is importing
+                limit = {
+                    check_variable = { offers@var:r_type > 0 }
+                }
+                add_to_variable = { available_exports@var:r_type = offers@var:r_type }
+            }
+            else = { # This country is exporting
+                subtract_from_variable = { available_imports@var:r_type = offers@var:r_type }
+            }
+        }
+
+        set_temp_variable = { country_temp = THIS }
+        every_other_country = {
+            limit = {
+                can_trade_with = yes
+            }
+            for_each_loop = {
+                array = global.resource_token_array
+                value = r_type
+                if = { # This country is importing
+                    limit = {
+                        check_variable = { offers@var:r_type > 0 }
+                    }
+                    add_to_variable = { PREV.available_exports@var:r_type = offers@var:r_type }
+                }
+                else = { # This country is exporting
+                    subtract_from_variable = { PREV.available_imports@var:r_type = offers@var:r_type }
+                }
+            }
+            for_each_loop = {
+                array = global.military_resource_token_array
+                value = r_type
+                if = { # This country is importing
+                    limit = {
+                        check_variable = { offers@var:r_type > 0 }
+                    }
+                    add_to_variable = { PREV.available_exports@var:r_type = offers@var:r_type }
+                }
+                else = { # This country is exporting
+                    subtract_from_variable = { PREV.available_imports@var:r_type = offers@var:r_type }
+                }
+            }
+        }
+
+        for_each_loop = {
+            array = global.resource_token_array
+            value = r_type
+
+            set_temp_variable = { s_temp = available_imports@var:r_type }
+            set_temp_variable = { d_temp = available_exports@var:r_type }
+            get_price = yes
+            set_variable = { trade_price@var:r_type = p_return_temp }
+        }
+    }
+    available_trade_update_resource = {
+        # r_type
+
+        set_variable = { available_exports@var:r_type = 0 }
+        set_variable = { available_imports@var:r_type = 0 }
+        
+        if = { # This country is importing
+            limit = {
+                check_variable = { offers@var:r_type > 0 }
+            }
+            add_to_variable = { available_exports@var:r_type = offers@var:r_type }
+        }
+        else = { # This country is exporting
+            subtract_from_variable = { available_imports@var:r_type = offers@var:r_type }
+        }
+
+        set_temp_variable = { country_temp = THIS }
+        every_other_country = {
+            limit = {
+                can_trade_with = yes
+            }
+            if = { # This country is importing
+                limit = {
+                    check_variable = { offers@var:r_type > 0 }
+                }
+                add_to_variable = { PREV.available_exports@var:r_type = offers@var:r_type }
+            }
+            else = { # This country is exporting
+                subtract_from_variable = { PREV.available_imports@var:r_type = offers@var:r_type }
+            }
+        }
+        
+        set_temp_variable = { s_temp = available_imports@var:r_type }
+        set_temp_variable = { d_temp = available_exports@var:r_type }
+        get_price = yes
+        set_variable = { trade_price@var:r_type = p_return_temp }
     }
 
 	set_trade_route = {
