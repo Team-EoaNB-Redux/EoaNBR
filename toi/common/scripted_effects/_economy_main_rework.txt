@@ -1342,14 +1342,6 @@
                 #
             }
 
-            for_each_loop = {
-                array = global.military_resource_token_array
-                value = r_token
-
-                set_variable = { monthly_resource_produced@var:r_token = resource_produced@var:r_token }
-                set_variable = { monthly_resource_cost@var:r_token = resource_cost@var:r_token }
-                set_variable = { monthly_resource@var:r_token = resource@var:r_token }
-            }
             calc_shipping_capacity = yes
             calc_military_resources = yes
 
@@ -1363,6 +1355,13 @@
 
             ai_trade_calculation = yes
 
+        }
+
+        for_each_loop = {
+            array = global.military_resource_token_array
+            value = r_token
+
+            clear_variable = global.additional_exports@var:r_token
         }
 
 		for_each_scope_loop = {
@@ -1718,6 +1717,27 @@
                 set_variable = { global.base_price@token:cotton = 0.2 }
                 set_variable = { global.base_price@token:silicates = 3.5 }
                 set_variable = { global.base_price@token:rare_earth_metals = 2.5 }
+                
+                # Basically controls how many of one resource do you need to affect prices. Higher means prices are more static
+                set_variable = { global.price_control@token:oil = 1 }
+                set_variable = { global.price_control@token:aluminium = 2 }
+                set_variable = { global.price_control@token:rubber = 5 }
+                set_variable = { global.price_control@token:tungsten = 0.5 }
+                set_variable = { global.price_control@token:steel = 2 }
+                set_variable = { global.price_control@token:chromium = 0.5 }
+                set_variable = { global.price_control@token:coal = 10 }
+                set_variable = { global.price_control@token:wood = 10 }
+                set_variable = { global.price_control@token:fabric = 2.5 }
+                set_variable = { global.price_control@token:machine_parts = 0.25 }
+                set_variable = { global.price_control@token:electronics = .015 }
+                set_variable = { global.price_control@token:plastics = 2 }
+                set_variable = { global.price_control@token:ceramics = 0.3 }
+                set_variable = { global.price_control@token:portable_power = 0.1 }
+                set_variable = { global.price_control@token:titanium = 0.2 }
+                set_variable = { global.price_control@token:iron = 5 }
+                set_variable = { global.price_control@token:cotton = 5 }
+                set_variable = { global.price_control@token:silicates = 0.3 }
+                set_variable = { global.price_control@token:rare_earth_metals = 0.4 }
 
                 clear_array = global.resource_token_array
                 add_to_array = { global.resource_token_array = token:resource_food }
@@ -2057,6 +2077,12 @@
                 clear_array = proj_energy_materials_demand
                 clear_array = proj_energy_materials_build_speed
             #
+            for_each_loop = {
+                array = global.resource_token_array
+                value = r_token
+
+                set_variable = { offers@var:r_token = 0 }
+            }
 
             clear_array = gdp_amount_monthly
             clear_array = gdp_amount_quarterly
@@ -3091,14 +3117,6 @@
                 calc_industrial_capacity = yes
             }
             
-            for_each_loop = {
-                array = global.military_resource_token_array
-                value = r_token
-
-                set_variable = { monthly_resource_produced@var:r_token = resource_produced@var:r_token }
-                set_variable = { monthly_resource_cost@var:r_token = resource_cost@var:r_token }
-                set_variable = { monthly_resource@var:r_token = resource@var:r_token }
-            }
             calc_shipping_capacity = yes
             calc_military_resources = yes
             calc_demand = yes
@@ -3107,12 +3125,30 @@
             
             # Trade
                 for_each_loop = {
+                    array = global.military_resource_token_array
+                    value = r_token
+
+                    if = {
+                        limit = {
+                            NOT = { is_in_array = { global.non_tradeable_resources = r_token } }
+                        }
+                        set_variable = { offers@var:r_token = resource@var:r_token }
+                        multiply_variable = { offers@var:r_token = -1 }
+                        round_variable = offers@var:r_token
+                    }
+                }
+                for_each_loop = {
                     array = global.resource_token_array
                     value = r_token
 
-                    set_variable = { offers@var:r_token = need@var:r_token }
-                    subtract_from_variable = { offers@var:r_token = production@var:r_token }
-                    round_variable = offers@var:r_token
+                    if = {
+                        limit = {
+                            NOT = { is_in_array = { global.non_tradeable_resources = r_token } }
+                        }
+                        set_variable = { offers@var:r_token = need@var:r_token }
+                        subtract_from_variable = { offers@var:r_token = production@var:r_token }
+                        round_variable = offers@var:r_token
+                    }
                 }
                 calc_shipping_capacity_use = yes
                 if = {
@@ -10062,54 +10098,30 @@
 
     calc_military_resource = {
         # r_type
-        set_variable = { supply@var:r_type = monthly_resource_produced@var:r_type }
-
-        set_variable = { supply_trade@var:r_type = supply_national_trade@var:r_type }
-        add_to_variable = { supply_trade@var:r_type = supply_foreign_trade@var:r_type }
-        set_variable = { demand_trade@var:r_type = demand_national_trade@var:r_type }
-        add_to_variable = { demand_trade@var:r_type = demand_foreign_trade@var:r_type }
-
-        set_variable = { resource_cost@var:r_type = demand_trade@var:r_type }
-        subtract_from_variable = { resource_cost@var:r_type = supply_trade@var:r_type }
+        set_variable = { resource_cost@var:r_type = trade@var:r_type }
+        multiply_variable = { resource_cost@var:r_type = -1 }
         round_variable = resource_cost@var:r_type
-
-        add_to_variable = { supply@var:r_type = monthly_resource_cost@var:r_type }
-        subtract_from_variable = { supply@var:r_type = resource_cost@var:r_type }
-        
-        set_variable = { demand@var:r_type = supply@var:r_type }
-        subtract_from_variable = { demand@var:r_type = monthly_resource@var:r_type }
-        add_to_variable = { demand@var:r_type = resource_cost@var:r_type }
-        subtract_from_variable = { demand@var:r_type = monthly_resource_cost@var:r_type }
-        
 
         set_variable = { price@var:r_type = global.base_price@var:r_type }
         if = {
             limit = {
-                NOT = { check_variable = { r_type = token:resource_valuable_materials } }
-                #NOT = { check_variable = { r_type = token:resource_finance } }
+                check_variable = { resource@var:r_type > 0 }
             }
-            set_temp_variable = { grp_multiplier = demand@var:r_type }
-            if = {
-                limit = {
-                    check_variable = { supply@var:r_type > 0 }
-                }
-                divide_temp_variable = { grp_multiplier = supply@var:r_type }
-            }
+            set_temp_variable = { grp_multiplier = resource@var:r_type }
+            divide_temp_variable = { grp_multiplier = controlled_states^num }
+            divide_temp_variable = { grp_multiplier = global.price_control@var:r_type }
             add_to_temp_variable = { grp_multiplier = 1 }
-            if = {
-                limit = {
-                    check_variable = { grp_multiplier > 3.0 }
-                }
-                set_temp_variable = { grp_multiplier = 3.0 }
+            divide_variable = { price@var:r_type = grp_multiplier }
+        }
+        else_if = {
+            limit = {
+                check_variable = { resource@var:r_type < 0 }
             }
-            if = {
-                limit = {
-                    check_variable = { grp_multiplier < 1.0 }
-                }
-                set_temp_variable = { grp_multiplier = 1.0 }
-            }
-
-            multiply_variable = { price@var:r_type = grp_multiplier }
+            set_temp_variable = { grp_multiplier = resource@var:r_type }
+            divide_temp_variable = { grp_multiplier = controlled_states^num }
+            divide_temp_variable = { grp_multiplier = global.price_control@var:r_type }
+            add_to_temp_variable = { grp_multiplier = 1 }
+            divide_variable = { price@var:r_type = grp_multiplier }
         }
     }
     calc_military_resources = {
@@ -11381,6 +11393,9 @@
             for_each_loop = {
                 array = global.military_resource_token_array
                 value = r_type
+                set_temp_variable = { offers_temp = offers@var:r_type }
+                multiply_temp_variable = { offers_temp = shipping_efficiency }
+
                 if = { # This country is importing
                     limit = {
                         check_variable = { offers@var:r_type > 0 }
@@ -12987,6 +13002,128 @@
 
 		# When a nation starts to approach its shipping capacity, also consider downgrading less productive routes
 
+        # Military Resources
+        for_each_loop = {
+            array = global.military_resource_token_array
+            value = r_token
+
+            set_temp_variable = { resource_without_trade = resource@var:r_token }
+            subtract_from_temp_variable = { resource_without_trade = resource_cost@var:r_token }
+
+            #global.additional_exports@var:r_token
+
+            if = { # If negative in a resource and exporting, reduce exports
+                limit = {
+                    check_variable = { resource@var:r_token < 0 }
+                    check_variable = { offers@var:r_token < 0 }
+                    check_variable = { resource_without_trade > 0 }
+                }
+                subtract_from_variable = { offers@var:r_token = resource@var:r_token }
+                if = {
+                    limit = {
+                        check_variable = { offers@var:r_token > 0 }
+                    }
+                    set_variable = { offers@var:r_token = 0 }
+                }
+            }
+            else_if = { # If negative in a resource, import what you need
+                limit = {
+                    check_variable = { resource_without_trade < 0 }
+                }
+                set_variable = { offers@var:r_token = resource_without_trade }
+                multiply_variable = { offers@var:r_token = -1 }
+                round_variable = offers@var:r_token
+            }
+            else_if = { # If positive in a resource and importing, import less
+                limit = {
+                    check_variable = { offers@var:r_token > 0 }
+                }
+                subtract_from_variable = { offers@var:r_token = resource@var:r_token }
+                if = {
+                    limit = {
+                        check_variable = { offers@var:r_token < 0 }
+                    }
+                    set_variable = { offers@var:r_token = 0 }
+                }
+            }
+            else_if = { # If positive in a resource, export
+                limit = {
+                    check_variable = { resource_without_trade > 0 }
+                }
+                if = {
+                    limit = {
+                        set_temp_variable = { import_temp = available_imports@var:r_token }
+                        add_to_temp_variable = { import_temp = global.additional_exports@var:r_token }
+                        multiply_temp_variable = { import_temp = 2 }
+                        check_variable = { available_exports@var:r_token > import_temp } 
+                    }
+                    set_temp_variable = { rwt = resource_without_trade }
+                    divide_temp_variable = { rwt = 10 }
+                    add_to_temp_variable = { rwt = 1 }
+                    round_temp_variable = rwt
+                    add_to_variable = { global.additional_exports@var:r_token = rwt }
+                    subtract_from_variable = { offers@var:r_token = rwt }
+                    multiply_variable = { offers@var:r_token = -1 }
+                    if = {
+                        limit = {
+                            check_variable = { offers@var:r_token > resource_without_trade }
+                        }
+                        set_variable = { offers@var:r_token = resource_without_trade }
+                    }
+                    multiply_variable = { offers@var:r_token = -1 }
+                }
+                else_if = {
+                    limit = {
+                        set_temp_variable = { import_temp = available_imports@var:r_token }
+                        add_to_temp_variable = { import_temp = global.additional_exports@var:r_token }
+                        check_variable = { available_exports@var:r_token > import_temp } 
+                    }
+                    set_temp_variable = { rwt = resource_without_trade }
+                    divide_temp_variable = { rwt = 20 }
+                    add_to_temp_variable = { rwt = 1 }
+                    round_temp_variable = rwt
+                    add_to_variable = { global.additional_exports@var:r_token = rwt }
+                    subtract_from_variable = { offers@var:r_token = rwt }
+                    multiply_variable = { offers@var:r_token = -1 }
+                    if = {
+                        limit = {
+                            check_variable = { offers@var:r_token > resource_without_trade }
+                        }
+                        set_variable = { offers@var:r_token = resource_without_trade }
+                    }
+                    multiply_variable = { offers@var:r_token = -1 }
+                }
+                else_if = {
+                    limit = {
+                        check_variable = { available_exports@var:r_token > 0 } 
+                        set_temp_variable = { import_temp = available_imports@var:r_token }
+                        add_to_temp_variable = { import_temp = global.additional_exports@var:r_token }
+                        multiply_temp_variable = { import_temp = 0.75 }
+                        check_variable = { available_exports@var:r_token < import_temp } 
+                    }
+                    set_temp_variable = { rwt = resource_without_trade }
+                    divide_temp_variable = { rwt = 20 }
+                    add_to_temp_variable = { rwt = 1 }
+                    round_temp_variable = rwt
+                    add_to_variable = { global.additional_exports@var:r_token = rwt }
+                    add_to_variable = { offers@var:r_token = rwt }
+                    if = {
+                        limit = {
+                            check_variable = { offers@var:r_token > 0 }
+                        }
+                        set_variable = { offers@var:r_token = 0 }
+                    }
+                }
+                else_if = {
+                    limit = {
+                        check_variable = { available_exports@var:r_token = 0 } 
+                    }
+                    set_variable = { offers@var:r_token = 0 }
+                }
+            }
+        }
+
+
         
         # Upper & Lower Bounds for increasing/decreasing trade
         #       If above the upper bound, then the import/export amount will be increased (Or established if it's zero)
@@ -13001,146 +13138,152 @@
             set_temp_variable = { resource_temp = r_token }
             set_temp_variable = { change_temp = 0 }
 
-            if = { # IF IMPORTING
+            if = {
                 limit = {
-                    check_variable = { offers@var:r_token > 0 }
+                    NOT = { is_in_array = { global.non_tradeable_resources = r_token } }
                 }
-                # Nested If-statements for performance
+                
+                if = { # IF IMPORTING
+                    limit = {
+                        check_variable = { offers@var:r_token > 0 }
+                    }
+                    # Nested If-statements for performance
+                    if = {
+                        limit = {
+                            check_variable = { trade_productivity@var:r_token > prod_upper_bound }
+                        }
+                        set_temp_variable = { change_temp = trade_productivity@var:r_token } # Export Less / Import More
+                        subtract_from_temp_variable = { change_temp = prod_upper_bound }
+                        divide_temp_variable = { change_temp = prod_upper_bound }
+                        divide_temp_variable = { change_temp = 4 }
+                    }
+                    else_if = {
+                        limit = {
+                            check_variable = { trade_productivity@var:r_token < prod_lower_bound }
+                        }
+                        set_temp_variable = { change_temp = trade_productivity@var:r_token } # Export More / Import Less
+                        subtract_from_temp_variable = { change_temp = prod_lower_bound }
+                        divide_temp_variable = { change_temp = prod_lower_bound }
+                        divide_temp_variable = { change_temp = 4 }
+                    }
+                }
+                else_if = { # IF ZERO & CAN IMPORT
+                    limit = {
+                        check_variable = { offers@var:r_token = 0 }
+                        check_variable = { trade_price@var:r_token < price@var:r_token }
+                        check_variable = { available_imports@var:r_token > 0 }
+                    }
+                    #	productivity_temp = ( revenue - goods cost - tariffs ) * shipping_amount
+                        set_temp_variable = { productivity_temp = price@var:r_token }
+                        subtract_from_temp_variable = { productivity_temp = trade_price@var:r_token }
+
+                        set_temp_variable = { tr_tariffs_temp = import_tariff_percentage }
+                        subtract_from_temp_variable = { tr_tariffs_temp = import_subsidy_percentage }
+                        divide_temp_variable = { tr_tariffs_temp = 100 }
+                        multiply_temp_variable = { tr_tariffs_temp = trade_price@var:r_token }
+
+                        subtract_from_temp_variable = { productivity_temp = tr_tariffs_temp }
+                        multiply_temp_variable = { productivity_temp = global.shipping_amount@var:r_token }
+                    #
+                    if = {
+                        limit = {
+                            check_variable = { productivity_temp > prod_upper_bound }
+                        }
+                        set_temp_variable = { change_temp = productivity_temp } # Export Less / Import More
+                        subtract_from_temp_variable = { change_temp = prod_upper_bound }
+                        divide_temp_variable = { change_temp = prod_upper_bound }
+                        divide_temp_variable = { change_temp = 4 }
+                    }
+                }
+                else_if = { # IF ZERO & CAN EXPORT
+                    limit = {
+                        check_variable = { offers@var:r_token = 0 }
+                        check_variable = { trade_price@var:r_token > price@var:r_token }
+                        check_variable = { available_exports@var:r_token > 0 }
+                    }
+                    #	productivity_temp = ( revenue - goods cost - tariffs ) * shipping_amount
+                        set_temp_variable = { tr_rev_temp = trade_price@var:r_token }
+
+                        set_temp_variable = { tr_goods_cost_temp = price@var:r_token }
+
+                        set_temp_variable = { tr_tariffs_temp = export_tariff_percentage }
+                        subtract_from_temp_variable = { tr_tariffs_temp = export_subsidy_percentage }
+                        divide_temp_variable = { tr_tariffs_temp = 100 }
+                        multiply_temp_variable = { tr_tariffs_temp = trade_price@var:r_token }
+
+                        set_temp_variable = { productivity_temp = tr_rev_temp }
+                        subtract_from_temp_variable = { productivity_temp = tr_goods_cost_temp }
+                        subtract_from_temp_variable = { productivity_temp = tr_tariffs_temp }
+                        multiply_temp_variable = { productivity_temp = global.shipping_amount@var:r_token }
+                    #
+                    if = {
+                        limit = {
+                            check_variable = { productivity_temp > prod_upper_bound }
+                        }
+                        set_temp_variable = { change_temp = productivity_temp } # Export More / Import Less
+                        subtract_from_temp_variable = { change_temp = prod_upper_bound }
+                        divide_temp_variable = { change_temp = prod_upper_bound }
+                        divide_temp_variable = { change_temp = -4 }
+                    }
+                }
+                else_if = { # IF EXPORTING
+                    limit = {
+                        check_variable = { offers@var:r_token < 0 }
+                    }
+                    if = {
+                        limit = {
+                            check_variable = { trade_productivity@var:r_token > prod_upper_bound }
+                        }
+                        set_temp_variable = { change_temp = trade_productivity@var:r_token } # Export More / Import Less
+                        subtract_from_temp_variable = { change_temp = prod_upper_bound }
+                        divide_temp_variable = { change_temp = prod_upper_bound }
+                        divide_temp_variable = { change_temp = -4 }
+                    }
+                    else_if = {
+                        limit = {
+                            check_variable = { trade_productivity@var:r_token < prod_lower_bound }
+                        }
+                        set_temp_variable = { change_temp = trade_productivity@var:r_token } # Export Less / Import More
+                        subtract_from_temp_variable = { change_temp = prod_upper_bound }
+                        divide_temp_variable = { change_temp = prod_upper_bound }
+                        divide_temp_variable = { change_temp = -4 }
+                    }
+                }
+                
                 if = {
                     limit = {
-                        check_variable = { trade_productivity@var:r_token > prod_upper_bound }
+                        check_variable = { change_temp > 1 }
                     }
-                    set_temp_variable = { change_temp = trade_productivity@var:r_token } # Export Less / Import More
-                    subtract_from_temp_variable = { change_temp = prod_upper_bound }
-                    divide_temp_variable = { change_temp = prod_upper_bound }
-                    divide_temp_variable = { change_temp = 4 }
+                    set_temp_variable = { change_temp = 1 }
                 }
                 else_if = {
                     limit = {
-                        check_variable = { trade_productivity@var:r_token < prod_lower_bound }
+                        check_variable = { change_temp < -1 }
                     }
-                    set_temp_variable = { change_temp = trade_productivity@var:r_token } # Export More / Import Less
-                    subtract_from_temp_variable = { change_temp = prod_lower_bound }
-                    divide_temp_variable = { change_temp = prod_lower_bound }
-                    divide_temp_variable = { change_temp = 4 }
+                    set_temp_variable = { change_temp = -1 }
                 }
-            }
-            else_if = { # IF ZERO & CAN IMPORT
-                limit = {
-                    check_variable = { offers@var:r_token = 0 }
-                    check_variable = { trade_price@var:r_token < price@var:r_token }
-                    check_variable = { available_imports@var:r_token > 0 }
-                }
-                #	productivity_temp = ( revenue - goods cost - tariffs ) * shipping_amount
-                    set_temp_variable = { productivity_temp = price@var:r_token }
-                    subtract_from_temp_variable = { productivity_temp = trade_price@var:r_token }
 
-                    set_temp_variable = { tr_tariffs_temp = import_tariff_percentage }
-                    subtract_from_temp_variable = { tr_tariffs_temp = import_subsidy_percentage }
-                    divide_temp_variable = { tr_tariffs_temp = 100 }
-                    multiply_temp_variable = { tr_tariffs_temp = trade_price@var:r_token }
-
-                    subtract_from_temp_variable = { productivity_temp = tr_tariffs_temp }
-                    multiply_temp_variable = { productivity_temp = global.shipping_amount@var:r_token }
-                #
                 if = {
                     limit = {
-                        check_variable = { productivity_temp > prod_upper_bound }
+                        NOT = { check_variable = { change_temp = 0 } }
                     }
-                    set_temp_variable = { change_temp = productivity_temp } # Export Less / Import More
-                    subtract_from_temp_variable = { change_temp = prod_upper_bound }
-                    divide_temp_variable = { change_temp = prod_upper_bound }
-                    divide_temp_variable = { change_temp = 4 }
-                }
-            }
-            else_if = { # IF ZERO & CAN EXPORT
-                limit = {
-                    check_variable = { offers@var:r_token = 0 }
-                    check_variable = { trade_price@var:r_token > price@var:r_token }
-                    check_variable = { available_exports@var:r_token > 0 }
-                }
-                #	productivity_temp = ( revenue - goods cost - tariffs ) * shipping_amount
-                    set_temp_variable = { tr_rev_temp = trade_price@var:r_token }
-
-                    set_temp_variable = { tr_goods_cost_temp = price@var:r_token }
-
-                    set_temp_variable = { tr_tariffs_temp = export_tariff_percentage }
-                    subtract_from_temp_variable = { tr_tariffs_temp = export_subsidy_percentage }
-                    divide_temp_variable = { tr_tariffs_temp = 100 }
-                    multiply_temp_variable = { tr_tariffs_temp = trade_price@var:r_token }
-
-                    set_temp_variable = { productivity_temp = tr_rev_temp }
-                    subtract_from_temp_variable = { productivity_temp = tr_goods_cost_temp }
-                    subtract_from_temp_variable = { productivity_temp = tr_tariffs_temp }
-                    multiply_temp_variable = { productivity_temp = global.shipping_amount@var:r_token }
-                #
-                if = {
-                    limit = {
-                        check_variable = { productivity_temp > prod_upper_bound }
+                    if = {
+                        limit = {
+                            check_variable = { need@var:r_token > production@var:r_token }
+                        }
+                        set_temp_variable = { amount_temp = need@var:r_token }
+                        subtract_from_temp_variable = { amount_temp = production@var:r_token }
                     }
-                    set_temp_variable = { change_temp = productivity_temp } # Export More / Import Less
-                    subtract_from_temp_variable = { change_temp = prod_upper_bound }
-                    divide_temp_variable = { change_temp = prod_upper_bound }
-                    divide_temp_variable = { change_temp = -4 }
-                }
-            }
-            else_if = { # IF EXPORTING
-                limit = {
-                    check_variable = { offers@var:r_token < 0 }
-                }
-                if = {
-                    limit = {
-                        check_variable = { trade_productivity@var:r_token > prod_upper_bound }
+                    else = {
+                        set_temp_variable = { amount_temp = production@var:r_token }
+                        subtract_from_temp_variable = { amount_temp = need@var:r_token }
                     }
-                    set_temp_variable = { change_temp = trade_productivity@var:r_token } # Export More / Import Less
-                    subtract_from_temp_variable = { change_temp = prod_upper_bound }
-                    divide_temp_variable = { change_temp = prod_upper_bound }
-                    divide_temp_variable = { change_temp = -4 }
-                }
-                else_if = {
-                    limit = {
-                        check_variable = { trade_productivity@var:r_token < prod_lower_bound }
-                    }
-                    set_temp_variable = { change_temp = trade_productivity@var:r_token } # Export Less / Import More
-                    subtract_from_temp_variable = { change_temp = prod_upper_bound }
-                    divide_temp_variable = { change_temp = prod_upper_bound }
-                    divide_temp_variable = { change_temp = -4 }
-                }
-            }
-            
-            if = {
-                limit = {
-                    check_variable = { change_temp > 1 }
-                }
-                set_temp_variable = { change_temp = 1 }
-            }
-            else_if = {
-                limit = {
-                    check_variable = { change_temp < -1 }
-                }
-                set_temp_variable = { change_temp = -1 }
-            }
+                    divide_temp_variable = { amount_temp = 10 }
+                    add_to_temp_variable = { amount_temp = 1 }
+                    multiply_temp_variable = { amount_temp = change_temp }
 
-            if = {
-                limit = {
-                    NOT = { check_variable = { change_temp = 0 } }
+                    adjust_trade_no_update = yes # Auto-rounds amount_temp
                 }
-                if = {
-                    limit = {
-                        check_variable = { need@var:r_token > production@var:r_token }
-                    }
-                    set_temp_variable = { amount_temp = need@var:r_token }
-                    subtract_from_temp_variable = { amount_temp = production@var:r_token }
-                }
-                else = {
-                    set_temp_variable = { amount_temp = production@var:r_token }
-                    subtract_from_temp_variable = { amount_temp = need@var:r_token }
-                }
-                divide_temp_variable = { amount_temp = 10 }
-                add_to_temp_variable = { amount_temp = 1 }
-                multiply_temp_variable = { amount_temp = change_temp }
-
-                adjust_trade_no_update = yes # Auto-rounds amount_temp
             }
         }
 
