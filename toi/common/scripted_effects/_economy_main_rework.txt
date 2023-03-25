@@ -208,6 +208,15 @@
                 }
             #
 
+            random_controlled_state = {
+                for_each_loop = {
+                    array = global.building_token_array
+                    value = building_token
+                    get_latest_production_method = yes
+                    set_variable = { controller:latest_production_method@var:building_token = pm_temp }
+                }
+            }
+
             set_temp_variable = { upper_earnings_limit = pops_earnings_avg }
             multiply_temp_variable = { upper_earnings_limit = 3 }
             set_temp_variable = { lower_earnings_limit = pops_earnings_avg }
@@ -1377,6 +1386,7 @@
             every_controlled_state = {
                 buildings_update = yes
                 pops_update = yes
+				refresh_construction_list = yes
                 #Statistics
                     #GDP
                     set_variable = { prev_gdp_amount = gdp_amount }
@@ -2082,6 +2092,15 @@
                 value = r_token
 
                 set_variable = { offers@var:r_token = 0 }
+            }
+
+            random_controlled_state = {
+                for_each_loop = {
+                    array = global.building_token_array
+                    value = building_token
+                    get_latest_production_method = yes
+                    set_variable = { controller:latest_production_method@var:building_token = pm_temp }
+                }
             }
 
             clear_array = gdp_amount_monthly
@@ -3227,6 +3246,7 @@
                 buildings_update = yes
                 create_pie_chart_pop_type = yes
                 gdp_update = yes
+				refresh_construction_list = yes
                 add_to_variable = { PREV.gdp_amount = gdp_amount }
                 clear_array = gdp_graph_amount_array
                 clear_array = gdp_graph_color_array
@@ -8535,7 +8555,10 @@
             value = bld_token
             if = {
                 limit = {
-                    check_variable = { size@var:bld_token > 0 }
+                    OR = {
+                        check_variable = { size@var:bld_token > 0 }
+                        check_variable = { under_construction@var:bld_token > 0 }
+                    }
                 }
                 add_to_array = { urban_buildings = bld_token }
                 add_to_array = { buildings = bld_token }
@@ -8546,7 +8569,10 @@
             value = bld_token
             if = {
                 limit = {
-                    check_variable = { size@var:bld_token > 0 }
+                    OR = {
+                        check_variable = { size@var:bld_token > 0 }
+                        check_variable = { under_construction@var:bld_token > 0 }
+                    }
                 }
                 add_to_array = { rural_buildings = bld_token }
                 add_to_array = { buildings = bld_token }
@@ -9741,6 +9767,54 @@
                 set_variable = { construction_expenses@var:om_building = 0 }
             }
 		}
+    }
+    refresh_construction_list = {
+        clear_array = construction_show
+
+        for_each_loop = {
+            array = global.building_token_array
+            value = building_token
+
+            if = {
+                limit = {
+                    NOT = { is_in_array = { buildings = building_token } }
+                }
+                if = {
+                    limit = {
+                        check_variable = { controller:latest_production_method@var:building_token  > -1 }
+                    }
+                    set_variable = { production_method@var:building_token = controller:latest_production_method@var:building_token  }
+                    if = {
+                        limit = {
+                            OR = {
+                                check_variable = { global.building_uses_deposits@var:building_token = 0 }
+                                AND = {
+                                    check_variable = { global.building_uses_deposits@var:building_token = 1 }
+                                    check_variable = { deposits@var:building_token > 0 }
+                                }
+                                has_global_flag = autobuild_flag
+                            }
+                            OR = {
+                                check_variable = { global.building_uses_arable_land@var:building_token = 0 }
+                                AND = {
+                                    check_variable = { global.building_uses_arable_land@var:building_token = 1 }
+                                    check_variable = { arable_land > arable_land_used }
+                                }
+                                has_global_flag = autobuild_flag
+                            }
+                            OR = {
+                                check_variable = { global.building_coastal@var:building_token = 0 }
+                                AND = {
+                                    check_variable = { global.building_coastal@var:building_token = 1 }
+                                    is_coastal = yes
+                                }
+                            }
+                        }
+                        add_to_array = { construction_show = building_token }
+                    }
+                }
+            }
+        }
     }
 
     buildings_update_predicted_vals = {
@@ -18335,6 +18409,7 @@
         #Urban
         define_port = {
             set_variable = { global.building_output_resource_1@token:building_port = token:resource_services }
+            set_variable = { global.building_coastal@token:building_port = 1 }
 
             #Basic
                 set_variable = { global.building_basic_tech_unlock@token:building_port = 1 }
@@ -19609,6 +19684,7 @@
         }
         define_naval_industry = {
             set_variable = { global.building_output_resource_1@token:building_naval_industry = token:resource_services }
+            set_variable = { global.building_coastal@token:building_naval_industry = 1 }
 
             #Basic
                 set_variable = { global.building_basic_tech_unlock@token:building_naval_industry = 1 }

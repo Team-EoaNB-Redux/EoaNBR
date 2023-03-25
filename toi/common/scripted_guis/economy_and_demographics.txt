@@ -187,6 +187,10 @@ scripted_gui = {
 			autobuild_button_title_visible = {
 				is_debug = yes
 			}
+			
+			build_building_button_click_enabled = {
+				is_fully_controlled_by = ROOT
+			}
 
 			urban_building_build_button_visible = {
 				NOT = { check_variable = { under_construction@var:v > 0 } }
@@ -269,11 +273,27 @@ scripted_gui = {
 					clr_country_flag = state_economy_view_open
 				}
 			}
+			
+			build_building_button_click = {
+				if = {
+					limit = {
+						ROOT = { has_country_flag = construction_view_open }
+					}
+					ROOT = { 
+						clr_country_flag = construction_view_open 
+					}
+				}
+				else = {
+					ROOT = {
+						set_country_flag = construction_view_open
+					}
+				}
+			}
 
 			urban_building_build_button_click = {
 				if = {
 					limit = {
-						ROOT = { has_country_flag = autobuild_flag }
+						has_global_flag = autobuild_flag
 					}
 					add_to_variable = { size@var:v = 1  }
 					ROOT = { country_recalc = yes }
@@ -290,7 +310,7 @@ scripted_gui = {
 			urban_building_build_button_right_click = {
 				if = {
 					limit = {
-						ROOT = { has_country_flag = autobuild_flag }
+						has_global_flag = autobuild_flag
 					}
 					subtract_from_variable = { size@var:v = 1  }
 					ROOT = { country_recalc = yes }
@@ -350,7 +370,7 @@ scripted_gui = {
 			rural_building_build_button_click = {
 				if = {
 					limit = {
-						ROOT = { has_country_flag = autobuild_flag }
+						has_global_flag = autobuild_flag
 					}
 					add_to_variable = { size@var:v = 1  }
 					ROOT = { country_recalc = yes }
@@ -367,7 +387,7 @@ scripted_gui = {
 			rural_building_build_button_right_click = {
 				if = {
 					limit = {
-						ROOT = { has_country_flag = autobuild_flag }
+						has_global_flag = autobuild_flag
 					}
 					subtract_from_variable = { size@var:v = 1  }
 					ROOT = { country_recalc = yes }
@@ -463,13 +483,16 @@ scripted_gui = {
 				ROOT = {
 					if = {
 						limit = {
-							has_country_flag = autobuild_flag
+							has_global_flag = autobuild_flag
 						}
-						clr_country_flag = autobuild_flag
+						clr_global_flag = autobuild_flag
 					}
 					else = {
-						set_country_flag = autobuild_flag
+						set_global_flag = autobuild_flag
 					}
+				}
+				every_state = {
+					refresh_construction_list = yes
 				}
 				add_to_variable = { update_state_econ_window = 1 }
 			}
@@ -644,6 +667,115 @@ scripted_gui = {
 				pie98 = { image = "[?pie_chart_pop_type^98.GetValueToPopType]" }
 				pie99 = { image = "[?pie_chart_pop_type^99.GetValueToPopType]" }
 			#
+		}
+	}
+	construction_list = {
+		window_name = "building_construction_container"
+		parent_window_name = "state_economy_window_container"
+
+		context_type = selected_state_context
+
+		visible = {
+			is_fully_controlled_by = ROOT
+			ROOT = { has_country_flag = construction_view_open }
+		}
+
+		triggers = {
+			construction_entry_background_click_enabled = {
+				set_temp_variable = { industry_token = construction_show^i }
+				if = {
+					limit = {
+						check_variable = { construction_pm_selected = 0 }
+					}
+					set_temp_variable = { tech_token = global.industry_base_tech_unlock@var:industry_token }
+				}
+				else_if = {
+					limit = {
+						check_variable = { construction_pm_selected = 1 }
+					}
+					set_temp_variable = { tech_token = global.industry_industrialized_tech_unlock@var:industry_token }
+				}
+				else_if = {
+					limit = {
+						check_variable = { construction_pm_selected = 2 }
+					}
+					set_temp_variable = { tech_token = global.industry_mechanized_tech_unlock@var:industry_token }
+				}
+				else_if = {
+					limit = {
+						check_variable = { construction_pm_selected = 3 }
+					}
+					set_temp_variable = { tech_token = global.industry_modernized_tech_unlock@var:industry_token }
+				}
+
+				NOT = { check_variable = { tech_token = -1 } }
+				OR = {
+					check_variable = { tech_token = 0 }
+					has_tech = var:tech_token
+				}
+			}
+			industry_construction_background_visible = {
+				#ROOT = { has_country_flag = construction_view_open }
+			}
+			construction_entry_background_visible = {
+				#ROOT = { has_country_flag = construction_view_open }
+			}
+		}
+
+		effects = {
+			construction_pm_button_click = {
+				add_to_variable = { construction_pm_selected = 1 }
+				if = {
+					limit = {
+						check_variable = { construction_pm_selected > 3 }
+					}
+					set_variable = { construction_pm_selected = 3 }
+				}
+			}
+			construction_pm_button_right_click = {
+				subtract_from_variable = { construction_pm_selected = 1 }
+				if = {
+					limit = {
+						check_variable = { construction_pm_selected < 0 }
+					}
+					set_variable = { construction_pm_selected = 0 }
+				}
+			}
+
+			construction_entry_background_click = {
+				if = {
+					limit = {
+						has_global_flag = autobuild_flag
+					}
+					add_to_variable = { size@var:v = 1  }
+					ROOT = { country_recalc = yes }
+				}
+				else = {
+					set_temp_variable = { x_temp = 1 }
+					set_temp_variable = { financer_temp = ROOT }
+					set_temp_variable = { building_token = v }
+					set_temp_variable = { production_method_temp = -1 }
+					construct_x_buildings = yes
+				}
+				ROOT = { clr_country_flag = construction_view_open }
+				add_to_variable = { update_state_econ_window = 1 }
+			}
+		}
+
+		dynamic_lists = {
+			construction_list = {
+				array = construction_show
+				entry_container = construction_entry
+			}
+		}
+
+		properties = {
+			construction_entry_resource = {
+				image = "[GetIndustriesConstructionResourceIcon]"
+			}
+			construction_pm_button = {
+				image = "[GetIndustriesConstructionProductionMethodButton]"
+			}
 		}
 	}
 
