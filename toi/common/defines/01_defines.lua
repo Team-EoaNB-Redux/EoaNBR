@@ -34,11 +34,13 @@ NDefines.NCountry.BASE_FUEL_GAIN = 1.0						-- base amount of fuel gained hourly
 NDefines.NCountry.BASE_FUEL_CAPACITY = 500						-- base amount of fuel capacity --50k
 
 NDefines.NProduction.MAX_EQUIPMENT_RESOURCES_NEED = 6 	-- Max number of different strategic resources an equipment can be dependent on. --3
-NDefines.NProduction.BASE_FACTORY_SPEED_MIL = 5				-- Base factory speed multiplier (how much hoi3 style IC each factory gives). --4.5
+NDefines.NProduction.BASE_FACTORY_SPEED_MIL = 2				-- vanilla 5 Base factory speed multiplier (how much hoi3 style IC each factory gives). --4.5
+NDefines.NProduction.BASE_FACTORY_SPEED_MIL = 4       -- vanilla 4.5
+NDefines.NProduction.BASE_FACTORY_SPEED_NAV = 3      -- vanilla 2.5
 NDefines.NProduction.ANNEX_FUEL_RATIO = 0.5	-- How much fuel will be transferred on annexation
 NDefines.NProduction.MIN_POSSIBLE_TRAINING_MANPOWER = 5000	-- How many deployment lines minimum can be training --100k
 NDefines.NProduction.CAPITULATE_FUEL_RATIO = 0.25 -- How much fuel will be transferred on capitulation --.5
-NDefines.NProduction.PRODUCTION_RESOURCE_LACK_PENALTY = -0.5			-- Penalty decrease while lack of resource per factory --.05
+NDefines.NProduction.PRODUCTION_RESOURCE_LACK_PENALTY = -0.4			-- Penalty decrease while lack of resource per factory --.05
 
 NDefines.NTechnology.BASE_TECH_COST = 1000 -- 100
 NDefines.NTechnology.MIN_RESEARCH_SPEED = 0.12						-- research speed can't go below this value
