@@ -17010,16 +17010,68 @@ defined_text = {
 		#Construction Tooltip
             defined_text = {
                 name = GetBuildingConstructionTooltip
+				text = {
+					trigger = {
+						OR = {
+							check_variable = { v = token:building_subsistence_farm }
+							check_variable = { v = token:building_rice_paddy }
+						}
+					}
+					localization_key = "building_cant_build_subsistence_tt"
+				}
+				text = {
+					trigger = {
+						#always = no
+						NOT = { is_fully_controlled_by = ROOT }
+					}
+					localization_key = "building_cant_build_control_tt"
+				}
                 text = {
                     trigger = {
-                        NOT = { check_variable = { v = token:building_subsistence_farm } }
-                        NOT = { check_variable = { v = token:building_rice_paddy } }
-						is_fully_controlled_by = ROOT
+						if = {
+							limit = {
+								check_variable = { v = token:building_military_industry }
+							}
+							NOT = { 
+								free_building_slots = {
+									building = arms_factory
+									size > 0
+									include_locked = no
+								}
+							}
+						}
+						else_if = {
+							limit = {
+								check_variable = { v = token:building_civilian_industry }
+							}
+							NOT = { 
+								free_building_slots = {
+									building = industrial_complex
+									size > 0
+									include_locked = no
+								}
+							}
+						}
+						else_if = {
+							limit = {
+								check_variable = { v = token:building_naval_industry }
+							}
+							NOT = { 
+								free_building_slots = {
+									building = dockyard
+									size > 0
+									include_locked = no
+								}
+							}
+						}
+						else = {
+							always = no
+						}
                     }
-                    localization_key = "building_build_tt"
+                    localization_key = "building_cant_build_slots_tt"
                 }
 				text = {
-					localization_key = "building_cant_build_tt"
+                    localization_key = "building_build_tt"
 				}
             }
             defined_text = {
@@ -17382,6 +17434,147 @@ defined_text = {
 						multiply_temp_variable = { gcpa = price@token:resource_industrial_goods }
 					}
 					localization_key = "[?gcpa|3]"
+				}
+            }
+            defined_text = {
+                name = GetBuildingConstructionPredictedTime
+				text = {
+					trigger = {
+						if = {
+							limit = {
+								check_variable = { size@var:v > 0 }
+							}
+							set_temp_variable = { pm_temp = production_method@var:v }
+						}
+						else = {
+							return_latest_production_method = yes
+						}
+
+						if = {
+							limit = {
+								check_variable = { pm_temp = 0 }
+							}
+							set_temp_variable = { total_amount_temp = global.building_basic_construction_amount@var:v }
+							set_temp_variable = { monthly_amount_temp = global.building_basic_construction_speed@var:v }
+						}
+						else_if = {
+							limit = {
+								check_variable = { pm_temp = 1 }
+							}
+							set_temp_variable = { total_amount_temp = global.building_advanced_construction_amount@var:v }
+							set_temp_variable = { monthly_amount_temp = global.building_advanced_construction_speed@var:v }
+						}
+						else_if = {
+							limit = {
+								check_variable = { pm_temp = 2 }
+							}
+							set_temp_variable = { total_amount_temp = global.building_industrialized_construction_amount@var:v }
+							set_temp_variable = { monthly_amount_temp = global.building_industrialized_construction_speed@var:v }
+						}
+						else_if = {
+							limit = {
+								check_variable = { pm_temp = 3 }
+							}
+							set_temp_variable = { total_amount_temp = global.building_mechanized_construction_amount@var:v }
+							set_temp_variable = { monthly_amount_temp = global.building_mechanized_construction_speed@var:v }
+						}
+						else_if = {
+							limit = {
+								check_variable = { pm_temp = 4 }
+							}
+							set_temp_variable = { total_amount_temp = global.building_electrified_construction_amount@var:v }
+							set_temp_variable = { monthly_amount_temp = global.building_electrified_construction_speed@var:v }
+						}
+						else_if = {
+							limit = {
+								check_variable = { pm_temp = 5 }
+							}
+							set_temp_variable = { total_amount_temp = global.building_motorized_construction_amount@var:v }
+							set_temp_variable = { monthly_amount_temp = global.building_motorized_construction_speed@var:v }
+						}
+						else_if = {
+							limit = {
+								check_variable = { pm_temp = 6 }
+							}
+							set_temp_variable = { total_amount_temp = global.building_modernized_construction_amount@var:v }
+							set_temp_variable = { monthly_amount_temp = global.building_modernized_construction_speed@var:v }
+						}
+						else_if = {
+							limit = {
+								check_variable = { pm_temp = 7 }
+							}
+							set_temp_variable = { total_amount_temp = global.building_roboticized_construction_amount@var:v }
+							set_temp_variable = { monthly_amount_temp = global.building_roboticized_construction_speed@var:v }
+						}
+						else_if = {
+							limit = {
+								check_variable = { pm_temp = 8 }
+							}
+							set_temp_variable = { total_amount_temp = global.building_computerized_construction_amount@var:v }
+							set_temp_variable = { monthly_amount_temp = global.building_computerized_construction_speed@var:v }
+						}
+						else_if = {
+							limit = {
+								check_variable = { pm_temp = 9 }
+							}
+							set_temp_variable = { total_amount_temp = global.building_digitalized_construction_amount@var:v }
+							set_temp_variable = { monthly_amount_temp = global.building_digitalized_construction_speed@var:v }
+						}
+						else_if = {
+							limit = {
+								check_variable = { pm_temp = 10 }
+							}
+							set_temp_variable = { total_amount_temp = global.building_automatized_construction_amount@var:v }
+							set_temp_variable = { monthly_amount_temp = global.building_automatized_construction_speed@var:v }
+						}
+						else_if = {
+							limit = {
+								check_variable = { pm_temp = 11 }
+							}
+							set_temp_variable = { total_amount_temp = global.building_futurized_construction_amount@var:v }
+							set_temp_variable = { monthly_amount_temp = global.building_futurized_construction_speed@var:v }
+						}
+
+						set_temp_variable = { months_temp = total_amount_temp }
+						divide_temp_variable = { months_temp = monthly_amount_temp }
+						add_to_temp_variable = { months_temp = 0.499 }
+						round_temp_variable = months_temp
+						
+						set_temp_variable = { years_temp = months_temp }
+						divide_temp_variable = { years_temp = 12 }
+						subtract_from_temp_variable = { years_temp = 0.5 }
+						round_temp_variable = years_temp
+
+						set_temp_variable = { months_sub_temp = years_temp }
+						multiply_temp_variable = { months_sub_temp = 12 }
+						subtract_from_temp_variable = { months_temp = months_sub_temp }
+
+						always = yes
+					}
+					localization_key = "building_build_time_tt"
+				}
+            }
+            defined_text = {
+                name = GetBuildingConstructionTime
+				text = {
+					trigger = {
+						set_temp_variable = { months_temp = construction_amount@var:v }
+						divide_temp_variable = { months_temp = construction_speed@var:v }
+						add_to_temp_variable = { months_temp = 0.499 }
+						round_temp_variable = months_temp
+						
+						set_temp_variable = { years_temp = months_temp }
+						divide_temp_variable = { years_temp = 12 }
+						subtract_from_temp_variable = { years_temp = 0.5 }
+						round_temp_variable = years_temp
+
+						set_temp_variable = { months_sub_temp = years_temp }
+						multiply_temp_variable = { months_sub_temp = 12 }
+						subtract_from_temp_variable = { months_temp = months_sub_temp }
+
+						always = yes
+					}
+					localization_key = "building_build_time_tt"
 				}
             }
             defined_text = {
