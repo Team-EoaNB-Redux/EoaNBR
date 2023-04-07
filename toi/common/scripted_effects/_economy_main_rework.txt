@@ -1761,6 +1761,8 @@
                 set_variable = { global.base_price@token:silicates = 3.5 }
                 set_variable = { global.base_price@token:rare_earth_metals = 2.5 }
                 
+                set_variable = { global.base_price_industrial_capacity = 5 }
+                
                 # Basically controls how many of one resource do you need to affect prices. Higher means prices are more static
                 set_variable = { global.price_control@token:oil = 1 }
                 set_variable = { global.price_control@token:aluminium = 2 }
@@ -3001,6 +3003,9 @@
                         multiply_variable = { pops_literacy_percentage = 100 }
                     }
                 #
+                
+                calc_industrial_capacity = yes
+                buildings_update = yes
 
                 #Standard of Living Setup
                     for_each_loop = {
@@ -9401,6 +9406,11 @@
         #Capacities
 			set_variable = { industrial_capacity_use@var:bu_token = global.building_industrial_capacity_use@var:bu_token }
             multiply_variable = { industrial_capacity_use@var:bu_token = size@var:bu_token }
+			set_temp_variable = { cap_modifier_temp = building_industrial_capacity_use_factor@var:bu_token }
+			add_to_temp_variable = { cap_modifier_temp = 1 }
+            multiply_variable = { industrial_capacity_use@var:bu_token = cap_modifier_temp }
+            multiply_variable = { industrial_capacity_use@var:bu_token = input_modifier_temp }
+            multiply_variable = { industrial_capacity_use@var:bu_token = throughput_modifier_temp }
 
             set_variable = { shipping_capacity@var:bu_token = 0 }
             set_variable = { industrial_capacity@var:bu_token = 0 }
@@ -9491,6 +9501,12 @@
             
             multiply_variable = { shipping_capacity@var:bu_token = size@var:bu_token }
             multiply_variable = { industrial_capacity@var:bu_token = size@var:bu_token }
+			multiply_variable = { shipping_capacity@var:bu_token = output_modifier_temp }
+			multiply_variable = { industrial_capacity@var:bu_token = output_modifier_temp }
+			multiply_variable = { shipping_capacity@var:bu_token = throughput_modifier_temp }
+			multiply_variable = { industrial_capacity@var:bu_token = throughput_modifier_temp }
+
+            set_variable = { max_industrial_capacity@var:bu_token = industrial_capacity@var:bu_token }
             
             multiply_variable = { shipping_capacity@var:bu_token = production_percentage@var:bu_token }
             divide_variable = { shipping_capacity@var:bu_token = 100 }
@@ -9532,6 +9548,11 @@
 			set_temp_variable = { mlt = global.building_money_limit }
 			multiply_variable = { mlt = global.base_price@var:bu_resource_5 }
 			multiply_variable = { mlt = max_production_5@var:bu_token }
+            add_to_variable = { money_limit@var:bu_token = mlt }
+            
+			set_temp_variable = { mlt = global.building_money_limit }
+			multiply_variable = { mlt = global.base_price_industrial_capacity }
+			multiply_variable = { mlt = max_industrial_capacity@var:bu_token }
             add_to_variable = { money_limit@var:bu_token = mlt }
 		#
 
@@ -9657,6 +9678,9 @@
             set_temp_variable = { rev_g_temp = max_production_5@var:bu_token }
             multiply_temp_variable = { rev_g_temp = price@var:bu_resource_5 }
             add_to_temp_variable = { revenue_temp = rev_g_temp }
+            set_temp_variable = { rev_g_temp = max_industrial_capacity@var:bu_token }
+            multiply_temp_variable = { rev_g_temp = price_industrial_capacity }
+            add_to_temp_variable = { revenue_temp = rev_g_temp }
             
             set_temp_variable = { expenses_temp = 0 }
             add_to_temp_variable = { expenses_temp = max_input_1_expenses@var:bu_token }
@@ -9664,6 +9688,10 @@
             add_to_temp_variable = { expenses_temp = max_input_3_expenses@var:bu_token }
             add_to_temp_variable = { expenses_temp = max_input_4_expenses@var:bu_token }
             add_to_temp_variable = { expenses_temp = max_input_5_expenses@var:bu_token }
+
+            set_temp_variable = { exp_temp = industrial_capacity_use@var:bu_token }
+            multiply_temp_variable = { exp_temp = price_industrial_capacity }
+            add_to_temp_variable = { expenses_temp = exp_temp }
 
 			set_variable = { productivity@var:bu_token = revenue_temp }
 			subtract_from_variable = { productivity@var:bu_token = expenses_temp }
@@ -9687,14 +9715,18 @@
             
 			set_variable = { revenue_goods_5@var:bu_token = production_5@var:bu_token }
 			multiply_variable = { revenue_goods_5@var:bu_token = price@var:bu_resource_5 }
+            
+			set_variable = { revenue_industrial_capacity@var:bu_token = industrial_capacity@var:bu_token }
+			multiply_variable = { revenue_industrial_capacity@var:bu_token = price_industrial_capacity }
 
 			set_variable = { revenue_goods@var:bu_token = revenue_goods_1@var:bu_token }
 			add_to_variable = { revenue_goods@var:bu_token = revenue_goods_2@var:bu_token }
 			add_to_variable = { revenue_goods@var:bu_token = revenue_goods_3@var:bu_token }
 			add_to_variable = { revenue_goods@var:bu_token = revenue_goods_4@var:bu_token }
-			add_to_variable = { revenue_goods@var:bu_token = revenue_goods_%@var:bu_token }
+			add_to_variable = { revenue_goods@var:bu_token = revenue_goods_5@var:bu_token }
             
 			set_variable = { revenue@var:bu_token = revenue_goods@var:bu_token }
+			add_to_variable = { revenue@var:bu_token = revenue_industrial_capacity@var:bu_token }
 
 			#Expenses
 			set_variable = { expenses_input@var:bu_token = input_1_expenses@var:bu_token }
@@ -9702,9 +9734,13 @@
 			add_to_variable = { expenses_input@var:bu_token = input_3_expenses@var:bu_token }
 			add_to_variable = { expenses_input@var:bu_token = input_4_expenses@var:bu_token }
 			add_to_variable = { expenses_input@var:bu_token = input_5_expenses@var:bu_token }
+            
+			set_variable = { expenses_industrial_capacity@var:bu_token = industrial_capacity_use@var:bu_token }
+			multiply_variable = { expenses_industrial_capacity@var:bu_token = price_industrial_capacity }
 
 			set_variable = { expenses@var:bu_token = expenses_payroll@var:bu_token }
 			add_to_variable = { expenses@var:bu_token = expenses_input@var:bu_token }
+			add_to_variable = { expenses@var:bu_token = expenses_industrial_capacity@var:bu_token }
 
 			#Profit
 			set_variable = { profit@var:bu_token = revenue@var:bu_token }
@@ -10851,6 +10887,8 @@
             add_to_variable = { industrial_capacity = industrial_capacity@var:b_type }
         }
 
+        
+        set_variable = { price_industrial_capacity = global.base_price_industrial_capacity }
         if = {
             limit = {
                 check_variable = { industrial_capacity_use > industrial_capacity }
@@ -10862,6 +10900,60 @@
         }
         else = {
             set_variable = { industrial_capacity_service = 1 }
+        }
+
+        set_temp_variable = { industrial_capacity_use_temp = industrial_capacity_use }
+        multiply_temp_variable = { industrial_capacity_use_temp = 1.25 }
+        if = {
+            limit = {
+                check_variable = { industrial_capacity_use > industrial_capacity }
+            }
+            if = {
+                limit = {
+                    check_variable = { industrial_capacity > 0.0 }
+                }
+                set_temp_variable = { grp_multiplier = industrial_capacity_use_temp }
+                divide_temp_variable = { grp_multiplier = industrial_capacity }
+                add_to_temp_variable = { grp_multiplier = 1 }
+                divide_temp_variable = { grp_multiplier = 2 }
+
+                if = {
+                    limit = {
+                        check_variable = { grp_multiplier > 2.0 }
+                    }
+                    set_temp_variable = { grp_multiplier = 2.0 }
+                }
+            }
+            else = {
+                set_temp_variable = { grp_multiplier = 2.0 }
+            }
+
+            multiply_variable = { price_industrial_capacity = grp_multiplier }
+        }
+        else = {
+            if = {
+                limit = {
+                    check_variable = { industrial_capacity_use_temp > 0.0 }
+                }
+                set_temp_variable = { grp_sd = industrial_capacity }
+                divide_temp_variable = { grp_sd = industrial_capacity_use_temp }
+
+                set_temp_variable = { grp_multiplier = 3 }
+                subtract_from_temp_variable = { grp_multiplier = grp_sd }
+                divide_temp_variable = { grp_multiplier = 2 }
+
+                if = {
+                    limit = {
+                        check_variable = { grp_multiplier < 0.25 }
+                    }
+                    set_temp_variable = { grp_multiplier = 0.25 }
+                }
+            }
+            else = {
+                set_temp_variable = { grp_multiplier = 0.25 }
+            }
+
+            multiply_variable = { price_industrial_capacity = grp_multiplier } #P = B * ((3 - S/D) / 2)
         }
     }
     calc_shipping_capacity = {
@@ -17828,9 +17920,9 @@
                 set_variable = { global.building_basic_upgrade_speed@token:building_infrastructure = 1 }
 
                 #Production
-                set_variable = { global.building_basic_output_1@token:building_infrastructure = 4.0 }
+                set_variable = { global.building_basic_output_1@token:building_infrastructure = 2.0 }
                 set_variable = { global.building_basic_output_industrial_capacity@token:building_infrastructure = 2 }
-                set_variable = { global.building_basic_output_shipping_capacity@token:building_infrastructure = 1 }
+                set_variable = { global.building_basic_output_shipping_capacity@token:building_infrastructure = 2 }
 
                 set_variable = { global.building_basic_input_resource_1@token:building_infrastructure = token:resource_raw_materials }
                 set_variable = { global.building_basic_input_amount_1@token:building_infrastructure = 3.0 }
@@ -17847,9 +17939,9 @@
                 set_variable = { global.building_advanced_tech_unlock@token:building_infrastructure = token:mass_transit_early }
 
                 #Production
-                set_variable = { global.building_advanced_output_1@token:building_infrastructure = 7.0 }
+                set_variable = { global.building_advanced_output_1@token:building_infrastructure = 4.5 }
                 set_variable = { global.building_advanced_output_industrial_capacity@token:building_infrastructure = 2.5 }
-                set_variable = { global.building_advanced_output_shipping_capacity@token:building_infrastructure = 1.25 }
+                set_variable = { global.building_advanced_output_shipping_capacity@token:building_infrastructure = 2.5 }
                 
                 set_variable = { global.building_advanced_construction_amount@token:building_infrastructure = 36 }
                 set_variable = { global.building_advanced_construction_speed@token:building_infrastructure = 1 }
@@ -17872,9 +17964,9 @@
                 set_variable = { global.building_industrialized_tech_unlock@token:building_infrastructure = token:tech_humanities_roadworks }
 
                 #Production
-                set_variable = { global.building_industrialized_output_1@token:building_infrastructure = 10.5 }
+                set_variable = { global.building_industrialized_output_1@token:building_infrastructure = 7.5 }
                 set_variable = { global.building_industrialized_output_industrial_capacity@token:building_infrastructure = 3.0 }
-                set_variable = { global.building_industrialized_output_shipping_capacity@token:building_infrastructure = 1.5 }
+                set_variable = { global.building_industrialized_output_shipping_capacity@token:building_infrastructure = 3.0 }
                 
                 set_variable = { global.building_industrialized_construction_amount@token:building_infrastructure = 72 }
                 set_variable = { global.building_industrialized_construction_speed@token:building_infrastructure = 2 }
@@ -17900,9 +17992,9 @@
                 set_variable = { global.building_mechanized_tech_unlock@token:building_infrastructure = token:tech_humanities_asphalt_roads }
 
                 #Production
-                set_variable = { global.building_mechanized_output_1@token:building_infrastructure = 12.5 }
+                set_variable = { global.building_mechanized_output_1@token:building_infrastructure = 8.5 }
                 set_variable = { global.building_mechanized_output_industrial_capacity@token:building_infrastructure = 4.0 }
-                set_variable = { global.building_mechanized_output_shipping_capacity@token:building_infrastructure = 2.0 }
+                set_variable = { global.building_mechanized_output_shipping_capacity@token:building_infrastructure = 4.0 }
                 
                 set_variable = { global.building_mechanized_construction_amount@token:building_infrastructure = 90 }
                 set_variable = { global.building_mechanized_construction_speed@token:building_infrastructure = 2.5 }
@@ -17928,9 +18020,9 @@
                 set_variable = { global.building_electrified_tech_unlock@token:building_infrastructure = token:tarmac_roads }
 
                 #Productivity: $4.3 /K
-                set_variable = { global.building_electrified_output_1@token:building_infrastructure = 16 }
+                set_variable = { global.building_electrified_output_1@token:building_infrastructure = 10 }
                 set_variable = { global.building_electrified_output_industrial_capacity@token:building_infrastructure = 6.0 }
-                set_variable = { global.building_electrified_output_shipping_capacity@token:building_infrastructure = 3.0 }
+                set_variable = { global.building_electrified_output_shipping_capacity@token:building_infrastructure = 6.0 }
                 
                 set_variable = { global.building_electrified_construction_amount@token:building_infrastructure = 126 }
                 set_variable = { global.building_electrified_construction_speed@token:building_infrastructure = 3.5 }
@@ -17959,9 +18051,9 @@
                 set_variable = { global.building_motorized_tech_unlock@token:building_infrastructure = token:mass_highspeed_highways }
 
                 #Productivity: $6.3 /K
-                set_variable = { global.building_motorized_output_1@token:building_infrastructure = 17 }
-                set_variable = { global.building_motorized_output_industrial_capacity@token:building_infrastructure = 10.0 }
-                set_variable = { global.building_motorized_output_shipping_capacity@token:building_infrastructure = 5.0 }
+                set_variable = { global.building_motorized_output_1@token:building_infrastructure = 9 }
+                set_variable = { global.building_motorized_output_industrial_capacity@token:building_infrastructure = 8.0 }
+                set_variable = { global.building_motorized_output_shipping_capacity@token:building_infrastructure = 8.0 }
                 
                 set_variable = { global.building_motorized_construction_amount@token:building_infrastructure = 180 }
                 set_variable = { global.building_motorized_construction_speed@token:building_infrastructure = 5.0 }
@@ -17990,9 +18082,9 @@
                 set_variable = { global.building_modernized_tech_unlock@token:building_infrastructure = token:modern_roundabouts }
 
                 #Productivity: $8.3 /K
-                set_variable = { global.building_modernized_output_1@token:building_infrastructure = 20 }
-                set_variable = { global.building_modernized_output_industrial_capacity@token:building_infrastructure = 12.0 }
-                set_variable = { global.building_modernized_output_shipping_capacity@token:building_infrastructure = 6.0 }
+                set_variable = { global.building_modernized_output_1@token:building_infrastructure = 10 }
+                set_variable = { global.building_modernized_output_industrial_capacity@token:building_infrastructure = 10.0 }
+                set_variable = { global.building_modernized_output_shipping_capacity@token:building_infrastructure = 10.0 }
                 
                 set_variable = { global.building_modernized_construction_amount@token:building_infrastructure = 198 }
                 set_variable = { global.building_modernized_construction_speed@token:building_infrastructure = 5.5 }
@@ -18021,9 +18113,9 @@
                 set_variable = { global.building_roboticized_tech_unlock@token:building_infrastructure = token:combined_transportation_networks }
 
                 #Productivity: $11.2 /K
-                set_variable = { global.building_roboticized_output_1@token:building_infrastructure = 22.5 }
-                set_variable = { global.building_roboticized_output_industrial_capacity@token:building_infrastructure = 14.0 }
-                set_variable = { global.building_roboticized_output_shipping_capacity@token:building_infrastructure = 7.0 }
+                set_variable = { global.building_roboticized_output_1@token:building_infrastructure = 11.5 }
+                set_variable = { global.building_roboticized_output_industrial_capacity@token:building_infrastructure = 11.0 }
+                set_variable = { global.building_roboticized_output_shipping_capacity@token:building_infrastructure = 11.0 }
                 
                 set_variable = { global.building_roboticized_construction_amount@token:building_infrastructure = 252 }
                 set_variable = { global.building_roboticized_construction_speed@token:building_infrastructure = 7 }
@@ -18052,9 +18144,9 @@
                 set_variable = { global.building_computerized_tech_unlock@token:building_infrastructure = token:centralized_traffic_controls }
 
                 #Productivity: $13.0 /K
-                set_variable = { global.building_computerized_output_1@token:building_infrastructure = 27 }
-                set_variable = { global.building_computerized_output_industrial_capacity@token:building_infrastructure = 16.0 }
-                set_variable = { global.building_computerized_output_shipping_capacity@token:building_infrastructure = 8.0 }
+                set_variable = { global.building_computerized_output_1@token:building_infrastructure = 14 }
+                set_variable = { global.building_computerized_output_industrial_capacity@token:building_infrastructure = 13.0 }
+                set_variable = { global.building_computerized_output_shipping_capacity@token:building_infrastructure = 13.0 }
                 
                 set_variable = { global.building_computerized_construction_amount@token:building_infrastructure = 324 }
                 set_variable = { global.building_computerized_construction_speed@token:building_infrastructure = 9 }
@@ -18083,9 +18175,9 @@
                 set_variable = { global.building_digitalized_tech_unlock@token:building_infrastructure = token:mass_transportation_networks }
 
                 #Productivity: $16.5 /K
-                set_variable = { global.building_digitalized_output_1@token:building_infrastructure = 38 }
-                set_variable = { global.building_digitalized_output_industrial_capacity@token:building_infrastructure = 18.0 }
-                set_variable = { global.building_digitalized_output_shipping_capacity@token:building_infrastructure = 9.0 }
+                set_variable = { global.building_digitalized_output_1@token:building_infrastructure = 19 }
+                set_variable = { global.building_digitalized_output_industrial_capacity@token:building_infrastructure = 19.0 }
+                set_variable = { global.building_digitalized_output_shipping_capacity@token:building_infrastructure = 19.0 }
                 
                 set_variable = { global.building_digitalized_construction_amount@token:building_infrastructure = 504 }
                 set_variable = { global.building_digitalized_construction_speed@token:building_infrastructure = 14 }
@@ -18114,9 +18206,9 @@
                 set_variable = { global.building_automatized_tech_unlock@token:building_infrastructure = token:early_automated_transportation }
 
                 #Productivity: $20.0 /K
-                set_variable = { global.building_automatized_output_1@token:building_infrastructure = 45 }
+                set_variable = { global.building_automatized_output_1@token:building_infrastructure = 25 }
                 set_variable = { global.building_automatized_output_industrial_capacity@token:building_infrastructure = 20.0 }
-                set_variable = { global.building_automatized_output_shipping_capacity@token:building_infrastructure = 10.0 }
+                set_variable = { global.building_automatized_output_shipping_capacity@token:building_infrastructure = 20.0 }
                 
                 set_variable = { global.building_automatized_construction_amount@token:building_infrastructure = 684 }
                 set_variable = { global.building_automatized_construction_speed@token:building_infrastructure = 19 }
@@ -18145,9 +18237,9 @@
                 set_variable = { global.building_futurized_tech_unlock@token:building_infrastructure = token:fully_automated_transportation }
 
                 #Productivity: $27.0 /K
-                set_variable = { global.building_futurized_output_1@token:building_infrastructure = 40 }
-                set_variable = { global.building_futurized_output_industrial_capacity@token:building_infrastructure = 24.0 }
-                set_variable = { global.building_futurized_output_shipping_capacity@token:building_infrastructure = 12.0 }
+                set_variable = { global.building_futurized_output_1@token:building_infrastructure = 20 }
+                set_variable = { global.building_futurized_output_industrial_capacity@token:building_infrastructure = 20.0 }
+                set_variable = { global.building_futurized_output_shipping_capacity@token:building_infrastructure = 20.0 }
                 
                 set_variable = { global.building_futurized_construction_amount@token:building_infrastructure = 720 }
                 set_variable = { global.building_futurized_construction_speed@token:building_infrastructure = 20 }
@@ -18177,7 +18269,7 @@
                 set_variable = { global.building_industrialized_tech_unlock@token:building_railway = token:steam_locomotive }
 
                 #Productivity: $2.9 /K
-                set_variable = { global.building_industrialized_output_1@token:building_railway = 10.5 }
+                set_variable = { global.building_industrialized_output_1@token:building_railway = 0.5 }
                 set_variable = { global.building_industrialized_output_industrial_capacity@token:building_railway = 10.0 }
                 set_variable = { global.building_industrialized_output_shipping_capacity@token:building_railway = 10.0 }
                 
@@ -18208,8 +18300,8 @@
                 set_variable = { global.building_mechanized_tech_unlock@token:building_railway = token:steam_locomotive_3 }
 
                 #Productivity: $3.6 /K
-                set_variable = { global.building_mechanized_output_1@token:building_railway = 12.5 }
-                set_variable = { global.building_mechanized_output_industrial_capacity@token:building_railway = 15.0 }
+                set_variable = { global.building_mechanized_output_1@token:building_railway = 1.5 }
+                set_variable = { global.building_mechanized_output_industrial_capacity@token:building_railway = 11.0 }
                 set_variable = { global.building_mechanized_output_shipping_capacity@token:building_railway = 15.0 }
                 
                 set_variable = { global.building_mechanized_construction_amount@token:building_railway = 90 }
@@ -18239,8 +18331,8 @@
                 set_variable = { global.building_electrified_tech_unlock@token:building_railway = token:diesel_locomotive_1 }
 
                 #Productivity: $4.7 /K
-                set_variable = { global.building_electrified_output_1@token:building_railway = 16.0 }
-                set_variable = { global.building_electrified_output_industrial_capacity@token:building_railway = 20.0 }
+                set_variable = { global.building_electrified_output_1@token:building_railway = 2.0 }
+                set_variable = { global.building_electrified_output_industrial_capacity@token:building_railway = 14.0 }
                 set_variable = { global.building_electrified_output_shipping_capacity@token:building_railway = 20.0 }
                 
                 set_variable = { global.building_electrified_construction_amount@token:building_railway = 126 }
@@ -18270,8 +18362,8 @@
                 set_variable = { global.building_motorized_tech_unlock@token:building_railway = token:diesel_locomotive_4 }
 
                 #Productivity: $7.1 /K
-                set_variable = { global.building_motorized_output_1@token:building_railway = 17 }
-                set_variable = { global.building_motorized_output_industrial_capacity@token:building_railway = 30.0 }
+                set_variable = { global.building_motorized_output_1@token:building_railway = 3 }
+                set_variable = { global.building_motorized_output_industrial_capacity@token:building_railway = 14.0 }
                 set_variable = { global.building_motorized_output_shipping_capacity@token:building_railway = 30.0 }
                 
                 set_variable = { global.building_motorized_construction_amount@token:building_railway = 96 }
@@ -18301,8 +18393,8 @@
                 set_variable = { global.building_modernized_tech_unlock@token:building_railway = token:full_electric_locomotives }
 
                 #Productivity: $11.1 /K
-                set_variable = { global.building_modernized_output_1@token:building_railway = 20 }
-                set_variable = { global.building_modernized_output_industrial_capacity@token:building_railway = 40.0 }
+                set_variable = { global.building_modernized_output_1@token:building_railway = 5 }
+                set_variable = { global.building_modernized_output_industrial_capacity@token:building_railway = 15.0 }
                 set_variable = { global.building_modernized_output_shipping_capacity@token:building_railway = 40.0 }
                 
                 set_variable = { global.building_modernized_construction_amount@token:building_railway = 198 }
@@ -18335,8 +18427,8 @@
                 set_variable = { global.building_roboticized_tech_unlock@token:building_railway = token:high_speed_rail }
 
                 #Productivity: $14.4 /K
-                set_variable = { global.building_roboticized_output_1@token:building_railway = 22.5 }
-                set_variable = { global.building_roboticized_output_industrial_capacity@token:building_railway = 44.0 }
+                set_variable = { global.building_roboticized_output_1@token:building_railway = 6.5 }
+                set_variable = { global.building_roboticized_output_industrial_capacity@token:building_railway = 16.0 }
                 set_variable = { global.building_roboticized_output_shipping_capacity@token:building_railway = 44.0 }
                 
                 set_variable = { global.building_roboticized_construction_amount@token:building_railway = 252 }
@@ -18369,8 +18461,8 @@
                 set_variable = { global.building_computerized_tech_unlock@token:building_railway = token:centralized_traffic_controls }
 
                 #Productivity: $16.5 /K
-                set_variable = { global.building_computerized_output_1@token:building_railway = 27 }
-                set_variable = { global.building_computerized_output_industrial_capacity@token:building_railway = 48.0 }
+                set_variable = { global.building_computerized_output_1@token:building_railway = 7 }
+                set_variable = { global.building_computerized_output_industrial_capacity@token:building_railway = 20.0 }
                 set_variable = { global.building_computerized_output_shipping_capacity@token:building_railway = 48.0 }
                 
                 set_variable = { global.building_computerized_construction_amount@token:building_railway = 324 }
@@ -18403,8 +18495,8 @@
                 set_variable = { global.building_digitalized_tech_unlock@token:building_railway = token:mass_transportation_networks }
 
                 #Productivity: $17.0 /K
-                set_variable = { global.building_digitalized_output_1@token:building_railway = 38 }
-                set_variable = { global.building_digitalized_output_industrial_capacity@token:building_railway = 52.0 }
+                set_variable = { global.building_digitalized_output_1@token:building_railway = 12 }
+                set_variable = { global.building_digitalized_output_industrial_capacity@token:building_railway = 25.0 }
                 set_variable = { global.building_digitalized_output_shipping_capacity@token:building_railway = 52.0 }
                 
                 set_variable = { global.building_digitalized_construction_amount@token:building_railway = 504 }
@@ -18437,8 +18529,8 @@
                 set_variable = { global.building_automatized_tech_unlock@token:building_railway = token:early_automated_transportation }
 
                 #Productivity: $20.0 /K
-                set_variable = { global.building_automatized_output_1@token:building_railway = 45 }
-                set_variable = { global.building_automatized_output_industrial_capacity@token:building_railway = 55.0 }
+                set_variable = { global.building_automatized_output_1@token:building_railway = 15 }
+                set_variable = { global.building_automatized_output_industrial_capacity@token:building_railway = 30.0 }
                 set_variable = { global.building_automatized_output_shipping_capacity@token:building_railway = 55.0 }
                 
                 set_variable = { global.building_automatized_construction_amount@token:building_railway = 684 }
@@ -18471,8 +18563,8 @@
                 set_variable = { global.building_futurized_tech_unlock@token:building_railway = token:fully_automated_transportation }
 
                 #Productivity: $27.0 /K
-                set_variable = { global.building_futurized_output_1@token:building_railway = 40 }
-                set_variable = { global.building_futurized_output_industrial_capacity@token:building_railway = 60.0 }
+                set_variable = { global.building_futurized_output_1@token:building_railway = 10 }
+                set_variable = { global.building_futurized_output_industrial_capacity@token:building_railway = 30.0 }
                 set_variable = { global.building_futurized_output_shipping_capacity@token:building_railway = 60.0 }
                 
                 set_variable = { global.building_futurized_construction_amount@token:building_railway = 720 }
@@ -19787,7 +19879,7 @@
 
                 #Productivity: $1.2 /K
                 set_variable = { global.building_basic_output_1@token:building_naval_industry = 11.5 }
-                set_variable = { global.building_basic_output_shipping_capacity@token:building_naval_industry = 50 }
+                set_variable = { global.building_basic_output_shipping_capacity@token:building_naval_industry = 100 }
 
                 set_variable = { global.building_basic_input_resource_1@token:building_naval_industry = token:resource_industrial_goods }
                 set_variable = { global.building_basic_input_amount_1@token:building_naval_industry = 3 }
@@ -19805,7 +19897,7 @@
 
                 #Productivity: $1.8 /K
                 set_variable = { global.building_advanced_output_1@token:building_naval_industry = 17.0 }
-                set_variable = { global.building_advanced_output_shipping_capacity@token:building_naval_industry = 60 }
+                set_variable = { global.building_advanced_output_shipping_capacity@token:building_naval_industry = 120 }
                 
                 set_variable = { global.building_advanced_construction_amount@token:building_naval_industry = 180 }
                 set_variable = { global.building_advanced_construction_speed@token:building_naval_industry = 5 }
@@ -19829,7 +19921,7 @@
 
                 #Productivity: $2.44 /K
                 set_variable = { global.building_industrialized_output_1@token:building_naval_industry = 26.5 }
-                set_variable = { global.building_industrialized_output_shipping_capacity@token:building_naval_industry = 70 }
+                set_variable = { global.building_industrialized_output_shipping_capacity@token:building_naval_industry = 140 }
                 
                 set_variable = { global.building_industrialized_construction_amount@token:building_naval_industry = 324 }
                 set_variable = { global.building_industrialized_construction_speed@token:building_naval_industry = 9 }
@@ -19856,7 +19948,7 @@
 
                 #Productivity: $3.25 /K
                 set_variable = { global.building_mechanized_output_1@token:building_naval_industry = 31.0 }
-                set_variable = { global.building_mechanized_output_shipping_capacity@token:building_naval_industry = 80 }
+                set_variable = { global.building_mechanized_output_shipping_capacity@token:building_naval_industry = 160 }
                 
                 set_variable = { global.building_mechanized_construction_amount@token:building_naval_industry = 396 }
                 set_variable = { global.building_mechanized_construction_speed@token:building_naval_industry = 11 }
@@ -19883,7 +19975,7 @@
 
                 #Productivity: $4.3 /K
                 set_variable = { global.building_electrified_output_1@token:building_naval_industry = 37 }
-                set_variable = { global.building_electrified_output_shipping_capacity@token:building_naval_industry = 100 }
+                set_variable = { global.building_electrified_output_shipping_capacity@token:building_naval_industry = 200 }
                 
                 set_variable = { global.building_electrified_construction_amount@token:building_naval_industry = 540 }
                 set_variable = { global.building_electrified_construction_speed@token:building_naval_industry = 15 }
@@ -19910,7 +20002,7 @@
 
                 #Productivity: $6.3 /K
                 set_variable = { global.building_motorized_output_1@token:building_naval_industry = 42 }
-                set_variable = { global.building_motorized_output_shipping_capacity@token:building_naval_industry = 125 }
+                set_variable = { global.building_motorized_output_shipping_capacity@token:building_naval_industry = 250 }
                 
                 set_variable = { global.building_motorized_construction_amount@token:building_naval_industry = 648 }
                 set_variable = { global.building_motorized_construction_speed@token:building_naval_industry = 18 }
@@ -19937,7 +20029,7 @@
 
                 #Productivity: $8.3 /K
                 set_variable = { global.building_modernized_output_1@token:building_naval_industry = 50 }
-                set_variable = { global.building_modernized_output_shipping_capacity@token:building_naval_industry = 150 }
+                set_variable = { global.building_modernized_output_shipping_capacity@token:building_naval_industry = 300 }
                 
                 set_variable = { global.building_modernized_construction_amount@token:building_naval_industry = 828 }
                 set_variable = { global.building_modernized_construction_speed@token:building_naval_industry = 23 }
@@ -19964,7 +20056,7 @@
 
                 #Productivity: $11.2 /K
                 set_variable = { global.building_roboticized_output_1@token:building_naval_industry = 55 }
-                set_variable = { global.building_roboticized_output_shipping_capacity@token:building_naval_industry = 175 }
+                set_variable = { global.building_roboticized_output_shipping_capacity@token:building_naval_industry = 350 }
                 
                 set_variable = { global.building_roboticized_construction_amount@token:building_naval_industry = 1116 }
                 set_variable = { global.building_roboticized_construction_speed@token:building_naval_industry = 31 }
@@ -19991,7 +20083,7 @@
 
                 #Productivity: $13.0 /K
                 set_variable = { global.building_computerized_output_1@token:building_naval_industry = 67 }
-                set_variable = { global.building_computerized_output_shipping_capacity@token:building_naval_industry = 200 }
+                set_variable = { global.building_computerized_output_shipping_capacity@token:building_naval_industry = 400 }
                 
                 set_variable = { global.building_computerized_construction_amount@token:building_naval_industry = 1440 }
                 set_variable = { global.building_computerized_construction_speed@token:building_naval_industry = 40 }
@@ -20018,7 +20110,7 @@
 
                 #Productivity: $16.5 /K
                 set_variable = { global.building_digitalized_output_1@token:building_naval_industry = 95 }
-                set_variable = { global.building_digitalized_output_shipping_capacity@token:building_naval_industry = 250 }
+                set_variable = { global.building_digitalized_output_shipping_capacity@token:building_naval_industry = 500 }
                 
                 set_variable = { global.building_digitalized_construction_amount@token:building_naval_industry = 2268 }
                 set_variable = { global.building_digitalized_construction_speed@token:building_naval_industry = 63 }
@@ -20045,7 +20137,7 @@
 
                 #Productivity: $20.0 /K
                 set_variable = { global.building_automatized_output_1@token:building_naval_industry = 106 }
-                set_variable = { global.building_automatized_output_shipping_capacity@token:building_naval_industry = 300 }
+                set_variable = { global.building_automatized_output_shipping_capacity@token:building_naval_industry = 600 }
                 
                 set_variable = { global.building_automatized_construction_amount@token:building_naval_industry = 2628 }
                 set_variable = { global.building_automatized_construction_speed@token:building_naval_industry = 73 }
@@ -20072,7 +20164,7 @@
 
                 #Productivity: $27.0 /K
                 set_variable = { global.building_futurized_output_1@token:building_naval_industry = 101 }
-                set_variable = { global.building_futurized_output_shipping_capacity@token:building_naval_industry = 400 }
+                set_variable = { global.building_futurized_output_shipping_capacity@token:building_naval_industry = 800 }
                 
                 set_variable = { global.building_futurized_construction_amount@token:building_naval_industry = 2988 }
                 set_variable = { global.building_futurized_construction_speed@token:building_naval_industry = 83 }
