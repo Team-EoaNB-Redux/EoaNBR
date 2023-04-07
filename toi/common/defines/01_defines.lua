@@ -42,7 +42,7 @@ NDefines.NProduction.MIN_POSSIBLE_TRAINING_MANPOWER = 5000	-- How many deploymen
 NDefines.NProduction.CAPITULATE_FUEL_RATIO = 0.25 -- How much fuel will be transferred on capitulation --.5
 NDefines.NProduction.PRODUCTION_RESOURCE_LACK_PENALTY = -0.4			-- Penalty decrease while lack of resource per factory --.05
 
-NDefines.NTechnology.BASE_TECH_COST = 1100 -- 100
+NDefines.NTechnology.BASE_TECH_COST = 1250 -- 100
 NDefines.NTechnology.MIN_RESEARCH_SPEED = 0.5						-- research speed can't go below this value
 
 NDefines.NPolitics.BASE_POLITICAL_POWER_INCREASE = 1.0
