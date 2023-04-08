@@ -110,6 +110,52 @@
 
             #Budget
                 add_to_variable = { treasury = net_budget }
+                set_temp_variable = { debt_amount_temp = 0.5 }
+                multiply_temp_variable = { debt_amount_temp = gdp_amount }
+                if = {
+                    limit = {
+                        check_variable = { treasury < 0 }
+                    }
+					add_to_variable = { treasury = debt_amount_temp }
+					debt_level_increase_by_1 = yes
+                }
+                else_if = {
+                    limit = {
+                        is_ai = yes
+                        check_variable = { treasury > debt_amount_temp }
+                        check_variable = { debt_level > 0 }
+                    }
+					subtract_from_variable = { treasury = debt_amount_temp }
+					debt_level_decrease_by_1 = yes
+                }
+                if = {
+                    limit = {
+                        is_ai = yes
+                        check_variable = { net_budget < 0 }
+                    }
+					set_temp_variable = { percent_change_temp = 1 }
+                    if = {
+                        limit = {
+                            check_variable = { sales_tax_percentage > 0 }
+                            check_variable = { sales_tax_revenue > 0 }
+                        }
+                        set_temp_variable = { st_per = sales_tax_revenue }
+                        divide_temp_variable = { st_per = sales_tax_percentage }
+
+					    set_temp_variable = { percent_change_temp = net_budget }
+                        divide_temp_variable = { percent_change_temp = st_per }
+                        multiply_temp_variable = { percent_change_temp = -1 }
+					    add_to_temp_variable = { percent_change_temp = 0.5 }
+                        round_temp_variable = percent_change_temp
+                        if = {
+                            limit = {
+                                check_variable = { percent_change_temp < 1 }
+                            }
+					        set_temp_variable = { percent_change_temp = 1 }
+                        }
+                    }
+					change_sales_tax = yes
+                }
                 
                 set_variable = { actual_revenue = revenue }
                 set_variable = { actual_income_tax_revenue = income_tax_revenue }
@@ -1564,6 +1610,9 @@
 
             taxes_update = yes
             spending_update = yes
+
+            clr_country_flag = repaid_debt_flag
+            clr_country_flag = borrowed_money_flag
         }
 
         add_to_variable = { global.month = 1 }
@@ -2151,6 +2200,9 @@
             
             set_variable = { military_spending_percentage = 100 }
             set_variable = { construction_spending_percentage = 100 }
+
+            clr_country_flag = repaid_debt_flag
+            clr_country_flag = borrowed_money_flag
             
             every_controlled_state = {
                 r_update_modifiers_state_effects = yes
@@ -14622,6 +14674,11 @@
 		set_variable = { discretionary_spending = subsidy_expense }
 		add_to_variable = { discretionary_spending = construction_spending_expense }
 		add_to_variable = { discretionary_spending = military_spending_expense }
+
+        set_variable = { national_debt_interest = debt_level }
+        multiply_variable = { national_debt_interest = 0.025 }
+        multiply_variable = { national_debt_interest = gdp_amount }
+        divide_variable = { national_debt_interest = 12 }
 
 		set_variable = { mandatory_spending = national_debt_interest }
 		add_to_variable = { mandatory_spending = administration_spending_expense }
