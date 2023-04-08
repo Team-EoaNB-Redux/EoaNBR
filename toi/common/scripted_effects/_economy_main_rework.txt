@@ -1694,6 +1694,7 @@
                 set_variable = { global.minimum_base_wage = 0.01 } #Minimum base wage (not average) for an building
                 set_variable = { global.buildings_economy_of_scale_factor = 0.01 } #What bonus gets added to throughput for each size building in a state
                 set_variable = { global.base_industrial_capacity = 5 } #Base amount of IC that each state gets
+                set_variable = { global.start_construction_cost_multiplier = 0.25 } #Multiplier on total cost on how much you need to put down to start construction
 
                 #Define Buildings
                 define_military_industry = yes
@@ -7469,6 +7470,24 @@
                 set_variable = { construction_amount@var:building_token = global.building_futurized_construction_amount@var:building_token }
             }
             multiply_variable = { construction_amount@var:building_token = under_construction@var:building_token }
+            
+            set_temp_variable = { initial_cost_temp = construction_amount@var:building_token }
+            multiply_temp_variable = { initial_cost_temp = price@token:resource_industrial_goods }
+            multiply_temp_variable = { initial_cost_temp = global.start_construction_cost_multiplier }
+            if = {
+                limit = {
+                    check_variable = { financer_temp < 0 } #Corporation
+                }
+            }
+            else_if = {
+                limit = {
+                    check_variable = { financer_temp > 0 } #Government
+                }
+                subtract_from_variable = { financer_temp:treasury = initial_cost_temp }
+            }
+            else = { #Local
+
+            }
 
             buildings_update_construction = yes
         }
