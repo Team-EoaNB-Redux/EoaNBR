@@ -13877,107 +13877,22 @@
         for_each_loop = {
             array = global.military_resource_token_array
             value = r_token
-
-            set_temp_variable = { resource_without_trade = resource@var:r_token }
-            subtract_from_temp_variable = { resource_without_trade = resource_cost@var:r_token }
-
-            #global.additional_exports@var:r_token
-
-            if = { # If negative in a resource and exporting, reduce exports
+            if = {
                 limit = {
-                    check_variable = { resource@var:r_token < 0 }
-                    check_variable = { offers@var:r_token < 0 }
-                    check_variable = { resource_without_trade > 0 }
+                    check_variable = { trade_ai@var:r_token = 0 } 
                 }
-                subtract_from_variable = { offers@var:r_token = resource@var:r_token }
-                if = {
+                set_temp_variable = { resource_without_trade = resource@var:r_token }
+                subtract_from_temp_variable = { resource_without_trade = resource_cost@var:r_token }
+
+                #global.additional_exports@var:r_token
+
+                if = { # If negative in a resource and exporting, reduce exports
                     limit = {
-                        check_variable = { offers@var:r_token > 0 }
-                    }
-                    set_variable = { offers@var:r_token = 0 }
-                }
-            }
-            else_if = { # If negative in a resource, import what you need
-                limit = {
-                    check_variable = { resource_without_trade < 0 }
-                }
-                set_variable = { offers@var:r_token = resource_without_trade }
-                multiply_variable = { offers@var:r_token = -1 }
-                round_variable = offers@var:r_token
-            }
-            else_if = { # If positive in a resource and importing, import less
-                limit = {
-                    check_variable = { offers@var:r_token > 0 }
-                }
-                subtract_from_variable = { offers@var:r_token = resource@var:r_token }
-                if = {
-                    limit = {
+                        check_variable = { resource@var:r_token < 0 }
                         check_variable = { offers@var:r_token < 0 }
+                        check_variable = { resource_without_trade > 0 }
                     }
-                    set_variable = { offers@var:r_token = 0 }
-                }
-            }
-            else_if = { # If positive in a resource, export
-                limit = {
-                    check_variable = { resource_without_trade > 0 }
-                }
-                if = {
-                    limit = {
-                        set_temp_variable = { import_temp = available_imports@var:r_token }
-                        add_to_temp_variable = { import_temp = global.additional_exports@var:r_token }
-                        multiply_temp_variable = { import_temp = 2 }
-                        check_variable = { available_exports@var:r_token > import_temp } 
-                    }
-                    set_temp_variable = { rwt = resource_without_trade }
-                    divide_temp_variable = { rwt = 10 }
-                    add_to_temp_variable = { rwt = 1 }
-                    round_temp_variable = rwt
-                    add_to_variable = { global.additional_exports@var:r_token = rwt }
-                    subtract_from_variable = { offers@var:r_token = rwt }
-                    multiply_variable = { offers@var:r_token = -1 }
-                    if = {
-                        limit = {
-                            check_variable = { offers@var:r_token > resource_without_trade }
-                        }
-                        set_variable = { offers@var:r_token = resource_without_trade }
-                    }
-                    multiply_variable = { offers@var:r_token = -1 }
-                }
-                else_if = {
-                    limit = {
-                        set_temp_variable = { import_temp = available_imports@var:r_token }
-                        add_to_temp_variable = { import_temp = global.additional_exports@var:r_token }
-                        check_variable = { available_exports@var:r_token > import_temp } 
-                    }
-                    set_temp_variable = { rwt = resource_without_trade }
-                    divide_temp_variable = { rwt = 20 }
-                    add_to_temp_variable = { rwt = 1 }
-                    round_temp_variable = rwt
-                    add_to_variable = { global.additional_exports@var:r_token = rwt }
-                    subtract_from_variable = { offers@var:r_token = rwt }
-                    multiply_variable = { offers@var:r_token = -1 }
-                    if = {
-                        limit = {
-                            check_variable = { offers@var:r_token > resource_without_trade }
-                        }
-                        set_variable = { offers@var:r_token = resource_without_trade }
-                    }
-                    multiply_variable = { offers@var:r_token = -1 }
-                }
-                else_if = {
-                    limit = {
-                        check_variable = { available_exports@var:r_token > 0 } 
-                        set_temp_variable = { import_temp = available_imports@var:r_token }
-                        add_to_temp_variable = { import_temp = global.additional_exports@var:r_token }
-                        multiply_temp_variable = { import_temp = 0.75 }
-                        check_variable = { available_exports@var:r_token < import_temp } 
-                    }
-                    set_temp_variable = { rwt = resource_without_trade }
-                    divide_temp_variable = { rwt = 20 }
-                    add_to_temp_variable = { rwt = 1 }
-                    round_temp_variable = rwt
-                    add_to_variable = { global.additional_exports@var:r_token = rwt }
-                    add_to_variable = { offers@var:r_token = rwt }
+                    subtract_from_variable = { offers@var:r_token = resource@var:r_token }
                     if = {
                         limit = {
                             check_variable = { offers@var:r_token > 0 }
@@ -13985,11 +13900,100 @@
                         set_variable = { offers@var:r_token = 0 }
                     }
                 }
-                else_if = {
+                else_if = { # If negative in a resource, import what you need
                     limit = {
-                        check_variable = { available_exports@var:r_token = 0 } 
+                        check_variable = { resource_without_trade < 0 }
                     }
-                    set_variable = { offers@var:r_token = 0 }
+                    set_variable = { offers@var:r_token = resource_without_trade }
+                    multiply_variable = { offers@var:r_token = -1 }
+                    round_variable = offers@var:r_token
+                }
+                else_if = { # If positive in a resource and importing, import less
+                    limit = {
+                        check_variable = { offers@var:r_token > 0 }
+                    }
+                    subtract_from_variable = { offers@var:r_token = resource@var:r_token }
+                    if = {
+                        limit = {
+                            check_variable = { offers@var:r_token < 0 }
+                        }
+                        set_variable = { offers@var:r_token = 0 }
+                    }
+                }
+                else_if = { # If positive in a resource, export
+                    limit = {
+                        check_variable = { resource_without_trade > 0 }
+                    }
+                    if = {
+                        limit = {
+                            set_temp_variable = { import_temp = available_imports@var:r_token }
+                            add_to_temp_variable = { import_temp = global.additional_exports@var:r_token }
+                            multiply_temp_variable = { import_temp = 2 }
+                            check_variable = { available_exports@var:r_token > import_temp } 
+                        }
+                        set_temp_variable = { rwt = resource_without_trade }
+                        divide_temp_variable = { rwt = 10 }
+                        add_to_temp_variable = { rwt = 1 }
+                        round_temp_variable = rwt
+                        add_to_variable = { global.additional_exports@var:r_token = rwt }
+                        subtract_from_variable = { offers@var:r_token = rwt }
+                        multiply_variable = { offers@var:r_token = -1 }
+                        if = {
+                            limit = {
+                                check_variable = { offers@var:r_token > resource_without_trade }
+                            }
+                            set_variable = { offers@var:r_token = resource_without_trade }
+                        }
+                        multiply_variable = { offers@var:r_token = -1 }
+                    }
+                    else_if = {
+                        limit = {
+                            set_temp_variable = { import_temp = available_imports@var:r_token }
+                            add_to_temp_variable = { import_temp = global.additional_exports@var:r_token }
+                            check_variable = { available_exports@var:r_token > import_temp } 
+                        }
+                        set_temp_variable = { rwt = resource_without_trade }
+                        divide_temp_variable = { rwt = 20 }
+                        add_to_temp_variable = { rwt = 1 }
+                        round_temp_variable = rwt
+                        add_to_variable = { global.additional_exports@var:r_token = rwt }
+                        subtract_from_variable = { offers@var:r_token = rwt }
+                        multiply_variable = { offers@var:r_token = -1 }
+                        if = {
+                            limit = {
+                                check_variable = { offers@var:r_token > resource_without_trade }
+                            }
+                            set_variable = { offers@var:r_token = resource_without_trade }
+                        }
+                        multiply_variable = { offers@var:r_token = -1 }
+                    }
+                    else_if = {
+                        limit = {
+                            check_variable = { available_exports@var:r_token > 0 } 
+                            set_temp_variable = { import_temp = available_imports@var:r_token }
+                            add_to_temp_variable = { import_temp = global.additional_exports@var:r_token }
+                            multiply_temp_variable = { import_temp = 0.75 }
+                            check_variable = { available_exports@var:r_token < import_temp } 
+                        }
+                        set_temp_variable = { rwt = resource_without_trade }
+                        divide_temp_variable = { rwt = 20 }
+                        add_to_temp_variable = { rwt = 1 }
+                        round_temp_variable = rwt
+                        add_to_variable = { global.additional_exports@var:r_token = rwt }
+                        add_to_variable = { offers@var:r_token = rwt }
+                        if = {
+                            limit = {
+                                check_variable = { offers@var:r_token > 0 }
+                            }
+                            set_variable = { offers@var:r_token = 0 }
+                        }
+                    }
+                    else_if = {
+                        limit = {
+                            check_variable = { available_exports@var:r_token = 0 } 
+                        }
+                        set_variable = { offers@var:r_token = 0 }
+                    }
                 }
             }
         }
@@ -14011,6 +14015,7 @@
 
             if = {
                 limit = {
+                    check_variable = { trade_ai@var:r_token = 0 } 
                     NOT = { is_in_array = { global.non_tradeable_resources = r_token } }
                 }
                 
@@ -14168,8 +14173,13 @@
                 array = global.resource_token_array
                 value = r_token
 
-                multiply_variable = { offers@var:r_token = shipping_efficiency }
-                round_variable = offers@var:r_token
+                if = {
+                    limit = {
+                        check_variable = { trade_ai@var:r_token = 0 } 
+                    }
+                    multiply_variable = { offers@var:r_token = shipping_efficiency }
+                    round_variable = offers@var:r_token
+                }
             }
         }
         calc_shipping_capacity_use = yes
