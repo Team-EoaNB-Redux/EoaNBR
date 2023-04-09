@@ -235,70 +235,146 @@ scripted_gui = {
 			urban_building_build_button_click_enabled = {
 				NOT = { check_variable = { v = token:building_subsistence_farm } }
 				NOT = { check_variable = { v = token:building_rice_paddy } }
+				if = {
+					limit = {
+						check_variable = { v = token:building_military_industry }
+					}
+					free_building_slots = {
+						building = arms_factory
+						size > 0
+						include_locked = no
+					}
+				}
+				else_if = {
+					limit = {
+						check_variable = { v = token:building_civilian_industry }
+					}
+					free_building_slots = {
+						building = industrial_complex
+						size > 0
+						include_locked = no
+					}
+				}
+				else_if = {
+					limit = {
+						check_variable = { v = token:building_naval_industry }
+					}
+					free_building_slots = {
+						building = dockyard
+						size > 0
+						include_locked = no
+					}
+				}
 				is_fully_controlled_by = ROOT
+
+				# Has enough starting capital
+					set_temp_variable = { pm_temp = production_method@var:v }
+					if = {
+						limit = {
+							check_variable = { pm_temp = 0 }
+						}
+						set_temp_variable = { gcpa = global.building_basic_construction_amount@var:v }
+					}
+					else_if = {
+						limit = {
+							check_variable = { pm_temp = 1 }
+						}
+						set_temp_variable = { gcpa = global.building_advanced_construction_amount@var:v }
+					}
+					else_if = {
+						limit = {
+							check_variable = { pm_temp = 2 }
+						}
+						set_temp_variable = { gcpa = global.building_industrialized_construction_amount@var:v }
+					}
+					else_if = {
+						limit = {
+							check_variable = { pm_temp = 3 }
+						}
+						set_temp_variable = { gcpa = global.building_mechanized_construction_amount@var:v }
+					}
+					else_if = {
+						limit = {
+							check_variable = { pm_temp = 4 }
+						}
+						set_temp_variable = { gcpa = global.building_electrified_construction_amount@var:v }
+					}
+					else_if = {
+						limit = {
+							check_variable = { pm_temp = 5 }
+						}
+						set_temp_variable = { gcpa = global.building_motorized_construction_amount@var:v }
+					}
+					else_if = {
+						limit = {
+							check_variable = { pm_temp = 6 }
+						}
+						set_temp_variable = { gcpa = global.building_modernized_construction_amount@var:v }
+					}
+					else_if = {
+						limit = {
+							check_variable = { pm_temp = 7 }
+						}
+						set_temp_variable = { gcpa = global.building_roboticized_construction_amount@var:v }
+					}
+					else_if = {
+						limit = {
+							check_variable = { pm_temp = 8 }
+						}
+						set_temp_variable = { gcpa = global.building_computerized_construction_amount@var:v }
+					}
+					else_if = {
+						limit = {
+							check_variable = { pm_temp = 9 }
+						}
+						set_temp_variable = { gcpa = global.building_digitalized_construction_amount@var:v }
+					}
+					else_if = {
+						limit = {
+							check_variable = { pm_temp = 10 }
+						}
+						set_temp_variable = { gcpa = global.building_automatized_construction_amount@var:v }
+					}
+					else_if = {
+						limit = {
+							check_variable = { pm_temp = 11 }
+						}
+						set_temp_variable = { gcpa = global.building_futurized_construction_amount@var:v }
+					}
+
+					multiply_temp_variable = { gcpa = price@token:resource_industrial_goods }
+					multiply_temp_variable = { gcpa = global.start_construction_cost_multiplier }
+					NOT = { check_variable = { gcpa > ROOT.treasury } }
+				#
 			}
 			urban_building_under_construction_icon_visible = {
 				check_variable = { under_construction@var:v > 0 }
 			}
 
+			urban_building_pm_button_click_enabled = {
+				check_variable = { under_construction@var:v = 0 }
+			}
 			urban_building_next_pm_button_visible = {
 				is_controlled_by = ROOT
 
-				set_temp_variable = { building_token = urban_buildings^i }
+				set_temp_variable = { building_token = v }
 				check_variable = { production_method@var:building_token < 11 }
 				check_variable = { buildings_pm_selected = building_token }
 			}
 			urban_building_next_pm_button_click_enabled = {
-				set_temp_variable = { building_token = urban_buildings^i }
+				set_temp_variable = { building_token = v }
 				return_latest_production_method = yes
 				check_variable = { production_method@var:building_token < pm_temp }
 			}
 			urban_building_prev_pm_button_visible = {
 				is_controlled_by = ROOT
 
-				set_temp_variable = { building_token = urban_buildings^i }
+				set_temp_variable = { building_token = v }
 				check_variable = { production_method@var:building_token > 0 }
 				check_variable = { buildings_pm_selected = building_token }
 			}
 			urban_building_prev_pm_button_click_enabled = {
-				set_temp_variable = { building_token = urban_buildings^i }
-				return_earliest_production_method = yes
-				check_variable = { production_method@var:building_token > pm_temp }
-			}
-
-			rural_building_build_button_visible = {
-				NOT = { check_variable = { under_construction@var:v > 0 } }
-			}
-			rural_building_build_button_click_enabled = {
-				NOT = { check_variable = { v = token:building_subsistence_farm } }
-				NOT = { check_variable = { v = token:building_rice_paddy } }
-				is_fully_controlled_by = ROOT
-			}
-			rural_building_under_construction_icon_visible = {
-				check_variable = { under_construction@var:v > 0 }
-			}
-
-			rural_building_next_pm_button_visible = {
-				is_controlled_by = ROOT
-
-				set_temp_variable = { building_token = rural_buildings^i }
-				check_variable = { production_method@var:building_token < 11 }
-				check_variable = { buildings_pm_selected = building_token }
-			}
-			rural_building_next_pm_button_click_enabled = {
-				set_temp_variable = { building_token = rural_buildings^i }
-				return_latest_production_method = yes
-				check_variable = { production_method@var:building_token < pm_temp }
-			}
-			rural_building_prev_pm_button_visible = {
-				is_controlled_by = ROOT
-
-				set_temp_variable = { building_token = rural_buildings^i }
-				check_variable = { production_method@var:building_token > 0 }
-				check_variable = { buildings_pm_selected = building_token }
-			}
-			rural_building_prev_pm_button_click_enabled = {
-				set_temp_variable = { building_token = rural_buildings^i }
+				set_temp_variable = { building_token = v }
 				return_earliest_production_method = yes
 				check_variable = { production_method@var:building_token > pm_temp }
 			}
@@ -341,6 +417,7 @@ scripted_gui = {
 					set_temp_variable = { building_token = v }
 					set_temp_variable = { production_method_temp = -1 }
 					construct_x_buildings = yes
+					clear_variable = buildings_pm_selected
 				}
 				add_to_variable = { update_state_econ_window = 1 }
 			}
@@ -358,6 +435,7 @@ scripted_gui = {
 					set_temp_variable = { building_token = v }
 					set_temp_variable = { production_method_temp = -1 }
 					construct_x_buildings = yes
+					clear_variable = buildings_pm_selected
 				}
 				add_to_variable = { update_state_econ_window = 1 }
 			}
@@ -375,6 +453,7 @@ scripted_gui = {
 					set_temp_variable = { building_token = v }
 					set_temp_variable = { production_method_temp = -1 }
 					construct_x_buildings = yes
+					clear_variable = buildings_pm_selected
 				}
 				add_to_variable = { update_state_econ_window = 1 }
 			}
@@ -407,7 +486,7 @@ scripted_gui = {
 			}
 
 			urban_building_pm_button_click = {
-				set_temp_variable = { building_token = urban_buildings^i }
+				set_temp_variable = { building_token = v }
 				get_latest_production_method = yes
 				log = "[?pm_temp]"
 				log = "[?production_method@var:building_token]"
@@ -417,9 +496,9 @@ scripted_gui = {
 					}
 					if = {
 						limit = {
-							NOT = { check_variable = { buildings_pm_selected = urban_buildings^i } }
+							NOT = { check_variable = { buildings_pm_selected = v } }
 						}
-						set_variable = { buildings_pm_selected = urban_buildings^i }
+						set_variable = { buildings_pm_selected = v }
 					}
 					else = {
 						clear_variable = buildings_pm_selected
@@ -442,135 +521,6 @@ scripted_gui = {
 				}
 			}
 			urban_building_prev_pm_button_click = {
-				if = {
-					limit = {
-						is_controlled_by = ROOT
-					}
-					set_temp_variable ={ building_token = buildings_pm_selected }
-					clear_variable = buildings_pm_selected
-
-					set_temp_variable ={ pm_temp = production_method@var:building_token }
-					subtract_from_temp_variable = { pm_temp = 1 }
-					set_production_method = yes
-					add_to_variable = { update_state_econ_window = 1 }
-				}
-			}
-
-			rural_building_build_button_click = {
-				if = {
-					limit = {
-						has_global_flag = autobuild_flag
-					}
-					add_to_variable = { size@var:v = 1  }
-					ROOT = { country_recalc = yes }
-				}
-				else = {
-					set_temp_variable = { x_temp = 1 }
-					set_temp_variable = { financer_temp = ROOT }
-					set_temp_variable = { building_token = v }
-					set_temp_variable = { production_method_temp = -1 }
-					construct_x_buildings = yes
-				}
-				add_to_variable = { update_state_econ_window = 1 }
-			}
-			rural_building_build_button_shift_click = {
-				if = {
-					limit = {
-						has_global_flag = autobuild_flag
-					}
-					add_to_variable = { size@var:v = 5  }
-					ROOT = { country_recalc = yes }
-				}
-				else = {
-					set_temp_variable = { x_temp = 5 }
-					set_temp_variable = { financer_temp = ROOT }
-					set_temp_variable = { building_token = v }
-					set_temp_variable = { production_method_temp = -1 }
-					construct_x_buildings = yes
-				}
-				add_to_variable = { update_state_econ_window = 1 }
-			}
-			rural_building_build_button_control_click = {
-				if = {
-					limit = {
-						has_global_flag = autobuild_flag
-					}
-					add_to_variable = { size@var:v = 20  }
-					ROOT = { country_recalc = yes }
-				}
-				else = {
-					set_temp_variable = { x_temp = 20 }
-					set_temp_variable = { financer_temp = ROOT }
-					set_temp_variable = { building_token = v }
-					set_temp_variable = { production_method_temp = -1 }
-					construct_x_buildings = yes
-				}
-				add_to_variable = { update_state_econ_window = 1 }
-			}
-			rural_building_build_button_right_click = {
-				if = {
-					limit = {
-						has_global_flag = autobuild_flag
-					}
-					subtract_from_variable = { size@var:v = 1  }
-					ROOT = { country_recalc = yes }
-				}
-			}
-			rural_building_build_button_shift_right_click = {
-				if = {
-					limit = {
-						has_global_flag = autobuild_flag
-					}
-					subtract_from_variable = { size@var:v = 5  }
-					ROOT = { country_recalc = yes }
-				}
-			}
-			rural_building_build_button_control_right_click = {
-				if = {
-					limit = {
-						has_global_flag = autobuild_flag
-					}
-					subtract_from_variable = { size@var:v = 20  }
-					ROOT = { country_recalc = yes }
-				}
-			}
-
-			rural_building_pm_button_click = {
-				set_temp_variable = { building_token = rural_buildings^i }
-				get_latest_production_method = yes
-				log = "[?pm_temp]"
-				log = "[?production_method@var:building_token]"
-				if = {
-					limit = {
-						is_controlled_by = ROOT
-					}
-					if = {
-						limit = {
-							NOT = { check_variable = { buildings_pm_selected = rural_buildings^i } }
-						}
-						set_variable = { buildings_pm_selected = rural_buildings^i }
-					}
-					else = {
-						clear_variable = buildings_pm_selected
-					}
-					add_to_variable = { update_state_econ_window = 1 }
-				}
-			}
-			rural_building_next_pm_button_click = {
-				if = {
-					limit = {
-						is_controlled_by = ROOT
-					}
-					set_temp_variable ={ building_token = buildings_pm_selected }
-					clear_variable = buildings_pm_selected
-
-					set_temp_variable ={ pm_temp = production_method@var:building_token }
-					add_to_temp_variable = { pm_temp = 1 }
-					set_production_method = yes
-					add_to_variable = { update_state_econ_window = 1 }
-				}
-			}
-			rural_building_prev_pm_button_click = {
 				if = {
 					limit = {
 						is_controlled_by = ROOT
@@ -647,7 +597,7 @@ scripted_gui = {
 			}
 			rural_buildings_list = {
 				array = rural_buildings
-				entry_container = rural_building_container
+				entry_container = urban_building_container
 			}
 			statistics_gdp_graph = {
 				array = gdp_graph_amount_array
@@ -826,34 +776,114 @@ scripted_gui = {
 				set_temp_variable = { industry_token = construction_show^i }
 				if = {
 					limit = {
-						check_variable = { construction_pm_selected = 0 }
+						check_variable = { v = token:building_military_industry }
 					}
-					set_temp_variable = { tech_token = global.industry_base_tech_unlock@var:industry_token }
+					free_building_slots = {
+						building = arms_factory
+						size > 0
+						include_locked = no
+					}
 				}
 				else_if = {
 					limit = {
-						check_variable = { construction_pm_selected = 1 }
+						check_variable = { v = token:building_civilian_industry }
 					}
-					set_temp_variable = { tech_token = global.industry_industrialized_tech_unlock@var:industry_token }
+					free_building_slots = {
+						building = industrial_complex
+						size > 0
+						include_locked = no
+					}
 				}
 				else_if = {
 					limit = {
-						check_variable = { construction_pm_selected = 2 }
+						check_variable = { v = token:building_naval_industry }
 					}
-					set_temp_variable = { tech_token = global.industry_mechanized_tech_unlock@var:industry_token }
-				}
-				else_if = {
-					limit = {
-						check_variable = { construction_pm_selected = 3 }
+					free_building_slots = {
+						building = dockyard
+						size > 0
+						include_locked = no
 					}
-					set_temp_variable = { tech_token = global.industry_modernized_tech_unlock@var:industry_token }
 				}
 
-				NOT = { check_variable = { tech_token = -1 } }
-				OR = {
-					check_variable = { tech_token = 0 }
-					has_tech = var:tech_token
-				}
+				# Has enough starting capital
+					set_temp_variable = { pm_temp = controller:latest_production_method@var:v }
+					if = {
+						limit = {
+							check_variable = { pm_temp = 0 }
+						}
+						set_temp_variable = { gcpa = global.building_basic_construction_amount@var:v }
+					}
+					else_if = {
+						limit = {
+							check_variable = { pm_temp = 1 }
+						}
+						set_temp_variable = { gcpa = global.building_advanced_construction_amount@var:v }
+					}
+					else_if = {
+						limit = {
+							check_variable = { pm_temp = 2 }
+						}
+						set_temp_variable = { gcpa = global.building_industrialized_construction_amount@var:v }
+					}
+					else_if = {
+						limit = {
+							check_variable = { pm_temp = 3 }
+						}
+						set_temp_variable = { gcpa = global.building_mechanized_construction_amount@var:v }
+					}
+					else_if = {
+						limit = {
+							check_variable = { pm_temp = 4 }
+						}
+						set_temp_variable = { gcpa = global.building_electrified_construction_amount@var:v }
+					}
+					else_if = {
+						limit = {
+							check_variable = { pm_temp = 5 }
+						}
+						set_temp_variable = { gcpa = global.building_motorized_construction_amount@var:v }
+					}
+					else_if = {
+						limit = {
+							check_variable = { pm_temp = 6 }
+						}
+						set_temp_variable = { gcpa = global.building_modernized_construction_amount@var:v }
+					}
+					else_if = {
+						limit = {
+							check_variable = { pm_temp = 7 }
+						}
+						set_temp_variable = { gcpa = global.building_roboticized_construction_amount@var:v }
+					}
+					else_if = {
+						limit = {
+							check_variable = { pm_temp = 8 }
+						}
+						set_temp_variable = { gcpa = global.building_computerized_construction_amount@var:v }
+					}
+					else_if = {
+						limit = {
+							check_variable = { pm_temp = 9 }
+						}
+						set_temp_variable = { gcpa = global.building_digitalized_construction_amount@var:v }
+					}
+					else_if = {
+						limit = {
+							check_variable = { pm_temp = 10 }
+						}
+						set_temp_variable = { gcpa = global.building_automatized_construction_amount@var:v }
+					}
+					else_if = {
+						limit = {
+							check_variable = { pm_temp = 11 }
+						}
+						set_temp_variable = { gcpa = global.building_futurized_construction_amount@var:v }
+					}
+
+					multiply_temp_variable = { gcpa = price@token:resource_industrial_goods }
+					multiply_temp_variable = { gcpa = global.start_construction_cost_multiplier }
+					NOT = { check_variable = { gcpa > ROOT.treasury } }
+				#
 			}
 			industry_construction_background_visible = {
 				#ROOT = { has_country_flag = construction_view_open }
@@ -913,10 +943,7 @@ scripted_gui = {
 
 		properties = {
 			construction_entry_resource = {
-				image = "[GetIndustriesConstructionResourceIcon]"
-			}
-			construction_pm_button = {
-				image = "[GetIndustriesConstructionProductionMethodButton]"
+				image = "[GetUrbanBuildingIcon]"
 			}
 		}
 	}
@@ -927,6 +954,14 @@ scripted_gui = {
 		context_type = player_context
 
 		triggers = {
+			increase_exports_button_click_enabled = {
+				NOT = { check_variable = { selected_resource = 0 } }
+				NOT = { is_in_array = { global.non_tradeable_resources = selected_resource } }
+			}
+			increase_imports_button_click_enabled = {
+				NOT = { check_variable = { selected_resource = 0 } }
+				NOT = { is_in_array = { global.non_tradeable_resources = selected_resource } }
+			}
 			
 			shipping_convoys_add_click_enabled = {
 				OR = {
@@ -1599,7 +1634,7 @@ scripted_gui = {
 		parent_window_token = trade_tab
 
 		visible = {
-			NOT = { has_country_flag = new_trade_route_view_open }
+			always = no
 		}
 		effects = {
 			trade_route_decrease_size_click = {
@@ -1656,7 +1691,7 @@ scripted_gui = {
 		parent_window_token = trade_tab
 
 		visible = {
-			has_country_flag = new_trade_route_view_open
+			always = no
 		}
 		effects = {
 			new_route_entry_background_click = {
@@ -1735,6 +1770,11 @@ scripted_gui = {
 				always = yes
 			}
 		}
+		properties = {
+			military_goods_icon = {
+				image = "[GetCurrencyIcon]"
+			}
+		}
 	}
 	country_economy_window = {
 		window_name = "country_economy_window_container"
@@ -1747,13 +1787,106 @@ scripted_gui = {
 		}
 
 		triggers = {
+			# Disabled Buttons
+				govt_decrease_upper_strata_income_tax_button_click_enabled = {
+					NOT = { tag = USA }
+				}
+				govt_increase_upper_strata_income_tax_button_click_enabled = {
+					NOT = { tag = USA }
+				}
+				govt_decrease_middle_strata_income_tax_button_click_enabled = {
+					NOT = { tag = USA }
+				}
+				govt_increase_middle_strata_income_tax_button_click_enabled = {
+					NOT = { tag = USA }
+				}
+				govt_decrease_lower_strata_income_tax_button_click_enabled = {
+					NOT = { tag = USA }
+				}
+				govt_increase_lower_strata_income_tax_button_click_enabled = {
+					NOT = { tag = USA }
+				}
+
+				govt_decrease_corporate_tax_button_click_enabled = {
+					always = no
+				}
+				govt_increase_corporate_tax_button_click_enabled = {
+					always = no
+				}
+				
+				govt_decrease_intelligence_spending_button_click_enabled = {
+					always = no
+				}
+				govt_increase_intelligence_spending_button_click_enabled = {
+					always = no
+				}
+				
+				govt_decrease_import_subsidy_button_click_enabled = {
+					always = no
+				}
+				govt_increase_import_subsidy_button_click_enabled = {
+					always = no
+				}
+				govt_decrease_export_subsidy_button_click_enabled = {
+					always = no
+				}
+				govt_increase_export_subsidy_button_click_enabled = {
+					always = no
+				}
+				govt_decrease_research_subsidy_button_click_enabled = {
+					always = no
+				}
+				govt_increase_research_subsidy_button_click_enabled = {
+					always = no
+				}
+				govt_decrease_industrial_subsidy_button_click_enabled = {
+					always = no
+				}
+				govt_increase_industrial_subsidy_button_click_enabled = {
+					always = no
+				}
+				govt_decrease_infrastructure_subsidy_button_click_enabled = {
+					always = no
+				}
+				govt_increase_infrastructure_subsidy_button_click_enabled = {
+					always = no
+				}
+				
+				govt_national_bank_increase_interest_button_click_enabled = {
+					always = no
+				}
+				govt_national_bank_decrease_interest_button_click_enabled = {
+					always = no
+				}
+			#
+
+			govt_borrow_money_button_click_enabled = {
+				NOT = { has_country_flag = borrowed_money_flag }
+			}
+			govt_repay_debt_button_click_enabled = {
+				NOT = { has_country_flag = repaid_debt_flag }
+				set_temp_variable = { debt_amount_temp = 1 }
+				multiply_temp_variable = { debt_amount_temp = gdp_amount }
+				divide_temp_variable = { debt_amount_temp = 2 }
+				check_variable = { treasury > debt_amount_temp }
+			}
+
 			time_button_visible = {
+				is_debug = yes
+			}
+			time_button_title_visible = {
 				is_debug = yes
 			}
 			reset_button_visible = {
 				is_debug = yes
 			}
+			reset_button_title_visible = {
+				is_debug = yes
+			}
 			extra_button_visible = {
+				is_debug = yes
+			}
+			extra_button_title_visible = {
 				is_debug = yes
 			}
 		}
@@ -2249,75 +2382,86 @@ scripted_gui = {
 
 			#Borrow Money Button
 				govt_borrow_money_button_click = {
-					if = { 
-						limit = {
-							NOT = {
-								ROOT = {
-									has_country_flag = country_borrow_money_view_open
-								}
-							}
-						}
-						ROOT = {
-							set_country_flag = country_borrow_money_view_open
-							global_bank_update = yes
-							close_repay_debt_window = yes
-						}
-					}
-					else = {
-						ROOT = {
-							close_borrow_money_window = yes
-						}
-					}
+					set_temp_variable = { debt_amount_temp = 0.5 }
+					multiply_temp_variable = { debt_amount_temp = gdp_amount }
+					add_to_variable = { treasury = debt_amount_temp }
+					debt_level_increase_by_1 = yes
+					set_country_flag = borrowed_money_flag
+					# if = { 
+					# 	limit = {
+					# 		NOT = {
+					# 			ROOT = {
+					# 				has_country_flag = country_borrow_money_view_open
+					# 			}
+					# 		}
+					# 	}
+					# 	ROOT = {
+					# 		set_country_flag = country_borrow_money_view_open
+					# 		global_bank_update = yes
+					# 		close_repay_debt_window = yes
+					# 	}
+					# }
+					# else = {
+					# 	ROOT = {
+					# 		close_borrow_money_window = yes
+					# 	}
+					# }
 				}
-				govt_borrow_money_button_shift_click = {
-					set_temp_variable = { borrow_money_temp = 10 }
-					set_temp_variable = { country_temp = 0 }
-					borrow_money = yes
-					add_to_variable = { update_state_econ_window = 1 }
-					global_bank_update = yes
-				}
-				govt_borrow_money_button_control_click = {
-					set_temp_variable = { borrow_money_temp = 100 }
-					set_temp_variable = { country_temp = 0 }
-					borrow_money = yes
-					add_to_variable = { update_state_econ_window = 1 }
-					global_bank_update = yes
-				}
-				govt_borrow_money_button_control_shift_click = {
-					set_temp_variable = { borrow_money_temp = 1000 }
-					set_temp_variable = { country_temp = 0 }
-					borrow_money = yes
-					add_to_variable = { update_state_econ_window = 1 }
-					global_bank_update = yes
-				}
+				# govt_borrow_money_button_shift_click = {
+				# 	set_temp_variable = { borrow_money_temp = 10 }
+				# 	set_temp_variable = { country_temp = 0 }
+				# 	borrow_money = yes
+				# 	add_to_variable = { update_state_econ_window = 1 }
+				# 	global_bank_update = yes
+				# }
+				# govt_borrow_money_button_control_click = {
+				# 	set_temp_variable = { borrow_money_temp = 100 }
+				# 	set_temp_variable = { country_temp = 0 }
+				# 	borrow_money = yes
+				# 	add_to_variable = { update_state_econ_window = 1 }
+				# 	global_bank_update = yes
+				# }
+				# govt_borrow_money_button_control_shift_click = {
+				# 	set_temp_variable = { borrow_money_temp = 1000 }
+				# 	set_temp_variable = { country_temp = 0 }
+				# 	borrow_money = yes
+				# 	add_to_variable = { update_state_econ_window = 1 }
+				# 	global_bank_update = yes
+				# }
 			#
 			#Repay Debt Button
 				govt_repay_debt_button_click = {
-					if = { 
-						limit = {
-							NOT = {
-								ROOT = {
-									has_country_flag = country_repay_debt_view_open
-								}
-							}
-						}
-						ROOT = {
-							set_country_flag = country_repay_debt_view_open
-							close_borrow_money_window = yes
-						}
-					}
-					else = {
-						ROOT = {
-							close_repay_debt_window = yes
-						}
-					}
+					set_temp_variable = { debt_amount_temp = 1 }
+					multiply_temp_variable = { debt_amount_temp = gdp_amount }
+					divide_temp_variable = { debt_amount_temp = 2 }
+					subtract_from_variable = { treasury = debt_amount_temp }
+					debt_level_decrease_by_1 = yes
+					set_country_flag = repaid_debt_flag
+					# if = { 
+					# 	limit = {
+					# 		NOT = {
+					# 			ROOT = {
+					# 				has_country_flag = country_repay_debt_view_open
+					# 			}
+					# 		}
+					# 	}
+					# 	ROOT = {
+					# 		set_country_flag = country_repay_debt_view_open
+					# 		close_borrow_money_window = yes
+					# 	}
+					# }
+					# else = {
+					# 	ROOT = {
+					# 		close_repay_debt_window = yes
+					# 	}
+					# }
 				}
-				govt_repay_debt_button_shift_click = {
-					set_temp_variable = { debt_repayment_temp = treasury }
-					set_temp_variable = { country_temp = 0 }
-					repay_debt = yes
-					add_to_variable = { update_state_econ_window = 1 }
-				}
+				# govt_repay_debt_button_shift_click = {
+				# 	set_temp_variable = { debt_repayment_temp = treasury }
+				# 	set_temp_variable = { country_temp = 0 }
+				# 	repay_debt = yes
+				# 	add_to_variable = { update_state_econ_window = 1 }
+				# }
 			#
 
 
