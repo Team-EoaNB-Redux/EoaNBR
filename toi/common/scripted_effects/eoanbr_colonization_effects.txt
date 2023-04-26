@@ -1,0 +1,143 @@
+eoanbr_colonize_setup = {
+	# state_scope
+	# THIS - STATE
+	# PREV - COUNTRY
+
+	if = {
+		limit = { is_owned_controlled_by = PREV }
+		if = {
+			limit = { 
+				PREV = {
+					has_tech = tech_projects_overseas_interests
+				}
+			}
+			#Clear Frontiers
+				if = {
+					limit = {
+						has_dynamic_modifier = {
+							modifier = frontier_state
+						}
+					}
+					remove_dynamic_modifier = {
+						modifier = frontier_state
+					}
+				}
+				if = {
+					limit = {
+						is_in_array = {
+							array = global.eoanbr_frontier_states_array
+							value = THIS.id
+						}
+					}
+					remove_from_array = {
+						global.eoanbr_frontier_states_array
+						value = THIS.id
+					}
+				}
+				clear_variable = eoanbr_frontier_country
+			#
+			#Add Colony
+				if = {
+					limit = {
+						NOT = {
+							has_dynamic_modifier = {
+								modifier = colonial_state
+							}
+						}
+					}
+					add_dynamic_modifier = {
+						modifier = colonial_state
+					}
+				}
+				if = {
+					limit = {
+						NOT = {
+							is_in_array = global.eoanbr_colony_states_array
+							value = THIS.id
+						}
+					}
+					add_to_array = {
+						array = global.eoanbr_colony_states_array
+						value = THIS.id
+					}
+				}
+				if = {
+					limit = {
+						NOT = {
+							is_in_array = eoanbr_colony_countries_array
+							value = PREV.id
+						}
+					}
+					add_to_array = {
+						array = eoanbr_colony_countries_array
+						value = PREV.id
+					}
+				}
+			#
+		}
+		else_if = {
+			limit = {
+				PREV = {
+					has_tech = tech_projects_hinterland_expansion
+				}
+			}
+			#Clear Colonies
+				if = {
+					limit = {
+						has_dynamic_modifier = {
+							modifier = colony_state
+						}
+					}
+					remove_dynamic_modifier = {
+						modifier = colony_state
+					}
+				}
+				if = {
+					limit = {
+						is_in_array = {
+							array = global.eoanbr_colony_states_array
+							value = THIS.id
+						}
+					}
+					remove_from_array = {
+						array = global.eoanbr_colony_states_array
+						value = THIS.id
+					}
+				}
+				clear_array = eoanbr_colony_countries_array
+			#
+			#Add Frontiers
+				if = {
+					limit = {
+						NOT = {
+							has_dynamic_modifier = {
+								modifier = frontier_state
+							}
+						}
+					}
+					add_dynamic_modifier = {
+						modifier = frontier_state
+					}
+				}
+				if = {
+					limit = {
+						NOT = {
+							is_in_array = {
+								global.eoanbr_frontier_states_array
+								value = THIS.id
+							}
+						}
+					}
+					add_to_array = {
+						array = global.eoanbr_frontier_states_array
+						value = THIS.id
+					}
+				}
+				set_variable = {
+					array = eoanbr_frontier_country
+					value = PREV.id
+				}
+			#
+		}
+	}
+}
