@@ -84,8 +84,8 @@ NDefines.NAir.COMBAT_DAMAGE_SCALE = 0.25 -- 1.0
 NDefines.NAir.COMBAT_DAMAGE_SCALE_CARRIER = 1 -- 5.0
 NDefines.NAir.NAVAL_STRIKE_DAMAGE_TO_STR = 2.0 -- 1.0
 NDefines.NAir.NAVAL_STRIKE_DAMAGE_TO_ORG = 2.5 -- 1.5
-
 NDefines.NAir.THRUST_WEIGHT_SPEED_FACTOR = 6 -- 3
+
 NDefines.NNavy.WAR_SCORE_GAIN_FOR_SUNK_SHIP_MANPOWER_FACTOR = 0.02 -- 0.001
 NDefines.NNavy.WAR_SCORE_GAIN_FOR_SUNK_SHIP_PRODUCTION_COST_FACTOR = 0.04 -- 0.004
 NDefines.NNavy.WAR_SCORE_GAIN_FOR_SUNK_CONVOY = 10.0 -- 0.05
@@ -103,14 +103,18 @@ NDefines.NNavy.SUPREMACY_PER_SHIP_BASE = 500.0
 NDefines.NNavy.CONVOY_DEFENSE_MAX_CONVOY_TO_SHIP_RATIO	= 2.0		-- each ship in convoy defense mission can at most cover this many convoys without losing efficiency
 
 NDefines.NAI.DEFAULT_LEGACY_VARIANT_CREATION_XP_CUTOFF_LAND = 10 -- 50
-NDefines.NAI.NAVY_PREFERED_MAX_SIZE = 20 -- 25
+NDefines.NAI.NAVY_PREFERED_MAX_SIZE = 25 -- 25
 NDefines.NAI.AREA_DEFENSE_BASE_IMPORTANCE = 3                  -- Area defense order base importance value (used for determining order of troop selections)
-NDefines.NAI.DOCKYARDS_PER_NAVAL_DESIRE_EFFECT = 0.0			-- Effects how much AI wants to build dockyards based on how navally focused they are in general. Recommended range -100.0 to 100.0.
+NDefines.NAI.DOCKYARDS_PER_NAVAL_DESIRE_EFFECT = 10.0			-- Effects how much AI wants to build dockyards based on how navally focused they are in general. Recommended range -100.0 to 100.0.
 NDefines.NAI.MAX_SCREEN_FORCES_FOR_INVASION_SUPPORT = 0.99 -- max ratio of screens forces to be used in naval invasion missions
 NDefines.NAI.MAX_CAPITAL_FORCES_FOR_INVASION_SUPPORT = 0.99 -- max ratio of capital forces to be used in naval invasion missions
 NDefines.NAI.MIN_UNIT_RATIO_FOR_INVASIONS = 0.2                         -- don't allocate more divisions than this for naval invasions
 NDefines.NAI.MAX_INVASION_FRONT_SCORE = 2000                            -- max score for naval invasion front scores
 NDefines.NAI.MAX_INVASION_FRONT_SCORE = 2000                            -- max score for naval invasion front scores
+NDefines.NAI.DIVISION_DESIGN_COMBAT_WIDTH_TARGET_WEIGHT = -500.0	-- This score is reduced the farther the width is from the target width (if set)
+NDefines.NAI.DIVISION_MATCH_ROLE_BOOST_FACTOR = 1.2                -- When finding closest matching existing template to a target template, boost the score by this much if the template also has the correct role
+NDefines.NAI.AREA_DEFENSE_IMPORTANCE_FACTOR = 0.5               -- used to balance defensive area importance vs other fronts
+NDefines.NAI.AREA_DEFENSE_BASE_IMPORTANCE = 10                  -- Area defense order base importance value (used for determining order of troop selections)
 
 NDefines.NFocus.FOCUS_POINT_DAYS = 1 -- 7
 NDefines.NMapMode.UI_CONFIGURABLE_SLOT_TO = 12
