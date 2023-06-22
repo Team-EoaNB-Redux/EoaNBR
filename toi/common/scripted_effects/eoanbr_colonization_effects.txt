@@ -9,129 +9,198 @@ eoanbr_colonize_setup = {
 				has_tech = tech_projects_overseas_interests
 			}
 		}
-		#Clear Frontiers
-			if = {
-				limit = {
-					has_dynamic_modifier = {
-						modifier = frontier_state
-					}
-				}
-				remove_dynamic_modifier = {
-					modifier = frontier_state
-				}
-			}
-			if = {
-				limit = {
-					is_in_array = {
-						array = global.eoanbr_frontier_states_array
-						value = THIS.id
-					}
-				}
-				remove_from_array = {
-					array = global.eoanbr_frontier_states_array
-					value = THIS.id
-				}
-			}
-			clear_variable = eoanbr_frontier_country
-			clear_variable = eoanbr_frontier_progress
-			clear_variable = eoanbr_frontier_speed_modifier
-		#
+		eoanbr_frontier_remove = yes
 		#Add Colony
 			if = {
-				limit = {
-					NOT = {
-						has_dynamic_modifier = {
-							modifier = colonial_state
+				limit = { OWNER = { num_of_institutions < 3 } }
+				if = {
+					limit = {
+						NOT = {
+							has_dynamic_modifier = {
+								modifier = colonial_state
+							}
 						}
 					}
-				}
-				add_dynamic_modifier = {
-					modifier = colonial_state
-				}
-			}
-			if = {
-				limit = {
-					NOT = {
-						is_in_array = global.eoanbr_colony_states_array
-						value = THIS.id
+					add_dynamic_modifier = {
+						modifier = colonial_state
 					}
 				}
-				add_to_array = {
-					array = global.eoanbr_colony_states_array
-					value = THIS.id
-				}
-			}
-			if = {
-				limit = {
-					NOT = {
-						is_in_array = eoanbr_colony_countries_array
+				if = {
+					limit = {
+						NOT = {
+							is_in_array = global.eoanbr_colony_states_array
+							value = THIS.id
+						}
+					}
+					add_to_array = {
+						array = global.eoanbr_colony_states_array
 						value = PREV.id
 					}
 				}
-				add_to_array = {
-					array = eoanbr_colony_countries_array
-					value = PREV.id
+				if = {
+					limit = {
+						NOT = {
+							is_in_array = {
+								array = eoanbr_colony_countries_array
+								value = PREV.id
+							}
+						}
+					}
+					add_to_array = {
+						array = eoanbr_colony_countries_array
+						value = PREV.id
+					}
 				}
 			}
 		#
 	}
 	else = {
-		#Clear Colonies
+		eoanbr_colony_remove = yes
+		#Add Frontiers
 			if = {
-				limit = {
-					has_dynamic_modifier = {
-						modifier = colony_state
+				limit = { is_owned_by = PREV }
+				if = {
+					limit = {
+						NOT = {
+							has_dynamic_modifier = {
+								modifier = frontier_state
+							}
+						}
+					}
+					add_dynamic_modifier = {
+						modifier = frontier_state
 					}
 				}
-				remove_dynamic_modifier = {
-					modifier = colony_state
-				}
-			}
-			if = {
-				limit = {
-					is_in_array = {
-						array = global.eoanbr_colony_states_array
+				if = {
+					limit = {
+						NOT = {
+							is_in_array = {
+								array = global.eoanbr_frontier_states_array
+								value = THIS.id
+							}
+						}
+					}
+					add_to_array = {
+						array = global.eoanbr_frontier_states_array
 						value = THIS.id
 					}
 				}
-				remove_from_array = {
-					array = global.eoanbr_colony_states_array
-					value = THIS.id
+				set_variable = {
+					array = eoanbr_frontier_country
+					value = PREV.id
 				}
 			}
-			clear_array = eoanbr_colony_countries_array
 		#
-		#Add Frontiers
+	}
+}
+eoanbr_frontier_monthly = {
+	for_each_scope_loop = {
+		array = global.eoanbr_frontier_states_array
+
+		if = {
+			limit = {
+				check_variable = {
+					var = eoanbr_frontier_country
+					value = OWNER.id
+				}
+			}
+			set_temp_variable = {
+				var = frontier_progress_change_temp
+				value = OWNER.modifier@monthly_frontier_progress_modifier
+			}
+			add_to_temp_variable = {
+				var = frontier_progress_change_temp
+				value = eoanbr_frontier_speed_modifier
+			}
+			multiply_temp_variable = {
+				var = frontier_progress_change_temp
+				value = OWNER.modifier@monthly_frontier_progress_factor
+			}
+			add_to_variable = {
+				var = eoanbr_frontier_progress
+				value = frontier_progress_change_temp
+			}
+			clamp_variable = {
+				var = eoanbr_frontier_progress
+				min = 0
+				max = 100
+			}
 			if = {
 				limit = {
-					NOT = {
-						has_dynamic_modifier = {
-							modifier = frontier_state
-						}
+					check_variable = {
+						var = eoanbr_frontier_progress
+						value = 99.99
+						compare = greater_than
 					}
 				}
-				add_dynamic_modifier = {
+				eoanbr_frontier_complete = yes
+			}
+		}
+		else = {
+			eoanbr_frontier_remove = yes
+		}
+	}
+}
+eoanbr_frontier_remove = {
+	#Clear Frontiers
+		if = {
+			limit = {
+				has_dynamic_modifier = {
 					modifier = frontier_state
 				}
 			}
-			if = {
-				limit = {
-					NOT = {
-						is_in_array = {
-							global.eoanbr_frontier_states_array
-							value = THIS.id
-						}
-					}
-				}
-				add_to_array = {
+			remove_dynamic_modifier = {
+				modifier = frontier_state
+			}
+		}
+		if = {
+			limit = {
+				is_in_array = {
 					array = global.eoanbr_frontier_states_array
 					value = THIS.id
 				}
 			}
-			set_variable = {
-				array = eoanbr_frontier_country
-				value = PREV.id
+			remove_from_array = {
+				array = global.eoanbr_frontier_states_array
+				value = THIS.id
 			}
-		#
+		}
+		clear_variable = eoanbr_frontier_country
+		clear_variable = eoanbr_frontier_progress
+		clear_variable = eoanbr_frontier_speed_modifier
+	#
+}
+eoanbr_frontier_complete = {
+	custom_effect_tooltip = eoanbr_frontier_complete_tt
+	hidden_effect = {
+		add_core_of = var:eoanbr_frontier_country
+		eoanbr_frontier_remove = yes
 	}
+}
+eoanbr_colony_remove = {
+	#Clear Colonies
+		if = {
+			limit = {
+				has_dynamic_modifier = {
+					modifier = colony_state
+				}
+			}
+			remove_dynamic_modifier = {
+				modifier = colony_state
+			}
+		}
+		if = {
+			limit = {
+				is_in_array = {
+					array = global.eoanbr_colony_states_array
+					value = THIS.id
+				}
+			}
+			remove_from_array = {
+				array = global.eoanbr_colony_states_array
+				value = THIS.id
+			}
+		}
+		clear_array = eoanbr_colony_countries_array
+	#
 }
