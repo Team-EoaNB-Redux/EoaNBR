@@ -17330,6 +17330,7 @@ country_event = { #NIC replies yes
 			target = NIC
 			decision = USA_decision_clayton_request_military_access
 		}
+		
 	}
 }
 
@@ -17475,12 +17476,44 @@ country_event = { #Distribute equipment
 			var = uni_equip_total
 			value = num_equipment@uniform_equipment
 		}
+		set_variable = {
+			var = cav_equip_total
+			value = num_equipment@cavalry_equipment
+		}
+		set_variable = {
+			var = can_equip_total
+			value = num_equipment@cannon_equipment
+		}
+		set_variable = {
+			var = howie_equip_total
+			value = num_equipment@howitzer_equipment
+		}
+		set_variable = {
+			var = sup_equip_total
+			value = num_equipment@support_equipment
+		}
 		multiply_variable = {
 			var = inf_equip_total
 			value = 0.01
 		}
 		multiply_variable = {
 			var = uni_equip_total
+			value = 0.01
+		}
+		multiply_variable = {
+			var = cav_equip_total
+			value = 0.01
+		}
+		multiply_variable = {
+			var = can_equip_total
+			value = 0.01
+		}
+		multiply_variable = {
+			var = howie_equip_total
+			value = 0.01
+		}
+		multiply_variable = {
+			var = sup_equip_total
 			value = 0.01
 		}
 	}
@@ -17490,69 +17523,211 @@ country_event = { #Distribute equipment
 		send_equipment = {
 			type = infantry_equipment
 			amount = inf_equip_total
-			target = ROOT
+			target = FROM
 		}
 		send_equipment = {
 			type = uniform_equipment
 			amount = uni_equip_total
 			target = FROM
+		}
+		hidden_effect = {
+			activate_targeted_decision = {
+				target = FROM
+				decision = USA_decision_clayton_send_equipment
+			}
 		}
 	}
 
 	option = { #medium
 		name = USA_clayton_conspiracy.20.b
-		multiply_temp_variable = {
+		multiply_variable = {
 			var = inf_equip_total
 			value = 2
 		}
-		multiply_temp_variable = {
+		multiply_variable = {
 			var = uni_equip_total
 			value = 2
 		}
-		# set_temp_variable = {
-		# 	inf_equip_total_temp = inf_equip_total
-		# }
-		# set_temp_variable = {
-		# 	uni_equip_total_temp = uni_equip_total
-		# }
 		send_equipment = {
 			type = infantry_equipment
 			amount = inf_equip_total
-			target = ROOT
+			target = FROM
 		}
 		send_equipment = {
 			type = uniform_equipment
 			amount = uni_equip_total
 			target = FROM
 		}
+		random_list = {
+			10 = {
+				send_equipment = {
+					type = cavalry_equipment
+					amount = cav_equip_total
+					target = FROM
+				}
+			}
+			10 = {
+				send_equipment = {
+					type = cannon_equipment
+					amount = can_equip_total
+					target = FROM
+				}				
+			}
+			0 = {
+				modifier = {
+					add = 10
+					AND = {
+						check_variable = {
+							howie_equip_total > 0
+						}
+						stockpile_ratio = {
+							archetype = howitzer_equipment
+							ratio > 0
+						}
+					}
+				}
+				send_equipment = {
+					type = howitzer_equipment
+					amount = howie_equip_total
+					target = FROM
+				}				
+			}
+			0 = {
+				modifier = {
+					add = 10
+					AND = {
+						check_variable = {
+							sup_equip_total > 0
+						}
+						stockpile_ratio = {
+							archetype = support_equipment
+							ratio > 0
+						}
+					}
+				}
+				send_equipment = {
+					type = support_equipment
+					amount = sup_equip_total
+					target = FROM
+				}				
+			}
+		}
+		hidden_effect = {
+			activate_targeted_decision = {
+				target = FROM
+				decision = USA_decision_clayton_send_equipment
+			}
+		}
+		clear_variable = inf_equip_total
+		clear_variable = uni_equip_total
+		clear_variable = cav_equip_total
+		clear_variable = can_equip_total
+		clear_variable = howie_equip_total
+		clear_variable = sup_equip_total
 	}
 
 	option = { #large
 		name = USA_clayton_conspiracy.20.c
-		set_temp_variable = {
-			inf_equip_total_temp = inf_equip_total
-		}
-		set_temp_variable = {
-			uni_equip_total_temp = uni_equip_total
-		}
-		multiply_temp_variable = {
-			var = inf_equip_total_temp
+		multiply_variable = {
+			var = inf_equip_total
 			value = 3
 		}
-		multiply_temp_variable = {
-			var = uni_equip_total_temp
+		multiply_variable = {
+			var = uni_equip_total
 			value = 3
 		}
 		send_equipment = {
 			type = infantry_equipment
-			amount = inf_equip_total_temp
+			amount = inf_equip_total
 			target = FROM
 		}
 		send_equipment = {
 			type = uniform_equipment
-			amount = uni_equip_total_temp
+			amount = uni_equip_total
 			target = FROM
+		}		
+		multiply_variable = {
+			var = cav_equip_total
+			value = 2
 		}
+		multiply_variable = {
+			var = can_equip_total
+			value = 2
+		}
+		multiply_variable = {
+			var = howie_equip_total
+			value = 2
+		}
+		multiply_variable = {
+			var = sup_equip_total
+			value = 2
+		}
+		random_list = {
+			10 = {
+				send_equipment = {
+					type = cavalry_equipment
+					amount = cav_equip_total
+					target = FROM
+				}
+			}
+			10 = {
+				send_equipment = {
+					type = cannon_equipment
+					amount = can_equip_total
+					target = FROM
+				}				
+			}
+			0 = {
+				modifier = {
+					add = 10
+					AND = {
+						check_variable = {
+							howie_equip_total > 0
+						}
+						stockpile_ratio = {
+							archetype = howitzer_equipment
+							ratio > 0
+						}
+					}
+				}
+				send_equipment = {
+					type = howitzer_equipment
+					amount = howie_equip_total
+					target = FROM
+				}				
+			}
+			0 = {
+				modifier = {
+					add = 10
+					AND = {
+						check_variable = {
+							sup_equip_total > 0
+						}
+						stockpile_ratio = {
+							archetype = support_equipment
+							ratio > 0
+						}
+					}
+				}
+				send_equipment = {
+					type = support_equipment
+					amount = sup_equip_total
+					target = FROM
+				}				
+			}
+		}
+		hidden_effect = {
+			activate_targeted_decision = {
+				target = FROM
+				decision = USA_decision_clayton_send_equipment
+			}
+		}
+		clear_variable = inf_equip_total
+		clear_variable = uni_equip_total
+		clear_variable = cav_equip_total
+		clear_variable = can_equip_total
+		clear_variable = howie_equip_total
+		clear_variable = sup_equip_total
 	}
 }
 
