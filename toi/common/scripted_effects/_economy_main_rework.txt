@@ -307,6 +307,9 @@
                 on_monthly_building_adjust_employment_target = yes
                 on_monthly_building_employment = yes
 
+                on_monthly_subsistence_farm = yes
+                pops_balance = yes
+
                 calc_industrial_capacity = yes # nil secs
 
                 buildings_update = yes # 0.5 secs
@@ -581,6 +584,7 @@
 
             #Buildings
 		        set_variable = { global.building_money_limit = 1 } #Money limit for an building for its output times the base price of the outputted resource
+                set_variable = { global.base_wage_factor = 0.8 } #What percentage of profits go to pops
                 set_variable = { global.minimum_base_wage = 0.01 } #Minimum base wage (not average) for an building
                 set_variable = { global.buildings_economy_of_scale_factor = 0.01 } #What bonus gets added to throughput for each size building in a state
                 set_variable = { global.base_industrial_capacity = 5 } #Base amount of IC that each state gets
@@ -2527,6 +2531,26 @@
 
                 pops_update = yes
                 buildings_update = yes
+                
+                for_each_loop = {
+                    array = buildings
+                    value = b_token
+
+                    if = {
+                        limit = {
+                            check_variable = { profit@var:b_token > 0 }
+                        }
+                        set_variable = { money@var:b_token = money_limit@var:b_token }
+                        set_variable = { money_transfer@var:b_token = profit@var:b_token }
+                    }
+                    else = {
+                        set_variable = { money@var:b_token = 0 }
+                        set_variable = { money_transfer@var:b_token = profit@var:b_token }
+                    }
+                }
+
+                pops_update = yes
+
                 create_pie_chart_pop_type = yes
                 gdp_update = yes
 				refresh_construction_list = yes
@@ -3909,7 +3933,7 @@
             set_variable = { pops_earnings = 0 }
         #
 
-        # Employment & Jobs
+        # Employment, Jobs, and Money Transfer
 			set_variable = { slaves_employed = 0 }
 			set_variable = { peasants_employed = 0 }
 			set_variable = { laborers_employed = 0 }
@@ -3932,6 +3956,9 @@
 			set_variable = { bureaucrats_jobs = 0 }
 			set_variable = { soldiers_jobs = 0 }
 
+            set_variable = { capitalists_money_transfer = 0 }
+            set_variable = { aristocrats_money_transfer = 0 }
+
 			#buildings
 			for_each_loop = {
 				array = buildings
@@ -3952,6 +3979,16 @@
 				add_to_variable = { specialists_jobs = specialists_jobs@var:pops_bld_token }
 				add_to_variable = { aristocrats_jobs = aristocrats_jobs@var:pops_bld_token }
 				add_to_variable = { capitalists_jobs = capitalists_jobs@var:pops_bld_token }
+                
+                if = {
+                    limit = {
+                        check_variable = { capitalists_jobs@var:pops_bld_token > 0 }
+                    }
+                    add_to_variable = { capitalists_money_transfer = money_transfer@var:pops_bld_token }
+                }
+                else = {
+                    add_to_variable = { aristocrats_money_transfer = money_transfer@var:pops_bld_token }
+                }
 			}
 
         #
@@ -4604,6 +4641,7 @@
                 # Earnings/Spending
                 set_variable = { aristocrats_earnings = aristocrats_employed }
                 multiply_variable = { aristocrats_earnings = aristocrats_wage }
+                add_to_variable = { aristocrats_earnings = aristocrats_money_transfer }
                 add_to_variable = { pops_earnings = aristocrats_earnings }
 
 				set_variable = { aristocrats_food_cost = aristocrats_food_need }
@@ -4705,6 +4743,7 @@
                 # Earnings/Spending
                 set_variable = { capitalists_earnings = capitalists_employed }
                 multiply_variable = { capitalists_earnings = capitalists_wage }
+                add_to_variable = { capitalists_earnings = capitalists_money_transfer }
                 add_to_variable = { pops_earnings = capitalists_earnings }
 
 				set_variable = { capitalists_food_cost = capitalists_food_need }
@@ -6961,31 +7000,20 @@
             }
         #
 
+        set_variable = { capitalists_money_transfer = 0 }
+        set_variable = { aristocrats_money_transfer = 0 }
         clear_temp_array = buildings_wage_sort
         for_each_loop = {
             array = buildings
             value = om_building
 
             #Money Accumulation
-            add_to_variable = { money@var:om_building = profit@var:om_building }
+            add_to_variable = { money@var:om_building = money_accumulation@var:om_building }
             if = { #Excess goes to owners
                 limit = {
                     check_variable = { money@var:om_building > money_limit@var:om_building }
                 }
-                set_variable = { money_transfer@var:om_building = money@var:om_building }
-                subtract_from_variable = { money_transfer@var:om_building = money_limit@var:om_building }
-
-                subtract_from_variable = { money@var:om_building = money_transfer@var:om_building }
-                #TODO - Add to Aristocrats/Capitalists' money pool and/or Corporate money pools
-            }
-            else = {
-                set_variable = { money_transfer@var:om_building = 0 }
-            }
-            if = {
-                limit = {
-                    check_variable = { money@var:om_building < 0 }
-                }
-                set_variable = { money@var:om_building = 0 }
+                set_variable = { money@var:om_building = money_limit@var:om_building }
             }
         }
     }
@@ -7114,6 +7142,8 @@
 
         set_variable = { base_wage = base_wage_counting }
         divide_variable = { base_wage = jobs_accounted_for }
+
+        multiply_variable = { base_wage = wage_factor }
 
         set_variable = { laborers_wage = base_wage }
         multiply_variable = { laborers_wage = 2 }
@@ -7341,6 +7371,85 @@
             }
             # Workforce Change
 
+        }
+    }
+
+    on_monthly_subsistence_farm = {
+        # Changes subsistence farm employment
+
+        set_temp_variable = { subsistence_farm_temp = token:building_subsistence_farm }
+        if = {
+            limit = {
+                has_state_flag = uses_rice_paddies
+            }
+            set_temp_variable = { subsistence_farm_temp = token:building_rice_paddy }
+        }
+
+        set_temp_variable = { workers_temp = peasants_workforce }
+        add_to_temp_variable = { workers_temp = laborers_workforce }
+        add_to_temp_variable = { workers_temp = workers_workforce }
+        add_to_temp_variable = { workers_temp = professionals_workforce }
+        add_to_temp_variable = { workers_temp = specialists_workforce }
+        add_to_temp_variable = { workers_temp = capitalists_workforce }
+        add_to_temp_variable = { workers_temp = aristocrats_workforce }
+        subtract_from_temp_variable = { workers_temp = employed@var:subsistence_farm_temp }
+
+        if = {
+            limit = {
+                check_variable = { employed@var:subsistence_farm_temp > 0 }
+                check_variable = { non_subs_jobs_buildings > workers_temp  }
+            }
+            if = {
+                limit = {
+                    check_variable = { peasants_employed@var:subsistence_farm_temp > 1 }
+                }
+                subtract_from_variable = { peasants_employed@var:subsistence_farm_temp = 1 }
+            }
+            else = {
+                set_variable = { peasants_employed@var:subsistence_farm_temp = 0 }
+            }
+        }
+        else_if = {
+            limit = {
+                check_variable = { non_subs_jobs_buildings < workers_temp  }
+                check_variable = { laborers_unemployed > 1.01  }
+            }
+            add_to_variable = { peasants_workforce = 1 }
+            add_to_variable = { aristocrats_workforce = 0.01 }
+            subtract_from_variable = { laborers_unemployed = 1.01 }
+            subtract_from_variable = { laborers_workforce = 1.01 }
+            add_to_variable = { peasants_employed@var:subsistence_farm_temp = 1 }
+            add_to_variable = { aristocrats_employed@var:subsistence_farm_temp = 0.01 }
+        }
+
+        if = {
+            limit = {
+                check_variable = { peasants_jobs@var:subsistence_farm_temp > 1000 }
+            }
+            set_temp_variable = { jobs_temp = peasants_jobs@var:subsistence_farm_temp }
+            divide_temp_variable = { jobs_temp = 100 }
+            set_variable = { employment_percentage@var:subsistence_farm_temp = peasants_employed@var:subsistence_farm_temp }
+            divide_variable = { employment_percentage@var:subsistence_farm_temp = jobs_temp }
+
+            set_variable = { aristocrats_employed@var:subsistence_farm_temp = aristocrats_jobs@var:subsistence_farm_temp }
+            divide_variable = { aristocrats_employed@var:subsistence_farm_temp = 100 }
+            multiply_variable = { aristocrats_employed@var:subsistence_farm_temp = employment_percentage@var:subsistence_farm_temp }
+        }
+        else_if = {
+            limit = {
+                check_variable = { peasants_jobs@var:subsistence_farm_temp > 0 }
+            }
+            set_variable = { employment_percentage@var:subsistence_farm_temp = peasants_employed@var:subsistence_farm_temp }
+            multiply_variable = { employment_percentage@var:subsistence_farm_temp = 100 }
+            divide_variable = { employment_percentage@var:subsistence_farm_temp = peasants_jobs@var:subsistence_farm_temp }
+            
+            set_variable = { aristocrats_employed@var:subsistence_farm_temp = aristocrats_jobs@var:subsistence_farm_temp }
+            divide_variable = { aristocrats_employed@var:subsistence_farm_temp = 100 }
+            multiply_variable = { aristocrats_employed@var:subsistence_farm_temp = employment_percentage@var:subsistence_farm_temp }
+        }
+        else = {
+            set_variable = { employment_percentage@var:subsistence_farm_temp = 0 }
+            set_variable = { aristocrats_employed@var:subsistence_farm_temp = 0 }
         }
     }
 
@@ -9097,9 +9206,9 @@
 			multiply_variable = { production_1@var:bu_token = production_percentage@var:bu_token }
             divide_variable = { production_1@var:bu_token = 100 }
 
-			set_temp_variable = { mlt = global.building_money_limit }
-			multiply_variable = { mlt = global.base_price@var:bu_resource_1 }
-			multiply_variable = { mlt = max_production_1@var:bu_token }
+			set_temp_variable = { money_limit_temp = global.building_money_limit }
+			multiply_temp_variable = { money_limit_temp = global.base_price@var:bu_resource_1 }
+			multiply_temp_variable = { money_limit_temp = max_production_1@var:bu_token }
             
             set_temp_variable = { rev_g_temp = max_production_1@var:bu_token }
             multiply_temp_variable = { rev_g_temp = price@var:bu_resource_1 }
@@ -9107,7 +9216,7 @@
 			set_variable = { revenue_goods_1@var:bu_token = production_1@var:bu_token }
 			multiply_variable = { revenue_goods_1@var:bu_token = price@var:bu_resource_1 }
 
-            add_to_variable = { money_limit@var:bu_token = mlt }
+            add_to_variable = { money_limit@var:bu_token = money_limit_temp }
             add_to_temp_variable = { revenue_temp = rev_g_temp }
 			set_variable = { revenue_goods@var:bu_token = revenue_goods_1@var:bu_token }
         #
@@ -9124,9 +9233,9 @@
 			multiply_variable = { production_2@var:bu_token = production_percentage@var:bu_token }
             divide_variable = { production_2@var:bu_token = 100 }
 
-			set_temp_variable = { mlt = global.building_money_limit }
-			multiply_variable = { mlt = global.base_price@var:bu_resource_2 }
-			multiply_variable = { mlt = max_production_2@var:bu_token }
+			set_temp_variable = { money_limit_temp = global.building_money_limit }
+			multiply_temp_variable = { money_limit_temp = global.base_price@var:bu_resource_2 }
+			multiply_temp_variable = { money_limit_temp = max_production_2@var:bu_token }
             
             set_temp_variable = { rev_g_temp = max_production_2@var:bu_token }
             multiply_temp_variable = { rev_g_temp = price@var:bu_resource_2 }
@@ -9134,7 +9243,7 @@
 			set_variable = { revenue_goods_2@var:bu_token = production_2@var:bu_token }
 			multiply_variable = { revenue_goods_2@var:bu_token = price@var:bu_resource_2 }
             
-            add_to_variable = { money_limit@var:bu_token = mlt }
+            add_to_variable = { money_limit@var:bu_token = money_limit_temp }
             add_to_temp_variable = { revenue_temp = rev_g_temp }
 			add_to_variable = { revenue_goods@var:bu_token = revenue_goods_2@var:bu_token }
             
@@ -9150,9 +9259,9 @@
                 multiply_variable = { production_3@var:bu_token = production_percentage@var:bu_token }
                 divide_variable = { production_3@var:bu_token = 100 }
 
-                set_temp_variable = { mlt = global.building_money_limit }
-                multiply_variable = { mlt = global.base_price@var:bu_resource_3 }
-                multiply_variable = { mlt = max_production_3@var:bu_token }
+                set_temp_variable = { money_limit_temp = global.building_money_limit }
+                multiply_temp_variable = { money_limit_temp = global.base_price@var:bu_resource_3 }
+                multiply_temp_variable = { money_limit_temp = max_production_3@var:bu_token }
                 
                 set_temp_variable = { rev_g_temp = max_production_3@var:bu_token }
                 multiply_temp_variable = { rev_g_temp = price@var:bu_resource_3 }
@@ -9160,7 +9269,7 @@
                 set_variable = { revenue_goods_3@var:bu_token = production_3@var:bu_token }
                 multiply_variable = { revenue_goods_3@var:bu_token = price@var:bu_resource_3 }
                 
-                add_to_variable = { money_limit@var:bu_token = mlt }
+                add_to_variable = { money_limit@var:bu_token = money_limit_temp }
                 add_to_temp_variable = { revenue_temp = rev_g_temp }
                 add_to_variable = { revenue_goods@var:bu_token = revenue_goods_3@var:bu_token }
                 
@@ -9176,9 +9285,9 @@
                     multiply_variable = { production_4@var:bu_token = production_percentage@var:bu_token }
                     divide_variable = { production_4@var:bu_token = 100 }
 
-                    set_temp_variable = { mlt = global.building_money_limit }
-                    multiply_variable = { mlt = global.base_price@var:bu_resource_4 }
-                    multiply_variable = { mlt = max_production_4@var:bu_token }
+                    set_temp_variable = { money_limit_temp = global.building_money_limit }
+                    multiply_temp_variable = { money_limit_temp = global.base_price@var:bu_resource_4 }
+                    multiply_temp_variable = { money_limit_temp = max_production_4@var:bu_token }
                     
                     set_temp_variable = { rev_g_temp = max_production_4@var:bu_token }
                     multiply_temp_variable = { rev_g_temp = price@var:bu_resource_4 }
@@ -9186,7 +9295,7 @@
                     set_variable = { revenue_goods_4@var:bu_token = production_4@var:bu_token }
                     multiply_variable = { revenue_goods_4@var:bu_token = price@var:bu_resource_4 }
                     
-                    add_to_variable = { money_limit@var:bu_token = mlt }
+                    add_to_variable = { money_limit@var:bu_token = money_limit_temp }
                     add_to_temp_variable = { revenue_temp = rev_g_temp }
                     add_to_variable = { revenue_goods@var:bu_token = revenue_goods_4@var:bu_token }
 
@@ -9202,9 +9311,9 @@
                         multiply_variable = { production_5@var:bu_token = production_percentage@var:bu_token }
                         divide_variable = { production_5@var:bu_token = 100 }
 
-                        set_temp_variable = { mlt = global.building_money_limit }
-                        multiply_variable = { mlt = global.base_price@var:bu_resource_5 }
-                        multiply_variable = { mlt = max_production_5@var:bu_token }
+                        set_temp_variable = { money_limit_temp = global.building_money_limit }
+                        multiply_temp_variable = { money_limit_temp = global.base_price@var:bu_resource_5 }
+                        multiply_temp_variable = { money_limit_temp = max_production_5@var:bu_token }
                         
                         set_temp_variable = { rev_g_temp = max_production_5@var:bu_token }
                         multiply_temp_variable = { rev_g_temp = price@var:bu_resource_5 }
@@ -9212,7 +9321,7 @@
                         set_variable = { revenue_goods_5@var:bu_token = production_5@var:bu_token }
                         multiply_variable = { revenue_goods_5@var:bu_token = price@var:bu_resource_5 }
                         
-                        add_to_variable = { money_limit@var:bu_token = mlt }
+                        add_to_variable = { money_limit@var:bu_token = money_limit_temp }
                         add_to_temp_variable = { revenue_temp = rev_g_temp }
                         add_to_variable = { revenue_goods@var:bu_token = revenue_goods_5@var:bu_token }
                     }
@@ -9482,6 +9591,24 @@
 
                 add_to_variable = { revenue@var:bu_token = revenue_subsidies@var:bu_token }
                 add_to_variable = { profit@var:bu_token = revenue_subsidies@var:bu_token }
+
+                
+                #Money Accumulation
+                set_variable = { money_accumulation@var:om_building = profit@var:om_building }
+                divide_variable = { money_accumulation@var:om_building = 2 }
+                set_variable = { money_transfer@var:om_building = profit@var:om_building }
+                divide_variable = { money_transfer@var:om_building = 2 }
+
+                set_temp_variable = { money_temp = money@var:om_building }
+                add_to_temp_array = { money_temp = money_accumulation@var:om_building }
+                if = {
+                    limit = {
+                        check_variable = { money_temp > money_limit@var:om_building }
+                    }
+                    subtract_from_temp_variable = { money_temp = money_limit@var:om_building }
+                    subtract_from_variable = { money_accumulation@var:om_building = money_temp }
+                    add_to_variable = { money_transfer@var:om_building = money_temp }
+                }
             }
 
 			#Profitability
