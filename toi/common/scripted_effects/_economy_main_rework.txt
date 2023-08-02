@@ -296,6 +296,7 @@
             divide_temp_variable = { sales_tax_multiplier = 100 }
 
             # 1.2 secs (calc: 1.4)
+            update_national_production_methods = yes
             every_controlled_state = {
                 r_update_modifiers_state_effects = yes # 0.38 secs
 
@@ -584,7 +585,7 @@
 
             #Buildings
 		        set_variable = { global.building_money_limit = 1 } #Money limit for an building for its output times the base price of the outputted resource
-                set_variable = { global.base_wage_factor = 0.8 } #What percentage of profits go to pops
+                set_variable = { global.base_wage_factor = 0.9 } #What percentage of profits go to pops
                 set_variable = { global.minimum_base_wage = 0.01 } #Minimum base wage (not average) for an building
                 set_variable = { global.buildings_economy_of_scale_factor = 0.01 } #What bonus gets added to throughput for each size building in a state
                 set_variable = { global.base_industrial_capacity = 5 } #Base amount of IC that each state gets
@@ -965,6 +966,13 @@
                         add_to_variable = { global.building_futurized_payroll_multiplier@var:b_type = mult_temp }
                     #
                 }
+            #
+
+            #Investment
+                set_variable = { global.base_investment_opportunities_cap = 2 }     # Base amount of investment opportunities
+                set_variable = { global.capitalists_per_investment_opportunity = 2 }    # How many capitalists are needed to add 1 to the investment opportunity cap
+                set_variable = { global.aristocrats_per_investment_opportunity = 20 }   # How many aristocrats are needed to add 1 to the investment opportunity cap
+                set_variable = { global.max_aristocrats_investment_opportunities = 10 } # The maximum that aristocrats can contribute to IOs as a base (basically anti-China/India)
             #
 
             #Resources
@@ -1385,14 +1393,7 @@
                 set_variable = { offers@var:r_token = 0 }
             }
 
-            random_controlled_state = {
-                for_each_loop = {
-                    array = global.building_token_array
-                    value = building_token
-                    get_latest_production_method = yes
-                    set_variable = { controller:latest_production_method@var:building_token = pm_temp }
-                }
-            }
+            update_national_production_methods = yes
 
             clear_array = gdp_amount_monthly
             clear_array = gdp_amount_quarterly
@@ -2541,11 +2542,11 @@
                             check_variable = { profit@var:b_token > 0 }
                         }
                         set_variable = { money@var:b_token = money_limit@var:b_token }
-                        set_variable = { money_transfer@var:b_token = profit@var:b_token }
+                        set_variable = { dividends@var:b_token = profit@var:b_token }
                     }
                     else = {
                         set_variable = { money@var:b_token = 0 }
-                        set_variable = { money_transfer@var:b_token = profit@var:b_token }
+                        set_variable = { dividends@var:b_token = profit@var:b_token }
                     }
                 }
 
@@ -3956,8 +3957,8 @@
 			set_variable = { bureaucrats_jobs = 0 }
 			set_variable = { soldiers_jobs = 0 }
 
-            set_variable = { capitalists_money_transfer = 0 }
-            set_variable = { aristocrats_money_transfer = 0 }
+            set_variable = { capitalists_dividends = 0 }
+            set_variable = { aristocrats_dividends = 0 }
 
 			#buildings
 			for_each_loop = {
@@ -3984,10 +3985,10 @@
                     limit = {
                         check_variable = { capitalists_jobs@var:pops_bld_token > 0 }
                     }
-                    add_to_variable = { capitalists_money_transfer = money_transfer@var:pops_bld_token }
+                    add_to_variable = { capitalists_dividends = dividends@var:pops_bld_token }
                 }
                 else = {
-                    add_to_variable = { aristocrats_money_transfer = money_transfer@var:pops_bld_token }
+                    add_to_variable = { aristocrats_dividends = dividends@var:pops_bld_token }
                 }
 			}
 
@@ -4641,7 +4642,7 @@
                 # Earnings/Spending
                 set_variable = { aristocrats_earnings = aristocrats_employed }
                 multiply_variable = { aristocrats_earnings = aristocrats_wage }
-                add_to_variable = { aristocrats_earnings = aristocrats_money_transfer }
+                add_to_variable = { aristocrats_earnings = aristocrats_dividends }
                 add_to_variable = { pops_earnings = aristocrats_earnings }
 
 				set_variable = { aristocrats_food_cost = aristocrats_food_need }
@@ -4743,7 +4744,7 @@
                 # Earnings/Spending
                 set_variable = { capitalists_earnings = capitalists_employed }
                 multiply_variable = { capitalists_earnings = capitalists_wage }
-                add_to_variable = { capitalists_earnings = capitalists_money_transfer }
+                add_to_variable = { capitalists_earnings = capitalists_dividends }
                 add_to_variable = { pops_earnings = capitalists_earnings }
 
 				set_variable = { capitalists_food_cost = capitalists_food_need }
@@ -5042,6 +5043,9 @@
         set_variable = { available_workforce = pops_unemployed }
         add_to_variable = { available_workforce = employed@token:building_subsistence_farm }
         add_to_variable = { available_workforce = employed@token:building_rice_paddy }
+        
+        set_variable = { excess_workforce = pops_workforce }
+        subtract_from_variable = { excess_workforce = non_subs_jobs_buildings }
 
         set_variable = { pops_spending = pops_needs_spending }
         add_to_variable = { pops_spending = pops_income_tax_spending }
@@ -6833,14 +6837,18 @@
 
     update_country_pop_stats = {
         set_variable = { pops = 0 }
+        set_variable = { pops_workforce = 0 }
         set_variable = { pops_col = 0 }
         set_variable = { pops_sol = 0 }
         set_variable = { pops_earnings = 0 }
 
+        set_variable = { capitalists_workforce = 0 }
+        set_variable = { aristocrats_workforce = 0 }
 
         every_controlled_state = {
             #Pops
             add_to_variable = { PREV.pops = pops }
+            add_to_variable = { PREV.pops_workforce = pops_workforce }
 
             set_temp_variable = { stat_temp = pops_col }
             multiply_temp_variable = { stat_temp = pops }
@@ -6851,6 +6859,9 @@
             add_to_variable = { PREV.pops_sol = stat_temp }
 
             add_to_variable = { PREV.pops_earnings = pops_earnings }
+            
+            add_to_variable = { PREV.capitalists_workforce = capitalists_workforce }
+            add_to_variable = { PREV.aristocrats_workforce = aristocrats_workforce }
         }
 
         divide_variable = { pops_sol = pops }
@@ -7000,8 +7011,8 @@
             }
         #
 
-        set_variable = { capitalists_money_transfer = 0 }
-        set_variable = { aristocrats_money_transfer = 0 }
+        set_variable = { capitalists_dividends = 0 }
+        set_variable = { aristocrats_dividends = 0 }
         clear_temp_array = buildings_wage_sort
         for_each_loop = {
             array = buildings
@@ -8489,6 +8500,337 @@
             set_temp_variable = { pm_temp = pm_correcting_temp }
         }
     }
+    update_national_production_methods = {
+        for_each_loop = {
+            array = global.building_token_array
+            value = building_token
+
+            # LATEST PRODUCTION METHOD
+                set_temp_variable = { pm_temp = -1 }
+                #Checks latest first
+                if = {
+                    limit = {
+                        OR = {
+                            check_variable = { global.building_futurized_tech_unlock@var:building_token = 1 }
+                            AND = {
+                                NOT = { check_variable = { global.building_futurized_tech_unlock@var:building_token = 0 } }
+                                set_temp_variable = { tech_temp = global.building_futurized_tech_unlock@var:building_token }
+                                has_tech = var:tech_temp
+                            }
+                        }
+                    }
+                    set_temp_variable = { pm_temp = 11 }
+                }
+                else_if = {
+                    limit = {
+                        OR = {
+                            check_variable = { global.building_automatized_tech_unlock@var:building_token = 1 }
+                            AND = {
+                                NOT = { check_variable = { global.building_automatized_tech_unlock@var:building_token = 0 } }
+                                set_temp_variable = { tech_temp = global.building_automatized_tech_unlock@var:building_token }
+                                has_tech = var:tech_temp
+                            }
+                        }
+                    }
+                    set_temp_variable = { pm_temp = 10 }
+                }
+                else_if = {
+                    limit = {
+                        OR = {
+                            check_variable = { global.building_digitalized_tech_unlock@var:building_token = 1 }
+                            AND = {
+                                NOT = { check_variable = { global.building_digitalized_tech_unlock@var:building_token = 0 } }
+                                set_temp_variable = { tech_temp = global.building_digitalized_tech_unlock@var:building_token }
+                                has_tech = var:tech_temp
+                            }
+                        }
+                    }
+                    set_temp_variable = { pm_temp = 9 }
+                }
+                else_if = {
+                    limit = {
+                        OR = {
+                            check_variable = { global.building_computerized_tech_unlock@var:building_token = 1 }
+                            AND = {
+                                NOT = { check_variable = { global.building_computerized_tech_unlock@var:building_token = 0 } }
+                                set_temp_variable = { tech_temp = global.building_computerized_tech_unlock@var:building_token }
+                                has_tech = var:tech_temp
+                            }
+                        }
+                    }
+                    set_temp_variable = { pm_temp = 8 }
+                }
+                else_if = {
+                    limit = {
+                        OR = {
+                            check_variable = { global.building_roboticized_tech_unlock@var:building_token = 1 }
+                            AND = {
+                                NOT = { check_variable = { global.building_roboticized_tech_unlock@var:building_token = 0 } }
+                                set_temp_variable = { tech_temp = global.building_roboticized_tech_unlock@var:building_token }
+                                has_tech = var:tech_temp
+                            }
+                        }
+                    }
+                    set_temp_variable = { pm_temp = 7 }
+                }
+                else_if = {
+                    limit = {
+                        OR = {
+                            check_variable = { global.building_modernized_tech_unlock@var:building_token = 1 }
+                            AND = {
+                                NOT = { check_variable = { global.building_modernized_tech_unlock@var:building_token = 0 } }
+                                set_temp_variable = { tech_temp = global.building_modernized_tech_unlock@var:building_token }
+                                has_tech = var:tech_temp
+                            }
+                        }
+                    }
+                    set_temp_variable = { pm_temp = 6 }
+                }
+                else_if = {
+                    limit = {
+                        OR = {
+                            check_variable = { global.building_motorized_tech_unlock@var:building_token = 1 }
+                            AND = {
+                                NOT = { check_variable = { global.building_motorized_tech_unlock@var:building_token = 0 } }
+                                set_temp_variable = { tech_temp = global.building_motorized_tech_unlock@var:building_token }
+                                has_tech = var:tech_temp
+                            }
+                        }
+                    }
+                    set_temp_variable = { pm_temp = 5 }
+                }
+                else_if = {
+                    limit = {
+                        OR = {
+                            check_variable = { global.building_electrified_tech_unlock@var:building_token = 1 }
+                            AND = {
+                                NOT = { check_variable = { global.building_electrified_tech_unlock@var:building_token = 0 } }
+                                set_temp_variable = { tech_temp = global.building_electrified_tech_unlock@var:building_token }
+                                has_tech = var:tech_temp
+                            }
+                        }
+                    }
+                    set_temp_variable = { pm_temp = 4 }
+                }
+                else_if = {
+                    limit = {
+                        OR = {
+                            check_variable = { global.building_mechanized_tech_unlock@var:building_token = 1 }
+                            AND = {
+                                NOT = { check_variable = { global.building_mechanized_tech_unlock@var:building_token = 0 } }
+                                set_temp_variable = { tech_temp = global.building_mechanized_tech_unlock@var:building_token }
+                                has_tech = var:tech_temp
+                            }
+                        }
+                    }
+                    set_temp_variable = { pm_temp = 3 }
+                }
+                else_if = {
+                    limit = {
+                        OR = {
+                            check_variable = { global.building_industrialized_tech_unlock@var:building_token = 1 }
+                            AND = {
+                                NOT = { check_variable = { global.building_industrialized_tech_unlock@var:building_token = 0 } }
+                                set_temp_variable = { tech_temp = global.building_industrialized_tech_unlock@var:building_token }
+                                has_tech = var:tech_temp
+                            }
+                        }
+                    }
+                    set_temp_variable = { pm_temp = 2 }
+                }
+                else_if = {
+                    limit = {
+                        OR = {
+                            check_variable = { global.building_advanced_tech_unlock@var:building_token = 1 }
+                            AND = {
+                                NOT = { check_variable = { global.building_advanced_tech_unlock@var:building_token = 0 } }
+                                set_temp_variable = { tech_temp = global.building_advanced_tech_unlock@var:building_token }
+                                has_tech = var:tech_temp
+                            }
+                        }
+                    }
+                    set_temp_variable = { pm_temp = 1 }
+                }
+                else_if = {
+                    limit = {
+                        OR = {
+                            check_variable = { global.building_basic_tech_unlock@var:building_token = 1 }
+                            AND = {
+                                NOT = { check_variable = { global.building_basic_tech_unlock@var:building_token = 0 } }
+                                set_temp_variable = { tech_temp = global.building_basic_tech_unlock@var:building_token }
+                                has_tech = var:tech_temp
+                            }
+                        }
+                    }
+                    set_temp_variable = { pm_temp = 0 }
+                }
+                set_variable = { latest_production_method@var:building_token = pm_temp }
+            #
+            
+            # EARLIEST PRODUCTION METHOD
+                set_temp_variable = { pm_temp = -1 }
+
+                #Checks earliest first
+                if = {
+                    limit = {
+                        OR = {
+                            check_variable = { global.building_basic_tech_unlock@var:building_token = 1 }
+                            AND = {
+                                NOT = { check_variable = { global.building_basic_tech_unlock@var:building_token = 0 } }
+                                set_temp_variable = { tech_temp = global.building_basic_tech_unlock@var:building_token }
+                                has_tech = var:tech_temp
+                            }
+                        }
+                    }
+                    set_temp_variable = { pm_temp = 0 }
+                }
+                else_if = {
+                    limit = {
+                        OR = {
+                            check_variable = { global.building_advanced_tech_unlock@var:building_token = 1 }
+                            AND = {
+                                NOT = { check_variable = { global.building_advanced_tech_unlock@var:building_token = 0 } }
+                                set_temp_variable = { tech_temp = global.building_advanced_tech_unlock@var:building_token }
+                                has_tech = var:tech_temp
+                            }
+                        }
+                    }
+                    set_temp_variable = { pm_temp = 1 }
+                }
+                else_if = {
+                    limit = {
+                        OR = {
+                            check_variable = { global.building_industrialized_tech_unlock@var:building_token = 1 }
+                            AND = {
+                                NOT = { check_variable = { global.building_industrialized_tech_unlock@var:building_token = 0 } }
+                                set_temp_variable = { tech_temp = global.building_industrialized_tech_unlock@var:building_token }
+                                has_tech = var:tech_temp
+                            }
+                        }
+                    }
+                    set_temp_variable = { pm_temp = 2 }
+                }
+                else_if = {
+                    limit = {
+                        OR = {
+                            check_variable = { global.building_mechanized_tech_unlock@var:building_token = 1 }
+                            AND = {
+                                NOT = { check_variable = { global.building_mechanized_tech_unlock@var:building_token = 0 } }
+                                set_temp_variable = { tech_temp = global.building_mechanized_tech_unlock@var:building_token }
+                                has_tech = var:tech_temp
+                            }
+                        }
+                    }
+                    set_temp_variable = { pm_temp = 3 }
+                }
+                else_if = {
+                    limit = {
+                        OR = {
+                            check_variable = { global.building_electrified_tech_unlock@var:building_token = 1 }
+                            AND = {
+                                NOT = { check_variable = { global.building_electrified_tech_unlock@var:building_token = 0 } }
+                                set_temp_variable = { tech_temp = global.building_electrified_tech_unlock@var:building_token }
+                                has_tech = var:tech_temp
+                            }
+                        }
+                    }
+                    set_temp_variable = { pm_temp = 4 }
+                }
+                else_if = {
+                    limit = {
+                        OR = {
+                            check_variable = { global.building_motorized_tech_unlock@var:building_token = 1 }
+                            AND = {
+                                NOT = { check_variable = { global.building_motorized_tech_unlock@var:building_token = 0 } }
+                                set_temp_variable = { tech_temp = global.building_motorized_tech_unlock@var:building_token }
+                                has_tech = var:tech_temp
+                            }
+                        }
+                    }
+                    set_temp_variable = { pm_temp = 5 }
+                }
+                else_if = {
+                    limit = {
+                        OR = {
+                            check_variable = { global.building_modernized_tech_unlock@var:building_token = 1 }
+                            AND = {
+                                NOT = { check_variable = { global.building_modernized_tech_unlock@var:building_token = 0 } }
+                                set_temp_variable = { tech_temp = global.building_modernized_tech_unlock@var:building_token }
+                                has_tech = var:tech_temp
+                            }
+                        }
+                    }
+                    set_temp_variable = { pm_temp = 6 }
+                }
+                else_if = {
+                    limit = {
+                        OR = {
+                            check_variable = { global.building_roboticized_tech_unlock@var:building_token = 1 }
+                            AND = {
+                                NOT = { check_variable = { global.building_roboticized_tech_unlock@var:building_token = 0 } }
+                                set_temp_variable = { tech_temp = global.building_roboticized_tech_unlock@var:building_token }
+                                has_tech = var:tech_temp
+                            }
+                        }
+                    }
+                    set_temp_variable = { pm_temp = 7 }
+                }
+                else_if = {
+                    limit = {
+                        OR = {
+                            check_variable = { global.building_computerized_tech_unlock@var:building_token = 1 }
+                            AND = {
+                                NOT = { check_variable = { global.building_computerized_tech_unlock@var:building_token = 0 } }
+                                set_temp_variable = { tech_temp = global.building_computerized_tech_unlock@var:building_token }
+                                has_tech = var:tech_temp
+                            }
+                        }
+                    }
+                    set_temp_variable = { pm_temp = 8 }
+                }
+                else_if = {
+                    limit = {
+                        OR = {
+                            check_variable = { global.building_digitalized_tech_unlock@var:building_token = 1 }
+                            AND = {
+                                NOT = { check_variable = { global.building_digitalized_tech_unlock@var:building_token = 0 } }
+                                set_temp_variable = { tech_temp = global.building_digitalized_tech_unlock@var:building_token }
+                                has_tech = var:tech_temp
+                            }
+                        }
+                    }
+                    set_temp_variable = { pm_temp = 9 }
+                }
+                else_if = {
+                    limit = {
+                        OR = {
+                            check_variable = { global.building_automatized_tech_unlock@var:building_token = 1 }
+                            AND = {
+                                NOT = { check_variable = { global.building_automatized_tech_unlock@var:building_token = 0 } }
+                                set_temp_variable = { tech_temp = global.building_automatized_tech_unlock@var:building_token }
+                                has_tech = var:tech_temp
+                            }
+                        }
+                    }
+                    set_temp_variable = { pm_temp = 10 }
+                }
+                else_if = {
+                    limit = {
+                        OR = {
+                            check_variable = { global.building_futurized_tech_unlock@var:building_token = 1 }
+                            AND = {
+                                NOT = { check_variable = { global.building_futurized_tech_unlock@var:building_token = 0 } }
+                                set_temp_variable = { tech_temp = global.building_futurized_tech_unlock@var:building_token }
+                                has_tech = var:tech_temp
+                            }
+                        }
+                    }
+                    set_temp_variable = { pm_temp = 11 }
+                }
+                set_variable = { earliest_production_method@var:building_token = pm_temp }
+            #
+        }
+    }
 
     reload_building_array = {
         clear_array = urban_buildings
@@ -9596,8 +9938,8 @@
                 #Money Accumulation
                 set_variable = { money_accumulation@var:om_building = profit@var:om_building }
                 divide_variable = { money_accumulation@var:om_building = 2 }
-                set_variable = { money_transfer@var:om_building = profit@var:om_building }
-                divide_variable = { money_transfer@var:om_building = 2 }
+                set_variable = { dividends@var:om_building = profit@var:om_building }
+                divide_variable = { dividends@var:om_building = 2 }
 
                 set_temp_variable = { money_temp = money@var:om_building }
                 add_to_temp_array = { money_temp = money_accumulation@var:om_building }
@@ -9607,7 +9949,7 @@
                     }
                     subtract_from_temp_variable = { money_temp = money_limit@var:om_building }
                     subtract_from_variable = { money_accumulation@var:om_building = money_temp }
-                    add_to_variable = { money_transfer@var:om_building = money_temp }
+                    add_to_variable = { dividends@var:om_building = money_temp }
                 }
             }
 
@@ -10415,6 +10757,378 @@
                 divide_variable = { productivity@var:ba_token = predicted_jobs@var:ba_token }
             #
         }
+    }
+#
+
+#Investment Opportunities
+    investment_opportunities_update = {
+        investment_opportunities_cap_calc = yes
+
+        # Investment Opportunities Array: Building Type
+        # In investment opportunities type array:
+        #   0 is New Building
+        #   1 is Expanding
+        #   2 is Upgrading
+        # State array is which state
+
+        every_controlled_state = {
+            clr_state_flag = current_investment_opportunity_flag
+        }
+        for_each_loop = {
+            array = investment_opportunities
+            value = state_temp
+            index = ii
+
+            set_temp_variable = { building_temp = investment_opportunity_building@var:state_temp }
+
+            var:state_temp = {
+                set_state_flag = current_investment_opportunity_flag
+            }
+            
+            # Cost
+                if = {
+                    limit = {
+                        check_variable = { investment_opportunity_type@var:state_temp = 0 } # Build New
+                    }
+                    set_temp_variable = { pm_temp = latest_production_method@var:building_temp }
+                }
+                else = {
+                    set_temp_variable = { pm_temp = state_temp:production_method@var:building_temp }
+                }
+                
+                if = {
+                    limit = {
+                        check_variable = { pm_temp = 0 }
+                    }
+                    set_temp_variable = { industrial_goods_cost_temp = global.building_basic_construction_amount@var:building_temp }
+                }
+                else_if = {
+                    limit = {
+                        check_variable = { pm_temp = 1 }
+                    }
+                    set_temp_variable = { industrial_goods_cost_temp = global.building_advanced_construction_amount@var:building_temp }
+                }
+                else_if = {
+                    limit = {
+                        check_variable = { pm_temp = 2 }
+                    }
+                    set_temp_variable = { industrial_goods_cost_temp = global.building_industrialized_construction_amount@var:building_temp }
+                }
+                else_if = {
+                    limit = {
+                        check_variable = { pm_temp = 3 }
+                    }
+                    set_temp_variable = { industrial_goods_cost_temp = global.building_mechanized_construction_amount@var:building_temp }
+                }
+                else_if = {
+                    limit = {
+                        check_variable = { pm_temp = 4 }
+                    }
+                    set_temp_variable = { industrial_goods_cost_temp = global.building_electrified_construction_amount@var:building_temp }
+                }
+                else_if = {
+                    limit = {
+                        check_variable = { pm_temp = 5 }
+                    }
+                    set_temp_variable = { industrial_goods_cost_temp = global.building_motorized_construction_amount@var:building_temp }
+                }
+                else_if = {
+                    limit = {
+                        check_variable = { pm_temp = 6 }
+                    }
+                    set_temp_variable = { industrial_goods_cost_temp = global.building_modernized_construction_amount@var:building_temp }
+                }
+                else_if = {
+                    limit = {
+                        check_variable = { pm_temp = 7 }
+                    }
+                    set_temp_variable = { industrial_goods_cost_temp = global.building_roboticized_construction_amount@var:building_temp }
+                }
+                else_if = {
+                    limit = {
+                        check_variable = { pm_temp = 8 }
+                    }
+                    set_temp_variable = { industrial_goods_cost_temp = global.building_computerized_construction_amount@var:building_temp }
+                }
+                else_if = {
+                    limit = {
+                        check_variable = { pm_temp = 9 }
+                    }
+                    set_temp_variable = { industrial_goods_cost_temp = global.building_digitalized_construction_amount@var:building_temp }
+                }
+                else_if = {
+                    limit = {
+                        check_variable = { pm_temp = 10 }
+                    }
+                    set_temp_variable = { industrial_goods_cost_temp = global.building_automatized_construction_amount@var:building_temp }
+                }
+                else_if = {
+                    limit = {
+                        check_variable = { pm_temp = 11 }
+                    }
+                    set_temp_variable = { industrial_goods_cost_temp = global.building_futurized_construction_amount@var:building_temp }
+                }
+                multiply_temp_variable = { industrial_goods_cost_temp = state_temp:price@token:resource_industrial_goods }
+                
+                set_variable = { investment_opportunity_industrial_goods_cost@var:state_temp = industrial_goods_cost_temp }
+                set_variable = { investment_opportunity_cost@var:state_temp = industrial_goods_cost_temp }
+
+                multiply_temp_variable = { industrial_goods_cost_temp = global.start_construction_cost_multiplier }
+                set_variable = { investment_opportunity_starting_cost@var:state_temp = industrial_goods_cost_temp }
+                add_to_variable = { investment_opportunity_cost@var:state_temp = industrial_goods_cost_temp }
+            #
+
+            # Attractiveness
+                set_temp_variable = { attract_modifier_temp = state_temp:building_attractiveness_modifier@var:building_temp }
+                set_temp_variable = { attract_factor_temp = state_temp:building_attractiveness_factor@var:building_temp }
+                add_to_temp_variable = { attract_factor_temp = 1 }
+
+                set_variable = { investment_opportunity_attractiveness@var:state_temp = 100 }
+                add_to_variable = { investment_opportunity_attractiveness@var:state_temp = attract_modifier_temp }
+                multiply_variable = { investment_opportunity_attractiveness@var:state_temp = attract_factor_temp }
+            #
+        }
+    }
+
+    investment_opportunities_cap_calc = {
+        set_variable = { investment_opportunities_cap = aristocrats_workforce }
+        divide_variable = { investment_opportunities_cap = global.aristocrats_per_investment_opportunity }
+        if = {
+            limit = {
+                check_variable = { investment_opportunities_cap > global.max_aristocrats_investment_opportunities }
+            }
+            set_variable = { investment_opportunities_cap = global.max_aristocrats_investment_opportunities }
+        }
+
+        set_temp_variable = { cap_temp = capitalists_workforce }
+        divide_temp_variable = { cap_temp = global.capitalists_per_investment_opportunity }
+        add_to_variable = { investment_opportunities_cap = cap_temp }
+        add_to_variable = { investment_opportunities_cap = global.base_investment_opportunities_cap }
+        round_variable = investment_opportunities_cap
+    }
+
+    generate_investment_opportunity = {
+        clr_country_flag = investment_opportunity_done
+        if = {
+            limit = {
+                check_variable = { investment_opportunities^num < investment_opportunities_cap }
+            }
+            if = { # BUILD a NEW Building
+                limit = {
+                    OR = {
+                        AND = {
+                            check_variable = { investment_opportunities_cap > 3 }
+                            NOT = {
+                                any_of = {
+                                    array = investment_opportunities
+                                    value = state_temp
+                                    check_variable = { investment_opportunity_type@var:state_temp = 0 }
+                                }
+                            }
+                        }
+                        AND = {
+                            any_controlled_state = {
+                                check_variable = { non_subs_jobs_buildings = 0 } # DOESN'T have a building that isn't a subsistence farm
+                                check_variable = { excess_workforce > 20 } # Has more than enough to fill a building
+                                NOT = { has_state_flag = current_investment_opportunity_flag } # State doesn't have an IO for it.
+                            }
+                            check_variable = { random < 0.25 }
+                        }
+                        check_variable = { random < 0.1 }
+                    }
+                }
+
+                generate_investment_opportunity_build = yes
+            }
+
+            # UPGRADE a CURRENT building
+
+            if = { # EXPAND a CURRENT building 
+                limit = { 
+                    NOT = { has_country_flag = investment_opportunity_done } # Nothing else was done
+                }
+                generate_investment_opportunity_expand = yes
+            }
+
+            add_investment_opportunity = yes
+        }
+    }
+    generate_investment_opportunity_build = {
+        io_state_build = yes # Pick a state
+
+        if = { limit = { NOT = { check_variable = { chosen_state = 0 } } } # State was chosen
+
+            # Pick building type
+            for_each_loop = {
+                array = global.building_token_array
+                value = potential_building_token
+                break = potential_building_brk
+
+                if = {
+                    limit = {
+                        NOT = { check_variable = { potential_building_token = token:building_military_industry } }
+                        NOT = { check_variable = { potential_building_token = token:building_civilian_industry } }
+                        NOT = { check_variable = { potential_building_token = token:building_naval_industry } }
+                        NOT = { check_variable = { potential_building_token = token:building_subsistence_farm } }
+                        NOT = { check_variable = { potential_building_token = token:building_rice_paddy } }
+                        NOT = {
+                            var:chosen_state = {
+                                is_in_array = { buildings = potential_building_token }
+                            }
+                        }
+                        check_variable = { random < 0.1 }
+                    }
+                    set_country_flag = investment_opportunity_done
+                    set_temp_variable = { investment_building_temp = potential_building_token }
+                    set_temp_variable = { investment_type_temp = 0 }
+                    set_temp_variable = { potential_building_brk = 1 }
+                }
+            }
+        }
+    }
+    generate_investment_opportunity_expand = {
+        io_state_expand = yes # Pick a state
+
+        if = { limit = { NOT = { check_variable = { chosen_state = 0 } } } # State was chosen
+            for_each_loop = { # Sort through most productive buildings to expand
+                array = chosen_state:buildings_productivity_sort
+                value = potential_building_token
+                break = potential_building_brk
+
+                if = {
+                    limit = {
+                        NOT = { check_variable = { potential_building_token = token:building_military_industry } }
+                        NOT = { check_variable = { potential_building_token = token:building_civilian_industry } }
+                        NOT = { check_variable = { potential_building_token = token:building_naval_industry } }
+                        NOT = { check_variable = { potential_building_token = token:building_subsistence_farm } }
+                        NOT = { check_variable = { potential_building_token = token:building_rice_paddy } }
+                        check_variable = { chosen_state:employment_target@var:potential_building_token > 95 }
+                        check_variable = { chosen_state:profitability@var:potential_building_token > 0.05 }
+                    }
+                    set_country_flag = investment_opportunity_done
+                    set_temp_variable = { investment_building_temp = potential_building_token }
+                    set_temp_variable = { investment_type_temp = 1 }
+                    set_temp_variable = { potential_building_brk = 1 }
+                }
+            }
+        }
+    }
+    generate_investment_opportunity_upgrade = {
+        
+    }
+    io_state_build = {
+        # Selects a semi-random state for building a new building
+        # Outputs chosen_state
+
+        set_temp_variable = { chosen_state = 0 }
+        random_controlled_state = { # Choose a state without a building
+            limit = {
+                check_variable = { non_subs_jobs_buildings = 0 } # DOESN'T have a building that isn't a subsistence farm
+                check_variable = { excess_workforce > 20 } # Has more than enough to fill a building
+                NOT = { has_state_flag = current_investment_opportunity_flag } # State doesn't have an IO for it.
+            }
+            set_temp_variable = { chosen_state = THIS }
+        }
+
+        if = { # If no state is chosen, choose a state, less restrictive on workforce
+            limit = {
+                check_variable = { chosen_state = 0 }
+            }
+            random_controlled_state = {
+                limit = {
+                    check_variable = { non_subs_jobs_buildings = 0 } # DOESN'T have a building that isn't a subsistence farm
+                    check_variable = { excess_workforce > 5 } # Doesn't have enough jobs to fill state's workforce
+                    NOT = { has_state_flag = current_investment_opportunity_flag } # State doesn't have an IO for it.
+                }
+                set_temp_variable = { chosen_state = THIS }
+            }
+        }
+
+        if = { # If no state is chosen, choose a state with a building
+            limit = {
+                check_variable = { chosen_state = 0 }
+            }
+            random_controlled_state = {
+                limit = {
+                    check_variable = { buildings^num < 10 } # Less than 10 buildings
+                    check_variable = { excess_workforce > 5 } # Doesn't have enough jobs to fill state's workforce
+                    NOT = { has_state_flag = current_investment_opportunity_flag } # State doesn't have an IO for it.
+                }
+                set_temp_variable = { chosen_state = THIS }
+            }
+        }
+    }
+    io_state_expand = {
+        # Selects a semi-random state for expanding an existing building
+        # Outputs chosen_state
+
+        set_temp_variable = { chosen_state = 0 }
+        random_controlled_state = { # Choose a state which has a building that is profitable and practically fully employed
+            limit = {
+                check_variable = { non_subs_jobs_buildings > 0 } # Has a building that isn't a subsistence farm
+                check_variable = { excess_workforce > 0 } # Doesn't have enough jobs to fill state's workforce
+                NOT = { has_state_flag = current_investment_opportunity_flag } # State doesn't have an IO for it.
+                any_of = { # One of the buildings is profitable & filled
+                    array = buildings
+                    value = b_token
+
+                    NOT = { check_variable = { b_token = token:building_military_industry } }
+                    NOT = { check_variable = { b_token = token:building_civilian_industry } }
+                    NOT = { check_variable = { b_token = token:building_naval_industry } }
+                    NOT = { check_variable = { b_token = token:building_subsistence_farm } }
+                    NOT = { check_variable = { b_token = token:building_rice_paddy } }
+                    check_variable = { employment_target@var:b_token > 95 }
+                    check_variable = { profitability@var:b_token > 0.05 }
+                }
+            }
+            set_temp_variable = { chosen_state = THIS }
+        }
+    }
+    io_state_upgrade = {
+        # Selects a semi-random state for upgrading an existing building
+        # Outputs chosen_state
+        
+        set_temp_variable = { chosen_state = 0 }
+        for_loop_effect = {
+            end = 5 # Will only try 5 times
+            break = invest_break
+
+            random_controlled_state = { # Choose a state with a building with an outdated production method
+                limit = {
+                    check_variable = { non_subs_jobs_buildings > 0 } # Has a building that isn't a subsistence farm
+                    NOT = { has_state_flag = current_investment_opportunity_flag } # State doesn't have an IO for it.
+                    any_of = { # One of the buildings doesn't have the latest production method
+                        array = buildings
+                        value = b_token
+
+                        NOT = { check_variable = { b_token = token:building_military_industry } }
+                        NOT = { check_variable = { b_token = token:building_civilian_industry } }
+                        NOT = { check_variable = { b_token = token:building_naval_industry } }
+                        check_variable = { controller:latest_production_method@var:b_token > production_method@var:b_token }
+                    }
+                }
+                set_temp_variable = { chosen_state = THIS }
+                set_temp_variable = { invest_break = 1 }
+            }
+        }
+    }
+    add_investment_opportunity = {
+        if = { # Need to have build/expand/upgrade fired before this
+            limit = {
+                has_country_flag = investment_opportunity_done
+            }
+            clr_country_flag = investment_opportunity_done
+
+            add_to_array = { investment_opportunities = chosen_state }
+            set_variable = { investment_opportunity_building@var:chosen_state = investment_building_temp }
+            set_variable = { investment_opportunity_type@var:chosen_state = investment_type_temp }
+
+            investment_opportunities_update = yes
+        }
+    }
+
+    remove_worst_investment_opportunity = {
+
     }
 #
 
