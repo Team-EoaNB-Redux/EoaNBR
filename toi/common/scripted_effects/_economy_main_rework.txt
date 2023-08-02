@@ -4641,7 +4641,13 @@
                 # Earnings/Spending
                 set_variable = { aristocrats_earnings = aristocrats_employed }
                 multiply_variable = { aristocrats_earnings = aristocrats_wage }
-                add_to_variable = { aristocrats_earnings = aristocrats_money_transfer }
+                add_to_variable = { aristocrats_earnings = aristocrats_dividends }
+                if = {
+                    limit = {
+                        check_variable = { aristocrats_earnings < 0 }
+                    }
+                    set_variable = { aristocrats_earnings = 0 }
+                }
                 add_to_variable = { pops_earnings = aristocrats_earnings }
 
 				set_variable = { aristocrats_food_cost = aristocrats_food_need }
@@ -4743,7 +4749,13 @@
                 # Earnings/Spending
                 set_variable = { capitalists_earnings = capitalists_employed }
                 multiply_variable = { capitalists_earnings = capitalists_wage }
-                add_to_variable = { capitalists_earnings = capitalists_money_transfer }
+                add_to_variable = { capitalists_earnings = capitalists_dividends }
+                if = {
+                    limit = {
+                        check_variable = { capitalists_earnings < 0 }
+                    }
+                    set_variable = { capitalists_earnings = 0 }
+                }
                 add_to_variable = { pops_earnings = capitalists_earnings }
 
 				set_variable = { capitalists_food_cost = capitalists_food_need }
@@ -7263,50 +7275,56 @@
         
         # Sets jobs_multiplier to the min of % of jobs of each type that can be filled
         set_temp_variable = { jobs_multiplier = 1 }
-        set_temp_variable = { laborers_mult = laborers_unemployed_amount }
-        divide_temp_variable = { laborers_mult = laborers_open_jobs_amount }
-        set_temp_variable = { workers_mult = workers_unemployed_amount }
-        divide_temp_variable = { workers_mult = workers_open_jobs_amount }
-        set_temp_variable = { professionals_mult = professionals_unemployed_amount }
-        divide_temp_variable = { professionals_mult = professionals_open_jobs_amount }
-        set_temp_variable = { specialists_mult = specialists_unemployed_amount }
-        divide_temp_variable = { specialists_mult = specialists_open_jobs_amount }
-        set_temp_variable = { aristocrats_mult = aristocrats_unemployed_amount }
-        divide_temp_variable = { aristocrats_mult = aristocrats_open_jobs_amount }
-        set_temp_variable = { capitalists_mult = capitalists_unemployed_amount }
-        divide_temp_variable = { capitalists_mult = capitalists_open_jobs_amount }
+        set_temp_variable = { laborers_mult = laborers_unemployed }
+        divide_temp_variable = { laborers_mult = laborers_open_jobs }
+        set_temp_variable = { workers_mult = workers_unemployed }
+        divide_temp_variable = { workers_mult = workers_open_jobs }
+        set_temp_variable = { professionals_mult = professionals_unemployed }
+        divide_temp_variable = { professionals_mult = professionals_open_jobs }
+        set_temp_variable = { specialists_mult = specialists_unemployed }
+        divide_temp_variable = { specialists_mult = specialists_open_jobs }
+        set_temp_variable = { aristocrats_mult = aristocrats_unemployed }
+        divide_temp_variable = { aristocrats_mult = aristocrats_open_jobs }
+        set_temp_variable = { capitalists_mult = capitalists_unemployed }
+        divide_temp_variable = { capitalists_mult = capitalists_open_jobs }
         if = {
             limit = {
+                check_variable = { laborers_open_jobs > 0 }
                 check_variable = { laborers_mult < jobs_multiplier }
             }
             set_temp_variable = { jobs_multiplier = laborers_mult }
         }
         if = {
             limit = {
+                check_variable = { workers_open_jobs > 0 }
                 check_variable = { workers_mult < jobs_multiplier }
             }
             set_temp_variable = { jobs_multiplier = workers_mult }
         }
         if = {
             limit = {
+                check_variable = { professionals_open_jobs > 0 }
                 check_variable = { professionals_mult < jobs_multiplier }
             }
             set_temp_variable = { jobs_multiplier = professionals_mult }
         }
         if = {
             limit = {
+                check_variable = { specialists_open_jobs > 0 }
                 check_variable = { specialists_mult < jobs_multiplier }
             }
             set_temp_variable = { jobs_multiplier = specialists_mult }
         }
         if = {
             limit = {
+                check_variable = { aristocrats_open_jobs > 0 }
                 check_variable = { aristocrats_mult < jobs_multiplier }
             }
             set_temp_variable = { jobs_multiplier = aristocrats_mult }
         }
         if = {
             limit = {
+                check_variable = { capitalists_open_jobs > 0 }
                 check_variable = { capitalists_mult < jobs_multiplier }
             }
             set_temp_variable = { jobs_multiplier = capitalists_mult }
@@ -7319,7 +7337,7 @@
             }
             # Hiring
             for_each_loop = {
-                array = industries_productivity_sort
+                array = buildings_productivity_sort
                 value = building_token
                 break = prod_break
 
@@ -7373,6 +7391,37 @@
 
         }
     }
+	pops_open_jobs_calc = {
+		# Adds up the pool of open jobs from positively productive buildings
+		set_variable = { laborers_open_jobs = 0 }
+		set_variable = { workers_open_jobs = 0 }
+		set_variable = { professionals_open_jobs = 0 }
+		set_variable = { specialists_open_jobs = 0 }
+		set_variable = { aristocrats_open_jobs = 0 }
+		set_variable = { capitalists_open_jobs = 0 }
+
+		for_each_loop = {
+			array = buildings_productivity_sort
+			value = om_industry
+			break = prod_break
+
+			if = {
+				limit = {
+					check_variable = { base_productivity@var:om_industry > 0 }
+				}
+
+				add_to_variable = { laborers_open_jobs = laborers_open_jobs@var:om_industry }
+				add_to_variable = { workers_open_jobs = workers_open_jobs@var:om_industry }
+				add_to_variable = { professionals_open_jobs = professionals_open_jobs@var:om_industry }
+				add_to_variable = { specialists_open_jobs = specialists_open_jobs@var:om_industry }
+				add_to_variable = { aristocrats_open_jobs = aristocrats_open_jobs@var:om_industry }
+				add_to_variable = { capitalists_open_jobs = capitalists_open_jobs@var:om_industry }
+			}
+			else = {
+				set_temp_variable = { prod_break = 1 }
+			}
+		}
+	}
 
     on_monthly_subsistence_farm = {
         # Changes subsistence farm employment
@@ -7688,19 +7737,19 @@
 
 		if = {
 			limit = {
-				check_variable = { peasants_to_hire > peasants_unemployed_amount }
+				check_variable = { peasants_to_hire > peasants_unemployed }
 			}
 			# Recorrecting Hiring %
             if = {
                 limit = {
-                    check_variable = { peasants_unemployed_amount > 10000 }
+                    check_variable = { peasants_unemployed > 10000 }
                 }
-			    set_temp_variable = { x_percent_temp = peasants_unemployed_amount }
+			    set_temp_variable = { x_percent_temp = peasants_unemployed }
 			    divide_temp_variable = { x_percent_temp = peasants_jobs@var:building_token }
 			    multiply_temp_variable = { x_percent_temp = 100 }
             }
             else = {
-			    set_temp_variable = { x_percent_temp = peasants_unemployed_amount }
+			    set_temp_variable = { x_percent_temp = peasants_unemployed }
 			    multiply_temp_variable = { x_percent_temp = 100 }
 			    divide_temp_variable = { x_percent_temp = peasants_jobs@var:building_token }
             }
@@ -7729,19 +7778,19 @@
 		}
 		if = {
 			limit = {
-				check_variable = { laborers_to_hire > laborers_unemployed_amount }
+				check_variable = { laborers_to_hire > laborers_unemployed }
 			}
 			# Recorrecting Hiring %
             if = {
                 limit = {
-                    check_variable = { laborers_unemployed_amount > 10000 }
+                    check_variable = { laborers_unemployed > 10000 }
                 }
-			    set_temp_variable = { x_percent_temp = laborers_unemployed_amount }
+			    set_temp_variable = { x_percent_temp = laborers_unemployed }
 			    divide_temp_variable = { x_percent_temp = laborers_jobs@var:building_token }
 			    multiply_temp_variable = { x_percent_temp = 100 }
             }
             else = {
-			    set_temp_variable = { x_percent_temp = laborers_unemployed_amount }
+			    set_temp_variable = { x_percent_temp = laborers_unemployed }
 			    multiply_temp_variable = { x_percent_temp = 100 }
 			    divide_temp_variable = { x_percent_temp = laborers_jobs@var:building_token }
             }
@@ -7767,19 +7816,19 @@
 		}
 		if = {
 			limit = {
-				check_variable = { workers_to_hire > workers_unemployed_amount }
+				check_variable = { workers_to_hire > workers_unemployed }
 			}
 			# Recorrecting Hiring %
             if = {
                 limit = {
-                    check_variable = { workers_unemployed_amount > 10000 }
+                    check_variable = { workers_unemployed > 10000 }
                 }
-			    set_temp_variable = { x_percent_temp = workers_unemployed_amount }
+			    set_temp_variable = { x_percent_temp = workers_unemployed }
 			    divide_temp_variable = { x_percent_temp = workers_jobs@var:building_token }
 			    multiply_temp_variable = { x_percent_temp = 100 }
             }
             else = {
-			    set_temp_variable = { x_percent_temp = workers_unemployed_amount }
+			    set_temp_variable = { x_percent_temp = workers_unemployed }
 			    multiply_temp_variable = { x_percent_temp = 100 }
 			    divide_temp_variable = { x_percent_temp = workers_jobs@var:building_token }
             }
@@ -7802,19 +7851,19 @@
 		}
 		if = {
 			limit = {
-				check_variable = { professionals_to_hire > professionals_unemployed_amount }
+				check_variable = { professionals_to_hire > professionals_unemployed }
 			}
 			# Recorrecting Hiring %
             if = {
                 limit = {
-                    check_variable = { professionals_unemployed_amount > 10000 }
+                    check_variable = { professionals_unemployed > 10000 }
                 }
-			    set_temp_variable = { x_percent_temp = professionals_unemployed_amount }
+			    set_temp_variable = { x_percent_temp = professionals_unemployed }
 			    divide_temp_variable = { x_percent_temp = professionals_jobs@var:building_token }
 			    multiply_temp_variable = { x_percent_temp = 100 }
             }
             else = {
-			    set_temp_variable = { x_percent_temp = professionals_unemployed_amount }
+			    set_temp_variable = { x_percent_temp = professionals_unemployed }
 			    multiply_temp_variable = { x_percent_temp = 100 }
 			    divide_temp_variable = { x_percent_temp = professionals_jobs@var:building_token }
             }
@@ -7834,19 +7883,19 @@
 		}
 		if = {
 			limit = {
-				check_variable = { specialists_to_hire > specialists_unemployed_amount }
+				check_variable = { specialists_to_hire > specialists_unemployed }
 			}
 			# Recorrecting Hiring %
             if = {
                 limit = {
-                    check_variable = { specialists_unemployed_amount > 10000 }
+                    check_variable = { specialists_unemployed > 10000 }
                 }
-			    set_temp_variable = { x_percent_temp = specialists_unemployed_amount }
+			    set_temp_variable = { x_percent_temp = specialists_unemployed }
 			    divide_temp_variable = { x_percent_temp = specialists_jobs@var:building_token }
 			    multiply_temp_variable = { x_percent_temp = 100 }
             }
             else = {
-			    set_temp_variable = { x_percent_temp = specialists_unemployed_amount }
+			    set_temp_variable = { x_percent_temp = specialists_unemployed }
 			    multiply_temp_variable = { x_percent_temp = 100 }
 			    divide_temp_variable = { x_percent_temp = specialists_jobs@var:building_token }
             }
@@ -7863,19 +7912,19 @@
 		}
 		if = {
 			limit = {
-				check_variable = { aristocrats_to_hire > aristocrats_unemployed_amount }
+				check_variable = { aristocrats_to_hire > aristocrats_unemployed }
 			}
 			# Recorrecting Hiring %
             if = {
                 limit = {
-                    check_variable = { aristocrats_unemployed_amount > 10000 }
+                    check_variable = { aristocrats_unemployed > 10000 }
                 }
-			    set_temp_variable = { x_percent_temp = aristocrats_unemployed_amount }
+			    set_temp_variable = { x_percent_temp = aristocrats_unemployed }
 			    divide_temp_variable = { x_percent_temp = aristocrats_jobs@var:building_token }
 			    multiply_temp_variable = { x_percent_temp = 100 }
             }
             else = {
-			    set_temp_variable = { x_percent_temp = aristocrats_unemployed_amount }
+			    set_temp_variable = { x_percent_temp = aristocrats_unemployed }
 			    multiply_temp_variable = { x_percent_temp = 100 }
 			    divide_temp_variable = { x_percent_temp = aristocrats_jobs@var:building_token }
             }
@@ -7889,25 +7938,26 @@
 		}
 		if = {
 			limit = {
-				check_variable = { capitalists_to_hire > capitalists_unemployed_amount }
+				check_variable = { capitalists_to_hire > capitalists_unemployed }
 			}
 			# Recorrecting Hiring %
             if = {
                 limit = {
-                    check_variable = { capitalists_unemployed_amount > 10000 }
+                    check_variable = { capitalists_unemployed > 10000 }
                 }
-			    set_temp_variable = { x_percent_temp = capitalists_unemployed_amount }
+			    set_temp_variable = { x_percent_temp = capitalists_unemployed }
 			    divide_temp_variable = { x_percent_temp = capitalists_jobs@var:building_token }
 			    multiply_temp_variable = { x_percent_temp = 100 }
             }
             else = {
-			    set_temp_variable = { x_percent_temp = capitalists_unemployed_amount }
+			    set_temp_variable = { x_percent_temp = capitalists_unemployed }
 			    multiply_temp_variable = { x_percent_temp = 100 }
 			    divide_temp_variable = { x_percent_temp = capitalists_jobs@var:building_token }
             }
 
 			set_temp_variable = { prod_break = 1 }
 		}
+
 
 		if = {
 			limit = {
@@ -9114,6 +9164,9 @@
 			add_to_variable = { employed@var:bu_token = peasants_employed@var:bu_token }
         }
 
+        set_temp_variable = { target_temp = employment_target@var:bu_token }
+        subtract_from_temp_variable = { target_temp = employment_percentage@var:bu_token }
+
         if = { # Laborers
             limit = {
                 check_variable = { laborers_jobs@var:bu_token > 0 }
@@ -9123,6 +9176,12 @@
 
 			add_to_variable = { jobs@var:bu_token = laborers_jobs@var:bu_token }
 			add_to_variable = { employed@var:bu_token = laborers_employed@var:bu_token }
+			set_variable = { laborers_open_jobs@var:bu_token = laborers_jobs@var:bu_token }
+			multiply_variable = { laborers_open_jobs@var:bu_token = target_temp }
+            divide_variable = { laborers_open_jobs@var:bu_token = 100 }
+        }
+        else = {
+			set_variable = { laborers_open_jobs@var:bu_token = 0 }
         }
 
         if = { # Workers
@@ -9134,6 +9193,12 @@
 
 			add_to_variable = { jobs@var:bu_token = workers_jobs@var:bu_token }
 			add_to_variable = { employed@var:bu_token = workers_employed@var:bu_token }
+			set_variable = { workers_open_jobs@var:bu_token = workers_jobs@var:bu_token }
+			multiply_variable = { workers_open_jobs@var:bu_token = target_temp }
+            divide_variable = { workers_open_jobs@var:bu_token = 100 }
+        }
+        else = {
+			set_variable = { workers_open_jobs@var:bu_token = 0 }
         }
 
         if = { # Professionals
@@ -9145,6 +9210,12 @@
 
 			add_to_variable = { jobs@var:bu_token = professionals_jobs@var:bu_token }
 			add_to_variable = { employed@var:bu_token = professionals_employed@var:bu_token }
+			set_variable = { professionals_open_jobs@var:bu_token = professionals_jobs@var:bu_token }
+			multiply_variable = { professionals_open_jobs@var:bu_token = target_temp }
+            divide_variable = { professionals_open_jobs@var:bu_token = 100 }
+        }
+        else = {
+			set_variable = { professionals_open_jobs@var:bu_token = 0 }
         }
 
         if = { # Specialists
@@ -9156,6 +9227,12 @@
 
 			add_to_variable = { jobs@var:bu_token = specialists_jobs@var:bu_token }
 			add_to_variable = { employed@var:bu_token = specialists_employed@var:bu_token }
+			set_variable = { specialists_open_jobs@var:bu_token = specialists_jobs@var:bu_token }
+			multiply_variable = { specialists_open_jobs@var:bu_token = target_temp }
+            divide_variable = { specialists_open_jobs@var:bu_token = 100 }
+        }
+        else = {
+			set_variable = { specialists_open_jobs@var:bu_token = 0 }
         }
 
         if = { # Aristocrats
@@ -9167,6 +9244,12 @@
 
 			add_to_variable = { jobs@var:bu_token = aristocrats_jobs@var:bu_token }
 			add_to_variable = { employed@var:bu_token = aristocrats_employed@var:bu_token }
+			set_variable = { aristocrats_open_jobs@var:bu_token = aristocrats_jobs@var:bu_token }
+			multiply_variable = { aristocrats_open_jobs@var:bu_token = target_temp }
+            divide_variable = { aristocrats_open_jobs@var:bu_token = 100 }
+        }
+        else = {
+			set_variable = { aristocrats_open_jobs@var:bu_token = 0 }
         }
 
         if = { # Capitalists
@@ -9178,6 +9261,12 @@
 
 			add_to_variable = { jobs@var:bu_token = capitalists_jobs@var:bu_token }
 			add_to_variable = { employed@var:bu_token = capitalists_employed@var:bu_token }
+			set_variable = { capitalists_open_jobs@var:bu_token = capitalists_jobs@var:bu_token }
+			multiply_variable = { capitalists_open_jobs@var:bu_token = target_temp }
+            divide_variable = { capitalists_open_jobs@var:bu_token = 100 }
+        }
+        else = {
+			set_variable = { capitalists_open_jobs@var:bu_token = 0 }
         }
 
 		#Employment/Production Percentage
@@ -9594,20 +9683,27 @@
 
                 
                 #Money Accumulation
-                set_variable = { money_accumulation@var:om_building = profit@var:om_building }
-                divide_variable = { money_accumulation@var:om_building = 2 }
-                set_variable = { money_transfer@var:om_building = profit@var:om_building }
-                divide_variable = { money_transfer@var:om_building = 2 }
+                set_variable = { money_accumulation@var:bu_token = profit@var:bu_token }
+                divide_variable = { money_accumulation@var:bu_token = 2 }
+                set_variable = { dividends@var:bu_token = profit@var:bu_token }
+                divide_variable = { dividends@var:bu_token = 2 }
 
-                set_temp_variable = { money_temp = money@var:om_building }
-                add_to_temp_array = { money_temp = money_accumulation@var:om_building }
+                set_temp_variable = { money_temp = money@var:bu_token }
+                add_to_temp_variable = { money_temp = money_accumulation@var:bu_token }
                 if = {
                     limit = {
-                        check_variable = { money_temp > money_limit@var:om_building }
+                        check_variable = { money_temp > money_limit@var:bu_token }
                     }
-                    subtract_from_temp_variable = { money_temp = money_limit@var:om_building }
-                    subtract_from_variable = { money_accumulation@var:om_building = money_temp }
-                    add_to_variable = { money_transfer@var:om_building = money_temp }
+                    subtract_from_temp_variable = { money_temp = money_limit@var:bu_token }
+                    subtract_from_variable = { money_accumulation@var:bu_token = money_temp }
+                    add_to_variable = { dividends@var:bu_token = money_temp }
+                }
+                if = {
+                    limit = {
+                        check_variable = { money_temp < 0 }
+                    }
+                    subtract_from_variable = { money_accumulation@var:bu_token = money_temp }
+                    add_to_variable = { dividends@var:bu_token = money_temp }
                 }
             }
 
