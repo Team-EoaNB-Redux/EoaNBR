@@ -286,13 +286,13 @@
             multiply_temp_variable = { upper_earnings_limit = 3 }
             set_temp_variable = { lower_earnings_limit = pops_earnings_avg }
 
-            set_temp_variable = { upper_income_multiplier = income_tax_upper_strata_percentage }
+            set_temp_variable = { upper_income_multiplier = income_tax_upper_strata_percentage_actual }
             divide_temp_variable = { upper_income_multiplier = 100 }
-            set_temp_variable = { middle_income_multiplier = income_tax_middle_strata_percentage }
+            set_temp_variable = { middle_income_multiplier = income_tax_middle_strata_percentage_actual }
             divide_temp_variable = { middle_income_multiplier = 100 }
-            set_temp_variable = { lower_income_multiplier = income_tax_lower_strata_percentage }
+            set_temp_variable = { lower_income_multiplier = income_tax_lower_strata_percentage_actual }
             divide_temp_variable = { lower_income_multiplier = 100 }
-            set_temp_variable = { sales_tax_multiplier = sales_tax_percentage }
+            set_temp_variable = { sales_tax_multiplier = sales_tax_percentage_actual }
             divide_temp_variable = { sales_tax_multiplier = 100 }
 
             # 1.2 secs (calc: 1.4)
@@ -1016,6 +1016,9 @@
             #
 
             #Investment
+                set_variable = { global.base_aristocrats_investment_contribution = 0.1 }
+                set_variable = { global.base_capitalists_investment_contribution = 0.25 }
+
                 set_variable = { global.base_investment_opportunities_cap = 2 }     # Base amount of investment opportunities
                 set_variable = { global.capitalists_per_investment_opportunity = 2 }    # How many capitalists are needed to add 1 to the investment opportunity cap
                 set_variable = { global.aristocrats_per_investment_opportunity = 20 }   # How many aristocrats are needed to add 1 to the investment opportunity cap
@@ -1283,6 +1286,9 @@
                     clear_array = proj_energy_materials_demand
                     clear_array = proj_energy_materials_build_speed
 				#
+                set_variable = { global.base_government_investment_efficiency = 0.1 }
+                set_variable = { global.base_tax_efficiency = 0.25 }
+                set_variable = { global.base_bureaucratic_efficiency = 0.25 }
 
 				set_variable = { global.administration_base_expense = 0.5 } #Percentage (from 0.0 to 100.0) of pop earnings that are needed for basic administration
 				set_variable = { global.administration_population_expense = 100 } #Below this population amount (in thousands), administration becomes more expensive. Should not be 0
@@ -1452,7 +1458,7 @@
             set_variable = { income_tax_upper_strata_percentage = 0 }
             set_variable = { income_tax_middle_strata_percentage = 0 }
             set_variable = { income_tax_lower_strata_percentage = 0 }
-            set_variable = { sales_tax_percentage = 4 }
+            set_variable = { sales_tax_percentage = 40 }
 
             set_variable = { military_spending_percentage = 100 }
             set_variable = { construction_spending_percentage = 100 }
@@ -4067,13 +4073,13 @@
         multiply_temp_variable = { upper_earnings_limit = 3 }
         set_temp_variable = { lower_earnings_limit = controller:pops_earnings_avg }
 
-        set_temp_variable = { upper_income_multiplier = controller:income_tax_upper_strata_percentage }
+        set_temp_variable = { upper_income_multiplier = controller:income_tax_upper_strata_percentage_actual }
         divide_temp_variable = { upper_income_multiplier = 100 }
-        set_temp_variable = { middle_income_multiplier = controller:income_tax_middle_strata_percentage }
+        set_temp_variable = { middle_income_multiplier = controller:income_tax_middle_strata_percentage_actual }
         divide_temp_variable = { middle_income_multiplier = 100 }
-        set_temp_variable = { lower_income_multiplier = controller:income_tax_lower_strata_percentage }
+        set_temp_variable = { lower_income_multiplier = controller:income_tax_lower_strata_percentage_actual }
         divide_temp_variable = { lower_income_multiplier = 100 }
-        set_temp_variable = { sales_tax_multiplier = controller:sales_tax_percentage }
+        set_temp_variable = { sales_tax_multiplier = controller:sales_tax_percentage_actual }
         divide_temp_variable = { sales_tax_multiplier = 100 }
 
         # Slaves
@@ -13188,7 +13194,7 @@
                         limit = {
                             check_variable = { trade@var:r_type > 0 }
                         }
-                        set_variable = { trade_tariffs@var:r_type = import_tariff_percentage }
+                        set_variable = { trade_tariffs@var:r_type = import_tariff_percentage_actual }
                         subtract_from_variable = { trade_tariffs@var:r_type = import_subsidy_percentage }
                     }
                     else = { #Export
@@ -13212,7 +13218,7 @@
                     set_variable = { trade_productivity@var:r_type = price@var:r_type }
                     subtract_from_variable = { trade_productivity@var:r_type = trade_price@var:r_type }
 
-                    set_temp_variable = { tr_tariffs_temp = import_tariff_percentage }
+                    set_temp_variable = { tr_tariffs_temp = import_tariff_percentage_actual }
                     subtract_from_temp_variable = { tr_tariffs_temp = import_subsidy_percentage }
                     divide_temp_variable = { tr_tariffs_temp = 100 }
                     multiply_temp_variable = { tr_tariffs_temp = trade_price@var:r_type }
@@ -15455,6 +15461,29 @@
 	taxes_update = {
 		#Country Scope
 
+        # Acutal Taxation Percentages
+            set_variable = { income_tax_upper_strata_percentage_actual = income_tax_upper_strata_percentage }
+            multiply_variable = { income_tax_upper_strata_percentage_actual = modifier@tax_efficiency_factor }
+        
+            set_variable = { income_tax_middle_strata_percentage_actual = income_tax_middle_strata_percentage }
+            multiply_variable = { income_tax_middle_strata_percentage_actual = modifier@tax_efficiency_factor }
+            
+            set_variable = { income_tax_lower_strata_percentage_actual = income_tax_lower_strata_percentage }
+            multiply_variable = { income_tax_lower_strata_percentage_actual = modifier@tax_efficiency_factor }
+            
+            set_variable = { sales_tax_percentage_actual = sales_tax_percentage }
+            multiply_variable = { sales_tax_percentage_actual = modifier@tax_efficiency_factor }
+        
+            set_variable = { corporate_tax_percentage_actual = corporate_tax_percentage }
+            multiply_variable = { corporate_tax_percentage_actual = modifier@tax_efficiency_factor }
+        
+            set_variable = { import_tariff_percentage_actual = import_tariff_percentage }
+            multiply_variable = { import_tariff_percentage_actual = modifier@bureaucratic_efficiency_factor }
+            
+            set_variable = { export_tariff_percentage_actual = export_tariff_percentage }
+            multiply_variable = { export_tariff_percentage_actual = modifier@bureaucratic_efficiency_factor }
+        #
+
 		#Income Taxes
         set_temp_variable = { upper_earnings_limit = pops_earnings_avg }
         multiply_temp_variable = { upper_earnings_limit = 3 }
@@ -15657,10 +15686,10 @@
                 check_variable = { income_tax_upper_strata_revenue > 1000 }
             }
 		    divide_variable = { income_tax_upper_strata_revenue = 100 }
-		    multiply_variable = { income_tax_upper_strata_revenue = income_tax_upper_strata_percentage }
+		    multiply_variable = { income_tax_upper_strata_revenue = income_tax_upper_strata_percentage_actual }
         }
         else = {
-		    multiply_variable = { income_tax_upper_strata_revenue = income_tax_upper_strata_percentage }
+		    multiply_variable = { income_tax_upper_strata_revenue = income_tax_upper_strata_percentage_actual }
 		    divide_variable = { income_tax_upper_strata_revenue = 100 }
         }
         if = {
@@ -15668,10 +15697,10 @@
                 check_variable = { income_tax_middle_strata_revenue > 1000 }
             }
 		    divide_variable = { income_tax_middle_strata_revenue = 100 }
-		    multiply_variable = { income_tax_middle_strata_revenue = income_tax_middle_strata_percentage }
+		    multiply_variable = { income_tax_middle_strata_revenue = income_tax_middle_strata_percentage_actual }
         }
         else = {
-		    multiply_variable = { income_tax_middle_strata_revenue = income_tax_middle_strata_percentage }
+		    multiply_variable = { income_tax_middle_strata_revenue = income_tax_middle_strata_percentage_actual }
 		    divide_variable = { income_tax_middle_strata_revenue = 100 }
         }
         if = {
@@ -15679,10 +15708,10 @@
                 check_variable = { income_tax_lower_strata_revenue > 1000 }
             }
 		    divide_variable = { income_tax_lower_strata_revenue = 100 }
-		    multiply_variable = { income_tax_lower_strata_revenue = income_tax_lower_strata_percentage }
+		    multiply_variable = { income_tax_lower_strata_revenue = income_tax_lower_strata_percentage_actual }
         }
         else = {
-		    multiply_variable = { income_tax_lower_strata_revenue = income_tax_lower_strata_percentage }
+		    multiply_variable = { income_tax_lower_strata_revenue = income_tax_lower_strata_percentage_actual }
 		    divide_variable = { income_tax_lower_strata_revenue = 100 }
         }
 
@@ -15700,10 +15729,10 @@
                     check_variable = { sales_tax_revenue > 1000 }
                 }
                 divide_variable = { sales_tax_revenue = 100 }
-                multiply_variable = { sales_tax_revenue = sales_tax_percentage }
+                multiply_variable = { sales_tax_revenue = sales_tax_percentage_actual }
             }
             else = {
-                multiply_variable = { sales_tax_revenue = sales_tax_percentage }
+                multiply_variable = { sales_tax_revenue = sales_tax_percentage_actual }
                 divide_variable = { sales_tax_revenue = 100 }
             }
 		#
@@ -16024,13 +16053,9 @@
 			}
 		}
 
-        if = {
-            limit = {
-                is_ai = no
-				check_variable = { income_tax_upper_strata_percentage > 25 }
-            }
-			set_variable = { income_tax_upper_strata_percentage = 25 }
-        }
+        set_variable = { income_tax_upper_strata_percentage_actual = income_tax_upper_strata_percentage }
+        multiply_variable = { income_tax_upper_strata_percentage_actual = modifier@tax_efficiency_factor }
+
 		taxes_update = yes
 	}
 	change_middle_strata_income_tax = {
@@ -16067,13 +16092,9 @@
 			}
 		}
 
-        if = {
-            limit = {
-                is_ai = no
-				check_variable = { income_tax_middle_strata_percentage > 25 }
-            }
-			set_variable = { income_tax_middle_strata_percentage = 25 }
-        }
+        set_variable = { income_tax_middle_strata_percentage_actual = income_tax_middle_strata_percentage }
+        multiply_variable = { income_tax_middle_strata_percentage_actual = modifier@tax_efficiency_factor }
+
 		taxes_update = yes
 	}
 	change_lower_strata_income_tax = {
@@ -16109,14 +16130,10 @@
 				set_variable = { income_tax_lower_strata_percentage = 0 }
 			}
 		}
+        
+        set_variable = { income_tax_lower_strata_percentage_actual = income_tax_lower_strata_percentage }
+        multiply_variable = { income_tax_lower_strata_percentage_actual = modifier@tax_efficiency_factor }
 
-        if = {
-            limit = {
-                is_ai = no
-				check_variable = { income_tax_lower_strata_percentage > 25 }
-            }
-			set_variable = { income_tax_lower_strata_percentage = 25 }
-        }
 		taxes_update = yes
 	}
 
@@ -16153,14 +16170,10 @@
 				set_variable = { sales_tax_percentage = 0 }
 			}
 		}
+        
+        set_variable = { sales_tax_percentage_actual = sales_tax_percentage }
+        multiply_variable = { sales_tax_percentage_actual = modifier@tax_efficiency_factor }
 
-        if = {
-            limit = {
-                is_ai = no
-				check_variable = { sales_tax_percentage > 25 }
-            }
-			set_variable = { sales_tax_percentage = 25 }
-        }
 		taxes_update = yes
 	}
 	change_corporate_tax = {
@@ -16196,6 +16209,10 @@
 				set_variable = { corporate_tax_percentage = 0 }
 			}
 		}
+        
+        set_variable = { corporate_tax_percentage_actual = corporate_tax_percentage }
+        multiply_variable = { corporate_tax_percentage_actual = modifier@tax_efficiency_factor }
+
 		taxes_update = yes
 	}
 	change_import_tariff = {
@@ -16231,6 +16248,9 @@
 				set_variable = { import_tariff_percentage = 0 }
 			}
 		}
+        
+        set_variable = { import_tariff_percentage_actual = import_tariff_percentage }
+        multiply_variable = { import_tariff_percentage_actual = modifier@bureaucratic_efficiency_factor }
 
         trade_update_value = yes
 		taxes_update = yes
@@ -16268,6 +16288,9 @@
 				set_variable = { export_tariff_percentage = 0 }
 			}
 		}
+        
+        set_variable = { export_tariff_percentage_actual = export_tariff_percentage }
+        multiply_variable = { export_tariff_percentage_actual = modifier@bureaucratic_efficiency_factor }
 
         trade_update_value = yes
 		taxes_update = yes
