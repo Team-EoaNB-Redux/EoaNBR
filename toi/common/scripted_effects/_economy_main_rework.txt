@@ -140,6 +140,27 @@
 		for_each_scope_loop = {
 			array = global.econ_order_array
 
+            if = {
+                limit = {
+                    NOT = {
+                        has_dynamic_modifier = {
+                            modifier = resource_trade
+                        }
+                    }
+                }
+                add_dynamic_modifier = { modifier = resource_trade }
+            }
+            if = {
+                limit = {
+                    NOT = {
+                        has_dynamic_modifier = {
+                            modifier = budgetary_spending
+                        }
+                    }
+                }
+                add_dynamic_modifier = { modifier = budgetary_spending }
+            }
+
             #Budget
                 add_to_variable = { treasury = net_budget }
                 set_temp_variable = { debt_amount_temp = 0.5 }
@@ -203,6 +224,8 @@
                 set_variable = { actual_military_spending = military_spending_expense }
                 set_variable = { actual_project_spending = project_spending_expense }
                 set_variable = { actual_net_budget = net_budget }
+
+                spending_effects_update = yes
             #
 
             #Projects
@@ -1187,6 +1210,15 @@
 
 			#Government
 				#Military
+                    # When military spending is at 0, what's the maximum of these modifiers
+                    set_variable = { global.min_military_spending_supply_consumption_factor = -1 }
+                    set_variable = { global.min_military_spending_naval_coordination = -0.5 }
+                    set_variable = { global.min_military_spending_training_time_army_factor = 1 }
+                    set_variable = { global.min_military_spending_army_org_factor = -0.5 }
+                    set_variable = { global.min_military_spending_army_bonus_air_superiority_factor = -0.5 }
+                    set_variable = { global.min_military_spending_air_accidents_factor = 1 }
+                    set_variable = { global.min_military_spending_attrition = 1 }
+
 					#Army
 					set_variable = { global.infantry_need@token:resource_food = 0.1 } #Per Regiment
 					set_variable = { global.infantry_need@token:resource_consumer_goods = 0.4 }
@@ -1290,6 +1322,21 @@
                     clear_array = proj_energy_materials_demand
                     clear_array = proj_energy_materials_build_speed
 				#
+                
+                # Research Subsidies
+                    set_variable = { global.research_base_expense = 0.25 } # What the base research spending is per pop(k).  
+                    set_variable = { global.research_pops_earnings_avg_expense_add = 0.05 } # What portion of the average pops earnings get added to the research base expense value
+                    set_variable = { global.max_research_spending_research_speed_factor = 0.1 } # Maxes out at 100% funding
+                    set_variable = { global.min_research_spending_research_speed_factor = -0.1 } # Maxes out at 0% funding
+                    set_variable = { global.min_research_spending_support_tech = -0.5 } # Maxes out at 0% funding
+                    set_variable = { global.min_research_spending_cat_artillery_techs = -0.5 } # Maxes out at 0% funding
+                    set_variable = { global.min_research_spending_armor = -0.5 } # Maxes out at 0% funding
+                    set_variable = { global.min_research_spending_aviation_tech = -0.5 } # Maxes out at 0% funding
+                    set_variable = { global.min_research_spending_air_equipment = -0.5 } # Maxes out at 0% funding
+                    set_variable = { global.min_research_spending_cat_projects_techs = -1 } # Maxes out at 0% funding
+                    set_variable = { global.min_research_spending_naval_equipment = -0.5 } # Maxes out at 0% funding
+                #
+
                 set_variable = { global.base_government_investment_efficiency = 0.1 }
                 set_variable = { global.base_tax_efficiency = 0.25 }
                 set_variable = { global.base_bureaucratic_efficiency = 0.25 }
@@ -1458,6 +1505,7 @@
             clear_array = investment_opportunities
 
 			add_dynamic_modifier = { modifier = resource_trade }
+            add_dynamic_modifier = { modifier = budgetary_spending }
 
             set_variable = { income_tax_upper_strata_percentage = 0 }
             set_variable = { income_tax_middle_strata_percentage = 0 }
@@ -15605,10 +15653,15 @@
                 if = { #Import
                     limit = {
                         check_variable = { trade@var:r_token > 0 }
+                        check_variable = { import_tariff_percentage > 0 }
                     }
                     add_to_variable = { import_tariff_revenue = trade_tariffs@var:r_token }
                 }
-                else = { #Export
+                else_if = { #Export
+                    limit = {
+                        check_variable = { trade@var:r_token < 0 }
+                        check_variable = { export_tariff_percentage > 0 }
+                    }
                     subtract_from_variable = { export_tariff_revenue = trade_tariffs@var:r_token }
                 }
             }
@@ -15626,6 +15679,57 @@
 	}
 	spending_update = {
 		proj_update = yes
+
+        # Spending Effects
+            # MILITARY
+            set_temp_variable = { factor_temp = 100 }
+            subtract_from_temp_variable = { factor_temp = military_spending_percentage }
+            divide_temp_variable = { factor_temp = 100 }
+
+            set_variable = { military_spending_supply_consumption_factor = global.min_military_spending_supply_consumption_factor }
+            set_variable = { military_spending_naval_coordination = global.min_military_spending_naval_coordination }
+            set_variable = { military_spending_training_time_army_factor = global.min_military_spending_training_time_army_factor }
+            set_variable = { military_spending_army_org_factor = global.min_military_spending_army_org_factor }
+            set_variable = { military_spending_army_bonus_air_superiority_factor = global.min_military_spending_army_bonus_air_superiority_factor }
+            set_variable = { military_spending_air_accidents_factor = global.min_military_spending_air_accidents_factor }
+            set_variable = { military_spending_attrition = global.min_military_spending_attrition }
+            
+            multiply_variable = { military_spending_supply_consumption_factor = factor_temp }
+            multiply_variable = { military_spending_naval_coordination = factor_temp }
+            multiply_variable = { military_spending_training_time_army_factor = factor_temp }
+            multiply_variable = { military_spending_army_org_factor = factor_temp }
+            multiply_variable = { military_spending_army_bonus_air_superiority_factor = factor_temp }
+            multiply_variable = { military_spending_air_accidents_factor = factor_temp }
+            multiply_variable = { military_spending_attrition = factor_temp }
+
+            # RESEARCH
+            set_temp_variable = { factor_temp = 100 }
+            subtract_from_temp_variable = { factor_temp = research_subsidy_percentage }
+            divide_temp_variable = { factor_temp = 100 }
+            
+            set_variable = { research_spending_research_speed_factor = global.min_research_spending_research_speed_factor }
+            set_variable = { research_spending_support_tech = global.min_research_spending_support_tech }
+            set_variable = { research_spending_cat_artillery_techs = global.min_research_spending_cat_artillery_techs }
+            set_variable = { research_spending_armor = global.min_research_spending_armor }
+            set_variable = { research_spending_aviation_tech = global.min_research_spending_aviation_tech }
+            set_variable = { research_spending_air_equipment = global.min_research_spending_air_equipment }
+            set_variable = { research_spending_cat_projects_techs = global.min_research_spending_cat_projects_techs }
+            set_variable = { research_spending_naval_equipment = global.min_research_spending_naval_equipment }
+
+            multiply_variable = { research_spending_research_speed_factor = factor_temp }
+            multiply_variable = { research_spending_support_tech = factor_temp }
+            multiply_variable = { research_spending_cat_artillery_techs = factor_temp }
+            multiply_variable = { research_spending_armor = factor_temp }
+            multiply_variable = { research_spending_aviation_tech = factor_temp }
+            multiply_variable = { research_spending_air_equipment = factor_temp }
+            multiply_variable = { research_spending_cat_projects_techs = factor_temp }
+            multiply_variable = { research_spending_naval_equipment = factor_temp }
+            
+            set_temp_variable = { factor_temp = research_subsidy_percentage }
+            divide_temp_variable = { factor_temp = 100 }
+            multiply_temp_variable = { factor_temp = global.max_research_spending_research_speed_factor }
+            add_to_variable = { research_spending_research_speed_factor = factor_temp }
+        #
 
 		set_variable = { construction_spending_expense = 0 }
 		set_variable = { project_spending_expense = 0 }
@@ -15733,134 +15837,47 @@
 		#Trade Subsidies
 			set_variable = { export_subsidy_expense = 0 }
 			set_variable = { import_subsidy_expense = 0 }
-			#life_goods
-				if = {
-					limit = {
-						check_variable = { life_goods_global_trade_actual_value < 0 }
-					}
-					set_temp_variable = { subsidy_temp = life_goods_global_trade_actual_value }
-					multiply_temp_variable = { subsidy_temp = -1 }
-					multiply_temp_variable = { subsidy_temp = import_subsidy_percentage }
-					add_to_variable = { import_subsidy_expense = subsidy_temp }
-				}
-				else_if = {
-					limit = {
-						check_variable = { life_goods_global_trade_actual_value > 0 }
-					}
-					set_temp_variable = { subsidy_temp = life_goods_global_trade_actual_value }
-					multiply_temp_variable = { subsidy_temp = export_subsidy_percentage }
-					add_to_variable = { export_subsidy_expense = subsidy_temp }
-				}
-			#
-			#everyday_goods
-				if = {
-					limit = {
-						check_variable = { everyday_goods_global_trade_actual_value < 0 }
-					}
-					set_temp_variable = { subsidy_temp = everyday_goods_global_trade_actual_value }
-					multiply_temp_variable = { subsidy_temp = -1 }
-					multiply_temp_variable = { subsidy_temp = import_subsidy_percentage }
-					add_to_variable = { import_subsidy_expense = subsidy_temp }
-				}
-				else_if = {
-					limit = {
-						check_variable = { everyday_goods_global_trade_actual_value > 0 }
-					}
-					set_temp_variable = { subsidy_temp = everyday_goods_global_trade_actual_value }
-					multiply_temp_variable = { subsidy_temp = export_subsidy_percentage }
-					add_to_variable = { export_subsidy_expense = subsidy_temp }
-				}
-			#
-			#luxury_goods
-				if = {
-					limit = {
-						check_variable = { luxury_goods_global_trade_actual_value < 0 }
-					}
-					set_temp_variable = { subsidy_temp = luxury_goods_global_trade_actual_value }
-					multiply_temp_variable = { subsidy_temp = -1 }
-					multiply_temp_variable = { subsidy_temp = import_subsidy_percentage }
-					add_to_variable = { import_subsidy_expense = subsidy_temp }
-				}
-				else_if = {
-					limit = {
-						check_variable = { luxury_goods_global_trade_actual_value > 0 }
-					}
-					set_temp_variable = { subsidy_temp = luxury_goods_global_trade_actual_value }
-					multiply_temp_variable = { subsidy_temp = export_subsidy_percentage }
-					add_to_variable = { export_subsidy_expense = subsidy_temp }
-				}
-			#
-			#services
-				if = {
-					limit = {
-						check_variable = { services_global_trade_actual_value < 0 }
-					}
-					set_temp_variable = { subsidy_temp = services_global_trade_actual_value }
-					multiply_temp_variable = { subsidy_temp = -1 }
-					multiply_temp_variable = { subsidy_temp = import_subsidy_percentage }
-					add_to_variable = { import_subsidy_expense = subsidy_temp }
-				}
-				else_if = {
-					limit = {
-						check_variable = { services_global_trade_actual_value > 0 }
-					}
-					set_temp_variable = { subsidy_temp = services_global_trade_actual_value }
-					multiply_temp_variable = { subsidy_temp = export_subsidy_percentage }
-					add_to_variable = { export_subsidy_expense = subsidy_temp }
-				}
-			#
-			#raw_goods
-				if = {
-					limit = {
-						check_variable = { raw_goods_global_trade_actual_value < 0 }
-					}
-					set_temp_variable = { subsidy_temp = raw_goods_global_trade_actual_value }
-					multiply_temp_variable = { subsidy_temp = -1 }
-					multiply_temp_variable = { subsidy_temp = import_subsidy_percentage }
-					add_to_variable = { import_subsidy_expense = subsidy_temp }
-				}
-				else_if = {
-					limit = {
-						check_variable = { raw_goods_global_trade_actual_value > 0 }
-					}
-					set_temp_variable = { subsidy_temp = raw_goods_global_trade_actual_value }
-					multiply_temp_variable = { subsidy_temp = export_subsidy_percentage }
-					add_to_variable = { export_subsidy_expense = subsidy_temp }
-				}
-			#
-			#industrial_goods
-				if = {
-					limit = {
-						check_variable = { industrial_goods_global_trade_actual_value < 0 }
-					}
-					set_temp_variable = { subsidy_temp = industrial_goods_global_trade_actual_value }
-					multiply_temp_variable = { subsidy_temp = -1 }
-					multiply_temp_variable = { subsidy_temp = import_subsidy_percentage }
-					add_to_variable = { import_subsidy_expense = subsidy_temp }
-				}
-				else_if = {
-					limit = {
-						check_variable = { industrial_goods_global_trade_actual_value > 0 }
-					}
-					set_temp_variable = { subsidy_temp = industrial_goods_global_trade_actual_value }
-					multiply_temp_variable = { subsidy_temp = export_subsidy_percentage }
-					add_to_variable = { export_subsidy_expense = subsidy_temp }
-				}
-			#
-			divide_variable = { import_subsidy_expense = 100 }
-			divide_variable = { export_subsidy_expense = 100 }
-            
-            divide_variable = { import_subsidy_expense = modifier@bureaucratic_efficiency_factor }
-            divide_variable = { export_subsidy_expense = modifier@bureaucratic_efficiency_factor }
+
+            for_each_loop = {
+                array = global.resource_token_array
+                value = r_token
+
+                if = { #Import
+                    limit = {
+                        check_variable = { trade@var:r_token > 0 }
+                        check_variable = { import_subsidy_percentage > 0 }
+                    }
+                    subtract_from_variable = { import_subsidy_expense = trade_tariffs@var:r_token }
+                }
+                else_if = { #Export
+                    limit = {
+                        check_variable = { trade@var:r_token < 0 }
+                        check_variable = { export_subsidy_percentage > 0 }
+                    }
+                    add_to_variable = { export_subsidy_expense = trade_tariffs@var:r_token }
+                }
+            }
 
 			set_variable = { subsidy_expense = import_subsidy_expense }
 			add_to_variable = { subsidy_expense = export_subsidy_expense }
 		#
 
+        # Research Subsidies
+            set_variable = { research_subsidy_expense = global.research_base_expense }
+            set_temp_variable = { expense_add_temp = pops_earnings_avg }
+            multiply_temp_variable = { expense_add_temp = global.research_pops_earnings_avg_expense_add }
+            add_to_variable = { research_subsidy_expense = expense_add_temp }
+            multiply_variable = { research_subsidy_expense = pops }
+            divide_variable = { research_subsidy_expense = 100 }
+            multiply_variable = { research_subsidy_expense = research_subsidy_percentage }
+            divide_variable = { research_subsidy_expense = modifier@bureaucratic_efficiency_factor }
+        #
+
 		set_variable = { subsidy_expense = infrastructure_subsidy_expense }
 		add_to_variable = { subsidy_expense = industrial_subsidy_expense }
 		add_to_variable = { subsidy_expense = export_subsidy_expense }
 		add_to_variable = { subsidy_expense = import_subsidy_expense }
+		add_to_variable = { subsidy_expense = research_subsidy_expense }
 
 		set_variable = { discretionary_spending = subsidy_expense }
 		add_to_variable = { discretionary_spending = construction_spending_expense }
@@ -15884,6 +15901,135 @@
 		subtract_from_variable = { net_budget = discretionary_spending }
 		subtract_from_variable = { net_budget = mandatory_spending }
 	}
+
+    spending_effects_update = {
+        # Only in the on-monthly code
+        # Applies changes to discretionary spending modifiers
+
+        set_variable = { military_spending_supply_consumption_factor_actual = military_spending_supply_consumption_factor }
+        set_variable = { military_spending_naval_coordination_actual = military_spending_naval_coordination }
+        set_variable = { military_spending_training_time_army_factor_actual = military_spending_training_time_army_factor }
+        set_variable = { military_spending_army_org_factor_actual = military_spending_army_org_factor }
+        set_variable = { military_spending_army_bonus_air_superiority_factor_actual = military_spending_army_bonus_air_superiority_factor }
+        set_variable = { military_spending_air_accidents_factor_actual = military_spending_air_accidents_factor }
+        set_variable = { military_spending_attrition_actual = military_spending_attrition }
+
+        set_variable = { research_spending_research_speed_factor_actual = research_spending_research_speed_factor }
+
+        remove_ideas = {
+            research_subsidies_0
+            research_subsidies_1
+            research_subsidies_2
+            research_subsidies_3
+            research_subsidies_4
+            research_subsidies_5
+            research_subsidies_6
+            research_subsidies_7
+            research_subsidies_8
+            research_subsidies_9
+            research_subsidies_10
+            research_subsidies_11
+            research_subsidies_12
+            research_subsidies_13
+            research_subsidies_14
+            research_subsidies_15
+            research_subsidies_16
+            research_subsidies_17
+            research_subsidies_18
+            research_subsidies_19
+            research_subsidies_20
+            research_subsidies_21
+            research_subsidies_22
+            research_subsidies_23
+            research_subsidies_24
+            research_subsidies_25
+            research_subsidies_26
+            research_subsidies_27
+            research_subsidies_28
+            research_subsidies_29
+            research_subsidies_30
+            research_subsidies_31
+            research_subsidies_32
+            research_subsidies_33
+            research_subsidies_34
+            research_subsidies_35
+            research_subsidies_36
+            research_subsidies_37
+            research_subsidies_38
+            research_subsidies_39
+            research_subsidies_40
+            research_subsidies_41
+            research_subsidies_42
+            research_subsidies_43
+            research_subsidies_44
+            research_subsidies_45
+            research_subsidies_46
+            research_subsidies_47
+            research_subsidies_48
+            research_subsidies_49
+            research_subsidies_50
+            research_subsidies_51
+            research_subsidies_52
+            research_subsidies_53
+            research_subsidies_54
+            research_subsidies_55
+            research_subsidies_56
+            research_subsidies_57
+            research_subsidies_58
+            research_subsidies_59
+            research_subsidies_60
+            research_subsidies_61
+            research_subsidies_62
+            research_subsidies_63
+            research_subsidies_64
+            research_subsidies_65
+            research_subsidies_66
+            research_subsidies_67
+            research_subsidies_68
+            research_subsidies_69
+            research_subsidies_70
+            research_subsidies_71
+            research_subsidies_72
+            research_subsidies_73
+            research_subsidies_74
+            research_subsidies_75
+            research_subsidies_76
+            research_subsidies_77
+            research_subsidies_78
+            research_subsidies_79
+            research_subsidies_80
+            research_subsidies_81
+            research_subsidies_82
+            research_subsidies_83
+            research_subsidies_84
+            research_subsidies_85
+            research_subsidies_86
+            research_subsidies_87
+            research_subsidies_88
+            research_subsidies_89
+            research_subsidies_90
+            research_subsidies_91
+            research_subsidies_92
+            research_subsidies_93
+            research_subsidies_94
+            research_subsidies_95
+            research_subsidies_96
+            research_subsidies_97
+            research_subsidies_98
+            research_subsidies_99
+        }
+        if = {
+            limit = {
+                check_variable = { research_subsidy_percentage < 100 }
+            }
+            meta_effect = {
+                text = {
+                    add_ideas = research_subsidies_[NUM_LEVEL]
+                }
+                NUM_LEVEL = "[?research_subsidy_percentage|0]"
+            }
+        }
+    }
 
 	change_upper_strata_income_tax = {
 		#Scope: Country
@@ -16309,6 +16455,8 @@
 				set_variable = { import_subsidy_percentage = 0 }
 			}
 		}
+
+        trade_update_value = yes
 		spending_update = yes
 	}
 	change_export_subsidy = {
@@ -16344,8 +16492,45 @@
 				set_variable = { export_subsidy_percentage = 0 }
 			}
 		}
+        
+        trade_update_value = yes
 		spending_update = yes
 	}
+    change_research_subsidy = {
+		#Scope: Country
+		#Increases/Decreases the Research Spending level
+		#INPUT:
+			#percent_change_temp - Amount to decrease it by. 1.0 increases it by 1%,  -10.0 decreases it by 10%
+
+		add_to_variable = { research_subsidy_percentage = percent_change_temp }
+		if = {
+			limit = {
+				check_variable = { percent_change_temp > 0 }
+			}
+			#TODO - People get angerry
+
+			if = {
+				limit = {
+					check_variable = { research_subsidy_percentage > 100 }
+				}
+				set_variable = { research_subsidy_percentage = 100 }
+			}
+		}
+		else_if = {
+			limit = {
+				check_variable = { percent_change_temp < 0 }
+			}
+			#TODO - People become happy
+
+			if = {
+				limit = {
+					check_variable = { research_subsidy_percentage < 0 }
+				}
+				set_variable = { research_subsidy_percentage = 0 }
+			}
+		}
+		spending_update = yes
+    }
 	change_infrastructure_subsidy = {
 		#Scope: Country
 		#Increases/Decreases the Infrastructure Subsidy level
