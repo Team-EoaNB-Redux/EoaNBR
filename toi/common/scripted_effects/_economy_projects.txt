@@ -87,6 +87,16 @@ proj_setup = {
                                                                     #   set_temp_variable = { id_temp = ID }
                                                                     #   set_temp_variable = { relative_temp = NUM }
                                                                     #   proj_create = yes
+                                                                    # NOTE: Scope (below) applies to relative. So scoping to a state with population relative will scale the
+                                                                    #       project to that state's population
+    set_variable = { global.proj_scope@token:dummy_project = 0 }        # 0: This project stores on the country scope
+                                                                        # 1: This project uses states based off of a temporary variable (project_state_temp) which
+                                                                        #   can then be used in the effects of the final efffect to scope to the given state
+                                                                        #   Also affects the localization shown in the menu
+                                                                        #
+                                                                        #   set_temp_variable = { id_temp = ID }
+                                                                        #   set_temp_variable = { project_state_temp = 123 }
+                                                                        #   proj_create = yes
     ################################
     # Generics: 0.001 <--> 999.999 #
     ################################
@@ -138,6 +148,7 @@ proj_setup = {
     set_variable = { global.proj_industrial_goods_base_build_speed@token:colony_project = 0.8 }
     set_variable = { global.proj_repeatable@token:colony_project = 0 } #Repeatable
     set_variable = { global.proj_relative@token:colony_project = 0 } #Absolute
+    set_variable = { global.proj_scope@token:colony_project = 1 } # Uses States
 
 		# ID 2: Frontier
     #   A nonrepeatable project fired usually by decision or colonial gui effect.
@@ -160,6 +171,7 @@ proj_setup = {
     set_variable = { global.proj_industrial_goods_base_build_speed@token:frontier_project = 0.2 }
     set_variable = { global.proj_repeatable@token:frontier_project = 0 } #Repeatable
     set_variable = { global.proj_relative@token:frontier_project = 0 } #Absolute
+    set_variable = { global.proj_scope@token:frontier_project = 1 } # Uses States
 
     ###############################
     # Country Specific: 1000.000+ #
@@ -195,6 +207,10 @@ proj_done = {
     # If you are looking manually through this for the specific effect of an already set-up project, then just use search.
     # Although it would also be nice if coders kept the list here in the same order that proj_setup is in as well.
 
+    # DO NOT USE ROOT. IT WILL SCOPE TO UNCLAIMED TERRITORY. USE CONTROLLER = {} INSTEAD
+
+    set_temp_variable = { project_scope_temp = proj_scope^proj_index_temp } # Use var:project_scope_temp = {} to scope to the state you're using
+    
     if = {
         limit = {
             check_variable = { project_token_temp = 0 }
@@ -217,10 +233,22 @@ proj_done = {
         #Give an event to player to let them know that it's done with effects.
         country_event = australian_colonial_governments.1
     }
+    else_if = {
+        limit = {
+            check_variable = { project_token_temp = token:frontier_project }
+        }
+        # Country Scope
+
+        var:project_scope_temp = {
+            # State Scope
+
+        }
+    }
 
 
     # Remove project from your project list & add to local/global completed projects (if necessary)
     remove_from_array = { array = proj_id index = proj_index_temp }
+    remove_from_array = { array = proj_scope index = proj_index_temp }
     subtract_from_temp_variable = { proj_index_temp = 1 }
 
     if = {
@@ -251,104 +279,134 @@ proj_create = {
         limit = {
             is_in_array = { global.projects_list = project_token_temp } # always assume users are idiots. Yes I'm talking about you, random coder reading this.
 
-            NOT = { is_in_array = { proj_id = project_token_temp } } #Make sure you don't create duplicate projects.
-                                                                    #Technically, it's possible for the code to handle that, but this is just for safekeeping.
+            NOT = { #Make sure you don't create duplicate projects.
+                AND = {
+                    check_variable = { global.proj_scope@var:project_token_temp = 0 }
+                    is_in_array = { proj_id = project_token_temp }
+                }
+                AND = {
+                    check_variable = { global.proj_scope@var:project_token_temp = 1 }
+                    any_of = {
+                        array = proj_id
+                        value = proj_token_temp2
+                        index = proj_i_temp
+
+                        check_variable = { proj_token_temp2 = project_token_temp }
+                        check_variable = { proj_scope^proj_i_temp = project_state_temp }
+                    }
+                }
+            }
 
             NOT = { is_in_array = { proj_completed = project_token_temp } } #Make sure projects that have been completed can't be done again (those set to the right conditions)
             NOT = { is_in_array = { global.proj_completed = project_token_temp } }
         }
 
         add_to_array = { proj_id = project_token_temp }
-        set_variable = { proj_relative@var:project_token_temp = 1 }
-        set_variable = { proj_estimated_cost@var:project_token_temp = 0 }
-        set_variable = { proj_estimated_monthly_cost@var:project_token_temp = 0 }
-        set_variable = { proj_estimated_complete_time@var:project_token_temp = 0 }
-        set_variable = { proj_time_elapsed@var:project_token_temp = 0 }
+        if = {
+            limit = {
+                OR = {
+                    check_variable = { global.proj_scope@var:project_token_temp = 0 }
+                    check_variable = { project_state_temp = 0 }
+                }
+            }
+            add_to_array = { proj_scope = THIS }
+            set_temp_variable = { project_scope_temp = THIS }
+        }
+        else = {
+            add_to_array = { proj_scope = project_state_temp }
+            set_temp_variable = { project_scope_temp = project_state_temp }
+        }
 
-        set_variable = { proj_food_need@var:project_token_temp = 0 }
-        set_variable = { proj_food_fulfilled@var:project_token_temp = 0 }
-        set_variable = { proj_food_demand@var:project_token_temp = 0 }
-        set_variable = { proj_food_build_speed@var:project_token_temp = 0 }
-        set_variable = { proj_consumer_goods_need@var:project_token_temp = 0 }
-        set_variable = { proj_consumer_goods_fulfilled@var:project_token_temp = 0 }
-        set_variable = { proj_consumer_goods_demand@var:project_token_temp = 0 }
-        set_variable = { proj_consumer_goods_build_speed@var:project_token_temp = 0 }
-        set_variable = { proj_luxury_goods_need@var:project_token_temp = 0 }
-        set_variable = { proj_luxury_goods_fulfilled@var:project_token_temp = 0 }
-        set_variable = { proj_luxury_goods_demand@var:project_token_temp = 0 }
-        set_variable = { proj_luxury_goods_build_speed@var:project_token_temp = 0 }
-        set_variable = { proj_services_need@var:project_token_temp = 0 }
-        set_variable = { proj_services_fulfilled@var:project_token_temp = 0 }
-        set_variable = { proj_services_demand@var:project_token_temp = 0 }
-        set_variable = { proj_services_build_speed@var:project_token_temp = 0 }
-        set_variable = { proj_raw_materials_need@var:project_token_temp = 0 }
-        set_variable = { proj_raw_materials_fulfilled@var:project_token_temp = 0 }
-        set_variable = { proj_raw_materials_demand@var:project_token_temp = 0 }
-        set_variable = { proj_raw_materials_build_speed@var:project_token_temp = 0 }
-        set_variable = { proj_industrial_goods_need@var:project_token_temp = 0 }
-        set_variable = { proj_industrial_goods_fulfilled@var:project_token_temp = 0 }
-        set_variable = { proj_industrial_goods_demand@var:project_token_temp = 0 }
-        set_variable = { proj_industrial_goods_build_speed@var:project_token_temp = 0 }
-        set_variable = { proj_electricity_need@var:project_token_temp = 0 }
-        set_variable = { proj_electricity_fulfilled@var:project_token_temp = 0 }
-        set_variable = { proj_electricity_demand@var:project_token_temp = 0 }
-        set_variable = { proj_electricity_build_speed@var:project_token_temp = 0 }
-        set_variable = { proj_energy_materials_need@var:project_token_temp = 0 }
-        set_variable = { proj_energy_materials_fulfilled@var:project_token_temp = 0 }
-        set_variable = { proj_energy_materials_demand@var:project_token_temp = 0 }
-        set_variable = { proj_energy_materials_build_speed@var:project_token_temp = 0 }
+        set_variable = { project_scope_temp:proj_relative@var:project_token_temp = 1 }
+        set_variable = { project_scope_temp:proj_estimated_cost@var:project_token_temp = 0 }
+        set_variable = { project_scope_temp:proj_estimated_monthly_cost@var:project_token_temp = 0 }
+        set_variable = { project_scope_temp:proj_estimated_complete_time@var:project_token_temp = 0 }
+        set_variable = { project_scope_temp:proj_time_elapsed@var:project_token_temp = 0 }
+
+        set_variable = { project_scope_temp:proj_food_need@var:project_token_temp = 0 }
+        set_variable = { project_scope_temp:proj_food_fulfilled@var:project_token_temp = 0 }
+        set_variable = { project_scope_temp:proj_food_demand@var:project_token_temp = 0 }
+        set_variable = { project_scope_temp:proj_food_build_speed@var:project_token_temp = 0 }
+        set_variable = { project_scope_temp:proj_consumer_goods_need@var:project_token_temp = 0 }
+        set_variable = { project_scope_temp:proj_consumer_goods_fulfilled@var:project_token_temp = 0 }
+        set_variable = { project_scope_temp:proj_consumer_goods_demand@var:project_token_temp = 0 }
+        set_variable = { project_scope_temp:proj_consumer_goods_build_speed@var:project_token_temp = 0 }
+        set_variable = { project_scope_temp:proj_luxury_goods_need@var:project_token_temp = 0 }
+        set_variable = { project_scope_temp:proj_luxury_goods_fulfilled@var:project_token_temp = 0 }
+        set_variable = { project_scope_temp:proj_luxury_goods_demand@var:project_token_temp = 0 }
+        set_variable = { project_scope_temp:proj_luxury_goods_build_speed@var:project_token_temp = 0 }
+        set_variable = { project_scope_temp:proj_services_need@var:project_token_temp = 0 }
+        set_variable = { project_scope_temp:proj_services_fulfilled@var:project_token_temp = 0 }
+        set_variable = { project_scope_temp:proj_services_demand@var:project_token_temp = 0 }
+        set_variable = { project_scope_temp:proj_services_build_speed@var:project_token_temp = 0 }
+        set_variable = { project_scope_temp:proj_raw_materials_need@var:project_token_temp = 0 }
+        set_variable = { project_scope_temp:proj_raw_materials_fulfilled@var:project_token_temp = 0 }
+        set_variable = { project_scope_temp:proj_raw_materials_demand@var:project_token_temp = 0 }
+        set_variable = { project_scope_temp:proj_raw_materials_build_speed@var:project_token_temp = 0 }
+        set_variable = { project_scope_temp:proj_industrial_goods_need@var:project_token_temp = 0 }
+        set_variable = { project_scope_temp:proj_industrial_goods_fulfilled@var:project_token_temp = 0 }
+        set_variable = { project_scope_temp:proj_industrial_goods_demand@var:project_token_temp = 0 }
+        set_variable = { project_scope_temp:proj_industrial_goods_build_speed@var:project_token_temp = 0 }
+        set_variable = { project_scope_temp:proj_electricity_need@var:project_token_temp = 0 }
+        set_variable = { project_scope_temp:proj_electricity_fulfilled@var:project_token_temp = 0 }
+        set_variable = { project_scope_temp:proj_electricity_demand@var:project_token_temp = 0 }
+        set_variable = { project_scope_temp:proj_electricity_build_speed@var:project_token_temp = 0 }
+        set_variable = { project_scope_temp:proj_energy_materials_need@var:project_token_temp = 0 }
+        set_variable = { project_scope_temp:proj_energy_materials_fulfilled@var:project_token_temp = 0 }
+        set_variable = { project_scope_temp:proj_energy_materials_demand@var:project_token_temp = 0 }
+        set_variable = { project_scope_temp:proj_energy_materials_build_speed@var:project_token_temp = 0 }
 
         #Relative
         if = {
             limit = {
                 check_variable = { global.proj_relative@var:project_token_temp = 1 }
             }
-            set_variable = { proj_relative@var:project_token_temp = max_manpower_k }
-            divide_variable = { proj_relative@var:project_token_temp = 100 }
+            set_variable = { project_scope_temp:proj_relative@var:project_token_temp = project_scope_temp:pops }
+            divide_variable = { project_scope_temp:proj_relative@var:project_token_temp = 100 }
         }
         else_if = {
             limit = {
                 check_variable = { global.proj_relative@var:project_token_temp = 2 }
             }
-            set_variable = { proj_relative@var:project_token_temp = gdp_amount }
-            divide_variable = { proj_relative@var:project_token_temp = 100 }
+            set_variable = { project_scope_temp:proj_relative@var:project_token_temp = project_scope_temp:gdp_amount }
+            divide_variable = { project_scope_temp:proj_relative@var:project_token_temp = 100 }
         }
         else_if = {
             limit = {
                 check_variable = { global.proj_relative@var:project_token_temp = 3 }
             }
-            set_variable = { proj_relative@var:project_token_temp = relative_temp }
-            divide_variable = { proj_relative@var:project_token_temp = 100 }
+            set_variable = { project_scope_temp:proj_relative@var:project_token_temp = relative_temp }
+            divide_variable = { project_scope_temp:proj_relative@var:project_token_temp = 100 }
         }
 
         #Build Cost
             set_temp_variable = { modifier_temp = proj_build_cost_effect }
             add_to_temp_variable = { modifier_temp = 1 }
-            multiply_temp_variable = { modifier_temp = proj_relative@var:project_token_temp }
+            multiply_temp_variable = { modifier_temp = project_scope_temp:proj_relative@var:project_token_temp }
 
-            set_variable = { proj_food_need@var:project_token_temp = global.proj_food_base_need@var:project_token_temp }
-            multiply_variable = { proj_food_need@var:project_token_temp = modifier_temp }
+            set_variable = { project_scope_temp:proj_food_need@var:project_token_temp = global.proj_food_base_need@var:project_token_temp }
+            multiply_variable = { project_scope_temp:proj_food_need@var:project_token_temp = modifier_temp }
 
-            set_variable = { proj_consumer_goods_need@var:project_token_temp = global.proj_consumer_goods_base_need@var:project_token_temp }
-            multiply_variable = { proj_consumer_goods_need@var:project_token_temp = modifier_temp }
+            set_variable = { project_scope_temp:proj_consumer_goods_need@var:project_token_temp = global.proj_consumer_goods_base_need@var:project_token_temp }
+            multiply_variable = { project_scope_temp:proj_consumer_goods_need@var:project_token_temp = modifier_temp }
 
-            set_variable = { proj_luxury_goods_need@var:project_token_temp = global.proj_luxury_goods_base_need@var:project_token_temp }
-            multiply_variable = { proj_luxury_goods_need@var:project_token_temp = modifier_temp }
+            set_variable = { project_scope_temp:proj_luxury_goods_need@var:project_token_temp = global.proj_luxury_goods_base_need@var:project_token_temp }
+            multiply_variable = { project_scope_temp:proj_luxury_goods_need@var:project_token_temp = modifier_temp }
 
-            set_variable = { proj_services_need@var:project_token_temp = global.proj_services_base_need@var:project_token_temp }
-            multiply_variable = { proj_services_need@var:project_token_temp = modifier_temp }
+            set_variable = { project_scope_temp:proj_services_need@var:project_token_temp = global.proj_services_base_need@var:project_token_temp }
+            multiply_variable = { project_scope_temp:proj_services_need@var:project_token_temp = modifier_temp }
 
-            set_variable = { proj_raw_materials_need@var:project_token_temp = global.proj_raw_materials_base_need@var:project_token_temp }
-            multiply_variable = { proj_raw_materials_need@var:project_token_temp = modifier_temp }
+            set_variable = { project_scope_temp:proj_raw_materials_need@var:project_token_temp = global.proj_raw_materials_base_need@var:project_token_temp }
+            multiply_variable = { project_scope_temp:proj_raw_materials_need@var:project_token_temp = modifier_temp }
 
-            set_variable = { proj_industrial_goods_need@var:project_token_temp = global.proj_industrial_goods_base_need@var:project_token_temp }
-            multiply_variable = { proj_industrial_goods_need@var:project_token_temp = modifier_temp }
+            set_variable = { project_scope_temp:proj_industrial_goods_need@var:project_token_temp = global.proj_industrial_goods_base_need@var:project_token_temp }
+            multiply_variable = { project_scope_temp:proj_industrial_goods_need@var:project_token_temp = modifier_temp }
 
-            set_variable = { proj_energy_materials_need@var:project_token_temp = global.proj_energy_materials_base_need@var:project_token_temp }
-            multiply_variable = { proj_energy_materials_need@var:project_token_temp = modifier_temp }
+            set_variable = { project_scope_temp:proj_energy_materials_need@var:project_token_temp = global.proj_energy_materials_base_need@var:project_token_temp }
+            multiply_variable = { project_scope_temp:proj_energy_materials_need@var:project_token_temp = modifier_temp }
 
-            set_variable = { proj_electricity_need@var:project_token_temp = global.proj_electricity_base_need@var:project_token_temp }
-            multiply_variable = { proj_electricity_need@var:project_token_temp = modifier_temp }
+            set_variable = { project_scope_temp:proj_electricity_need@var:project_token_temp = global.proj_electricity_base_need@var:project_token_temp }
+            multiply_variable = { project_scope_temp:proj_electricity_need@var:project_token_temp = modifier_temp }
         #
 
         spending_update = yes
@@ -367,34 +425,36 @@ proj_update = {
         index = i2
         break = b2
 
+        set_temp_variable = { project_scope_temp = proj_scope^i2 }
+
         #Build Speed
             set_temp_variable = { modifier_temp = proj_build_speed_effect }
             add_to_temp_variable = { modifier_temp = 1 }
             multiply_temp_variable = { modifier_temp = proj_relative@var:project_token_temp }
 
-            set_variable = { proj_food_build_speed@var:project_token_temp = global.proj_food_base_build_speed@var:project_token_temp }
-            multiply_variable = { proj_food_build_speed@var:project_token_temp = modifier_temp }
+            set_variable = { project_scope_temp:proj_food_build_speed@var:project_token_temp = global.proj_food_base_build_speed@var:project_token_temp }
+            multiply_variable = { project_scope_temp:proj_food_build_speed@var:project_token_temp = modifier_temp }
 
-            set_variable = { proj_consumer_goods_build_speed@var:project_token_temp = global.proj_consumer_goods_base_build_speed@var:project_token_temp }
-            multiply_variable = { proj_consumer_goods_build_speed@var:project_token_temp = modifier_temp }
+            set_variable = { project_scope_temp:proj_consumer_goods_build_speed@var:project_token_temp = global.proj_consumer_goods_base_build_speed@var:project_token_temp }
+            multiply_variable = { project_scope_temp:proj_consumer_goods_build_speed@var:project_token_temp = modifier_temp }
 
-            set_variable = { proj_luxury_goods_build_speed@var:project_token_temp = global.proj_luxury_goods_base_build_speed@var:project_token_temp }
-            multiply_variable = { proj_luxury_goods_build_speed@var:project_token_temp = modifier_temp }
+            set_variable = { project_scope_temp:proj_luxury_goods_build_speed@var:project_token_temp = global.proj_luxury_goods_base_build_speed@var:project_token_temp }
+            multiply_variable = { project_scope_temp:proj_luxury_goods_build_speed@var:project_token_temp = modifier_temp }
 
-            set_variable = { proj_services_build_speed@var:project_token_temp = global.proj_services_base_build_speed@var:project_token_temp }
-            multiply_variable = { proj_services_build_speed@var:project_token_temp = modifier_temp }
+            set_variable = { project_scope_temp:proj_services_build_speed@var:project_token_temp = global.proj_services_base_build_speed@var:project_token_temp }
+            multiply_variable = { project_scope_temp:proj_services_build_speed@var:project_token_temp = modifier_temp }
 
-            set_variable = { proj_raw_materials_build_speed@var:project_token_temp = global.proj_raw_materials_base_build_speed@var:project_token_temp }
-            multiply_variable = { proj_raw_materials_build_speed@var:project_token_temp = modifier_temp }
+            set_variable = { project_scope_temp:proj_raw_materials_build_speed@var:project_token_temp = global.proj_raw_materials_base_build_speed@var:project_token_temp }
+            multiply_variable = { project_scope_temp:proj_raw_materials_build_speed@var:project_token_temp = modifier_temp }
 
-            set_variable = { proj_energy_materials_build_speed@var:project_token_temp = global.proj_energy_materials_base_build_speed@var:project_token_temp }
-            multiply_variable = { proj_energy_materials_build_speed@var:project_token_temp = modifier_temp }
+            set_variable = { project_scope_temp:proj_energy_materials_build_speed@var:project_token_temp = global.proj_energy_materials_base_build_speed@var:project_token_temp }
+            multiply_variable = { project_scope_temp:proj_energy_materials_build_speed@var:project_token_temp = modifier_temp }
 
-            set_variable = { proj_industrial_goods_build_speed@var:project_token_temp = global.proj_industrial_goods_base_build_speed@var:project_token_temp }
-            multiply_variable = { proj_industrial_goods_build_speed@var:project_token_temp = modifier_temp }
+            set_variable = { project_scope_temp:proj_industrial_goods_build_speed@var:project_token_temp = global.proj_industrial_goods_base_build_speed@var:project_token_temp }
+            multiply_variable = { project_scope_temp:proj_industrial_goods_build_speed@var:project_token_temp = modifier_temp }
 
-            set_variable = { proj_electricity_build_speed@var:project_token_temp = global.proj_electricity_base_build_speed@var:project_token_temp }
-            multiply_variable = { proj_electricity_build_speed@var:project_token_temp = modifier_temp }
+            set_variable = { project_scope_temp:proj_electricity_build_speed@var:project_token_temp = global.proj_electricity_base_build_speed@var:project_token_temp }
+            multiply_variable = { project_scope_temp:proj_electricity_build_speed@var:project_token_temp = modifier_temp }
         #
 
         #Demand
@@ -403,306 +463,306 @@ proj_update = {
 
             if = {
                 limit = {
-                    check_variable = { proj_food_need@var:project_token_temp > proj_food_fulfilled@var:project_token_temp }
+                    check_variable = { project_scope_temp:proj_food_need@var:project_token_temp > project_scope_temp:proj_food_fulfilled@var:project_token_temp }
                 }
-                set_variable = { proj_food_demand@var:project_token_temp = proj_food_build_speed@var:project_token_temp }
-                multiply_variable = { proj_food_demand@var:project_token_temp = modifier_temp }
+                set_variable = { project_scope_temp:proj_food_demand@var:project_token_temp = project_scope_temp:proj_food_build_speed@var:project_token_temp }
+                multiply_variable = { project_scope_temp:proj_food_demand@var:project_token_temp = modifier_temp }
             }
             else = {
-                set_variable = { proj_food_demand@var:project_token_temp = 0 }
+                set_variable = { project_scope_temp:proj_food_demand@var:project_token_temp = 0 }
             }
 
             if = {
                 limit = {
-                    check_variable = { proj_consumer_goods_need@var:project_token_temp > proj_consumer_goods_fulfilled@var:project_token_temp }
+                    check_variable = { project_scope_temp:proj_consumer_goods_need@var:project_token_temp > project_scope_temp:proj_consumer_goods_fulfilled@var:project_token_temp }
                 }
-                set_variable = { proj_consumer_goods_demand@var:project_token_temp = proj_consumer_goods_build_speed@var:project_token_temp }
-                multiply_variable = { proj_consumer_goods_demand@var:project_token_temp = modifier_temp }
+                set_variable = { project_scope_temp:proj_consumer_goods_demand@var:project_token_temp = project_scope_temp:proj_consumer_goods_build_speed@var:project_token_temp }
+                multiply_variable = { project_scope_temp:proj_consumer_goods_demand@var:project_token_temp = modifier_temp }
             }
             else = {
-                set_variable = { proj_consumer_goods_demand@var:project_token_temp = 0 }
+                set_variable = { project_scope_temp:proj_consumer_goods_demand@var:project_token_temp = 0 }
             }
 
             if = {
                 limit = {
-                    check_variable = { proj_luxury_goods_need@var:project_token_temp > proj_luxury_goods_fulfilled@var:project_token_temp }
+                    check_variable = { project_scope_temp:proj_luxury_goods_need@var:project_token_temp > project_scope_temp:proj_luxury_goods_fulfilled@var:project_token_temp }
                 }
-                set_variable = { proj_luxury_goods_demand@var:project_token_temp = proj_luxury_goods_build_speed@var:project_token_temp }
-                multiply_variable = { proj_luxury_goods_demand@var:project_token_temp = modifier_temp }
+                set_variable = { project_scope_temp:proj_luxury_goods_demand@var:project_token_temp = project_scope_temp:proj_luxury_goods_build_speed@var:project_token_temp }
+                multiply_variable = { project_scope_temp:proj_luxury_goods_demand@var:project_token_temp = modifier_temp }
             }
             else = {
-                set_variable = { proj_luxury_goods_demand@var:project_token_temp = 0 }
+                set_variable = { project_scope_temp:proj_luxury_goods_demand@var:project_token_temp = 0 }
             }
 
             if = {
                 limit = {
-                    check_variable = { proj_services_need@var:project_token_temp > proj_services_fulfilled@var:project_token_temp }
+                    check_variable = { project_scope_temp:proj_services_need@var:project_token_temp > project_scope_temp:proj_services_fulfilled@var:project_token_temp }
                 }
-                set_variable = { proj_services_demand@var:project_token_temp = proj_services_build_speed@var:project_token_temp }
-                multiply_variable = { proj_services_demand@var:project_token_temp = modifier_temp }
+                set_variable = { project_scope_temp:proj_services_demand@var:project_token_temp = project_scope_temp:proj_services_build_speed@var:project_token_temp }
+                multiply_variable = { project_scope_temp:proj_services_demand@var:project_token_temp = modifier_temp }
             }
             else = {
-                set_variable = { proj_services_demand@var:project_token_temp = 0 }
+                set_variable = { project_scope_temp:proj_services_demand@var:project_token_temp = 0 }
             }
 
             if = {
                 limit = {
-                    check_variable = { proj_raw_materials_need@var:project_token_temp > proj_raw_materials_fulfilled@var:project_token_temp }
+                    check_variable = { project_scope_temp:proj_raw_materials_need@var:project_token_temp > project_scope_temp:proj_raw_materials_fulfilled@var:project_token_temp }
                 }
-                set_variable = { proj_raw_materials_demand@var:project_token_temp = proj_raw_materials_build_speed@var:project_token_temp }
-                multiply_variable = { proj_raw_materials_demand@var:project_token_temp = modifier_temp }
+                set_variable = { project_scope_temp:proj_raw_materials_demand@var:project_token_temp = project_scope_temp:proj_raw_materials_build_speed@var:project_token_temp }
+                multiply_variable = { project_scope_temp:proj_raw_materials_demand@var:project_token_temp = modifier_temp }
             }
             else = {
-                set_variable = { proj_raw_materials_demand@var:project_token_temp = 0 }
+                set_variable = { project_scope_temp:proj_raw_materials_demand@var:project_token_temp = 0 }
             }
 
             if = {
                 limit = {
-                    check_variable = { proj_industrial_goods_need@var:project_token_temp > proj_industrial_goods_fulfilled@var:project_token_temp }
+                    check_variable = { project_scope_temp:proj_industrial_goods_need@var:project_token_temp > project_scope_temp:proj_industrial_goods_fulfilled@var:project_token_temp }
                 }
-                set_variable = { proj_industrial_goods_demand@var:project_token_temp = proj_industrial_goods_build_speed@var:project_token_temp }
-                multiply_variable = { proj_industrial_goods_demand@var:project_token_temp = modifier_temp }
+                set_variable = { project_scope_temp:proj_industrial_goods_demand@var:project_token_temp = project_scope_temp:proj_industrial_goods_build_speed@var:project_token_temp }
+                multiply_variable = { project_scope_temp:proj_industrial_goods_demand@var:project_token_temp = modifier_temp }
             }
             else = {
-                set_variable = { proj_industrial_goods_demand@var:project_token_temp = 0 }
+                set_variable = { project_scope_temp:proj_industrial_goods_demand@var:project_token_temp = 0 }
             }
 
             if = {
                 limit = {
-                    check_variable = { proj_energy_materials_need@var:project_token_temp > proj_energy_materials_fulfilled@var:project_token_temp }
+                    check_variable = { project_scope_temp:proj_energy_materials_need@var:project_token_temp > project_scope_temp:proj_energy_materials_fulfilled@var:project_token_temp }
                 }
-                set_variable = { proj_energy_materials_demand@var:project_token_temp = proj_energy_materials_build_speed@var:project_token_temp }
-                multiply_variable = { proj_energy_materials_demand@var:project_token_temp = modifier_temp }
+                set_variable = { project_scope_temp:proj_energy_materials_demand@var:project_token_temp = project_scope_temp:proj_energy_materials_build_speed@var:project_token_temp }
+                multiply_variable = { project_scope_temp:proj_energy_materials_demand@var:project_token_temp = modifier_temp }
             }
             else = {
-                set_variable = { proj_energy_materials_demand@var:project_token_temp = 0 }
+                set_variable = { project_scope_temp:proj_energy_materials_demand@var:project_token_temp = 0 }
             }
 
             if = {
                 limit = {
-                    check_variable = { proj_electricity_need@var:project_token_temp > proj_electricity_fulfilled@var:project_token_temp }
+                    check_variable = { project_scope_temp:proj_electricity_need@var:project_token_temp > project_scope_temp:proj_electricity_fulfilled@var:project_token_temp }
                 }
-                set_variable = { proj_electricity_demand@var:project_token_temp = proj_electricity_build_speed@var:project_token_temp }
-                multiply_variable = { proj_electricity_demand@var:project_token_temp = modifier_temp }
+                set_variable = { project_scope_temp:proj_electricity_demand@var:project_token_temp = project_scope_temp:proj_electricity_build_speed@var:project_token_temp }
+                multiply_variable = { project_scope_temp:proj_electricity_demand@var:project_token_temp = modifier_temp }
             }
             else = {
-                set_variable = { proj_electricity_demand@var:project_token_temp = 0 }
+                set_variable = { project_scope_temp:proj_electricity_demand@var:project_token_temp = 0 }
             }
         #
 
         #Estimated Monthly Cost
 
-            set_variable = { proj_estimated_monthly_cost@var:project_token_temp = 0 }
+            set_variable = { project_scope_temp:proj_estimated_monthly_cost@var:project_token_temp = 0 }
 
-            set_temp_variable = { cost_temp = proj_food_demand@var:project_token_temp }
+            set_temp_variable = { cost_temp = project_scope_temp:proj_food_demand@var:project_token_temp }
             multiply_temp_variable = { cost_temp = price@token:resource_food }
-            add_to_variable = { proj_estimated_monthly_cost@var:project_token_temp = cost_temp }
+            add_to_variable = { project_scope_temp:proj_estimated_monthly_cost@var:project_token_temp = cost_temp }
 
-            set_temp_variable = { cost_temp = proj_consumer_goods_demand@var:project_token_temp }
+            set_temp_variable = { cost_temp = project_scope_temp:proj_consumer_goods_demand@var:project_token_temp }
             multiply_temp_variable = { cost_temp = price@token:resource_consumer_goods }
-            add_to_variable = { proj_estimated_monthly_cost@var:project_token_temp = cost_temp }
+            add_to_variable = { project_scope_temp:proj_estimated_monthly_cost@var:project_token_temp = cost_temp }
 
-            set_temp_variable = { cost_temp = proj_luxury_goods_demand@var:project_token_temp }
+            set_temp_variable = { cost_temp = project_scope_temp:proj_luxury_goods_demand@var:project_token_temp }
             multiply_temp_variable = { cost_temp = price@token:resource_luxury_goods }
-            add_to_variable = { proj_estimated_monthly_cost@var:project_token_temp = cost_temp }
+            add_to_variable = { project_scope_temp:proj_estimated_monthly_cost@var:project_token_temp = cost_temp }
 
-            set_temp_variable = { cost_temp = proj_services_demand@var:project_token_temp }
+            set_temp_variable = { cost_temp = project_scope_temp:proj_services_demand@var:project_token_temp }
             multiply_temp_variable = { cost_temp = price@token:resource_services }
-            add_to_variable = { proj_estimated_monthly_cost@var:project_token_temp = cost_temp }
+            add_to_variable = { project_scope_temp:proj_estimated_monthly_cost@var:project_token_temp = cost_temp }
 
-            set_temp_variable = { cost_temp = proj_raw_materials_demand@var:project_token_temp }
+            set_temp_variable = { cost_temp = project_scope_temp:proj_raw_materials_demand@var:project_token_temp }
             multiply_temp_variable = { cost_temp = price@token:resource_raw_materials }
-            add_to_variable = { proj_estimated_monthly_cost@var:project_token_temp = cost_temp }
+            add_to_variable = { project_scope_temp:proj_estimated_monthly_cost@var:project_token_temp = cost_temp }
 
-            set_temp_variable = { cost_temp = proj_industrial_goods_demand@var:project_token_temp }
+            set_temp_variable = { cost_temp = project_scope_temp:proj_industrial_goods_demand@var:project_token_temp }
             multiply_temp_variable = { cost_temp = price@token:resource_industrial_goods }
-            add_to_variable = { proj_estimated_monthly_cost@var:project_token_temp = cost_temp }
+            add_to_variable = { project_scope_temp:proj_estimated_monthly_cost@var:project_token_temp = cost_temp }
 
-            set_temp_variable = { cost_temp = proj_energy_materials_demand@var:project_token_temp }
+            set_temp_variable = { cost_temp = project_scope_temp:proj_energy_materials_demand@var:project_token_temp }
             multiply_temp_variable = { cost_temp = price@token:resource_energy_materials }
-            add_to_variable = { proj_estimated_monthly_cost@var:project_token_temp = cost_temp }
+            add_to_variable = { project_scope_temp:proj_estimated_monthly_cost@var:project_token_temp = cost_temp }
 
-            set_temp_variable = { cost_temp = proj_electricity_demand@var:project_token_temp }
+            set_temp_variable = { cost_temp = project_scope_temp:proj_electricity_demand@var:project_token_temp }
             multiply_temp_variable = { cost_temp = price@token:resource_electricity }
-            add_to_variable = { proj_estimated_monthly_cost@var:project_token_temp = cost_temp }
+            add_to_variable = { project_scope_temp:proj_estimated_monthly_cost@var:project_token_temp = cost_temp }
         #
 
         #Estimated Total Cost
-            set_variable = { proj_estimated_cost@var:project_token_temp = 0 }
+            set_variable = { project_scope_temp:proj_estimated_cost@var:project_token_temp = 0 }
 
-            set_temp_variable = { cost_temp = proj_food_need@var:project_token_temp }
-            subtract_from_temp_variable = { cost_temp = proj_food_fulfilled@var:project_token_temp }
+            set_temp_variable = { cost_temp = project_scope_temp:proj_food_need@var:project_token_temp }
+            subtract_from_temp_variable = { cost_temp = project_scope_temp:proj_food_fulfilled@var:project_token_temp }
             multiply_temp_variable = { cost_temp = price@token:resource_food }
-            add_to_variable = { proj_estimated_cost@var:project_token_temp = cost_temp }
+            add_to_variable = { project_scope_temp:proj_estimated_cost@var:project_token_temp = cost_temp }
 
-            set_temp_variable = { cost_temp = proj_consumer_goods_need@var:project_token_temp }
-            subtract_from_temp_variable = { cost_temp = proj_consumer_goods_fulfilled@var:project_token_temp }
+            set_temp_variable = { cost_temp = project_scope_temp:proj_consumer_goods_need@var:project_token_temp }
+            subtract_from_temp_variable = { cost_temp = project_scope_temp:proj_consumer_goods_fulfilled@var:project_token_temp }
             multiply_temp_variable = { cost_temp = price@token:resource_consumer_goods }
-            add_to_variable = { proj_estimated_cost@var:project_token_temp = cost_temp }
+            add_to_variable = { project_scope_temp:proj_estimated_cost@var:project_token_temp = cost_temp }
 
-            set_temp_variable = { cost_temp = proj_luxury_goods_need@var:project_token_temp }
-            subtract_from_temp_variable = { cost_temp = proj_luxury_goods_fulfilled@var:project_token_temp }
+            set_temp_variable = { cost_temp = project_scope_temp:proj_luxury_goods_need@var:project_token_temp }
+            subtract_from_temp_variable = { cost_temp = project_scope_temp:proj_luxury_goods_fulfilled@var:project_token_temp }
             multiply_temp_variable = { cost_temp = price@token:resource_luxury_goods }
-            add_to_variable = { proj_estimated_cost@var:project_token_temp = cost_temp }
+            add_to_variable = { project_scope_temp:proj_estimated_cost@var:project_token_temp = cost_temp }
 
-            set_temp_variable = { cost_temp = proj_services_need@var:project_token_temp }
-            subtract_from_temp_variable = { cost_temp = proj_services_fulfilled@var:project_token_temp }
+            set_temp_variable = { cost_temp = project_scope_temp:proj_services_need@var:project_token_temp }
+            subtract_from_temp_variable = { cost_temp = project_scope_temp:proj_services_fulfilled@var:project_token_temp }
             multiply_temp_variable = { cost_temp = price@token:resource_services }
-            add_to_variable = { proj_estimated_cost@var:project_token_temp = cost_temp }
+            add_to_variable = { project_scope_temp:proj_estimated_cost@var:project_token_temp = cost_temp }
 
-            set_temp_variable = { cost_temp = proj_raw_materials_need@var:project_token_temp }
-            subtract_from_temp_variable = { cost_temp = proj_raw_materials_fulfilled@var:project_token_temp }
+            set_temp_variable = { cost_temp = project_scope_temp:proj_raw_materials_need@var:project_token_temp }
+            subtract_from_temp_variable = { cost_temp = project_scope_temp:proj_raw_materials_fulfilled@var:project_token_temp }
             multiply_temp_variable = { cost_temp = price@token:resource_raw_materials }
-            add_to_variable = { proj_estimated_cost@var:project_token_temp = cost_temp }
+            add_to_variable = { project_scope_temp:proj_estimated_cost@var:project_token_temp = cost_temp }
 
-            set_temp_variable = { cost_temp = proj_industrial_goods_need@var:project_token_temp }
-            subtract_from_temp_variable = { cost_temp = proj_industrial_goods_fulfilled@var:project_token_temp }
+            set_temp_variable = { cost_temp = project_scope_temp:proj_industrial_goods_need@var:project_token_temp }
+            subtract_from_temp_variable = { cost_temp = project_scope_temp:proj_industrial_goods_fulfilled@var:project_token_temp }
             multiply_temp_variable = { cost_temp = price@token:resource_industrial_goods }
-            add_to_variable = { proj_estimated_cost@var:project_token_temp = cost_temp }
+            add_to_variable = { project_scope_temp:proj_estimated_cost@var:project_token_temp = cost_temp }
 
-            set_temp_variable = { cost_temp = proj_energy_materials_need@var:project_token_temp }
-            subtract_from_temp_variable = { cost_temp = proj_energy_materials_fulfilled@var:project_token_temp }
+            set_temp_variable = { cost_temp = project_scope_temp:proj_energy_materials_need@var:project_token_temp }
+            subtract_from_temp_variable = { cost_temp = project_scope_temp:proj_energy_materials_fulfilled@var:project_token_temp }
             multiply_temp_variable = { cost_temp = price@token:resource_energy_materials }
-            add_to_variable = { proj_estimated_cost@var:project_token_temp = cost_temp }
+            add_to_variable = { project_scope_temp:proj_estimated_cost@var:project_token_temp = cost_temp }
 
-            set_temp_variable = { cost_temp = proj_electricity_need@var:project_token_temp }
-            subtract_from_temp_variable = { cost_temp = proj_electricity_fulfilled@var:project_token_temp }
+            set_temp_variable = { cost_temp = project_scope_temp:proj_electricity_need@var:project_token_temp }
+            subtract_from_temp_variable = { cost_temp = project_scope_temp:proj_electricity_fulfilled@var:project_token_temp }
             multiply_temp_variable = { cost_temp = price@token:resource_electricity }
-            add_to_variable = { proj_estimated_cost@var:project_token_temp = cost_temp }
+            add_to_variable = { project_scope_temp:proj_estimated_cost@var:project_token_temp = cost_temp }
         #
 
         #Estimated Completion Time
-            set_variable = { proj_estimated_complete_time@var:project_token_temp = 0 }
+            set_variable = { project_scope_temp:proj_estimated_complete_time@var:project_token_temp = 0 }
 
-            set_temp_variable = { months_temp = proj_food_need@var:project_token_temp }
-            subtract_from_temp_variable = { months_temp = proj_food_fulfilled@var:project_token_temp }
+            set_temp_variable = { months_temp = project_scope_temp:proj_food_need@var:project_token_temp }
+            subtract_from_temp_variable = { months_temp = project_scope_temp:proj_food_fulfilled@var:project_token_temp }
             if = {
                 limit = {
                     check_variable = { months_temp > 0 }
-                    check_variable = { proj_food_demand@var:project_token_temp > 0 }
+                    check_variable = { project_scope_temp:proj_food_demand@var:project_token_temp > 0 }
                 }
-                divide_temp_variable = { months_temp = proj_food_demand@var:project_token_temp }
+                divide_temp_variable = { months_temp = project_scope_temp:proj_food_demand@var:project_token_temp }
                 if = {
                     limit = {
-                        check_variable = { months_temp > proj_estimated_complete_time@var:project_token_temp }
+                        check_variable = { months_temp > project_scope_temp:proj_estimated_complete_time@var:project_token_temp }
                     }
-                    set_variable = { proj_estimated_complete_time@var:project_token_temp = months_temp }
+                    set_variable = { project_scope_temp:proj_estimated_complete_time@var:project_token_temp = months_temp }
                 }
             }
 
-            set_temp_variable = { months_temp = proj_consumer_goods_need@var:project_token_temp }
-            subtract_from_temp_variable = { months_temp = proj_consumer_goods_fulfilled@var:project_token_temp }
+            set_temp_variable = { months_temp = project_scope_temp:proj_consumer_goods_need@var:project_token_temp }
+            subtract_from_temp_variable = { months_temp = project_scope_temp:proj_consumer_goods_fulfilled@var:project_token_temp }
             if = {
                 limit = {
                     check_variable = { months_temp > 0 }
-                    check_variable = { proj_consumer_goods_demand@var:project_token_temp > 0 }
+                    check_variable = { project_scope_temp:proj_consumer_goods_demand@var:project_token_temp > 0 }
                 }
-                divide_temp_variable = { months_temp = proj_consumer_goods_demand@var:project_token_temp }
+                divide_temp_variable = { months_temp = project_scope_temp:proj_consumer_goods_demand@var:project_token_temp }
                 if = {
                     limit = {
-                        check_variable = { months_temp > proj_estimated_complete_time@var:project_token_temp }
+                        check_variable = { months_temp > project_scope_temp:proj_estimated_complete_time@var:project_token_temp }
                     }
-                    set_variable = { proj_estimated_complete_time@var:project_token_temp = months_temp }
+                    set_variable = { project_scope_temp:proj_estimated_complete_time@var:project_token_temp = months_temp }
                 }
             }
 
-            set_temp_variable = { months_temp = proj_luxury_goods_need@var:project_token_temp }
-            subtract_from_temp_variable = { months_temp = proj_luxury_goods_fulfilled@var:project_token_temp }
+            set_temp_variable = { months_temp = project_scope_temp:proj_luxury_goods_need@var:project_token_temp }
+            subtract_from_temp_variable = { months_temp = project_scope_temp:proj_luxury_goods_fulfilled@var:project_token_temp }
             if = {
                 limit = {
                     check_variable = { months_temp > 0 }
-                    check_variable = { proj_luxury_goods_demand@var:project_token_temp > 0 }
+                    check_variable = { project_scope_temp:proj_luxury_goods_demand@var:project_token_temp > 0 }
                 }
-                divide_temp_variable = { months_temp = proj_luxury_goods_demand@var:project_token_temp }
+                divide_temp_variable = { months_temp = project_scope_temp:proj_luxury_goods_demand@var:project_token_temp }
                 if = {
                     limit = {
-                        check_variable = { months_temp > proj_estimated_complete_time@var:project_token_temp }
+                        check_variable = { months_temp > project_scope_temp:proj_estimated_complete_time@var:project_token_temp }
                     }
-                    set_variable = { proj_estimated_complete_time@var:project_token_temp = months_temp }
+                    set_variable = { project_scope_temp:proj_estimated_complete_time@var:project_token_temp = months_temp }
                 }
             }
 
-            set_temp_variable = { months_temp = proj_services_need@var:project_token_temp }
-            subtract_from_temp_variable = { months_temp = proj_services_fulfilled@var:project_token_temp }
+            set_temp_variable = { months_temp = project_scope_temp:proj_services_need@var:project_token_temp }
+            subtract_from_temp_variable = { months_temp = project_scope_temp:proj_services_fulfilled@var:project_token_temp }
             if = {
                 limit = {
                     check_variable = { months_temp > 0 }
-                    check_variable = { proj_services_demand@var:project_token_temp > 0 }
+                    check_variable = { project_scope_temp:proj_services_demand@var:project_token_temp > 0 }
                 }
-                divide_temp_variable = { months_temp = proj_services_demand@var:project_token_temp }
+                divide_temp_variable = { months_temp = project_scope_temp:proj_services_demand@var:project_token_temp }
                 if = {
                     limit = {
-                        check_variable = { months_temp > proj_estimated_complete_time@var:project_token_temp }
+                        check_variable = { months_temp > project_scope_temp:proj_estimated_complete_time@var:project_token_temp }
                     }
-                    set_variable = { proj_estimated_complete_time@var:project_token_temp = months_temp }
+                    set_variable = { project_scope_temp:proj_estimated_complete_time@var:project_token_temp = months_temp }
                 }
             }
 
-            set_temp_variable = { months_temp = proj_raw_materials_need@var:project_token_temp }
-            subtract_from_temp_variable = { months_temp = proj_raw_materials_fulfilled@var:project_token_temp }
+            set_temp_variable = { months_temp = project_scope_temp:proj_raw_materials_need@var:project_token_temp }
+            subtract_from_temp_variable = { months_temp = project_scope_temp:proj_raw_materials_fulfilled@var:project_token_temp }
             if = {
                 limit = {
                     check_variable = { months_temp > 0 }
-                    check_variable = { proj_raw_materials_demand@var:project_token_temp > 0 }
+                    check_variable = { project_scope_temp:proj_raw_materials_demand@var:project_token_temp > 0 }
                 }
-                divide_temp_variable = { months_temp = proj_raw_materials_demand@var:project_token_temp }
+                divide_temp_variable = { months_temp = project_scope_temp:proj_raw_materials_demand@var:project_token_temp }
                 if = {
                     limit = {
-                        check_variable = { months_temp > proj_estimated_complete_time@var:project_token_temp }
+                        check_variable = { months_temp > project_scope_temp:proj_estimated_complete_time@var:project_token_temp }
                     }
-                    set_variable = { proj_estimated_complete_time@var:project_token_temp = months_temp }
+                    set_variable = { project_scope_temp:proj_estimated_complete_time@var:project_token_temp = months_temp }
                 }
             }
 
-            set_temp_variable = { months_temp = proj_industrial_goods_need@var:project_token_temp }
-            subtract_from_temp_variable = { months_temp = proj_industrial_goods_fulfilled@var:project_token_temp }
+            set_temp_variable = { months_temp = project_scope_temp:proj_industrial_goods_need@var:project_token_temp }
+            subtract_from_temp_variable = { months_temp = project_scope_temp:proj_industrial_goods_fulfilled@var:project_token_temp }
             if = {
                 limit = {
                     check_variable = { months_temp > 0 }
-                    check_variable = { proj_industrial_goods_demand@var:project_token_temp > 0 }
+                    check_variable = { project_scope_temp:proj_industrial_goods_demand@var:project_token_temp > 0 }
                 }
-                divide_temp_variable = { months_temp = proj_industrial_goods_demand@var:project_token_temp }
+                divide_temp_variable = { months_temp = project_scope_temp:proj_industrial_goods_demand@var:project_token_temp }
                 if = {
                     limit = {
-                        check_variable = { months_temp > proj_estimated_complete_time@var:project_token_temp }
+                        check_variable = { months_temp > project_scope_temp:proj_estimated_complete_time@var:project_token_temp }
                     }
-                    set_variable = { proj_estimated_complete_time@var:project_token_temp = months_temp }
+                    set_variable = { project_scope_temp:proj_estimated_complete_time@var:project_token_temp = months_temp }
                 }
             }
 
-            set_temp_variable = { months_temp = proj_energy_materials_need@var:project_token_temp }
-            subtract_from_temp_variable = { months_temp = proj_energy_materials_fulfilled@var:project_token_temp }
+            set_temp_variable = { months_temp = project_scope_temp:proj_energy_materials_need@var:project_token_temp }
+            subtract_from_temp_variable = { months_temp = project_scope_temp:proj_energy_materials_fulfilled@var:project_token_temp }
             if = {
                 limit = {
                     check_variable = { months_temp > 0 }
-                    check_variable = { proj_energy_materials_demand@var:project_token_temp > 0 }
+                    check_variable = { project_scope_temp:proj_energy_materials_demand@var:project_token_temp > 0 }
                 }
-                divide_temp_variable = { months_temp = proj_energy_materials_demand@var:project_token_temp }
+                divide_temp_variable = { months_temp = project_scope_temp:proj_energy_materials_demand@var:project_token_temp }
                 if = {
                     limit = {
-                        check_variable = { months_temp > proj_estimated_complete_time@var:project_token_temp }
+                        check_variable = { months_temp > project_scope_temp:proj_estimated_complete_time@var:project_token_temp }
                     }
-                    set_variable = { proj_estimated_complete_time@var:project_token_temp = months_temp }
+                    set_variable = { project_scope_temp:proj_estimated_complete_time@var:project_token_temp = months_temp }
                 }
             }
 
-            set_temp_variable = { months_temp = proj_electricity_need@var:project_token_temp }
-            subtract_from_temp_variable = { months_temp = proj_electricity_fulfilled@var:project_token_temp }
+            set_temp_variable = { months_temp = project_scope_temp:proj_electricity_need@var:project_token_temp }
+            subtract_from_temp_variable = { months_temp = project_scope_temp:proj_electricity_fulfilled@var:project_token_temp }
             if = {
                 limit = {
                     check_variable = { months_temp > 0 }
-                    check_variable = { proj_electricity_demand@var:project_token_temp > 0 }
+                    check_variable = { project_scope_temp:proj_electricity_demand@var:project_token_temp > 0 }
                 }
-                divide_temp_variable = { months_temp = proj_industrial_goods_demand@var:project_token_temp }
+                divide_temp_variable = { months_temp = project_scope_temp:proj_industrial_goods_demand@var:project_token_temp }
                 if = {
                     limit = {
-                        check_variable = { months_temp > proj_estimated_complete_time@var:project_token_temp }
+                        check_variable = { months_temp > project_scope_temp:proj_estimated_complete_time@var:project_token_temp }
                     }
-                    set_variable = { proj_estimated_complete_time@var:project_token_temp = months_temp }
+                    set_variable = { project_scope_temp:proj_estimated_complete_time@var:project_token_temp = months_temp }
                 }
             }
 
-            round_variable = proj_estimated_complete_time@var:project_token_temp
+            round_variable = project_scope_temp:proj_estimated_complete_time@var:project_token_temp
         #
     }
 }
