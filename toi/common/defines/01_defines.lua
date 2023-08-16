@@ -40,7 +40,7 @@ NDefines.NProduction.BASE_FACTORY_SPEED_NAV = 3      -- vanilla 2.5
 NDefines.NProduction.ANNEX_FUEL_RATIO = 0.5	-- How much fuel will be transferred on annexation
 NDefines.NProduction.MIN_POSSIBLE_TRAINING_MANPOWER = 5000	-- How many deployment lines minimum can be training --100k
 NDefines.NProduction.CAPITULATE_FUEL_RATIO = 0.25 -- How much fuel will be transferred on capitulation --.5
-NDefines.NProduction.PRODUCTION_RESOURCE_LACK_PENALTY = -0.4			-- Penalty decrease while lack of resource per factory --.05
+NDefines.NProduction.PRODUCTION_RESOURCE_LACK_PENALTY = -0.4			-- Penalty decrease while lack of resource per factory --0.05
 
 NDefines.NTechnology.BASE_TECH_COST = 1250 -- 100
 NDefines.NTechnology.MIN_RESEARCH_SPEED = 0.5						-- research speed can't go below this value
@@ -58,7 +58,7 @@ NDefines.NMilitary.PARACHUTE_COMPLETE_ORG = 0.1 -- 0.4
 
 NDefines.NMilitary.HOURLY_ORG_MOVEMENT_IMPACT = -0.1		-- how much org is lost every hour while moving an army. --.2
 NDefines.NMilitary.ENGAGEMENT_WIDTH_PER_WIDTH = 5.0	-- how much enemy combat width we are allowed to engage per width of our own --2
-NDefines.NMilitary.INFRASTRUCTURE_MOVEMENT_SPEED_IMPACT = -0.025	-- speed penalty per infrastucture below maximum. ---.05
+NDefines.NMilitary.INFRASTRUCTURE_MOVEMENT_SPEED_IMPACT = -0.025	-- speed penalty per infrastucture below maximum. ---0.05
 NDefines.NMilitary.DIVISION_SIZE_FOR_XP = 4                 -- how many battalions should a division have to count as a full divisions when calculating XP stuff
 NDefines.NMilitary.MAX_ARMY_EXPERIENCE = 2500			--Max army experience a country can store
 NDefines.NMilitary.MAX_NAVY_EXPERIENCE = 2500			--Max navy experience a country can store
