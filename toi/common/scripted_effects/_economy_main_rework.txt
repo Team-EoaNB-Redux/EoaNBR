@@ -6169,6 +6169,7 @@
 		# Peasants & Subsistence Farms have to be handled seperately
 		
 		set_temp_variable = { total_workers_temp = laborers_workforce }
+		add_to_temp_variable = { total_workers_temp = peasants_unemployed }
 		add_to_temp_variable = { total_workers_temp = workers_workforce }
 		add_to_temp_variable = { total_workers_temp = professionals_workforce }
 		add_to_temp_variable = { total_workers_temp = specialists_workforce }
@@ -6191,6 +6192,9 @@
 
 		# log = "wjr: [?workers_jobs_ratio]"
 
+        set_temp_variable = { peasants_change = peasants_unemployed }
+        multiply_temp_variable = { peasants_change = -1 }
+
 		set_temp_variable = { laborers_change = laborers_jobs }
 		multiply_temp_variable = { laborers_change = workers_jobs_ratio }
 		subtract_from_temp_variable = { laborers_change = laborers_workforce }
@@ -6207,11 +6211,17 @@
 		multiply_temp_variable = { specialists_change = workers_jobs_ratio }
 		subtract_from_temp_variable = { specialists_change = specialists_workforce }
 
-		set_temp_variable = { aristocrats_change = aristocrats_jobs }
+        set_temp_variable = { aristocrats_jobs_temp = aristocrats_jobs }
+		subtract_from_temp_variable = { aristocrats_jobs_temp = aristocrats_jobs@token:building_subsistence_farm }
+		subtract_from_temp_variable = { aristocrats_jobs_temp = aristocrats_jobs@token:building_rice_paddy }
+
+        set_temp_variable = { aristocrats_workforce_temp = aristocrats_workforce }
+		subtract_from_temp_variable = { aristocrats_workforce_temp = aristocrats_employed@token:building_subsistence_farm }
+		subtract_from_temp_variable = { aristocrats_workforce_temp = aristocrats_employed@token:building_rice_paddy }
+
+		set_temp_variable = { aristocrats_change = aristocrats_jobs_temp }
 		multiply_temp_variable = { aristocrats_change = workers_jobs_ratio }
-		subtract_from_temp_variable = { aristocrats_change = aristocrats_workforce }
-		add_to_temp_variable = { aristocrats_change = aristocrats_employed@token:building_subsistence_farm }
-		add_to_temp_variable = { aristocrats_change = aristocrats_employed@token:building_rice_paddy }
+		subtract_from_temp_variable = { aristocrats_change = aristocrats_workforce_temp }
         
 		set_temp_variable = { capitalists_change = capitalists_jobs }
 		multiply_temp_variable = { capitalists_change = workers_jobs_ratio }
@@ -6239,6 +6249,7 @@
 		## Making sure negatives don't go beyond actual amount ##
 			if = {	
 				limit = {
+					check_variable = { slaves_change < 0 }
 					set_temp_variable = { slaves_temp = slaves_change }
 					multiply_temp_variable = { slaves_temp = -1 }
 					check_variable = { slaves_temp > slaves_workforce }
@@ -6248,6 +6259,7 @@
 			}
 			if = {	
 				limit = {
+					check_variable = { peasants_change < 0 }
 					set_temp_variable = { peasants_temp = peasants_change }
 					multiply_temp_variable = { peasants_temp = -1 }
 					check_variable = { peasants_temp > peasants_workforce }
@@ -6257,6 +6269,7 @@
 			}
 			if = {	
 				limit = {
+					check_variable = { laborers_change < 0 }
 					set_temp_variable = { laborers_temp = laborers_change }
 					multiply_temp_variable = { laborers_temp = -1 }
 					check_variable = { laborers_temp > laborers_workforce }
@@ -6266,6 +6279,7 @@
 			}
 			if = {	
 				limit = {
+					check_variable = { workers_change < 0 }
 					set_temp_variable = { workers_temp = workers_change }
 					multiply_temp_variable = { workers_temp = -1 }
 					check_variable = { workers_temp > workers_workforce }
@@ -6275,6 +6289,7 @@
 			}
 			if = {	
 				limit = {
+					check_variable = { professionals_change < 0 }
 					set_temp_variable = { professionals_temp = professionals_change }
 					multiply_temp_variable = { professionals_temp = -1 }
 					check_variable = { professionals_temp > professionals_workforce }
@@ -6284,6 +6299,7 @@
 			}
 			if = {	
 				limit = {
+					check_variable = { specialists_change < 0 }
 					set_temp_variable = { specialists_temp = specialists_change }
 					multiply_temp_variable = { specialists_temp = -1 }
 					check_variable = { specialists_temp > specialists_workforce }
@@ -6293,6 +6309,7 @@
 			}
 			if = {	
 				limit = {
+					check_variable = { aristocrats_change < 0 }
 					set_temp_variable = { aristocrats_temp = aristocrats_change }
 					multiply_temp_variable = { aristocrats_temp = -1 }
 					check_variable = { aristocrats_temp > aristocrats_workforce }
@@ -6302,6 +6319,7 @@
 			}
 			if = {	
 				limit = {
+					check_variable = { capitalists_change < 0 }
 					set_temp_variable = { capitalists_temp = capitalists_change }
 					multiply_temp_variable = { capitalists_temp = -1 }
 					check_variable = { capitalists_temp > capitalists_workforce }
@@ -6311,6 +6329,7 @@
 			}
 			if = {	
 				limit = {
+					check_variable = { bureaucrats_change < 0 }
 					set_temp_variable = { bureaucrats_temp = bureaucrats_change }
 					multiply_temp_variable = { bureaucrats_temp = -1 }
 					check_variable = { bureaucrats_temp > bureaucrats_workforce }
@@ -6320,6 +6339,7 @@
 			}
 			if = {	
 				limit = {
+					check_variable = { soldiers_change < 0 }
 					set_temp_variable = { soldiers_temp = soldiers_change }
 					multiply_temp_variable = { soldiers_temp = -1 }
 					check_variable = { soldiers_temp > soldiers_workforce }
@@ -6639,28 +6659,28 @@
 			#
 
 			# Debugging #
-				# if = { limit = { NOT = { check_variable = { slaves_change = 0 } } }  log = "Slaves Change: [?slaves_change]" }
-				# if = { limit = { NOT = { check_variable = { peasants_change = 0 } } }  log = "Peasants Change: [?peasants_change]" }
-				# if = { limit = { NOT = { check_variable = { laborers_change = 0 } } }  log = "Laborers Change: [?laborers_change]" }
-				# if = { limit = { NOT = { check_variable = { workers_change = 0 } } }  log = "Workers Change: [?workers_change]" }
-				# if = { limit = { NOT = { check_variable = { professionals_change = 0 } } }  log = "Professionals Change: [?professionals_change]" }
-				# if = { limit = { NOT = { check_variable = { specialists_change = 0 } } }  log = "Specialists Change: [?specialists_change]" }
-				# if = { limit = { NOT = { check_variable = { aristocrats_change = 0 } } }  log = "Aristocrats Change: [?aristocrats_change]" }
-				# if = { limit = { NOT = { check_variable = { capitalists_change = 0 } } }  log = "Capitalists Change: [?capitalists_change]" }
-				# if = { limit = { NOT = { check_variable = { bureaucrats_change = 0 } } }  log = "Bureaucrats Change: [?bureaucrats_change]" }
-				# if = { limit = { NOT = { check_variable = { soldiers_change = 0 } } }  log = "Soldiers Change: [?soldiers_change]" }
-				# log = "BEFORE:"
-				# if = { limit = { NOT = { check_variable = { slaves_workforce = 0 } } }  log = "Slaves Workforce: [?slaves_workforce]" }
-				# if = { limit = { NOT = { check_variable = { peasants_workforce = 0 } } }  log = "Peasants Workforce: [?peasants_workforce]" }
-				# if = { limit = { NOT = { check_variable = { laborers_workforce = 0 } } }  log = "Laborers Workforce: [?laborers_workforce]" }
-				# if = { limit = { NOT = { check_variable = { workers_workforce = 0 } } }  log = "Workers Workforce: [?workers_workforce]" }
-				# if = { limit = { NOT = { check_variable = { professionals_workforce = 0 } } }  log = "Professionals Workforce: [?professionals_workforce]" }
-				# if = { limit = { NOT = { check_variable = { specialists_workforce = 0 } } }  log = "Specialists Workforce: [?specialists_workforce]" }
-				# if = { limit = { NOT = { check_variable = { aristocrats_workforce = 0 } } }  log = "Aristocrats Workforce: [?aristocrats_workforce]" }
-				# if = { limit = { NOT = { check_variable = { capitalists_workforce = 0 } } }  log = "Capitalists Workforce: [?capitalists_workforce]" }
-				# if = { limit = { NOT = { check_variable = { bureaucrats_workforce = 0 } } }  log = "Bureaucrats Workforce: [?bureaucrats_workforce]" }
-				# if = { limit = { NOT = { check_variable = { soldiers_workforce = 0 } } }  log = "Soldiers Workforce: [?soldiers_workforce]" }
-				# log = "AFTER:"
+				if = { limit = { NOT = { check_variable = { slaves_change = 0 } } }  log = "Slaves Change: [?slaves_change]" }
+				if = { limit = { NOT = { check_variable = { peasants_change = 0 } } }  log = "Peasants Change: [?peasants_change]" }
+				if = { limit = { NOT = { check_variable = { laborers_change = 0 } } }  log = "Laborers Change: [?laborers_change]" }
+				if = { limit = { NOT = { check_variable = { workers_change = 0 } } }  log = "Workers Change: [?workers_change]" }
+				if = { limit = { NOT = { check_variable = { professionals_change = 0 } } }  log = "Professionals Change: [?professionals_change]" }
+				if = { limit = { NOT = { check_variable = { specialists_change = 0 } } }  log = "Specialists Change: [?specialists_change]" }
+				if = { limit = { NOT = { check_variable = { aristocrats_change = 0 } } }  log = "Aristocrats Change: [?aristocrats_change]" }
+				if = { limit = { NOT = { check_variable = { capitalists_change = 0 } } }  log = "Capitalists Change: [?capitalists_change]" }
+				if = { limit = { NOT = { check_variable = { bureaucrats_change = 0 } } }  log = "Bureaucrats Change: [?bureaucrats_change]" }
+				if = { limit = { NOT = { check_variable = { soldiers_change = 0 } } }  log = "Soldiers Change: [?soldiers_change]" }
+				log = "BEFORE:"
+				if = { limit = { NOT = { check_variable = { slaves_workforce = 0 } } }  log = "Slaves Workforce: [?slaves_workforce]" }
+				if = { limit = { NOT = { check_variable = { peasants_workforce = 0 } } }  log = "Peasants Workforce: [?peasants_workforce]" }
+				if = { limit = { NOT = { check_variable = { laborers_workforce = 0 } } }  log = "Laborers Workforce: [?laborers_workforce]" }
+				if = { limit = { NOT = { check_variable = { workers_workforce = 0 } } }  log = "Workers Workforce: [?workers_workforce]" }
+				if = { limit = { NOT = { check_variable = { professionals_workforce = 0 } } }  log = "Professionals Workforce: [?professionals_workforce]" }
+				if = { limit = { NOT = { check_variable = { specialists_workforce = 0 } } }  log = "Specialists Workforce: [?specialists_workforce]" }
+				if = { limit = { NOT = { check_variable = { aristocrats_workforce = 0 } } }  log = "Aristocrats Workforce: [?aristocrats_workforce]" }
+				if = { limit = { NOT = { check_variable = { capitalists_workforce = 0 } } }  log = "Capitalists Workforce: [?capitalists_workforce]" }
+				if = { limit = { NOT = { check_variable = { bureaucrats_workforce = 0 } } }  log = "Bureaucrats Workforce: [?bureaucrats_workforce]" }
+				if = { limit = { NOT = { check_variable = { soldiers_workforce = 0 } } }  log = "Soldiers Workforce: [?soldiers_workforce]" }
+				log = "AFTER:"
 			#
 
 			## Changes to Workforce ##
@@ -6697,17 +6717,17 @@
 		}
 
 		# More Debugging #
-			# if = { limit = { NOT = { check_variable = { slaves_workforce = 0 } } }  log = "Slaves Workforce: [?slaves_workforce]" }
-			# if = { limit = { NOT = { check_variable = { peasants_workforce = 0 } } }  log = "Peasants Workforce: [?peasants_workforce]" }
-			# if = { limit = { NOT = { check_variable = { laborers_workforce = 0 } } }  log = "Laborers Workforce: [?laborers_workforce]" }
-			# if = { limit = { NOT = { check_variable = { workers_workforce = 0 } } }  log = "Workers Workforce: [?workers_workforce]" }
-			# if = { limit = { NOT = { check_variable = { professionals_workforce = 0 } } }  log = "Professionals Workforce: [?professionals_workforce]" }
-			# if = { limit = { NOT = { check_variable = { specialists_workforce = 0 } } }  log = "Specialists Workforce: [?specialists_workforce]" }
-			# if = { limit = { NOT = { check_variable = { aristocrats_workforce = 0 } } }  log = "Aristocrats Workforce: [?aristocrats_workforce]" }
-			# if = { limit = { NOT = { check_variable = { capitalists_workforce = 0 } } }  log = "Capitalists Workforce: [?capitalists_workforce]" }
-			# if = { limit = { NOT = { check_variable = { bureaucrats_workforce = 0 } } }  log = "Bureaucrats Workforce: [?bureaucrats_workforce]" }
-			# if = { limit = { NOT = { check_variable = { soldiers_workforce = 0 } } }  log = "Soldiers Workforce: [?soldiers_workforce]" }
-			# log = "PERCENT DONE: [?percent_done]"
+			if = { limit = { NOT = { check_variable = { slaves_workforce = 0 } } }  log = "Slaves Workforce: [?slaves_workforce]" }
+			if = { limit = { NOT = { check_variable = { peasants_workforce = 0 } } }  log = "Peasants Workforce: [?peasants_workforce]" }
+			if = { limit = { NOT = { check_variable = { laborers_workforce = 0 } } }  log = "Laborers Workforce: [?laborers_workforce]" }
+			if = { limit = { NOT = { check_variable = { workers_workforce = 0 } } }  log = "Workers Workforce: [?workers_workforce]" }
+			if = { limit = { NOT = { check_variable = { professionals_workforce = 0 } } }  log = "Professionals Workforce: [?professionals_workforce]" }
+			if = { limit = { NOT = { check_variable = { specialists_workforce = 0 } } }  log = "Specialists Workforce: [?specialists_workforce]" }
+			if = { limit = { NOT = { check_variable = { aristocrats_workforce = 0 } } }  log = "Aristocrats Workforce: [?aristocrats_workforce]" }
+			if = { limit = { NOT = { check_variable = { capitalists_workforce = 0 } } }  log = "Capitalists Workforce: [?capitalists_workforce]" }
+			if = { limit = { NOT = { check_variable = { bureaucrats_workforce = 0 } } }  log = "Bureaucrats Workforce: [?bureaucrats_workforce]" }
+			if = { limit = { NOT = { check_variable = { soldiers_workforce = 0 } } }  log = "Soldiers Workforce: [?soldiers_workforce]" }
+			log = "PERCENT DONE: [?percent_done]"
 		#
 
 		## Reset Temp Vars ##
@@ -9885,6 +9905,8 @@
             multiply_variable = { industrial_capacity_use@var:bu_token = cap_modifier_temp }
             multiply_variable = { industrial_capacity_use@var:bu_token = input_modifier_temp }
             multiply_variable = { industrial_capacity_use@var:bu_token = throughput_modifier_temp }
+            multiply_variable = { industrial_capacity_use@var:bu_token = employment_percentage@var:bu_token }
+            divide_variable = { industrial_capacity_use@var:bu_token = 100 }
 
             multiply_variable = { shipping_capacity@var:bu_token = size@var:bu_token }
             multiply_variable = { industrial_capacity@var:bu_token = size@var:bu_token }
