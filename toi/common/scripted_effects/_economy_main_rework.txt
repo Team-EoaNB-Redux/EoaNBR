@@ -186,28 +186,199 @@
                         is_ai = yes
                         check_variable = { net_budget < 0 }
                     }
-					set_temp_variable = { percent_change_temp = 1 }
                     if = {
                         limit = {
-                            check_variable = { sales_tax_percentage > 0 }
-                            check_variable = { sales_tax_revenue > 0 }
+                            check_variable = { sales_tax_percentage < 100 }
                         }
-                        set_temp_variable = { st_per = sales_tax_revenue }
-                        divide_temp_variable = { st_per = sales_tax_percentage }
-
-					    set_temp_variable = { percent_change_temp = net_budget }
-                        divide_temp_variable = { percent_change_temp = st_per }
-                        multiply_temp_variable = { percent_change_temp = -1 }
-					    add_to_temp_variable = { percent_change_temp = 0.5 }
-                        round_temp_variable = percent_change_temp
+                        set_temp_variable = { percent_change_temp = 5 }
                         if = {
                             limit = {
-                                check_variable = { percent_change_temp < 1 }
+                                check_variable = { sales_tax_percentage > 0 }
+                                check_variable = { sales_tax_revenue > 0 }
                             }
-					        set_temp_variable = { percent_change_temp = 1 }
+                            set_temp_variable = { st_per = sales_tax_revenue }
+                            divide_temp_variable = { st_per = sales_tax_percentage }
+
+                            set_temp_variable = { percent_change_temp = net_budget }
+                            divide_temp_variable = { percent_change_temp = st_per }
+                            multiply_temp_variable = { percent_change_temp = -1 }
+                            add_to_temp_variable = { percent_change_temp = 0.5 }
+                            round_temp_variable = percent_change_temp
+                            if = {
+                                limit = {
+                                    check_variable = { percent_change_temp < 5 }
+                                }
+                                set_temp_variable = { percent_change_temp = 5 }
+                            }
+                        }
+                        change_sales_tax = yes
+                    }
+                    else_if = {
+                        limit = {
+                            check_variable = { income_tax_lower_strata_percentage < 100 }
+                        }
+                        set_temp_variable = { percent_change_temp = 5 }
+                        if = {
+                            limit = {
+                                check_variable = { income_tax_lower_strata_percentage > 0 }
+                                check_variable = { income_tax_lower_strata_revenue > 0 }
+                            }
+                            set_temp_variable = { st_per = income_tax_lower_strata_revenue }
+                            divide_temp_variable = { st_per = income_tax_lower_strata_percentage }
+
+                            set_temp_variable = { percent_change_temp = net_budget }
+                            divide_temp_variable = { percent_change_temp = st_per }
+                            multiply_temp_variable = { percent_change_temp = -1 }
+                            add_to_temp_variable = { percent_change_temp = 0.5 }
+                            round_temp_variable = percent_change_temp
+                            if = {
+                                limit = {
+                                    check_variable = { percent_change_temp < 5 }
+                                }
+                                set_temp_variable = { percent_change_temp = 5 }
+                            }
+                        }
+                        change_lower_strata_income_tax = yes
+                    }
+                    else_if = {
+                        limit = {
+                            check_variable = { income_tax_middle_strata_percentage < 100 }
+                        }
+                        set_temp_variable = { percent_change_temp = 5 }
+                        if = {
+                            limit = {
+                                check_variable = { income_tax_middle_strata_percentage > 0 }
+                                check_variable = { income_tax_middle_strata_revenue > 0 }
+                            }
+                            set_temp_variable = { st_per = income_tax_middle_strata_revenue }
+                            divide_temp_variable = { st_per = income_tax_middle_strata_percentage }
+
+                            set_temp_variable = { percent_change_temp = net_budget }
+                            divide_temp_variable = { percent_change_temp = st_per }
+                            multiply_temp_variable = { percent_change_temp = -1 }
+                            add_to_temp_variable = { percent_change_temp = 0.5 }
+                            round_temp_variable = percent_change_temp
+                            if = {
+                                limit = {
+                                    check_variable = { percent_change_temp < 5 }
+                                }
+                                set_temp_variable = { percent_change_temp = 5 }
+                            }
+                        }
+                        change_middle_strata_income_tax = yes
+                    }
+                    else_if = {
+                        limit = {
+                            check_variable = { income_tax_upper_strata_percentage < 100 }
+                        }
+                        set_temp_variable = { percent_change_temp = 5 }
+                        if = {
+                            limit = {
+                                check_variable = { income_tax_upper_strata_percentage > 0 }
+                                check_variable = { income_tax_upper_strata_revenue > 0 }
+                            }
+                            set_temp_variable = { st_per = income_tax_upper_strata_revenue }
+                            divide_temp_variable = { st_per = income_tax_upper_strata_percentage }
+
+                            set_temp_variable = { percent_change_temp = net_budget }
+                            divide_temp_variable = { percent_change_temp = st_per }
+                            multiply_temp_variable = { percent_change_temp = -1 }
+                            add_to_temp_variable = { percent_change_temp = 0.5 }
+                            round_temp_variable = percent_change_temp
+                            if = {
+                                limit = {
+                                    check_variable = { percent_change_temp < 5 }
+                                }
+                                set_temp_variable = { percent_change_temp = 5 }
+                            }
+                        }
+                        change_upper_strata_income_tax = yes
+                    }
+                }
+                else_if = { # AI debt repayment
+                    limit = {
+                        is_ai = yes
+                        check_variable = { debt_level > 0 }
+                        set_temp_variable = { debt_amount_temp = 0.025 }
+                        multiply_temp_variable = { debt_amount_temp = gdp_amount }
+                        check_variable = { net_budget < debt_amount_temp }
+                    }
+                    if = {
+                        limit = {
+                            check_variable = { sales_tax_percentage < 100 }
+                        }
+                        set_temp_variable = { percent_change_temp = 5 }
+                        change_sales_tax = yes
+                    }
+                    else_if = {
+                        limit = {
+                            check_variable = { income_tax_lower_strata_percentage < 100 }
+                        }
+                        set_temp_variable = { percent_change_temp = 5 }
+                        change_lower_strata_income_tax = yes
+                    }
+                    else_if = {
+                        limit = {
+                            check_variable = { income_tax_middle_strata_percentage < 100 }
+                        }
+                        set_temp_variable = { percent_change_temp = 5 }
+                        change_middle_strata_income_tax = yes
+                    }
+                    else_if = {
+                        limit = {
+                            check_variable = { income_tax_upper_strata_percentage < 100 }
+                        }
+                        set_temp_variable = { percent_change_temp = 5 }
+                        change_upper_strata_income_tax = yes
+                    }
+                }
+                else_if = { # AI lowers taxes if no debt OR if has debt and is earning wayyy too much
+                    limit = {
+                        is_ai = yes
+                        OR = {
+                            AND = {
+                                check_variable = { debt_level = 0 }
+                                set_temp_variable = { debt_amount_temp = 0.005 }
+                                multiply_temp_variable = { debt_amount_temp = gdp_amount }
+                                check_variable = { net_budget > debt_amount_temp }
+                            }
+                            AND = {
+                                check_variable = { debt_level > 0 }
+                                set_temp_variable = { debt_amount_temp = 0.04 }
+                                multiply_temp_variable = { debt_amount_temp = gdp_amount }
+                                check_variable = { net_budget > debt_amount_temp }
+                            }
                         }
                     }
-					change_sales_tax = yes
+
+                    if = {
+                        limit = {
+                            check_variable = { income_tax_upper_strata_percentage > 100 }
+                        }
+                        set_temp_variable = { percent_change_temp = -5 }
+                        change_upper_strata_income_tax = yes
+                    }
+                    else_if = {
+                        limit = {
+                            check_variable = { income_tax_middle_strata_percentage > 0 }
+                        }
+                        set_temp_variable = { percent_change_temp = -5 }
+                        change_middle_strata_income_tax = yes
+                    }
+                    else_if = {
+                        limit = {
+                            check_variable = { income_tax_lower_strata_percentage > 0 }
+                        }
+                        set_temp_variable = { percent_change_temp = -5 }
+                        change_lower_strata_income_tax = yes
+                    }
+                    else_if = {
+                        limit = {
+                            check_variable = { sales_tax_percentage > 0 }
+                        }
+                        set_temp_variable = { percent_change_temp = -5 }
+                        change_sales_tax = yes
+                    }
                 }
                 if = { # AI always funds its military
                     limit = {
