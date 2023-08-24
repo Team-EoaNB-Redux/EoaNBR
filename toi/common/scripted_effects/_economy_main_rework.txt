@@ -3966,6 +3966,7 @@
 			set_variable = { pops_employed = 0 }
             set_variable = { pops_sol = 0 }
             set_variable = { pops_income_tax_spending = 0 }
+            set_variable = { pops_corporate_tax_spending = 0 }
             set_variable = { pops_sales_tax_spending = 0 }
             set_variable = { pops_debt_interest_spending = 0 }
             set_variable = { pops_spending_target = 0 }
@@ -4047,6 +4048,8 @@
         divide_temp_variable = { lower_income_multiplier = 100 }
         set_temp_variable = { sales_tax_multiplier = controller:sales_tax_percentage_actual }
         divide_temp_variable = { sales_tax_multiplier = 100 }
+        set_temp_variable = { corporate_tax_multiplier = controller:corporate_tax_percentage_actual }
+        divide_temp_variable = { corporate_tax_multiplier = 100 }
 
         # Slaves
             if = {
@@ -4740,18 +4743,45 @@
                         check_variable = { avg_earnings_temp < lower_earnings_limit }
                     }
                     multiply_variable = { aristocrats_income_tax_spending = lower_income_multiplier }
+
+                    set_temp_variable = { ic_temp = 1 }
+                    subtract_from_temp_variable = { ic_temp = lower_income_multiplier }
+                    multiply_variable = { capitalists_investment = ic_temp }
                 }
                 else_if = {
                     limit = {
                         check_variable = { avg_earnings_temp < upper_earnings_limit }
                     }
                     multiply_variable = { aristocrats_income_tax_spending = middle_income_multiplier }
+
+                    set_temp_variable = { ic_temp = 1 }
+                    subtract_from_temp_variable = { ic_temp = middle_income_multiplier }
+                    multiply_variable = { capitalists_investment = ic_temp }
                 }
                 else = {
                     multiply_variable = { aristocrats_income_tax_spending = upper_income_multiplier }
+
+                    set_temp_variable = { ic_temp = 1 }
+                    subtract_from_temp_variable = { ic_temp = upper_income_multiplier }
+                    multiply_variable = { capitalists_investment = ic_temp }
                 }
                 add_to_variable = { aristocrats_spending = aristocrats_income_tax_spending }
                 add_to_variable = { pops_income_tax_spending = aristocrats_income_tax_spending }
+                
+                #Corporate Tax
+                set_variable = { aristocrats_corporate_tax_spending = aristocrats_dividends }
+                multiply_variable = { aristocrats_corporate_tax_spending = corporate_tax_multiplier }
+                
+                set_temp_variable = { investment_reduction_temp = 0.25 } # What % of corp tax spending go into reducing investment
+                add_to_temp_variable = { investment_reduction_temp = controller:modifier@aristocrats_investment_contribution_factor }
+                if = { limit = { check_variable = { investment_reduction_temp > 1 } } set_variable = { investment_reduction_temp = 1 } }
+                set_variable = { aristocrats_investment_tax = aristocrats_corporate_tax_spending }
+                multiply_variable = { aristocrats_investment_tax = investment_reduction_temp }
+                if = { limit = { check_variable = { aristocrats_investment_tax > aristocrats_investment } } set_variable = { aristocrats_investment_tax = aristocrats_investment }  }
+                subtract_from_variable = { aristocrats_corporate_tax_spending = aristocrats_investment_tax }
+
+                add_to_variable = { aristocrats_spending = aristocrats_corporate_tax_spending }
+                add_to_variable = { pops_corporate_tax_spending = aristocrats_corporate_tax_spending }
 
                 #Spending Target
                 set_variable = { aristocrats_spending_target = aristocrats_earnings }
@@ -4809,7 +4839,7 @@
                     subtract_from_variable = { capitalists_earnings = capitalists_investment }
                 }
                 else = {
-                    set_variable = { capitalists_earnings = 0 }
+                    set_variable = { capitalists_dividends = 0 }
                 }
                 if = {
                     limit = {
@@ -4859,18 +4889,46 @@
                         check_variable = { avg_earnings_temp < lower_earnings_limit }
                     }
                     multiply_variable = { capitalists_income_tax_spending = lower_income_multiplier }
+
+                    set_temp_variable = { ic_temp = 1 }
+                    subtract_from_temp_variable = { ic_temp = lower_income_multiplier }
+                    multiply_variable = { capitalists_investment = ic_temp }
                 }
                 else_if = {
                     limit = {
                         check_variable = { avg_earnings_temp < upper_earnings_limit }
                     }
                     multiply_variable = { capitalists_income_tax_spending = middle_income_multiplier }
+
+                    set_temp_variable = { ic_temp = 1 }
+                    subtract_from_temp_variable = { ic_temp = middle_income_multiplier }
+                    multiply_variable = { capitalists_investment = ic_temp }
                 }
                 else = {
                     multiply_variable = { capitalists_income_tax_spending = upper_income_multiplier }
+
+                    set_temp_variable = { ic_temp = 1 }
+                    subtract_from_temp_variable = { ic_temp = upper_income_multiplier }
+                    multiply_variable = { capitalists_investment = ic_temp }
                 }
+                
                 add_to_variable = { capitalists_spending = capitalists_income_tax_spending }
                 add_to_variable = { pops_income_tax_spending = capitalists_income_tax_spending }
+
+                #Corporate Tax
+                set_variable = { capitalists_corporate_tax_spending = capitalists_dividends }
+                multiply_variable = { capitalists_corporate_tax_spending = corporate_tax_multiplier }
+                
+                set_temp_variable = { investment_reduction_temp = 0.25 } # What % of corp tax spending go into reducing investment
+                add_to_temp_variable = { investment_reduction_temp = controller:modifier@capitalists_investment_contribution_factor }
+                if = { limit = { check_variable = { investment_reduction_temp > 1 } } set_variable = { investment_reduction_temp = 1 } }
+                set_variable = { capitalists_investment_tax = capitalists_corporate_tax_spending }
+                multiply_variable = { capitalists_investment_tax = investment_reduction_temp }
+                if = { limit = { check_variable = { capitalists_investment_tax > capitalists_investment } } set_variable = { capitalists_investment_tax = capitalists_investment }  }
+                subtract_from_variable = { capitalists_corporate_tax_spending = capitalists_investment_tax }
+
+                add_to_variable = { capitalists_spending = capitalists_corporate_tax_spending }
+                add_to_variable = { pops_corporate_tax_spending = capitalists_corporate_tax_spending }
 
                 #Spending Target
                 set_variable = { capitalists_spending_target = capitalists_earnings }
@@ -5122,6 +5180,7 @@
         set_variable = { pops_spending = pops_needs_spending }
         add_to_variable = { pops_spending = pops_income_tax_spending }
         add_to_variable = { pops_spending = pops_sales_tax_spending }
+        add_to_variable = { pops_spending = pops_corporate_tax_spending }
         add_to_variable = { pops_spending = pops_debt_interest_spending }
 
         divide_variable = { pops_sol = pops_workforce }
@@ -6935,7 +6994,9 @@
         set_variable = { pops_earnings = 0 }
 
         set_variable = { capitalists_workforce = 0 }
+        set_variable = { capitalists_dividends = 0 }
         set_variable = { aristocrats_workforce = 0 }
+        set_variable = { aristocrats_dividends = 0 }
 
         every_controlled_state = {
             #Pops
@@ -6953,7 +7014,9 @@
             add_to_variable = { PREV.pops_earnings = pops_earnings }
             
             add_to_variable = { PREV.capitalists_workforce = capitalists_workforce }
+            add_to_variable = { PREV.capitalists_dividends = capitalists_dividends }
             add_to_variable = { PREV.aristocrats_workforce = aristocrats_workforce }
+            add_to_variable = { PREV.aristocrats_dividends = aristocrats_dividends }
         }
 
         divide_variable = { pops_sol = pops }
@@ -11645,10 +11708,13 @@
     investment_fund_update = {
         set_variable = { investment_fund_capitalists_investment = 0 }
         set_variable = { investment_fund_aristocrats_investment = 0 }
+        set_variable = { investment_fund_spending_corporate_tax = 0 }
         set_variable = { investment_fund_spending_construction = 0 }
 		every_controlled_state = {
             add_to_variable = { PREV.investment_fund_capitalists_investment = capitalists_investment }
             add_to_variable = { PREV.investment_fund_aristocrats_investment = aristocrats_investment }
+            add_to_variable = { PREV.investment_fund_spending_corporate_tax = capitalists_investment_tax }
+            add_to_variable = { PREV.investment_fund_spending_corporate_tax = aristocrats_investment_tax }
 
             for_each_loop = {
                 array = buildings
@@ -11684,6 +11750,7 @@
 
         set_variable = { investment_fund_spending = investment_fund_spending_construction }
         add_to_variable = { investment_fund_spending = investment_fund_spending_interest }
+        add_to_variable = { investment_fund_spending = investment_fund_spending_corporate_tax }
 
         # Balance
         set_variable = { investment_fund_balance = investment_fund_income }
@@ -14221,6 +14288,19 @@
 		#
 
 		#Corporate
+            set_variable = { corporate_tax_revenue = capitalists_dividends }
+            add_to_variable = { corporate_tax_revenue = aristocrats_dividends }
+            if = {
+                limit = {
+                    check_variable = { corporate_tax_revenue > 1000 }
+                }
+                divide_variable = { corporate_tax_revenue = 100 }
+                multiply_variable = { corporate_tax_revenue = corporate_tax_percentage_actual }
+            }
+            else = {
+                multiply_variable = { corporate_tax_revenue = corporate_tax_percentage_actual }
+                divide_variable = { corporate_tax_revenue = 100 }
+            }
 		#
 
 		#Tariffs
@@ -14253,6 +14333,7 @@
 
 		set_variable = { revenue = income_tax_revenue }
 		add_to_variable = { revenue = sales_tax_revenue }
+        add_to_variable = { revenue = corporate_tax_revenue }
 		add_to_variable = { revenue = import_tariff_revenue }
 		add_to_variable = { revenue = export_tariff_revenue }
         add_to_variable = { revenue = public_enterprise_revenue }
@@ -14866,6 +14947,10 @@
         set_variable = { corporate_tax_percentage_actual = corporate_tax_percentage }
         multiply_variable = { corporate_tax_percentage_actual = modifier@tax_efficiency_factor }
 
+        every_controlled_state = {
+            pops_update = yes
+        }
+        investment_fund_update = yes
 		taxes_update = yes
 	}
 	change_import_tariff = {
