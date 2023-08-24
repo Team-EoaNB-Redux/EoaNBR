@@ -2747,6 +2747,7 @@
             }
 
             update_country_pop_stats = yes
+            io_state_list = yes
             investment_opportunities_update = yes
 
             for_loop_effect = {
@@ -10725,6 +10726,8 @@
 #Investment
     # Opportunities
     investment_opportunities_monthly = {
+        io_state_list = yes
+
         for_loop_effect = {
             end = investment_opportunities_monthly
             add_to_variable = { investment_opportunities_cap = investment_opportunities_monthly }
@@ -11211,8 +11214,12 @@
             limit = {
                 check_variable = { investment_opportunities^num < investment_opportunities_cap }
             }
+            # BUILD/EXPAND industrial capacity
+            generate_investment_opportunity_industrial_cap = yes
+
             if = { # BUILD a NEW Building
                 limit = {
+                    NOT = { has_country_flag = investment_opportunity_done } # Nothing else was done
                     OR = {
                         AND = {
                             check_variable = { investment_opportunities_cap > 3 }
@@ -11251,6 +11258,38 @@
             add_investment_opportunity = yes
         }
     }
+    generate_investment_opportunity_industrial_cap = {
+        io_state_industrial_cap = yes
+        if = { limit = { NOT = { check_variable = { chosen_state = 0 } } } # State was chosen
+
+            # If railways are unlocked (State choice already avoids states with IC buildings being built in them), choose them. Otherwise, infra
+            if = {
+                limit = {
+                    check_variable = { latest_production_method@token:building_railway > -1 }
+                }
+                set_temp_variable = { investment_building_temp = token:building_railway }
+            }
+            else = {
+                set_temp_variable = { investment_building_temp = token:building_infrastructure }
+            }
+
+            if = { # If building isn't in state, then it's a build action. Otherwise expand.
+                limit = {
+                    NOT = {
+                        var:chosen_state = {
+                            is_in_array = { buildings = investment_building_temp }
+                        }
+                    }
+                }
+                set_temp_variable = { investment_type_temp = 0 } # build
+            }
+            else = {
+                set_temp_variable = { investment_type_temp = 1 } # expand
+            }
+            
+            set_country_flag = investment_opportunity_done
+        }
+    }
     generate_investment_opportunity_build = {
         io_state_build = yes # Pick a state
 
@@ -11269,6 +11308,8 @@
                         NOT = { check_variable = { potential_building_token = token:building_naval_industry } }
                         NOT = { check_variable = { potential_building_token = token:building_subsistence_farm } }
                         NOT = { check_variable = { potential_building_token = token:building_rice_paddy } }
+                        NOT = { check_variable = { potential_building_token = token:building_infrastructure } }
+                        NOT = { check_variable = { potential_building_token = token:building_railway } }
                         NOT = {
                             var:chosen_state = {
                                 is_in_array = { buildings = potential_building_token }
@@ -11322,7 +11363,10 @@
                         NOT = { check_variable = { potential_building_token = token:building_naval_industry } }
                         NOT = { check_variable = { potential_building_token = token:building_subsistence_farm } }
                         NOT = { check_variable = { potential_building_token = token:building_rice_paddy } }
+                        NOT = { check_variable = { potential_building_token = token:building_infrastructure } }
+                        NOT = { check_variable = { potential_building_token = token:building_railway } }
                         check_variable = { chosen_state:employment_target@var:potential_building_token > 95 }
+                        check_variable = { chosen_state:productivity@var:potential_building_token > 1 }
                         check_variable = { chosen_state:profitability@var:potential_building_token > 0.05 }
                         check_variable = { chosen_state:under_construction@var:potential_building_token = 0 }
                     }
@@ -11336,6 +11380,59 @@
     }
     generate_investment_opportunity_upgrade = {
         
+    }
+    io_state_list = {
+        # Regenerates the list of states for potential investment (in order of workforce)
+
+        for_each_loop = {
+            array = investment_states_array
+            value = vv
+            clear_variable = investment_weight@var:vv
+        }
+        set_variable = { investment_weight_total = 0 }
+        clear_array = investment_states_array
+        every_controlled_state = {
+
+            set_temp_variable = { investment_weight_temp = pops_workforce } # Population is base
+
+            # Non-core states get reduced by 90%
+            if = { limit = { NOT = { is_core_of = PREV } } multiply_temp_variable = { investment_weight_temp = 0.1 } }
+            # Non-owned states get reduced by 90%
+            if = { limit = { NOT = { is_owned_by = PREV } } multiply_temp_variable = { investment_weight_temp = 0.1 } }
+
+            # Wealthy states get invested in more often
+            set_temp_variable = { sol_temp = pops_sol }
+            divide_temp_variable = { sol_temp = 10 }
+            multiply_temp_variable = { investment_weight_temp = sol_temp }
+            
+            set_variable = { PREV.investment_weight@THIS = investment_weight_temp }
+            add_to_variable = { investment_weight_total = investment_weight_temp }
+
+            for_each_loop = {
+                array = PREV.investment_states_array
+                index = ii
+                value = vv
+                break = bb
+
+                if = {
+                    limit = {
+                        check_variable = { PREV.investment_weight@var:vv < investment_weight_temp }
+                    }
+                    add_to_array = { 
+                        array = PREV.investment_states_array 
+                        value = THIS
+                        index = ii
+                    }
+                    set_temp_variable = { bb = 1 }
+                }
+            }
+            if = {
+                limit = {
+                    check_variable = { bb = 0 }
+                }
+                add_to_array = { PREV.investment_states_array = THIS }
+            }
+        }
     }
     io_state_build = {
         # Selects a semi-random state for building a new building
@@ -11379,31 +11476,68 @@
             }
         }
     }
-    io_state_expand = {
-        # Selects a semi-random state for expanding an existing building
+    io_state_industrial_cap = {
+        # Selects a semi-random state for infrastructure
         # Outputs chosen_state
 
         set_temp_variable = { chosen_state = 0 }
-        random_controlled_state = { # Choose a state which has a building that is profitable and practically fully employed
+        random_controlled_state = {
             limit = {
-                check_variable = { non_subs_jobs_buildings > 0 } # Has a building that isn't a subsistence farm
-                check_variable = { excess_workforce > 0 } # Doesn't have enough jobs to fill state's workforce
+                set_temp_variable = { industrial_cap_temp = industrial_capacity_use }
+                multiply_temp_variable = { industrial_cap_temp = 1.1 }
+                check_variable = { industrial_cap_temp > industrial_capacity } # Either Lacks industrial capacity or is getting close
                 NOT = { has_state_flag = current_investment_opportunity_flag } # State doesn't have an IO for it.
-                any_of = { # One of the buildings is profitable & filled
-                    array = buildings
-                    value = b_token
-
-                    NOT = { check_variable = { b_token = token:building_military_industry } }
-                    NOT = { check_variable = { b_token = token:building_civilian_industry } }
-                    NOT = { check_variable = { b_token = token:building_naval_industry } }
-                    NOT = { check_variable = { b_token = token:building_subsistence_farm } }
-                    NOT = { check_variable = { b_token = token:building_rice_paddy } }
-                    check_variable = { employment_target@var:b_token > 95 }
-                    check_variable = { profitability@var:b_token > 0.05 }
-                    check_variable = { under_construction@var:b_token = 0 }
-                }
+                NOT = { check_variable = { under_construction@token:building_infrastructure > 0 } } # Currently not building an IC building
+                NOT = { check_variable = { under_construction@token:building_railway > 0 } }
             }
             set_temp_variable = { chosen_state = THIS }
+        }
+    }
+    io_state_expand = {
+        # Selects a semi-random state for expanding an existing building (NOT INFRA)
+        # Outputs chosen_state
+        
+        set_temp_variable = { investment_weight_temp = investment_weight_total }
+        multiply_temp_variable = { investment_weight_temp = random }
+        multiply_temp_variable = { investment_weight_temp = 0.9 }
+
+        set_temp_variable = { chosen_state = 0 }
+        set_temp_variable = { weight_temp = 0 }
+        for_each_loop = { # Go thru the list and pick a random state (weighted random)
+            array = investment_states_array
+            value = state_temp
+            break = invest_break
+            add_to_temp_variable = { weight_temp = investment_weight_temp } # Needs to be added first otherwise largest state will never be invested in
+
+            if = { limit = { check_variable = { investment_weight_temp < weight_temp } } # Skip until after random condition fulfilled
+                var:state_temp = {
+                    if = { # Choose a state which has a building that is profitable and practically fully employed
+                        limit = {
+                            check_variable = { non_subs_jobs_buildings > 0 } # Has a building that isn't a subsistence farm
+                            check_variable = { excess_workforce > 0 } # Doesn't have enough jobs for state's workforce
+                            NOT = { has_state_flag = current_investment_opportunity_flag } # State doesn't have an IO for it.
+                            any_of = { # One of the buildings is profitable & filled
+                                array = buildings_productivity_sort
+                                value = b_token
+
+                                NOT = { check_variable = { b_token = token:building_military_industry } }
+                                NOT = { check_variable = { b_token = token:building_civilian_industry } }
+                                NOT = { check_variable = { b_token = token:building_naval_industry } }
+                                NOT = { check_variable = { b_token = token:building_subsistence_farm } }
+                                NOT = { check_variable = { b_token = token:building_rice_paddy } }
+                                NOT = { check_variable = { b_token = token:building_infrastructure } }
+                                NOT = { check_variable = { b_token = token:building_railway } }
+                                check_variable = { employment_target@var:b_token > 95 }
+                                check_variable = { productivity@var:b_token > 2 } # Subsistence Farms usually hover around 1 to 2
+                                check_variable = { profitability@var:b_token > 0.05 }
+                                check_variable = { under_construction@var:b_token = 0 }
+                            }
+                        }
+                        set_temp_variable = { chosen_state = THIS }
+                        set_temp_variable = { invest_break = 1 }
+                    }
+                }
+            }
         }
     }
     io_state_upgrade = {
