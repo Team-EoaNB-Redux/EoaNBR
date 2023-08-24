@@ -229,10 +229,10 @@ scripted_gui = {
 				is_fully_controlled_by = ROOT
 			}
 
-			urban_building_build_button_visible = {
+			building_build_button_visible = {
 				NOT = { check_variable = { under_construction@var:v > 0 } }
 			}
-			urban_building_build_button_click_enabled = {
+			building_build_button_click_enabled = {
 				NOT = { check_variable = { v = token:building_subsistence_farm } }
 				NOT = { check_variable = { v = token:building_rice_paddy } }
 				if = {
@@ -348,36 +348,32 @@ scripted_gui = {
 					NOT = { check_variable = { gcpa > ROOT.treasury } }
 				#
 			}
-			urban_building_under_construction_icon_visible = {
+			building_under_construction_icon_visible = {
 				check_variable = { under_construction@var:v > 0 }
 			}
 
-			urban_building_pm_button_click_enabled = {
+			building_pm_button_click_enabled = {
 				check_variable = { under_construction@var:v = 0 }
 			}
-			urban_building_next_pm_button_visible = {
+			building_next_pm_button_visible = {
 				is_controlled_by = ROOT
 
 				set_temp_variable = { building_token = v }
 				check_variable = { production_method@var:building_token < 11 }
 				check_variable = { buildings_pm_selected = building_token }
 			}
-			urban_building_next_pm_button_click_enabled = {
-				set_temp_variable = { building_token = v }
-				return_latest_production_method = yes
-				check_variable = { production_method@var:building_token < pm_temp }
+			building_next_pm_button_click_enabled = {
+				check_variable = { production_method@var:v < ROOT.latest_production_method@var:v }
 			}
-			urban_building_prev_pm_button_visible = {
+			building_prev_pm_button_visible = {
 				is_controlled_by = ROOT
 
 				set_temp_variable = { building_token = v }
 				check_variable = { production_method@var:building_token > 0 }
 				check_variable = { buildings_pm_selected = building_token }
 			}
-			urban_building_prev_pm_button_click_enabled = {
-				set_temp_variable = { building_token = v }
-				return_earliest_production_method = yes
-				check_variable = { production_method@var:building_token > pm_temp }
+			building_prev_pm_button_click_enabled = {
+				check_variable = { production_method@var:v > controller:earliest_production_method@var:v }
 			}
 		}
 
@@ -404,7 +400,7 @@ scripted_gui = {
 				}
 			}
 
-			urban_building_build_button_click = {
+			building_build_button_click = {
 				if = {
 					limit = {
 						has_global_flag = autobuild_flag
@@ -424,7 +420,7 @@ scripted_gui = {
 				}
 				add_to_variable = { update_state_econ_window = 1 }
 			}
-			urban_building_build_button_shift_click = {
+			building_build_button_shift_click = {
 				if = {
 					limit = {
 						has_global_flag = autobuild_flag
@@ -444,7 +440,7 @@ scripted_gui = {
 				}
 				add_to_variable = { update_state_econ_window = 1 }
 			}
-			urban_building_build_button_control_click = {
+			building_build_button_control_click = {
 				if = {
 					limit = {
 						has_global_flag = autobuild_flag
@@ -464,7 +460,7 @@ scripted_gui = {
 				}
 				add_to_variable = { update_state_econ_window = 1 }
 			}
-			urban_building_build_button_right_click = {
+			building_build_button_right_click = {
 				if = {
 					limit = {
 						has_global_flag = autobuild_flag
@@ -473,7 +469,7 @@ scripted_gui = {
 					ROOT = { country_recalc = yes }
 				}
 			}
-			urban_building_build_button_shift_right_click = {
+			building_build_button_shift_right_click = {
 				if = {
 					limit = {
 						has_global_flag = autobuild_flag
@@ -482,7 +478,7 @@ scripted_gui = {
 					ROOT = { country_recalc = yes }
 				}
 			}
-			urban_building_build_button_shift_control_right_click = {
+			building_build_button_shift_control_right_click = {
 				if = {
 					limit = {
 						has_global_flag = autobuild_flag
@@ -492,11 +488,8 @@ scripted_gui = {
 				}
 			}
 
-			urban_building_pm_button_click = {
+			building_pm_button_click = {
 				set_temp_variable = { building_token = v }
-				get_latest_production_method = yes
-				log = "[?pm_temp]"
-				log = "[?production_method@var:building_token]"
 				if = {
 					limit = {
 						is_controlled_by = ROOT
@@ -513,7 +506,7 @@ scripted_gui = {
 					add_to_variable = { update_state_econ_window = 1 }
 				}
 			}
-			urban_building_next_pm_button_click = {
+			building_next_pm_button_click = {
 				if = {
 					limit = {
 						is_controlled_by = ROOT
@@ -527,7 +520,7 @@ scripted_gui = {
 					add_to_variable = { update_state_econ_window = 1 }
 				}
 			}
-			urban_building_prev_pm_button_click = {
+			building_prev_pm_button_click = {
 				if = {
 					limit = {
 						is_controlled_by = ROOT
@@ -581,11 +574,11 @@ scripted_gui = {
 		dynamic_lists = {
 			urban_buildings_list = {
 				array = urban_buildings
-				entry_container = urban_building_container
+				entry_container = building_container
 			}
 			rural_buildings_list = {
 				array = rural_buildings
-				entry_container = urban_building_container
+				entry_container = building_container
 			}
 			statistics_gdp_graph = {
 				array = gdp_graph_amount_array
@@ -598,38 +591,22 @@ scripted_gui = {
 				image = "[GetCurrencyIconState]"
 			}
 			
-			urban_building_background = {
-				image = "[GetUrbanBuildingBackground]"
+			building_background = {
+				image = "[GetBuildingBackground]"
 			}
-			urban_building_icon = {
-				image = "[GetUrbanBuildingIcon]"
+			building_icon = {
+				image = "[GetBuildingIcon]"
 			}
-			urban_building_pm_button = {
-				image = "[GetUrbanBuildingPMButton]"
+			building_pm_button = {
+				image = "[GetBuildingPMButton]"
 			}
-			urban_building_next_pm_button = {
-				image = "[GetUrbanBuildingNextPMButton]"
+			building_next_pm_button = {
+				image = "[GetBuildingNextPMButton]"
 			}
-			urban_building_prev_pm_button = {
-				image = "[GetUrbanBuildingPrevPMButton]"
+			building_prev_pm_button = {
+				image = "[GetBuildingPrevPMButton]"
 			}
 			
-			rural_building_background = {
-				image = "[GetRuralBuildingBackground]"
-			}
-			rural_building_icon = {
-				image = "[GetRuralBuildingIcon]"
-			}
-			rural_building_pm_button = {
-				image = "[GetRuralBuildingPMButton]"
-			}
-			rural_building_next_pm_button = {
-				image = "[GetRuralBuildingNextPMButton]"
-			}
-			rural_building_prev_pm_button = {
-				image = "[GetRuralBuildingPrevPMButton]"
-			}
-
 			pops_life_needs_fulfilled_strip = {
 				frame = pops_life_needs_fulfilled_frame
 			}
@@ -934,7 +911,7 @@ scripted_gui = {
 
 		properties = {
 			construction_entry_resource = {
-				image = "[GetUrbanBuildingIcon]"
+				image = "[GetBuildingIcon]"
 			}
 		}
 	}
@@ -1617,111 +1594,6 @@ scripted_gui = {
 		}
 
 		dynamic_lists = {
-		}
-	}
-	country_current_trade_route_window = {
-		window_name = "country_current_trade_route_window_container"
-		context_type = player_context
-		parent_window_token = trade_tab
-
-		visible = {
-			always = no
-		}
-		effects = {
-			trade_route_decrease_size_click = {
-				set_temp_variable = { i_temp = show_trade_route_index^i }
-				downgrade_trade_route_at_index = yes
-			}
-			trade_route_decrease_size_shift_click = {
-				set_temp_variable = { i_temp = show_trade_route_index^i }
-				downgrade_trade_route_at_index_by_10 = yes
-			}
-			trade_route_decrease_size_control_click = {
-				set_temp_variable = { i_temp = show_trade_route_index^i }
-				downgrade_trade_route_at_index_by_50 = yes
-			}
-			trade_route_increase_size_click = {
-				set_temp_variable = { i_temp = show_trade_route_index^i }
-				upgrade_trade_route_at_index = yes
-			}
-			trade_route_increase_size_shift_click = {
-				set_temp_variable = { i_temp = show_trade_route_index^i }
-				upgrade_trade_route_at_index_by_10 = yes
-			}
-			trade_route_increase_size_control_click = {
-				set_temp_variable = { i_temp = show_trade_route_index^i }
-				upgrade_trade_route_at_index_by_50 = yes
-			}
-		}
-		triggers = {
-
-		}
-		properties = {
-			#Trade Routes
-				trade_route_resource_icon = {
-					image = "[GetTradeRouteResourceIcon]"
-				}
-				trade_route_exporter_flag = {
-					image = "[GetTradeRouteExporterFlag]"
-				}
-				trade_route_importer_flag = {
-					image = "[GetTradeRouteImporterFlag]"
-				}
-			#
-		}
-		dynamic_lists = {
-			trade_route_list = {
-				array = show_trade_route_index
-				entry_container = trade_route_entry
-			}
-		}
-	}
-	country_new_trade_route_window = {
-		window_name = "country_new_trade_route_window_container"
-		context_type = player_context
-		parent_window_token = trade_tab
-
-		visible = {
-			always = no
-		}
-		effects = {
-			new_route_entry_background_click = {
-				set_temp_variable = { resource_temp = selected_resource }
-				set_temp_variable = { country_temp = v }
-				if = {
-					limit = {
-						has_country_flag = new_route_export
-					}
-					set_temp_variable = { trade_type_temp = -1 }
-				}
-				else = {
-					set_temp_variable = { trade_type_temp = 1 }
-				}
-				clr_country_flag = new_trade_route_view_open
-				clr_country_flag = new_route_export
-				clear_variable = selected_resource
-				add_trade_route = yes
-			}
-		}
-		triggers = {
-
-		}
-		properties = {
-			new_route_resource_icon = {
-				image = "[GetSelectedResourceIcon]"
-			}
-			new_route_exporter_flag = {
-				image = "[GetNewRouteExporterFlag]"
-			}
-			new_route_importer_flag = {
-				image = "[GetNewRouteImporterFlag]"
-			}
-		}
-		dynamic_lists = {
-			new_trade_route_list = {
-				array = new_route_list_country_array
-				entry_container = new_route_entry
-			}
 		}
 	}
 
