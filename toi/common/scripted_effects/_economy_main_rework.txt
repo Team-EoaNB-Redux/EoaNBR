@@ -1265,6 +1265,17 @@
                 set_variable = { global.base_price@token:cotton = 4 }
                 set_variable = { global.base_price@token:silicates = 70 }
                 set_variable = { global.base_price@token:rare_earth_metals = 50 }
+                
+                set_variable = { global.base_price@token:food = 3 }
+                set_variable = { global.base_price@token:luxuries = 20 }
+                set_variable = { global.base_price@token:chemicals = 20 }
+                set_variable = { global.base_price@token:consumer_goods = 20 }
+                set_variable = { global.base_price@token:clothing = 10 }
+                set_variable = { global.base_price@token:appliances = 50 }
+                set_variable = { global.base_price@token:computers = 100 }
+                set_variable = { global.base_price@token:vehicles = 200 }
+                set_variable = { global.base_price@token:electricity = 4 }
+                set_variable = { global.base_price@token:services = 10 }
 
                 set_variable = { global.base_price_industrial_capacity = 5 }
 
@@ -26113,6 +26124,12 @@
 #
 
 #Production Methods
+
+	# Country Total = Resource Eff. Modifier * ( (Additional Resources + State Production) * Infrastructure Bonus * Local Resources Modifier + Temporary Resources - Resource Cost )
+	# State resource@token does NOT get modified by modifier@local_resources, but DOES get modified by additional resources & resource cost
+	# resource@token = (Base + Additional Resources) * Infra - Resource Cost
+	# Base = (resource@token + Resource Cost) / Infra - Additional Resources
+
     # Railway (Services, Industrial Cap)
     # Port (Services, Shipping Cap)
 
@@ -26138,11 +26155,118 @@
     # Urban Center (Services)
     # Entertainment Hub (Services)
 
+    # LOGGING
+        # Applies to Wood
+
+        # Production
+        define_pm_simple_forestry = {
+            set_variable = { global.pm_rgo_multiplier@token:pm_simple_forestry = 1.0 } # x1 = 1
+
+            # per resource / base price
+            set_variable = { global.pm_rgo_laborers@token:pm_simple_forestry = 0.25 } # x2.0 = 0.5 peasant wages
+            
+            # Profit: 1 (2.0)
+        }
+        define_pm_saw_mills = {
+            #set_variable = { global.pm_tech_unlock@token:pm_saw_mills =  }
+            set_variable = { global.pm_rgo_multiplier@token:pm_saw_mills = 2.0 } # x1 = 2.0
+            
+            # per resource / base price
+            clear_array = global.pm_input@token:pm_saw_mills
+            clear_array = global.pm_input_amount@token:pm_saw_mills
+            add_to_array = { global.pm_input@token:pm_saw_mills = token:machine_parts }
+            add_to_array = { global.pm_input_amount@token:pm_saw_mills = 0.005 } # x80 = -0.4
+
+            # per resource / base price
+            set_variable = { global.pm_rgo_laborers@token:pm_saw_mills = 0.20 } # x2.0 = 0.4 peasant wages
+            set_variable = { global.pm_rgo_workers@token:pm_saw_mills = 0.05 } # x5.0 = 0.25 peasant wages
+            
+            # Profit: 1.6 (2.46)
+        }
+        # define_pm_national_forests
+        # define_pm_precision_forestry
+
+        # Automation
+        define_pm_muscle_power = {
+        }
+        define_pm_river_power = {
+            # per resource / base price
+            clear_array = global.pm_input@token:pm_river_power
+            clear_array = global.pm_input_amount@token:pm_river_power
+            add_to_array = { global.pm_input@token:pm_river_power = token:machine_parts }
+            add_to_array = { global.pm_input_amount@token:pm_river_power = 0.002 } # x80 = -0.16
+
+            # per resource / base price
+            set_variable = { global.pm_rgo_laborers@token:pm_river_power = -0.05 } # x2.0 = 0.1 peasant wages
+
+            # Profit: -0.16 (break-even when wage > 1.6 )
+        }
+        define_pm_steam_power = {
+            # per resource / base price
+            clear_array = global.pm_input@token:pm_steam_power
+            clear_array = global.pm_input_amount@token:pm_steam_power
+            add_to_array = { global.pm_input@token:pm_steam_power = token:machine_parts }
+            add_to_array = { global.pm_input_amount@token:pm_steam_power = 0.003 } # x80 = -0.24
+            add_to_array = { global.pm_input@token:pm_steam_power = token:coal }
+            add_to_array = { global.pm_input_amount@token:pm_steam_power = 0.08 } # x2 = -0.16
+
+            # per resource / base price
+            set_variable = { global.pm_rgo_laborers@token:pm_steam_power = -0.1 } # x2.0 = 0.2 peasant wages
+
+            # Profit: -0.4 (break-even when wage > 2.0 )
+        }
+        define_pm_logging_electrification = {
+            # per resource / base price
+            clear_array = global.pm_input@token:pm_logging_electrification
+            clear_array = global.pm_input_amount@token:pm_logging_electrification
+            add_to_array = { global.pm_input@token:pm_logging_electrification = token:machine_parts }
+            add_to_array = { global.pm_input_amount@token:pm_logging_electrification = 0.004 } # x80 = -0.32
+            add_to_array = { global.pm_input@token:pm_logging_electrification = token:electricity }
+            add_to_array = { global.pm_input_amount@token:pm_logging_electrification = 0.05 } # x4 = -0.2
+
+            # per resource / base price
+            set_variable = { global.pm_rgo_laborers@token:pm_logging_electrification = -0.15 } # x2.0 = 0.3 peasant wages
+            set_variable = { global.pm_rgo_workers@token:pm_logging_electrification = 0.01 } # x5.0 = 0.05 peasant wages
+
+            # Profit: -0.52 (break-even when wage > 2.08 )
+        }
+        define_pm_chainsaws = {
+            # per resource / base price
+            clear_array = global.pm_input@token:pm_chainsaws
+            clear_array = global.pm_input_amount@token:pm_chainsaws
+            add_to_array = { global.pm_input@token:pm_chainsaws = token:machine_parts }
+            add_to_array = { global.pm_input_amount@token:pm_chainsaws = 0.005 } # x80 = -0.4
+            add_to_array = { global.pm_input@token:pm_chainsaws = token:electricity }
+            add_to_array = { global.pm_input_amount@token:pm_chainsaws = 0.05 } # x4 = -0.2
+            add_to_array = { global.pm_input@token:pm_chainsaws = token:oil }
+            add_to_array = { global.pm_input_amount@token:pm_chainsaws = 0.005 } # x20 = -0.1
+
+            # per resource / base price
+            set_variable = { global.pm_rgo_laborers@token:pm_chainsaws = -0.2 } # x2.0 = 0.4 peasant wages
+            set_variable = { global.pm_rgo_professionals@token:pm_chainsaws = 0.01 } # x10.0 = 0.1 peasant wages
+
+            # Profit: -0.7 (break-even when wage > 2.33 )
+        }
+
+    #
+
     # MINING
         # Applies to Aluminum, Tungsten, Chromium, Coal, Titanium, Iron, Silicates, Rare Earth Metals
 
         # Production
-        # define_pm_basic_extraction
+        define_pm_basic_extraction = {
+            set_variable = { global.pm_rgo_multiplier@token:pm_basic_extraction = 1.0 } # x1 = 1
+            
+            clear_array = global.pm_input@token:pm_basic_extraction
+            clear_array = global.pm_input_amount@token:pm_basic_extraction
+            add_to_array = { global.pm_input@token:pm_basic_extraction = token:wood }
+            add_to_array = { global.pm_input_amount@token:pm_basic_extraction = 1.0 }
+
+            # per resource / base price
+            set_variable = { global.pm_rgo_laborers@token:pm_basic_extraction = 0.25 } # x2.0 = 0.5 peasant wages
+            
+            # Profit: 1 (2.0)
+        }
         # define_pm_shaft_mining - Refining (1840)
         # define_pm_nitroglycerin - Nitroglycerin (1850)
         # define_pm_dynamite - Dynamite (1865)
@@ -26181,15 +26305,220 @@
         # define_pm_tanker_trucks - V6 Engines (1950)
         # define_pm_ai_transport - Advanced AI Systems (2020)
     #
-    # PLANTATIONS
-        # Applies to Rubber, Cotton, Luxuries Plantation
-
-        # define_pm_basic_plantation
-    #
     # FARMING
-        # Applies to Commercial Farm
+        # Applies to Commercial Farm, Rubber, Cotton, Luxuries Plantation
+
+        # Production
+        # define_pm_basic_planting
+        # define_pm_irrigation - Irrigation (1500)
+        # define_pm_crop_rotation - 4-Field Crop Rotation (1840)
+        # define_pm_artificial_fertilizers - Early Artificial Fertilizers (1850) 
+        # define_pm_industrial_fertilizers - Industrial Fertilizers (1880)
+        # define_pm_synthetic_fertilizers - Synthetic Fertilizers (1915)
+        # define_pm_nitrophosphate_fertiliziers - Nitrophosphate Process (1930)
+        # define_pm_high_yield_crops - High-Yield Grains (1950)
+        # define_pm_GMOs - GMO (1980)
+        # define_pm_precision_planting - Precision Agriculture (1990)
+        # define_pm_second_wave_precision_ag - Second Wave Precision Agriculture (2010)
+        # define_pm_customized_crops - Customized Crops (2025)
+        # define_pm_accelerated_growth_techniques - Accelerated Growth Techniques (2040)
+        
+        # Automation (Rubber, Cotton, Luxuries Plantation)
+        # define_pm_manual_farming
+        # define_pm_harvesting_tools - Mechanized Farming (1840)
+        # define_pm_automatic_irrigation - Fordson Tractor (1915)
+        # define_pm_plantation_mechanization - Agricultural Unit Machinery (1950)
+        # define_pm_modern_ag_machines - Refined Agricultural Machines (1970)
+        # define_pm_e_agriculture - E-Agriculture (2005)
+        # define_pm_automated_agriculture - Fully Automated Agriculture (2030)
+
+        # Automation (Commercial Farm)
+        # define_pm_manual_farming
+        # define_pm_harvesting_tools
+        # define_pm_threshing_machine - Threshing Machine (1850)
+        # define_pm_traction_engine - Late Traction Engines (1870)
+        # define_pm_tractors - Early Tractors (1890)
+        # define_pm_diesel_tractors - Fordson Tractor (1915)
+        # define_pm_agricultural_machines - Agricultural Unit Machinery (1950)
+        # define_pm_modern_ag_machines - Refined Agricultural Machines (1970)
+        # define_pm_e_agriculture - E-Agriculture (2005)
+        # define_pm_automated_agriculture - Fully Automated Agriculture (2030)
     #
 
     # FACTORIES
+        # Textile Mill
+        # define_pm_spinning_wheel
+        # define_pm_spinning_mule - Manufactories (1700)
+        # define_pm_power_loom - Factory Industry I (1840)
+        # define_pm_elastics - Organic Chemistry (1850)
+        # define_pm_polyester
+        # define_pm_nanofibers
+        # define_pm_smart_textiles
+
+        # Clothing Factory
+        # define_pm_handsewn_clothes
+        # define_pm_dye_workshops
+        # define_pm_sewing_machines
+        # define_pm_electric_sewing_machines
+        # define_pm_shirt_designs - Compactron (1960)
+        # define_pm_laser_printers - 32-Bit Processors (1980)
+
+        # Steel Mill
+        # define_pm_primitive_steelmaking
+        # define_pm_blister_steel_process - Dry Puddling (1700)
+        # define_pm_hot_blast_process - Hot Blast Furnace (1850)
+        # define_pm_bessemer_process - Bessemer Process (1860)
+        # define_pm_electric_arc_process - Electric Arc Furnace (1880)
+        # define_pm_injection_molding - Injection Molding (1920)
+        # define_pm_oxygen_converter_process - Lina Donawitz Steelmaking (1950)
+        # define_pm_energy_optimizing_process - Energy Optimizing Furnace (1980)
+        # define_pm_hydrogen_steel_process - Industrial Metalworks VII (2025)
+
+        # Machinery Factory
+        # define_pm_machine_tools
+        # define_pm_factory_machinery - Corliss Steam Engine (1840)
+        # define_pm_electrical_machinery - Transformer (1885)
+        # define_pm_modern_machinery - Machine Tools V (1915)
+        # define_pm_machining_robots - Industrial Robotics (1955)
+        # define_pm_assembly_robots - SCARA Systems (1975)
+        # define_pm_smart_robots - Early Intelligent Robots (2005)
+        # define_pm_mobile_robots - Robotics (2025)
+        # define_pm_intelligent_robots - Advanced Quantum Computers (2045)
+
+        # Electronics Factory
+        # define_pm_lightbulbs - Swan/Edison Incandescant Lightbulb (1880)
+        # define_pm_vacuum_tubes - Diode (1905)
+        # define_pm_integrated_circuits - Integrated Circuits (1960)
+        # define_pm_microprocessors - Micrometer Process Chips (1985)
+        # define_pm_multi_core_processors - Multi-Core Processors (2000)
+        # define_pm_qubit_processors - Quantum Computing (2025)
+
+        # Battery Plant
+        # define_pm_early_battery
+        # define_pm_lead_acid_battery - Lead-Acid Battery (1860)
+        # define_pm_nickel_cadmium_battery - Nickel-Cadmium Battery (1900)
+        # define_pm_alkaline_battery - Alkaline Battery (1955)
+        # define_pm_nickel_hydrogen_battery - Nickle-Hydrogen Battery (1970)
+        # define_pm_lithium_ion_battery - Lithium Ion Battery (1985)
+        # define_pm_portable_generators - Portable High-power Generator (2030)
+
+        # Consumer Goods Factory
+        # define_pm_furniture_workshop
+        # define_pm_furniture_manufactory - Manufactories (1700)
+        # define_pm_luxury_furniture - Industrial Era Tools I (1850)
+        # define_pm_mechanized_workshops - Mechanical Production III (1890)
+        # define_pm_composite_furniture - Modern Ceramics (1960)
+
+        # Appliance Factory
+        # define_pm_telegraph - Electrical Telegraph (1850)
+        # define_pm_telephones - Telephone (1875)
+        # define_pm_cinematogrpahs - Cinematograph (1890)
+        # define_pm_radios - Early Radio (1910)
+        # define_pm_television - Black and White TV (1935)
+        # define_pm_color_tv - Color TV (1960)
+        # define_pm_lcd_tv - LCD TV (1975)
+        # define_pm_mobile_phones - Simple Mobile Phones (1990)
+        # define_pm_smartphones - Smartphones (2005)
+        # define_pm_vr_headsets - VR (2015)
+        # define_pm_fullbody_haptics - Full Immersion VR (2035)
+
+        # Vehicle Plant
+        # define_pm_gasoline_automobiles - Internal Combustion Engine (1890)
+        # define_pm_diesel_automobiles - Diesel Engine (1900)
+        # define_pm_direct_fuel_injection - Direct Fuel Injection (1920)
+        # define_pm_modern_automobiles - V6 Engines (1950)
+        # define_pm_electronic_control_mechanisms - Wankel Engines (1965)
+        # define_pm_hybrid_cars - Hybrid Engines (2000)
+        # define_pm_electric_cars - Full Power Electric Engines (2025)
+
+        # Computer Assembly
+        # define_pm_mechanical_computers - Diode (1905)
+        # define_pm_electro_mechanical_computers - Turing Machines (1940)
+        # define_pm_electronic_computers - Early Computers (1975)
+        # define_pm_modern_computers - 64Bit Processors (1990)
+        # define_pm_supercomputers - Multi-Core Processors (2000)
+        # define_pm_quantum_computers - Improved Quantum Computing (2035)
+        
+        # Plastics Plant
+        # define_pm_polymer_synthesis - Polymer Synthesis (1900)
+        # define_pm_polyethylene_synthesis - Polyethylene Synthesis (1930)
+        # define_pm_polypropylene_synthesis - Polypropylene Synthesis (1955)
+        # define_pm_electroactive_polymer_synthesis - Electroactive Polymers (1990)
+        # define_pm_bioplastic_synthesis - Expanded Bio-plastic Methods (2010)
+        
+        # Chemical Plant
+        # define_pm_leblanc_process - Wohler Synthesis (1700)
+        # define_pm_ammonia_soda_process - Chemical Structure Model (1860)
+        # define_pm_brine_electrolysis - Polyphase Alternators (1890)
+        # define_pm_petrochemicals - Polyethelyne Synthesis (1930)
+        # define_pm_modern_chemical_production - Electroactive Polymers (1990)
+        
+        # Composites Manufactory
+        # define_pm_composites - Modern Ceramics (1960)
+        # define_pm_advanced_composites - Advanced Ceramics (1985)
+
+        # Power Plant
+        # define_pm_hydroelectric_plant - Hydroelectric Plant (1870)
+        # define_pm_coal_fired_plant - Early Power Station (1875)
+        # define_pm_steam_turbine_plant - Impulse Turbine (1885)
+        # define_pm_oil_fired_plant - Internal Combustion Engine (1890)
+        # define_pm_fission_reactor_plant - Atomic Reactors (1950)
+        # define_pm_fusion_reactor_plant - Practical Fusion Reactors (2025)
+
+        # Automation
+        # define_pm_no_automation
+        # define_pm_atmospheric_steam_engine  - Atmospheric Steam Engine (1700)
+        # define_pm_corliss_steam_engine - Corliss Steam Engine (1840)
+        # define_pm_industrial_machinery - Mechanical Production II (1865)
+        # define_pm_electrification - Transformers (1885)
+        # define_pm_assembly_lines - Factory Industry V (1910)
+        # define_pm_modern_assembly_lines - Modern Powered Assembly Lines (1950)
+        # define_pm_basic_robots - Industrial Robotics (1960)
+        # define_pm_industrial_robots - SCARA Systems (1975)
+        # define_pm_internet - Internet (1990)
+        # define_pm_intelligent_robots - Early-Intelligent Robots (2005)
+        # define_pm_artificial_intelligence - Advanced AI Systems (2020)
+        # define_pm_mass_automation - Automated Industrial 3D Printing (2050)
+    #
+    # URBAN CENTER
+        # Production
+        # define_pm_wooden_buildings
+        # define_pm_brick_buildings - Manufactories (1700)
+        # define_pm_iron_frame_buildings - Hydraulic Cranes (1850)
+        # define_pm_steel_frame_buildings - Reinforced Concrete (1870)
+        # define_pm_high_rise_buildings - Skyscraper Design (1885)
+        # define_pm_skyscrapers - International Style Construction (1930)
+        # define_pm_superscrapers - Superstructure Construction Techniques (2025)
+
+        # Automation
+        # define_pm_no_automation
+        # define_pm_gas_streetlights
+        # define_pm_public_transit
+        # define_pm_electrification - Transformers (1885)
+        # define_pm_subways - Subway Construction (1900)
+        # define_pm_highways - Mass Highspeed Highways (1925)
+        # define_pm_airports - Fan Jet Engines (1960)
+        # define_pm_computerization - Centralized Traffic Controls (1990)
+        # define_pm_automation - Fully Automated Transportation
+    #
+    # ENTERTAINMENT HUB
+        # Production
+        # define_pm_live_theater
+        # define_pm_exhibits - Industrial Society (1700)
+        # define_pm_photography - Daguerrotype (1840)
+        # define_pm_cinema - Cinematograph (1890)
+        # define_pm_radio - Commercial Radio Broadcasting Equipment (1920)
+        # define_pm_television - Black and White TV (1935)
+        # define_pm_internet - Internet (1990)
+        # define_pm_virtual_reality - VR (2015)
+        # define_pm_life_simulation - Better Than Life (2050)
+        
+        # Automation
+        # define_pm_no_automation
+        # define_pm_industrial_printing - Corliss Steam Engine (1840)
+        # define_pm_electrification - Transformers (1885)
+        # define_pm_neon_lighting - Neon Tubes (1925)
+        # define_pm_computers - Early Computers (1975)
+        # define_pm_artificial_intelligence - Advanced AI Systems (2020)
     #
 #
