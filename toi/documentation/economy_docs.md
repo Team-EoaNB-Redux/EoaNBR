@@ -446,6 +446,14 @@ Variables (Read-Only)
         <td> State </td>
     </tr>
     <tr>
+        <td> cancel_building_construction </td>
+        <td> <code> building_token = token:building </code> <br> (Optional) Which building to stop construction of. Default is to stop all construction in a state. </td>
+        <td> set_temp_variable = { building_token = token:building_consumer_goods_factory } <br> cancel_building_construction = yes </code> </td>
+        <td> Cancels the construction of one or all buildings in a state. Does not refund construction.. </td>
+        <td> Building tokens can be found under common/ideas/_economy_tokens.txt </td>
+        <td> State </td>
+    </tr>
+    <tr>
         <td> upgrade_production_method </td>
         <td> <code> building_token = token:building </code> <br> Building type to be upgraded. <br> <code> financier_temp = SCOPE </code> (Optional) The entity that is financing this upgrade. Default, 0, is local, a state scope is a corporation (if present), country scope is government. </td>
         <td> <code> set_temp_variable = { financier_temp = ROOT } <br> set_temp_variable = { building_token = token:building_consumer_goods_factory } <br> upgrade_production_method = yes </code> </td>
