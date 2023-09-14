@@ -7,14 +7,20 @@ Presume by default that tooltips are done for you.
 ```
 Effects
 (Country Scope)
+- Copy over Economy Stuff for new tags
+- Subsume Economic Stuff
+
 - Add Months of Income
 - Add Treasury
 - Adjust Budget
-- Add Loan
-- Remove Loan
+- Add Loans
+- Remove Loans
 - Borrow Money
 - Repay Debt
 - Adjust Trade
+
+- Set Budget Slider Maximum
+- Set Budget Slider Minimum
 
 - Improve Economic Situation
 - Worsen Economic Situation
