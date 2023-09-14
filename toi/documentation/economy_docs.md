@@ -450,7 +450,7 @@ Variables (Read-Only)
         <td> <code> building_token = token:building </code> <br> Building type to be upgraded. <br> <code> financier_temp = SCOPE </code> (Optional) The entity that is financing this upgrade. Default, 0, is local, a state scope is a corporation (if present), country scope is government. </td>
         <td> <code> set_temp_variable = { financier_temp = ROOT } <br> set_temp_variable = { building_token = token:building_consumer_goods_factory } <br> upgrade_production_method = yes </code> </td>
         <td> Starts the upgrade of a building's production method. Does not start upgrading if the financier doesn't have the tech. </td>
-        <td> Do not worry about the financier just yet. Production Method upgrades haven't been implemented yet, so this effect currently just increases a building's production method by 1. </td>
+        <td> Building tokens can be found under common/ideas/_economy_tokens.txt. Do not worry about the financier just yet. Production Method upgrades haven't been implemented yet, so this effect currently just increases a building's production method by 1. </td>
         <td> State </td>
     </tr>
     <tr>
@@ -458,6 +458,7 @@ Variables (Read-Only)
         <td> <code> building_token = token:building </code> <br> Which building's production method is to be changed. <br> <code> production_method_temp = integer </code> <br> (Optional) Production method for the building to be set to. Default is latest available. Use -1 for basic production method. </td>
         <td> <code> set_temp_variable = { building_token = token:building_consumer_goods_factory } <br> set_production_method = yes </code> </td>
         <td> Changes the production method of a building. There is no upgrade process nor cost. </td>
+        <td> Building tokens can be found under common/ideas/_economy_tokens.txt </td>
         <td> State </td>
     </tr>
 </table>
