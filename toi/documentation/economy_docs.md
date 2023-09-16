@@ -2,248 +2,19 @@
 ### Written by Strat
 This file contains the documenation for the various effects, triggers, and modifiers.
 
-Presume by default that tooltips are done for you.
+Attempting to use an effect or a trigger in the wrong scope may result in anything from weird results to breaking the system. Please don't do that.
 
-```
-Effects
-(Country Scope)
-- Copy over Economy Stuff for new tags
-- Subsume Economic Stuff
+Presume by default that tooltips are done for you. Also that all temp-variables that get used in one of these scripted effects below get set to 0 after firing the effect.
 
-- Add Months of Income
-- Add Treasury
-- Adjust Budget
-- Add Loans
-- Remove Loans
-- Borrow Money
-- Repay Debt
-- Adjust Trade
-
-- Set Budget Slider Maximum
-- Set Budget Slider Minimum
-
-- Improve Economic Situation
-- Worsen Economic Situation
-- Set Economic Situation
-- Generate Investment Opportunity
-- Generate All Investment Opportunities
-
-- Create Project
-- Cancel Project
-- Clear Projects
-- Complete Project
-
-(State Scope)
-- Add Population
-- Migrate Population
-- Construct Buildings
-- Remove Buildings
-- Cancel Construction
-- Upgrade Production Method
-- Set Production Method
-
-Triggers
-(Country Scope)
-- has_x_gdp
-- has_x_gdp_per_c
-- has_x_average_sol
-- has_x_debt
-- has_x_treasury
-- has_x_months_of_income
-- has_x_tax_revenue
-- has_x_spending
-- has_x_net_budget
-
-- has_x_workforce
-- has_x_capitalists
-- has_x_aristocrats
-- has_x_investment_income
-- has_x_investment_spending
-- has_attractive_opportunity
-
-- has_x_supply
-- has_x_demand
-- has_x_production
-- has_x_trade
-- has_x_offers
-- has_x_balance
-- has_x_relative_price
-- has_x_relative_balance
-
-- has_x_consumer_confidence
-- has_x_investment_confidence
-- has_x_banking_confidence
-
-(State Scope)
-- has_buildings (Include specific buildings/pms/size)
-- has_construction
-- has_arable_land
-- has_deposits
-- has_free_deposits
-- has_spare_industrial_capacity
-- has_gdp_growth
-- is_profitable
-- has_production
-
-- has_x_building_count
-- has_x_productivity
-- has_x_wage
-- has_x_gdp
-- has_x_gdp_per_c
-- has_x_workforce
-- has_x_available_workforce
-- has_x_peasants
-- has_x_unemployed
-- has_x_unemployed_percent
-- has_x_employed
-- has_x_average_sol
-
-- has_x_supply
-- has_x_demand
-- has_x_production
-- has_x_balance
-- has_x_relative_price
-- has_x_relative_balance
-
-Modifiers
-(Country Scope)
-- banking_confidence_modifier
-- consumer_confidence_modifier
-- investment_confidence_modifier
-- tax_efficiency_factor
-- corruption_factor
-- bureaucratic_efficiency_factor
-- aristocrats_investment_contribution_factor
-- capitalists_investment_contribution_factor
-- government_investment_efficiency_factor
-
-- building_construction_speed_factor
-- building_construction_cost_factor
-- building_upgrade_speed_factor
-- building_upgrade_cost_factor
-- building_input_factor
-- building_output_factor
-- building_throughput_factor
-- building_attractiveness_modifier
-- building_attractiveness_factor
-- building_industrial_capacity_use_factor
-
-- building_subsistence_agriculture_input_factor
-- building_subsistence_agriculture_output_factor
-- building_subsistence_farm_input_factor
-- building_subsistence_farm_output_factor
-- building_rice_paddy_input_factor
-- building_rice_paddy_output_factor
-
-- building_factory_input_factor
-- building_factory_output_factor
-- building_factory_throughput_factor
-- building_factory_attractiveness_modifier
-- building_factory_attractiveness_factor
-- building_factory_industrial_capacity_use_factor
-
-- building_agriculture_input_factor
-- building_agriculture_output_factor
-- building_agriculture_throughput_factor
-- building_agriculture_attractiveness_modifier
-- building_agriculture_attractiveness_factor
-- building_agriculture_industrial_capacity_use_factor
-
-- building_plantation_input_factor
-- building_plantation_output_factor
-- building_plantation_throughput_factor
-- building_plantation_attractiveness_modifier
-- building_plantation_attractiveness_factor
-- building_plantation_industrial_capacity_use_factor
-
-- building_resource_input_factor
-- building_resource_output_factor
-- building_resource_throughput_factor
-- building_resource_attractiveness_modifier
-- building_resource_attractiveness_factor
-- building_resource_industrial_capacity_use_factor
-
-- building_transport_input_factor
-- building_transport_output_factor
-- building_transport_throughput_factor
-- building_transport_industrial_capacity_factor
-- building_transport_shipping_capacity_factor
-- building_transport_attractiveness_modifier
-- building_transport_attractiveness_factor
-
-- building_[type]_input_factor
-- building_[type]_output_factor
-- building_[type]_throughput_factor
-- building_[type]_attractiveness_modifier
-- building_[type]_attractiveness_factor
-- building_[type]_industrial_capacity_use_factor
-
-(State Scope)
-- local_building_construction_speed_factor
-- local_building_construction_cost_factor
-- local_building_upgrade_speed_factor
-- local_building_upgrade_cost_factor
-- local_building_input_factor
-- local_building_output_factor
-- local_building_throughput_factor
-- local_building_attractiveness_modifier
-- local_building_attractiveness_factor
-- local_building_industrial_capacity_use_factor
-
-- local_building_subsistence_agriculture_input_factor
-- local_building_subsistence_agriculture_output_factor
-- local_building_subsistence_farm_input_factor
-- local_building_subsistence_farm_output_factor
-- local_building_rice_paddy_input_factor
-- local_building_rice_paddy_output_factor
-
-- local_building_factory_input_factor
-- local_building_factory_output_factor
-- local_building_factory_throughput_factor
-- local_building_factory_attractiveness_modifier
-- local_building_factory_attractiveness_factor
-- local_building_factory_industrial_capacity_use_factor
-
-- local_building_agriculture_input_factor
-- local_building_agriculture_output_factor
-- local_building_agriculture_throughput_factor
-- local_building_agriculture_attractiveness_modifier
-- local_building_agriculture_attractiveness_factor
-- local_building_agriculture_industrial_capacity_use_factor
-
-- local_building_plantation_input_factor
-- local_building_plantation_output_factor
-- local_building_plantation_throughput_factor
-- local_building_plantation_attractiveness_modifier
-- local_building_plantation_attractiveness_factor
-- local_building_plantation_industrial_capacity_use_factor
-
-- local_building_resource_input_factor
-- local_building_resource_output_factor
-- local_building_resource_throughput_factor
-- local_building_resource_attractiveness_modifier
-- local_building_resource_attractiveness_factor
-- local_building_resource_industrial_capacity_use_factor
-
-- local_building_transport_input_factor
-- local_building_transport_output_factor
-- local_building_transport_throughput_factor
-- local_building_transport_industrial_capacity_factor
-- local_building_transport_shipping_capacity_factor
-- local_building_transport_attractiveness_modifier
-- local_building_transport_attractiveness_factor
-
-- local_building_[type]_input_factor
-- local_building_[type]_output_factor
-- local_building_[type]_throughput_factor
-- local_building_[type]_attractiveness_modifier
-- local_building_[type]_attractiveness_factor
-- local_building_[type]_industrial_capacity_use_factor
-
-Variables (Read-Only)
-``````
+The location of (almost all of) these effects, triggers, and modifiers are under: <br>
+`common/scripted_effects/_economy_effects_documentation.txt`
+<br>
+`common/scripted_triggers/_economy_triggers_documentation.txt`
+<br>
+`common/modifier_definitions/00_economy_modifiers.txt`
 
 ## Effects
+A list of effects that can be used in events, focus tree completion rewards, decision completion effects, and many other places.
 <table>
     <tr>
         <th>Name</th>
@@ -254,10 +25,10 @@ Variables (Read-Only)
         <th>Scope</th>
     </tr>
     <tr>
-        <td> add_months_of_income </td>
-        <td> <code> x_temp = float </code> <br> Months of revenue to add/subtract to treasury. </td>
-        <td> <code> set_temp_variable = { x_temp = 5 } <br> add_months_of_income = yes </code> </td>
-        <td> Adds or subtracts money to your treasury. Subtracting treasury beyond negatives will add debt. Amount is relative to your government revenue. </td>
+        <td> inherit_economy </td>
+        <td> <code> scope_temp = SCOPE </code> <br> (Optional) Which scope to copy. Default is PREV <br> <code> replace_temp = 0/1 </code> <br> (Optional) Whether to replace to simply add. Default is replace. Non-zero values simply add. </td>
+        <td> <code> set_temp_variable = { scope_temp = GER } <br> inherit_economy = yes </code> </td>
+        <td> Adds/Replaces all of the relavant country-level economic data (like debt and GDP graphs) as well as building/project construction to the currently scoped country.</td>
         <td> </td>
         <td> Country </td>
     </tr>
@@ -471,6 +242,831 @@ Variables (Read-Only)
     </tr>
 </table>
 
-## Modifiers
-
 ## Triggers
+A list of triggers that can be used in limits, focus tree triggers, and anywhere else where conditions are located.
+<table>
+    <tr>
+        <th>Name</th>
+        <th>Parameters</th>
+        <th>Examples</th>
+        <th>Description</th>
+        <th>Notes</th>
+        <th>Scope</th>
+    </tr>
+    <tr>
+        <td> has_debt </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> has_treasury </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> has_months_of_income </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> has_revenue </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> has_spending </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> has_net_budget </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> has_investment_income </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> has_investment_spending </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> has_attractive_opportunity </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> has_trade </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> has_offers </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> has_balance </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> has_relative_price </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> has_relative_balance </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> has_consumer_confidence </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> has_investment_confidence </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> has_banking_confidence </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> has_buildings </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> State </td>
+    </tr>
+    <tr>
+        <td> has_construction </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> State </td>
+    </tr>
+    <tr>
+        <td> has_arable_land </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> State </td>
+    </tr>
+    <tr>
+        <td> has_deposits </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> State </td>
+    </tr>
+    <tr>
+        <td> has_free_deposits </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> State </td>
+    </tr>
+    <tr>
+        <td> has_spare_industrial_capacity </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> State </td>
+    </tr>
+    <tr>
+        <td> has_gdp_growth </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> State </td>
+    </tr>
+    <tr>
+        <td> has_profitability </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> State </td>
+    </tr>
+    <tr>
+        <td> has_profitability </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> State </td>
+    </tr>
+    <tr>
+        <td> has_productivity </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> State </td>
+    </tr>
+    <tr>
+        <td> has_wage </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> State </td>
+    </tr>
+    <tr>
+        <td> has_building_count </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country/State </td>
+    </tr>
+    <tr>
+        <td> has_gdp </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country/State </td>
+    </tr>
+    <tr>
+        <td> has_gdp_per_c </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country/State </td>
+    </tr>
+    <tr>
+        <td> has_average_sol </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country/State </td>
+    </tr>
+    <tr>
+        <td> has_workforce </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country/State </td>
+    </tr>
+    <tr>
+        <td> has_capitalists </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country/State </td>
+    </tr>
+    <tr>
+        <td> has_aristocrats </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country/State </td>
+    </tr>
+    <tr>
+        <td> has_available_workforce </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country/State </td>
+    </tr>
+    <tr>
+        <td> has_peasants </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country/State </td>
+    </tr>
+    <tr>
+        <td> has_unemployed </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country/State </td>
+    </tr>
+    <tr>
+        <td> has_unemployed_percent </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country/State </td>
+    </tr>
+    <tr>
+        <td> has_employed </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country/State </td>
+    </tr>
+    <tr>
+        <td> has_supply </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country/State </td>
+    </tr>
+    <tr>
+        <td> has_demand </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country/State </td>
+    </tr>
+    <tr>
+        <td> has_production </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country/State </td>
+    </tr>
+</table>
+
+## Modifiers
+A list of modifiers that can be used in ideas and dynamic modifiers.
+<table>
+    <tr>
+        <th>Name</th>
+        <th>Parameters</th>
+        <th>Examples</th>
+        <th>Description</th>
+        <th>Notes</th>
+        <th>Scope</th>
+    </tr>
+    <tr>
+        <td> banking_confidence_modifier </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> consumer_confidence_modifier </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> investment_confidence_modifier </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> tax_efficiency_factor </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> corruption_factor </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> bureaucratic_efficiency_factor </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> aristocrats_investment_contribution_factor </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> capitalists_investment_contribution_factor </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> government_investment_efficiency_factor </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> building_construction_speed_factor </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> building_construction_cost_factor </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> building_upgrade_speed_factor </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> building_upgrade_cost_factor </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> building_input_factor </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> building_output_factor </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> building_throughput_factor </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> building_attractiveness_modifier </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> building_attractiveness_factor </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> building_industrial_capacity_use_factor </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> building_[type]_input_factor </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> building_[type]_output_factor </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> building_[type]_throughput_factor </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> building_[type]_attractiveness_modifier </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> building_[type]_attractiveness_factor </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> building_[type]_industrial_capacity_use_factor </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> building_subsistence_agriculture_input_factor </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> building_subsistence_agriculture_output_factor </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> building_subsistence_farm_input_factor </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> building_subsistence_farm_output_factor </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> building_rice_paddy_input_factor </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> building_rice_paddy_output_factor </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> building_transport_industrial_capacity_factor </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> building_transport_shipping_capacity_factor </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> local_building_construction_speed_factor </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> State </td>
+    </tr>
+    <tr>
+        <td> local_building_construction_cost_factor </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> State </td>
+    </tr>
+    <tr>
+        <td> local_building_upgrade_speed_factor </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> State </td>
+    </tr>
+    <tr>
+        <td> local_building_upgrade_cost_factor </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> State </td>
+    </tr>
+    <tr>
+        <td> local_building_input_factor </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> State </td>
+    </tr>
+    <tr>
+        <td> local_building_output_factor </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> State </td>
+    </tr>
+    <tr>
+        <td> local_building_throughput_factor </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> State </td>
+    </tr>
+    <tr>
+        <td> local_building_attractiveness_modifier </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> State </td>
+    </tr>
+    <tr>
+        <td> local_building_attractiveness_factor </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> State </td>
+    </tr>
+    <tr>
+        <td> local_building_industrial_capacity_use_factor </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> State </td>
+    </tr>
+    <tr>
+        <td> local_building_[type]_input_factor </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> State </td>
+    </tr>
+    <tr>
+        <td> local_building_[type]_output_factor </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> State </td>
+    </tr>
+    <tr>
+        <td> local_building_[type]_throughput_factor </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> State </td>
+    </tr>
+    <tr>
+        <td> local_building_[type]_attractiveness_modifier </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> State </td>
+    </tr>
+    <tr>
+        <td> local_building_[type]_attractiveness_factor </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> State </td>
+    </tr>
+    <tr>
+        <td> local_building_[type]_industrial_capacity_use_factor </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> State </td>
+    </tr>
+    <tr>
+        <td> local_building_subsistence_agriculture_input_factor </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> State </td>
+    </tr>
+    <tr>
+        <td> local_building_subsistence_agriculture_output_factor </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> State </td>
+    </tr>
+    <tr>
+        <td> local_building_subsistence_farm_input_factor </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> State </td>
+    </tr>
+    <tr>
+        <td> local_building_subsistence_farm_output_factor </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> State </td>
+    </tr>
+    <tr>
+        <td> local_building_rice_paddy_input_factor </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> State </td>
+    </tr>
+    <tr>
+        <td> local_building_rice_paddy_output_factor </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> State </td>
+    </tr>
+    <tr>
+        <td> local_building_transport_industrial_capacity_factor </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> State </td>
+    </tr>
+    <tr>
+        <td> local_building_transport_shipping_capacity_factor </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> State </td>
+    </tr>
+</table>
+
+## Variables (Read-Only)
+This is a list of variables that you can use if you want to grab a value from the economy system. Presume that they are read-only because if you change them at all, it could break things.
