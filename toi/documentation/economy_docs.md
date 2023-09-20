@@ -243,7 +243,7 @@ A list of effects that can be used in events, focus tree completion rewards, dec
 </table>
 
 ## Triggers
-A list of triggers that can be used in limits, focus tree triggers, and anywhere else where conditions are located.
+A list of triggers that can be used in limits, focus tree triggers, and anywhere else where conditions are located. All of these are GREATER THAN, so if you want LESS THAN OR EQUALS then do `trigger = no`
 <table>
     <tr>
         <th>Name</th>
@@ -255,345 +255,345 @@ A list of triggers that can be used in limits, focus tree triggers, and anywhere
     </tr>
     <tr>
         <td> has_debt </td>
-        <td> </td>
-        <td> </td>
-        <td> </td>
+        <td> <code> x_temp = float </code> <br> (Optional) Amount of debt. Default is 0. </td>
+        <td> <code> set_temp_variable = { x_temp = 200 } <br> has_debt = yes </code> </td>
+        <td> Checks if the amount of debt that the current scope has is greater than the given value. </td>
         <td> </td>
         <td> Country </td>
     </tr>
     <tr>
         <td> has_treasury </td>
-        <td> </td>
-        <td> </td>
-        <td> </td>
+        <td> <code> x_temp = float </code> <br> (Optional) Treasury amount. Default is 0. </td>
+        <td> <code> set_temp_variable = { x_temp = 200 } <br> has_treasury = yes </code> </td>
+        <td> Checks if the treasury that the current scope has is greater than the given value.</td>
         <td> </td>
         <td> Country </td>
     </tr>
     <tr>
         <td> has_months_of_income </td>
-        <td> </td>
-        <td> </td>
-        <td> </td>
+        <td> <code> x_temp = float </code> <br> (Optional) Treasury amount in months of income. Default is 0. </td>
+        <td> <code> set_temp_variable = { x_temp = 2 } <br> has_months_of_income = yes </code> </td>
+        <td> Checks if treasury amount of the current scope is greater than the revenue multiplied by the given value.</td>
         <td> </td>
         <td> Country </td>
     </tr>
     <tr>
         <td> has_revenue </td>
-        <td> </td>
-        <td> </td>
-        <td> </td>
+        <td> <code> x_temp = float </code> <br> (Optional) Revenue amount. Default is 0. </td>
+        <td> <code> set_temp_variable = { x_temp = 1200 } <br> has_revenue = yes </code> </td>
+        <td> Checks if the revenue of the current scope is greater than the given value.</td>
         <td> </td>
         <td> Country </td>
     </tr>
     <tr>
         <td> has_spending </td>
-        <td> </td>
-        <td> </td>
-        <td> </td>
+        <td> <code> x_temp = float </code> <br> (Optional) Spending amount. Default is 0. </td>
+        <td> <code> set_temp_variable = { x_temp = 1200 } <br> has_spending = no # Less than or equal to 1200 in spending </code> </td>
+        <td> Checks if the spending of the current scope is greater than the given value.</td>
         <td> </td>
         <td> Country </td>
     </tr>
     <tr>
         <td> has_net_budget </td>
-        <td> </td>
-        <td> </td>
-        <td> </td>
+        <td> <code> x_temp = float </code> <br> (Optional) Net Budget amount. Default is 0. </td>
+        <td> <code> set_temp_variable = { x_temp = 0 } <br> has_net_budget = yes  # Checks if budget balance is positive </code> </td>
+        <td> Checks if the net budget of the current scope is greater than the given value.</td>
         <td> </td>
         <td> Country </td>
     </tr>
     <tr>
         <td> has_investment_income </td>
-        <td> </td>
-        <td> </td>
-        <td> </td>
+        <td> <code> x_temp = float </code> <br> (Optional) Income amount. Default is 0. </td>
+        <td> <code> set_temp_variable = { x_temp = 1200 } <br> has_investment_income = yes </code> </td>
+        <td> Checks if the investment fund's income is greater than the given value.</td>
         <td> </td>
         <td> Country </td>
     </tr>
     <tr>
         <td> has_investment_spending </td>
-        <td> </td>
-        <td> </td>
-        <td> </td>
+        <td> <code> x_temp = float </code> <br> (Optional) Spending amount. Default is 0. </td>
+        <td> <code> set_temp_variable = { x_temp = 1200 } <br> has_investment_spending = yes </code> </td>
+        <td> Checks if the investment fund's spending is greater than the given value.</td>
         <td> </td>
         <td> Country </td>
     </tr>
     <tr>
         <td> has_attractive_opportunity </td>
         <td> </td>
-        <td> </td>
-        <td> </td>
+        <td> <code> has_attractive_opportunity = no # Doesn't have an attractive opportunity </code> </td>
+        <td> Checks if the current scope has an investment opportunity with over 200 attractiveness.</td>
         <td> </td>
         <td> Country </td>
     </tr>
     <tr>
         <td> has_trade </td>
-        <td> </td>
-        <td> </td>
-        <td> </td>
-        <td> </td>
+        <td> <code> x_temp = float </code> <br> (Optional) Trade amount. Default is 0. <br> <code> resource_temp = token:resource_token </code> <br> Resource to evaluate. </td>
+        <td> <code> set_temp_variable = { x_temp = 250 } <br> set_temp_variable = { resource_temp = token:resource_food } <br> has_trade = yes # Importing more than 250 food </code> </td>
+        <td> Checks if the current scope has more than the given amount of trade for a specific good. Positive is importing, negative is exporting. Be careful with checking exports because this checks if the value is GREATER THAN so it has inverse behavior with exporting goods.</td>
+        <td> Resource tokens are found both under common/resources/00_resources.txt and common/ideas/_economy_tokens.txt</td>
         <td> Country </td>
     </tr>
     <tr>
         <td> has_offers </td>
-        <td> </td>
-        <td> </td>
-        <td> </td>
-        <td> </td>
+        <td> <code> x_temp = float </code> <br> (Optional) Offers amount. Default is 0. <br> <code> resource_temp = token:resource_token </code> <br> Resource to evaluate. </td>
+        <td> <code> set_temp_variable = { x_temp = -100 } <br> set_temp_variable = { resource_temp = token:resource_luxury_goods } <br> has_trade = no # Exporting more than 100 luxury goods </code> </td>
+        <td> Checks if the current scope has more than the given amount of offers for a specific good. Positive is importing, negative is exporting. Be careful with checking exports because this checks if the value is GREATER THAN so it has inverse behavior with exporting goods.</td>
+        <td> Resource tokens are found both under common/resources/00_resources.txt and common/ideas/_economy_tokens.txt</td>
         <td> Country </td>
     </tr>
     <tr>
         <td> has_balance </td>
-        <td> </td>
-        <td> </td>
-        <td> </td>
-        <td> </td>
+        <td> <code> x_temp = float </code> <br> (Optional) Balance amount. Default is 0. <br> <code> resource_temp = token:resource_token </code> <br> Resource to evaluate. </td>
+        <td> <code> set_temp_variable = { resource_temp = token:resource_food } <br> has_balance = yes # Positive balance of food </code> </td>
+        <td> Checks if the current scope has a greater balance of a given resource than the given value.</td>
+        <td> Resource tokens are found both under common/resources/00_resources.txt and common/ideas/_economy_tokens.txt</td>
         <td> Country </td>
     </tr>
     <tr>
         <td> has_relative_price </td>
-        <td> </td>
-        <td> </td>
-        <td> </td>
-        <td> </td>
+        <td> <code> x_temp = float </code> <br> (Optional) Relative Price amount. Default is 0. Values typically range from -1 to 1. <br> <code> resource_temp = token:resource_token </code> <br> Resource to evaluate. </td>
+        <td> <code> set_temp_variable = { x_temp = 0.2 } <br> set_temp_variable = { resource_temp = token:resource_services } <br> has_relative_price = yes # 20% more expensive </code> </td>
+        <td> Checks if the current scope has a higher relative price of a given resource than the given value. Positive is more expensive, negative is less expensive than base price.</td>
+        <td> Resource tokens are found both under common/resources/00_resources.txt and common/ideas/_economy_tokens.txt</td>
         <td> Country </td>
     </tr>
     <tr>
         <td> has_relative_balance </td>
-        <td> </td>
-        <td> </td>
-        <td> </td>
-        <td> </td>
+        <td> <code> x_temp = float </code> <br> (Optional) Relative Balance amount. Default is 0. Values typically range from -1 to 1. <br> <code> resource_temp = token:resource_token </code> <br> Resource to evaluate. </td>
+        <td> <code> set_temp_variable = { x_temp = 0.2 } <br> set_temp_variable = { resource_temp = token:resource_industrial_goods } <br> has_relative_balance = yes # 20% more supply than demand </code> </td>
+        <td> Checks if the current scope has a higher relative balance of a given resource than the given value.</td>
+        <td> Resource tokens are found both under common/resources/00_resources.txt and common/ideas/_economy_tokens.txt</td>
         <td> Country </td>
     </tr>
     <tr>
         <td> has_consumer_confidence </td>
-        <td> </td>
-        <td> </td>
-        <td> </td>
+        <td> <code> x_temp = float </code> <br> (Optional) Consumer Confidence amount. Default is 0. Base Consumer Confidence value is 100. </td>
+        <td> <code> set_temp_variable = { x_temp = 125 } <br> has_consumer_confidence = yes # Consumer spending is 25% more than their earnings </code> </td>
+        <td> Checks if the current scope has a higher consumer confidence than the given value.</td>
         <td> </td>
         <td> Country </td>
     </tr>
     <tr>
         <td> has_investment_confidence </td>
-        <td> </td>
-        <td> </td>
-        <td> </td>
+        <td> <code> x_temp = float </code> <br> (Optional) Investment Confidence amount. Default is 0. Base Investment Confidence value is 100. </td>
+        <td> <code> set_temp_variable = { x_temp = 75 } <br> has_investment_confidence = no # Investors are scared </code> </td>
+        <td> Checks if the current scope has a higher investment confidence than the given value.</td>
         <td> </td>
         <td> Country </td>
     </tr>
     <tr>
         <td> has_banking_confidence </td>
-        <td> </td>
-        <td> </td>
-        <td> </td>
+        <td> <code> x_temp = float </code> <br> (Optional) Banking Confidence amount. Default is 0. Base Banking Confidence value is 25. </td>
+        <td> <code> set_temp_variable = { x_temp = 50 } <br> has_banking_confidence = yes </code> </td>
+        <td> Checks if the current scope has a higher banking confidence than the given value.</td>
         <td> </td>
         <td> Country </td>
     </tr>
     <tr>
         <td> has_buildings </td>
-        <td> </td>
-        <td> </td>
-        <td> </td>
-        <td> </td>
+        <td> <code> x_temp = integer </code> <br> (Optional) Size of building. Default is 0. <br> <code> building_temp = token:building_token </code> <br> Building to check. </td>
+        <td> <code> set_temp_variable = { x_temp = 5 } <br> set_temp_variable = { building_temp = token:building_lumber_mill } <br> has_buildings = yes </code> </td>
+        <td> Checks if the current state has a building of a given type (or any) and potentially a size greater than the given value.</td>
+        <td> Building tokens can be found under common/ideas/_economy_tokens.txt </td>
         <td> State </td>
     </tr>
     <tr>
         <td> has_construction </td>
-        <td> </td>
-        <td> </td>
-        <td> </td>
-        <td> </td>
+        <td> <code> building_temp = token:building_token </code> <br> (Optional) Building to check. </td>
+        <td> <code> set_temp_variable = { building_temp = token:building_lumber_mill } <br> has_construction = yes </code> </td>
+        <td> Checks if the current state has a building (or specific building) under construction.</td>
+        <td> Building tokens can be found under common/ideas/_economy_tokens.txt </td>
         <td> State </td>
     </tr>
     <tr>
         <td> has_arable_land </td>
+        <td> <code> x_temp = integer </code> <br> (Optional) Arable Land amount. Default is 0. </td>
+        <td> <code> set_temp_variable = { x_temp = 25 } <br> has_arable_land = yes </code> </td>
+        <td> Checks if the current state as more arable land than the given value.</td>
         <td> </td>
-        <td> </td>
-        <td> </td>
+        <td> State </td>
+    </tr>
+    <tr>
+        <td> has_available_arable_land </td>
+        <td> <code> x_temp = integer </code> <br> (Optional) Arable Land amount. Default is 0. </td>
+        <td> <code> has_available_arable_land = yes # Any arable land available </code> </td>
+        <td> Checks if the current state as more arable land available than the given value.</td>
         <td> </td>
         <td> State </td>
     </tr>
     <tr>
         <td> has_deposits </td>
-        <td> </td>
-        <td> </td>
-        <td> </td>
+        <td> <code> x_temp = integer </code> <br> (Optional) Deposits amount. Default is 0. </td>
+        <td> <code> set_temp_variable = { x_temp = 5 } <br> has_deposits = yes </code> </td>
+        <td> Checks if the current state as more deposits than the given value.</td>
         <td> </td>
         <td> State </td>
     </tr>
     <tr>
         <td> has_free_deposits </td>
-        <td> </td>
-        <td> </td>
-        <td> </td>
+        <td> <code> x_temp = integer </code> <br> (Optional) Deposits amount. Default is 0. </td>
+        <td> <code> has_free_deposits = no # No free deposits available to exploit </code> </td>
+        <td> Checks if the current state as more free deposit slots than the given value.</td>
         <td> </td>
         <td> State </td>
     </tr>
     <tr>
         <td> has_spare_industrial_capacity </td>
-        <td> </td>
-        <td> </td>
-        <td> </td>
-        <td> </td>
-        <td> State </td>
-    </tr>
-    <tr>
-        <td> has_gdp_growth </td>
-        <td> </td>
-        <td> </td>
-        <td> </td>
+        <td> <code> x_temp = float </code> <br> (Optional) Spare capacity. Default is 0. </td>
+        <td> <code> set_temp_variable = { x_temp = 1.5 } <br> has_spare_industrial_capacity = yes </code> </td>
+        <td> Checks if the current state has more extra industrial capacity in excess of its usage than the given value.</td>
         <td> </td>
         <td> State </td>
     </tr>
     <tr>
         <td> has_profitability </td>
-        <td> </td>
-        <td> </td>
-        <td> </td>
-        <td> </td>
-        <td> State </td>
-    </tr>
-    <tr>
-        <td> has_profitability </td>
-        <td> </td>
-        <td> </td>
-        <td> </td>
-        <td> </td>
+        <td> <code> x_temp = float </code> <br> (Optional) Profitability percentage. Default is 0. <br> <code> building_temp = token:building_token </code> <br> Building to evaluate. </td>
+        <td> <code> set_temp_variable = { x_temp = 0.2 } <br> set_temp_variable = { building_temp = token:building_lumber_mill } <br> has_profitability = yes </code> </td>
+        <td> Checks if the given building has profitability in excess of the given value.</td>
+        <td> Building tokens can be found under common/ideas/_economy_tokens.txt </td>
         <td> State </td>
     </tr>
     <tr>
         <td> has_productivity </td>
-        <td> </td>
-        <td> </td>
-        <td> </td>
-        <td> </td>
+        <td> <code> x_temp = float </code> <br> (Optional) Productivity amount. Default is 0. <br> <code> building_temp = token:building_token </code> <br> Building to evaluate. </td>
+        <td> <code> set_temp_variable = { x_temp = 2.5 } <br> set_temp_variable = { building_temp = token:building_lumber_mill } <br> has_profitability = no # Unproductive lumber mill </code> </td>
+        <td> Checks if the given building has higher productivity than the given value.</td>
+        <td> Building tokens can be found under common/ideas/_economy_tokens.txt </td>
         <td> State </td>
     </tr>
     <tr>
         <td> has_wage </td>
-        <td> </td>
-        <td> </td>
-        <td> </td>
+        <td> <code> x_temp = float </code> <br> (Optional) Wage amount. Default is 0. </td>
+        <td> <code> set_temp_variable = { x_temp = 5.0 } <br> has_wage = yes </code> </td>
+        <td> Checks if the current state has a higher wage than the given value.</td>
         <td> </td>
         <td> State </td>
     </tr>
     <tr>
         <td> has_building_count </td>
-        <td> </td>
-        <td> </td>
-        <td> </td>
+        <td> <code> x_temp = integer </code> <br> (Optional) Non-Subsistence Building amount. Default is 0. </td>
+        <td> <code> set_temp_variable = { x_temp = 25 } <br> has_building_count = yes </code> </td>
+        <td> Checks if the current state's building count is more than the given value. Building count is the number of non-subsistence farm buildings (unrelated to HOI4-style buildings)</td>
         <td> </td>
         <td> Country/State </td>
     </tr>
     <tr>
         <td> has_gdp </td>
-        <td> </td>
-        <td> </td>
-        <td> </td>
+        <td> <code> x_temp = float </code> <br> (Optional) GDP amount. Default is 0. </td>
+        <td> <code> set_temp_variable = { x_temp = 255 } <br> has_gdp = yes </code> </td>
+        <td> Checks if the current scope's GDP amount is greater than the given value.</td>
         <td> </td>
         <td> Country/State </td>
     </tr>
     <tr>
         <td> has_gdp_per_c </td>
+        <td> <code> x_temp = float </code> <br> (Optional) GDP/c amount. Default is 0. </td>
+        <td> <code> set_temp_variable = { x_temp = 2.4 } <br> has_gdp_per_c = yes </code> </td>
+        <td> Checks if the current scope's GDP per capita (GDP per pop) is greater than the given value.</td>
         <td> </td>
-        <td> </td>
-        <td> </td>
+        <td> Country/State </td>
+    </tr>
+    <tr>
+        <td> has_gdp_growth </td>
+        <td> <code> x_temp = float </code> <br> (Optional) GDP Growth percentage. Default is 0. </td>
+        <td> <code> set_temp_variable = { x_temp = 0.03 } <br> has_gdp_growth = yes </code> </td>
+        <td> Checks if the current scope has a greater yearly GDP growth than the given value.</td>
         <td> </td>
         <td> Country/State </td>
     </tr>
     <tr>
         <td> has_average_sol </td>
-        <td> </td>
-        <td> </td>
-        <td> </td>
+        <td> <code> x_temp = float </code> <br> (Optional) Standard of Living amount. Default is 0.</td>
+        <td> <code> set_temp_variable = { x_temp = 21.5 } <br> has_average_sol = yes </code> </td>
+        <td> Checks if the current scope's standard of living is higher than the given value.</td>
         <td> </td>
         <td> Country/State </td>
     </tr>
     <tr>
         <td> has_workforce </td>
-        <td> </td>
-        <td> </td>
-        <td> </td>
+        <td> <code> x_temp = float </code> <br> (Optional) Workforce amount. Default is 0.</td>
+        <td> <code> set_temp_variable = { x_temp = 312.01 } <br> has_workforce = yes </code> </td>
+        <td> Checks if the current scope's workforce amount is more than the given value.</td>
         <td> </td>
         <td> Country/State </td>
     </tr>
     <tr>
         <td> has_capitalists </td>
-        <td> </td>
-        <td> </td>
-        <td> </td>
+        <td> <code> x_temp = float </code> <br> (Optional) Capitalists amount. Default is 0.</td>
+        <td> <code> set_temp_variable = { x_temp = 2.4 } <br> has_capitalists = yes </code> </td>
+        <td> Checks if the current scope's capitalist amount is more than the given value.</td>
         <td> </td>
         <td> Country/State </td>
     </tr>
     <tr>
         <td> has_aristocrats </td>
-        <td> </td>
-        <td> </td>
-        <td> </td>
+        <td> <code> x_temp = float </code> <br> (Optional) Aristocrats amount. Default is 0.</td>
+        <td> <code> set_temp_variable = { x_temp = 3.5 } <br> has_aristocrats = yes </code> </td>
+        <td> Checks if the current scope's aristocrat amount is more than the given value.</td>
         <td> </td>
         <td> Country/State </td>
     </tr>
     <tr>
         <td> has_available_workforce </td>
-        <td> </td>
-        <td> </td>
-        <td> </td>
+        <td> <code> x_temp = float </code> <br> (Optional) Available Workforce amount. Default is 0.</td>
+        <td> <code> set_temp_variable = { x_temp = 85.5 } <br> has_available_workforce = yes </code> </td>
+        <td> Checks if the current scope's aristocrat amount is more than the given value.</td>
         <td> </td>
         <td> Country/State </td>
     </tr>
     <tr>
         <td> has_peasants </td>
-        <td> </td>
-        <td> </td>
-        <td> </td>
+        <td> <code> x_temp = float </code> <br> (Optional) Peasant amount. Default is 0.</td>
+        <td> <code> set_temp_variable = { x_temp = 1020 } <br> has_peasants = yes </code> </td>
+        <td> Checks if the current scope's peasant amount is more than the given value.</td>
         <td> </td>
         <td> Country/State </td>
     </tr>
     <tr>
         <td> has_unemployed </td>
-        <td> </td>
-        <td> </td>
-        <td> </td>
+        <td> <code> x_temp = float </code> <br> (Optional) Unemployed amount. Default is 0.</td>
+        <td> <code> set_temp_variable = { x_temp = 12.2 } <br> has_unemployed = yes </code> </td>
+        <td> Checks if the current scope's unemployment is more than the given value.</td>
         <td> </td>
         <td> Country/State </td>
     </tr>
     <tr>
         <td> has_unemployed_percent </td>
-        <td> </td>
-        <td> </td>
-        <td> </td>
+        <td> <code> x_temp = float </code> <br> (Optional) Unemployed percentage. Default is 0.</td>
+        <td> <code> set_temp_variable = { x_temp = 0.05 } <br> has_unemployed_percent = yes </code> </td>
+        <td> Checks if the current scope's unemployment percentage is more than the given value (from 0 to 1).</td>
         <td> </td>
         <td> Country/State </td>
     </tr>
     <tr>
         <td> has_employed </td>
-        <td> </td>
-        <td> </td>
-        <td> </td>
+        <td><code> x_temp = float </code> <br> (Optional) Employed amount. Default is 0.</td>
+        <td> <code> set_temp_variable = { x_temp = 250 } <br> has_employed = yes </code> </td>
+        <td> Checks if the current scope's employment is more than the given value.</td>
         <td> </td>
         <td> Country/State </td>
     </tr>
     <tr>
         <td> has_supply </td>
-        <td> </td>
-        <td> </td>
-        <td> </td>
+        <td> <code> x_temp = float </code> <br> (Optional) Supply amount. Default is 0. <br> <code> resource_temp = token:resource_token </code> <br> Resource to evaluate. </td>
+        <td> <code> set_temp_variable = { x_temp = 100 } <br> set_temp_variable = { resource_temp = token:resource_electricity } <br> has_supply = yes </code> </td>
+        <td> Checks if the current scope's supply of a specific good is more than the given value.</td>
         <td> </td>
         <td> Country/State </td>
     </tr>
     <tr>
         <td> has_demand </td>
-        <td> </td>
-        <td> </td>
-        <td> </td>
+        <td> <code> x_temp = float </code> <br> (Optional) Demand amount. Default is 0. <br> <code> resource_temp = token:resource_token </code> <br> Resource to evaluate. </td>
+        <td> <code> set_temp_variable = { x_temp = 500 } <br> set_temp_variable = { resource_temp = token:resource_services } <br> has_demand = yes </code> </td>
+        <td> Checks if the current scope's demand of a specific good is more than the given value.</td>
         <td> </td>
         <td> Country/State </td>
     </tr>
     <tr>
         <td> has_production </td>
-        <td> </td>
-        <td> </td>
-        <td> </td>
+        <td> <code> x_temp = float </code> <br> (Optional) Production amount. Default is 0. <br> <code> resource_temp = token:resource_token </code> <br> Resource to evaluate. </td>
+        <td> <code> set_temp_variable = { x_temp = 0 } <br> set_temp_variable = { resource_temp = token:resource_raw_materials } <br> has_production = yes </code> </td>
+        <td> Checks if the current scope's production of a specific good is more than the given value.</td>
         <td> </td>
         <td> Country/State </td>
     </tr>
