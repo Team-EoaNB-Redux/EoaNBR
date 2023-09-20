@@ -264,7 +264,7 @@ A list of triggers that can be used in limits, focus tree triggers, and anywhere
     <tr>
         <td> has_debt_to_gdp </td>
         <td> <code> x_temp = float </code> <br> (Optional) Amount of debt as a % of GDP. Default is 0. </td>
-        <td> <code> set_temp_variable = { x_temp = 0.5 } <br> has_relative_debt = yes </code> </td>
+        <td> <code> set_temp_variable = { x_temp = 0.5 } <br> has_debt_to_gdp = yes </code> </td>
         <td> Checks if the debt to GDP ratio of the current scope is greater than the given percentage value. </td>
         <td> </td>
         <td> Country </td>
