@@ -7467,123 +7467,53 @@
         }
 
         pops_open_jobs_calc = yes # Adds up the pool of open jobs from positively productive buildings
-        
-        # Sets jobs_multiplier to the min of % of jobs of each type that can be filled
-        set_temp_variable = { jobs_multiplier = 1 }
-        set_temp_variable = { laborers_mult = laborers_unemployed }
-        divide_temp_variable = { laborers_mult = laborers_open_jobs }
-        set_temp_variable = { workers_mult = workers_unemployed }
-        divide_temp_variable = { workers_mult = workers_open_jobs }
-        set_temp_variable = { professionals_mult = professionals_unemployed }
-        divide_temp_variable = { professionals_mult = professionals_open_jobs }
-        set_temp_variable = { specialists_mult = specialists_unemployed }
-        divide_temp_variable = { specialists_mult = specialists_open_jobs }
-        set_temp_variable = { aristocrats_mult = aristocrats_unemployed }
-        divide_temp_variable = { aristocrats_mult = aristocrats_open_jobs }
-        set_temp_variable = { capitalists_mult = capitalists_unemployed }
-        divide_temp_variable = { capitalists_mult = capitalists_open_jobs }
-        if = {
-            limit = {
-                check_variable = { laborers_open_jobs > 0 }
-                check_variable = { laborers_mult < jobs_multiplier }
-            }
-            set_temp_variable = { jobs_multiplier = laborers_mult }
-        }
-        if = {
-            limit = {
-                check_variable = { workers_open_jobs > 0 }
-                check_variable = { workers_mult < jobs_multiplier }
-            }
-            set_temp_variable = { jobs_multiplier = workers_mult }
-        }
-        if = {
-            limit = {
-                check_variable = { professionals_open_jobs > 0 }
-                check_variable = { professionals_mult < jobs_multiplier }
-            }
-            set_temp_variable = { jobs_multiplier = professionals_mult }
-        }
-        if = {
-            limit = {
-                check_variable = { specialists_open_jobs > 0 }
-                check_variable = { specialists_mult < jobs_multiplier }
-            }
-            set_temp_variable = { jobs_multiplier = specialists_mult }
-        }
-        if = {
-            limit = {
-                check_variable = { aristocrats_open_jobs > 0 }
-                check_variable = { aristocrats_mult < jobs_multiplier }
-            }
-            set_temp_variable = { jobs_multiplier = aristocrats_mult }
-        }
-        if = {
-            limit = {
-                check_variable = { capitalists_open_jobs > 0 }
-                check_variable = { capitalists_mult < jobs_multiplier }
-            }
-            set_temp_variable = { jobs_multiplier = capitalists_mult }
-        }
 
+        # Hiring
+        for_each_loop = {
+            array = buildings_productivity_sort
+            value = building_token
+            break = prod_break
 
-        if = {
-            limit = {
-                check_variable = { jobs_multiplier > 0 }
-            }
-            # Hiring
-            for_each_loop = {
-                array = buildings_productivity_sort
-                value = building_token
-                break = prod_break
-
+            if = {
+                limit = {
+                    NOT = { check_variable = { building_token = token:building_subsistence_farm } }
+                    NOT = { check_variable = { building_token = token:building_rice_paddy } }
+                }
                 if = {
                     limit = {
-                        NOT = { check_variable = { building_token = token:building_subsistence_farm } }
-                        NOT = { check_variable = { building_token = token:building_rice_paddy } }
+                        check_variable = { base_productivity@var:building_token > 0 }
+                        check_variable = { employment_target@var:building_token > employment_percentage@var:building_token }
                     }
+                    set_temp_variable = { hiring_percentage_mult = 1 }
                     if = {
                         limit = {
-                            check_variable = { base_productivity@var:building_token > 0 }
-                            check_variable = { employment_target@var:building_token > employment_percentage@var:building_token }
+                            check_variable = { base_productivity@var:building_token < base_wage }
                         }
-                        set_temp_variable = { hiring_percentage_mult = jobs_multiplier }
-                        if = {
-                            limit = {
-                                check_variable = { base_productivity@var:building_token < base_wage }
-                            }
-                            multiply_temp_variable = { hiring_percentage_mult = base_productivity@var:building_token }
-                            divide_temp_variable = { hiring_percentage_mult = base_wage }
-                        }
-
-                        if = {
-                            limit = {
-                                check_variable = { hiring_percentage_mult > 1 }
-                            }
-                            set_temp_variable = { hiring_percentage_mult = 1 }
-                        }
-
-                        # x_percent_temp is the percentage of building jobs to hire
-                        set_temp_variable = { x_percent_temp = employment_target@var:building_token }
-                        subtract_from_temp_variable = { x_percent_temp = employment_percentage@var:building_token }
-                        multiply_temp_variable = { x_percent_temp = hiring_percentage_mult }
-
-                        change_building_employment_by_x_percent = yes # Hiring
+                        multiply_temp_variable = { hiring_percentage_mult = base_productivity@var:building_token }
+                        divide_temp_variable = { hiring_percentage_mult = base_wage }
                     }
-                    else_if = {
+
+                    if = {
                         limit = {
-                            check_variable = { base_productivity@var:building_token < 0 }
+                            check_variable = { hiring_percentage_mult > 1 }
                         }
-                        set_temp_variable = { prod_break = 1 }
+                        set_temp_variable = { hiring_percentage_mult = 1 }
                     }
+
+                    # x_percent_temp is the percentage of building jobs to hire
+                    set_temp_variable = { x_percent_temp = employment_target@var:building_token }
+                    subtract_from_temp_variable = { x_percent_temp = employment_percentage@var:building_token }
+                    multiply_temp_variable = { x_percent_temp = hiring_percentage_mult }
+
+                    change_building_employment_by_x_percent = yes # Hiring
+                }
+                else_if = {
+                    limit = {
+                        check_variable = { base_productivity@var:building_token < 0 }
+                    }
+                    set_temp_variable = { prod_break = 1 }
                 }
             }
-        }
-        else_if = {
-            limit = {
-                check_variable = { jobs_multiplier < 0 }
-            }
-            # Workforce Change
-
         }
     }
 	pops_open_jobs_calc = {
@@ -7906,420 +7836,371 @@
 			}
 			set_temp_variable = { x_percent_temp = 0 }
 		}
-		subtract_from_temp_variable = { x_percent_temp = employment_percentage@var:building_token }
 
-		#Prospective Hiring
-		set_temp_variable = { peasants_to_hire = peasants_jobs@var:building_token }
-		multiply_temp_variable = { peasants_to_hire = x_percent_temp }
-        divide_temp_variable = { peasants_to_hire = 100 }
-		set_temp_variable = { laborers_to_hire = laborers_jobs@var:building_token }
-		multiply_temp_variable = { laborers_to_hire = x_percent_temp }
-        divide_temp_variable = { laborers_to_hire = 100 }
-		set_temp_variable = { workers_to_hire = workers_jobs@var:building_token }
-		multiply_temp_variable = { workers_to_hire = x_percent_temp }
-        divide_temp_variable = { workers_to_hire = 100 }
-		set_temp_variable = { professionals_to_hire = professionals_jobs@var:building_token }
-		multiply_temp_variable = { professionals_to_hire = x_percent_temp }
-        divide_temp_variable = { professionals_to_hire = 100 }
-		set_temp_variable = { specialists_to_hire = specialists_jobs@var:building_token }
-		multiply_temp_variable = { specialists_to_hire = x_percent_temp }
-        divide_temp_variable = { specialists_to_hire = 100 }
-		set_temp_variable = { aristocrats_to_hire = aristocrats_jobs@var:building_token }
-		multiply_temp_variable = { aristocrats_to_hire = x_percent_temp }
-        divide_temp_variable = { aristocrats_to_hire = 100 }
-		set_temp_variable = { capitalists_to_hire = capitalists_jobs@var:building_token }
-		multiply_temp_variable = { capitalists_to_hire = x_percent_temp }
-        divide_temp_variable = { capitalists_to_hire = 100 }
-
-		if = {
+		if = { # Peasants
 			limit = {
-				check_variable = { peasants_to_hire > peasants_unemployed }
+				check_variable = { peasants_jobs@var:building_token > 0 }
 			}
-			# Recorrecting Hiring %
-            if = {
+            # Employment Change
+            set_temp_variable = { employment_change_temp = peasants_jobs@var:building_token }
+            multiply_temp_variable = { employment_change_temp = x_percent_temp }
+            divide_temp_variable = { employment_change_temp = 100 }
+            subtract_from_temp_variable = { employment_change_temp = peasants_employed@var:building_token }
+
+            if = { # Caps to unemployment (if positive)
                 limit = {
-                    check_variable = { peasants_unemployed > 10000 }
+                    check_variable = { employment_change_temp > peasants_unemployed }
                 }
-			    set_temp_variable = { x_percent_temp = peasants_unemployed }
-			    divide_temp_variable = { x_percent_temp = peasants_jobs@var:building_token }
-			    multiply_temp_variable = { x_percent_temp = 100 }
+			    set_temp_variable = { employment_change_temp = peasants_unemployed }
             }
-            else = {
-			    set_temp_variable = { x_percent_temp = peasants_unemployed }
-			    multiply_temp_variable = { x_percent_temp = 100 }
-			    divide_temp_variable = { x_percent_temp = peasants_jobs@var:building_token }
+            if = { # Caps to jobs (if positive)
+                limit = {
+                    set_temp_variable = { num_after = peasants_employed@var:building_token }
+                    add_to_temp_variable = { num_after = employment_change_temp }
+                    check_variable = { num_after > peasants_jobs@var:building_token }
+                }
+			    set_temp_variable = { employment_change_temp = peasants_employed@var:building_token }
+                subtract_from_temp_variable = { employment_change_temp = peasants_jobs@var:building_token }
             }
-
-			# Redoing Prospective Hiring
-            set_temp_variable = { laborers_to_hire = laborers_jobs@var:building_token }
-            multiply_temp_variable = { laborers_to_hire = x_percent_temp }
-            divide_temp_variable = { laborers_to_hire = 100 }
-            set_temp_variable = { workers_to_hire = workers_jobs@var:building_token }
-            multiply_temp_variable = { workers_to_hire = x_percent_temp }
-            divide_temp_variable = { workers_to_hire = 100 }
-            set_temp_variable = { professionals_to_hire = professionals_jobs@var:building_token }
-            multiply_temp_variable = { professionals_to_hire = x_percent_temp }
-            divide_temp_variable = { professionals_to_hire = 100 }
-            set_temp_variable = { specialists_to_hire = specialists_jobs@var:building_token }
-            multiply_temp_variable = { specialists_to_hire = x_percent_temp }
-            divide_temp_variable = { specialists_to_hire = 100 }
-            set_temp_variable = { aristocrats_to_hire = aristocrats_jobs@var:building_token }
-            multiply_temp_variable = { aristocrats_to_hire = x_percent_temp }
-            divide_temp_variable = { aristocrats_to_hire = 100 }
-            set_temp_variable = { capitalists_to_hire = capitalists_jobs@var:building_token }
-            multiply_temp_variable = { capitalists_to_hire = x_percent_temp }
-            divide_temp_variable = { capitalists_to_hire = 100 }
-
-			set_temp_variable = { prod_break = 1 }
+            if = { # Caps to employment (if negative)
+                limit = {
+                    check_variable = { employment_change_temp < 0 }
+                    set_temp_variable = { neg_temp = employment_change_temp }
+                    multiply_temp_variable = { neg_temp = -1 }
+                    check_variable = { neg_temp > peasants_employed@var:building_token }
+                }
+                set_temp_variable = { employment_change_temp = peasants_employed@var:building_token }
+                multiply_temp_variable = { employment_change_temp = -1 }
+            }
+            
+            # Adjusting Employment
+            add_to_variable = { peasants_employed@var:building_token = employment_change_temp }
+            add_to_variable = { employed@var:building_token = employment_change_temp }
+            
+			add_to_variable = { peasants_employed = employment_change_temp }
+			subtract_from_variable = { peasants_unemployed = employment_change_temp }
+            add_to_variable = { pops_employed = employment_change_temp }
+            subtract_from_variable = { pops_unemployed = employment_change_temp }
 		}
-		if = {
+		if = { # Laborers
 			limit = {
-				check_variable = { laborers_to_hire > laborers_unemployed }
+				check_variable = { laborers_jobs@var:building_token > 0 }
 			}
-			# Recorrecting Hiring %
-            if = {
+            # Employment Change
+            set_temp_variable = { employment_change_temp = laborers_jobs@var:building_token }
+            multiply_temp_variable = { employment_change_temp = x_percent_temp }
+            divide_temp_variable = { employment_change_temp = 100 }
+            subtract_from_temp_variable = { employment_change_temp = laborers_employed@var:building_token }
+
+            if = { # Caps to unemployment (if positive)
                 limit = {
-                    check_variable = { laborers_unemployed > 10000 }
+                    check_variable = { employment_change_temp > laborers_unemployed }
                 }
-			    set_temp_variable = { x_percent_temp = laborers_unemployed }
-			    divide_temp_variable = { x_percent_temp = laborers_jobs@var:building_token }
-			    multiply_temp_variable = { x_percent_temp = 100 }
+			    set_temp_variable = { employment_change_temp = laborers_unemployed }
             }
-            else = {
-			    set_temp_variable = { x_percent_temp = laborers_unemployed }
-			    multiply_temp_variable = { x_percent_temp = 100 }
-			    divide_temp_variable = { x_percent_temp = laborers_jobs@var:building_token }
+            if = { # Caps to jobs (if positive)
+                limit = {
+                    set_temp_variable = { num_after = laborers_employed@var:building_token }
+                    add_to_temp_variable = { num_after = employment_change_temp }
+                    check_variable = { num_after > laborers_jobs@var:building_token }
+                }
+			    set_temp_variable = { employment_change_temp = laborers_employed@var:building_token }
+                subtract_from_temp_variable = { employment_change_temp = laborers_jobs@var:building_token }
             }
-
-			# Redoing Prospective Hiring
-            set_temp_variable = { workers_to_hire = workers_jobs@var:building_token }
-            multiply_temp_variable = { workers_to_hire = x_percent_temp }
-            divide_temp_variable = { workers_to_hire = 100 }
-            set_temp_variable = { professionals_to_hire = professionals_jobs@var:building_token }
-            multiply_temp_variable = { professionals_to_hire = x_percent_temp }
-            divide_temp_variable = { professionals_to_hire = 100 }
-            set_temp_variable = { specialists_to_hire = specialists_jobs@var:building_token }
-            multiply_temp_variable = { specialists_to_hire = x_percent_temp }
-            divide_temp_variable = { specialists_to_hire = 100 }
-            set_temp_variable = { aristocrats_to_hire = aristocrats_jobs@var:building_token }
-            multiply_temp_variable = { aristocrats_to_hire = x_percent_temp }
-            divide_temp_variable = { aristocrats_to_hire = 100 }
-            set_temp_variable = { capitalists_to_hire = capitalists_jobs@var:building_token }
-            multiply_temp_variable = { capitalists_to_hire = x_percent_temp }
-            divide_temp_variable = { capitalists_to_hire = 100 }
-
-			set_temp_variable = { prod_break = 1 }
+            if = { # Caps to employment (if negative)
+                limit = {
+                    check_variable = { employment_change_temp < 0 }
+                    set_temp_variable = { neg_temp = employment_change_temp }
+                    multiply_temp_variable = { neg_temp = -1 }
+                    check_variable = { neg_temp > laborers_employed@var:building_token }
+                }
+                set_temp_variable = { employment_change_temp = laborers_employed@var:building_token }
+                multiply_temp_variable = { employment_change_temp = -1 }
+            }
+            
+            # Adjusting Employment
+            add_to_variable = { laborers_employed@var:building_token = employment_change_temp }
+            add_to_variable = { employed@var:building_token = employment_change_temp }
+            
+			add_to_variable = { laborers_employed = employment_change_temp }
+			subtract_from_variable = { laborers_unemployed = employment_change_temp }
+            add_to_variable = { pops_employed = employment_change_temp }
+            subtract_from_variable = { pops_unemployed = employment_change_temp }
 		}
-		if = {
+		if = { # Workers
 			limit = {
-				check_variable = { workers_to_hire > workers_unemployed }
+				check_variable = { workers_jobs@var:building_token > 0 }
 			}
-			# Recorrecting Hiring %
-            if = {
+            # Employment Change
+            set_temp_variable = { employment_change_temp = workers_jobs@var:building_token }
+            multiply_temp_variable = { employment_change_temp = x_percent_temp }
+            divide_temp_variable = { employment_change_temp = 100 }
+            subtract_from_temp_variable = { employment_change_temp = workers_employed@var:building_token }
+
+            if = { # Caps to unemployment (if positive)
                 limit = {
-                    check_variable = { workers_unemployed > 10000 }
+                    check_variable = { employment_change_temp > workers_unemployed }
                 }
-			    set_temp_variable = { x_percent_temp = workers_unemployed }
-			    divide_temp_variable = { x_percent_temp = workers_jobs@var:building_token }
-			    multiply_temp_variable = { x_percent_temp = 100 }
+			    set_temp_variable = { employment_change_temp = workers_unemployed }
             }
-            else = {
-			    set_temp_variable = { x_percent_temp = workers_unemployed }
-			    multiply_temp_variable = { x_percent_temp = 100 }
-			    divide_temp_variable = { x_percent_temp = workers_jobs@var:building_token }
+            if = { # Caps to jobs (if positive)
+                limit = {
+                    set_temp_variable = { num_after = workers_employed@var:building_token }
+                    add_to_temp_variable = { num_after = employment_change_temp }
+                    check_variable = { num_after > workers_jobs@var:building_token }
+                }
+			    set_temp_variable = { employment_change_temp = workers_employed@var:building_token }
+                subtract_from_temp_variable = { employment_change_temp = workers_jobs@var:building_token }
             }
-
-			# Redoing Prospective Hiring
-            set_temp_variable = { professionals_to_hire = professionals_jobs@var:building_token }
-            multiply_temp_variable = { professionals_to_hire = x_percent_temp }
-            divide_temp_variable = { professionals_to_hire = 100 }
-            set_temp_variable = { specialists_to_hire = specialists_jobs@var:building_token }
-            multiply_temp_variable = { specialists_to_hire = x_percent_temp }
-            divide_temp_variable = { specialists_to_hire = 100 }
-            set_temp_variable = { aristocrats_to_hire = aristocrats_jobs@var:building_token }
-            multiply_temp_variable = { aristocrats_to_hire = x_percent_temp }
-            divide_temp_variable = { aristocrats_to_hire = 100 }
-            set_temp_variable = { capitalists_to_hire = capitalists_jobs@var:building_token }
-            multiply_temp_variable = { capitalists_to_hire = x_percent_temp }
-            divide_temp_variable = { capitalists_to_hire = 100 }
-
-			set_temp_variable = { prod_break = 1 }
+            if = { # Caps to employment (if negative)
+                limit = {
+                    check_variable = { employment_change_temp < 0 }
+                    set_temp_variable = { neg_temp = employment_change_temp }
+                    multiply_temp_variable = { neg_temp = -1 }
+                    check_variable = { neg_temp > workers_employed@var:building_token }
+                }
+                set_temp_variable = { employment_change_temp = workers_employed@var:building_token }
+                multiply_temp_variable = { employment_change_temp = -1 }
+            }
+            
+            # Adjusting Employment
+            add_to_variable = { workers_employed@var:building_token = employment_change_temp }
+            add_to_variable = { employed@var:building_token = employment_change_temp }
+            
+			add_to_variable = { workers_employed = employment_change_temp }
+			subtract_from_variable = { workers_unemployed = employment_change_temp }
+            add_to_variable = { pops_employed = employment_change_temp }
+            subtract_from_variable = { pops_unemployed = employment_change_temp }
 		}
-		if = {
+		if = { # Professionals
 			limit = {
-				check_variable = { professionals_to_hire > professionals_unemployed }
+				check_variable = { professionals_jobs@var:building_token > 0 }
 			}
-			# Recorrecting Hiring %
-            if = {
+            # Employment Change
+            set_temp_variable = { employment_change_temp = professionals_jobs@var:building_token }
+            multiply_temp_variable = { employment_change_temp = x_percent_temp }
+            divide_temp_variable = { employment_change_temp = 100 }
+            subtract_from_temp_variable = { employment_change_temp = professionals_employed@var:building_token }
+
+            if = { # Caps to unemployment (if positive)
                 limit = {
-                    check_variable = { professionals_unemployed > 10000 }
+                    check_variable = { employment_change_temp > professionals_unemployed }
                 }
-			    set_temp_variable = { x_percent_temp = professionals_unemployed }
-			    divide_temp_variable = { x_percent_temp = professionals_jobs@var:building_token }
-			    multiply_temp_variable = { x_percent_temp = 100 }
+			    set_temp_variable = { employment_change_temp = professionals_unemployed }
             }
-            else = {
-			    set_temp_variable = { x_percent_temp = professionals_unemployed }
-			    multiply_temp_variable = { x_percent_temp = 100 }
-			    divide_temp_variable = { x_percent_temp = professionals_jobs@var:building_token }
+            if = { # Caps to jobs (if positive)
+                limit = {
+                    set_temp_variable = { num_after = professionals_employed@var:building_token }
+                    add_to_temp_variable = { num_after = employment_change_temp }
+                    check_variable = { num_after > professionals_jobs@var:building_token }
+                }
+			    set_temp_variable = { employment_change_temp = professionals_employed@var:building_token }
+                subtract_from_temp_variable = { employment_change_temp = professionals_jobs@var:building_token }
             }
-
-			# Redoing Prospective Hiring
-            set_temp_variable = { specialists_to_hire = specialists_jobs@var:building_token }
-            multiply_temp_variable = { specialists_to_hire = x_percent_temp }
-            divide_temp_variable = { specialists_to_hire = 100 }
-            set_temp_variable = { aristocrats_to_hire = aristocrats_jobs@var:building_token }
-            multiply_temp_variable = { aristocrats_to_hire = x_percent_temp }
-            divide_temp_variable = { aristocrats_to_hire = 100 }
-            set_temp_variable = { capitalists_to_hire = capitalists_jobs@var:building_token }
-            multiply_temp_variable = { capitalists_to_hire = x_percent_temp }
-            divide_temp_variable = { capitalists_to_hire = 100 }
-
-			set_temp_variable = { prod_break = 1 }
+            if = { # Caps to employment (if negative)
+                limit = {
+                    check_variable = { employment_change_temp < 0 }
+                    set_temp_variable = { neg_temp = employment_change_temp }
+                    multiply_temp_variable = { neg_temp = -1 }
+                    check_variable = { neg_temp > professionals_employed@var:building_token }
+                }
+                set_temp_variable = { employment_change_temp = professionals_employed@var:building_token }
+                multiply_temp_variable = { employment_change_temp = -1 }
+            }
+            
+            # Adjusting Employment
+            add_to_variable = { professionals_employed@var:building_token = employment_change_temp }
+            add_to_variable = { employed@var:building_token = employment_change_temp }
+            
+			add_to_variable = { professionals_employed = employment_change_temp }
+			subtract_from_variable = { professionals_unemployed = employment_change_temp }
+            add_to_variable = { pops_employed = employment_change_temp }
+            subtract_from_variable = { pops_unemployed = employment_change_temp }
 		}
-		if = {
+		if = { # Specialists
 			limit = {
-				check_variable = { specialists_to_hire > specialists_unemployed }
+				check_variable = { specialists_jobs@var:building_token > 0 }
 			}
-			# Recorrecting Hiring %
-            if = {
+            # Employment Change
+            set_temp_variable = { employment_change_temp = specialists_jobs@var:building_token }
+            multiply_temp_variable = { employment_change_temp = x_percent_temp }
+            divide_temp_variable = { employment_change_temp = 100 }
+            subtract_from_temp_variable = { employment_change_temp = specialists_employed@var:building_token }
+
+            if = { # Caps to unemployment (if positive)
                 limit = {
-                    check_variable = { specialists_unemployed > 10000 }
+                    check_variable = { employment_change_temp > specialists_unemployed }
                 }
-			    set_temp_variable = { x_percent_temp = specialists_unemployed }
-			    divide_temp_variable = { x_percent_temp = specialists_jobs@var:building_token }
-			    multiply_temp_variable = { x_percent_temp = 100 }
+			    set_temp_variable = { employment_change_temp = specialists_unemployed }
             }
-            else = {
-			    set_temp_variable = { x_percent_temp = specialists_unemployed }
-			    multiply_temp_variable = { x_percent_temp = 100 }
-			    divide_temp_variable = { x_percent_temp = specialists_jobs@var:building_token }
+            if = { # Caps to jobs (if positive)
+                limit = {
+                    set_temp_variable = { num_after = specialists_employed@var:building_token }
+                    add_to_temp_variable = { num_after = employment_change_temp }
+                    check_variable = { num_after > specialists_jobs@var:building_token }
+                }
+			    set_temp_variable = { employment_change_temp = specialists_employed@var:building_token }
+                subtract_from_temp_variable = { employment_change_temp = specialists_jobs@var:building_token }
             }
-
-			# Redoing Prospective Hiring
-            set_temp_variable = { aristocrats_to_hire = aristocrats_jobs@var:building_token }
-            multiply_temp_variable = { aristocrats_to_hire = x_percent_temp }
-            divide_temp_variable = { aristocrats_to_hire = 100 }
-            set_temp_variable = { capitalists_to_hire = capitalists_jobs@var:building_token }
-            multiply_temp_variable = { capitalists_to_hire = x_percent_temp }
-            divide_temp_variable = { capitalists_to_hire = 100 }
-
-			set_temp_variable = { prod_break = 1 }
+            if = { # Caps to employment (if negative)
+                limit = {
+                    check_variable = { employment_change_temp < 0 }
+                    set_temp_variable = { neg_temp = employment_change_temp }
+                    multiply_temp_variable = { neg_temp = -1 }
+                    check_variable = { neg_temp > specialists_employed@var:building_token }
+                }
+                set_temp_variable = { employment_change_temp = specialists_employed@var:building_token }
+                multiply_temp_variable = { employment_change_temp = -1 }
+            }
+            
+            # Adjusting Employment
+            add_to_variable = { specialists_employed@var:building_token = employment_change_temp }
+            add_to_variable = { employed@var:building_token = employment_change_temp }
+            
+			add_to_variable = { specialists_employed = employment_change_temp }
+			subtract_from_variable = { specialists_unemployed = employment_change_temp }
+            add_to_variable = { pops_employed = employment_change_temp }
+            subtract_from_variable = { pops_unemployed = employment_change_temp }
 		}
-		if = {
+		if = { # Aristocrats
 			limit = {
-				check_variable = { aristocrats_to_hire > aristocrats_unemployed }
+				check_variable = { aristocrats_jobs@var:building_token > 0 }
 			}
-			# Recorrecting Hiring %
-            if = {
+            # Employment Change
+            set_temp_variable = { employment_change_temp = aristocrats_jobs@var:building_token }
+            multiply_temp_variable = { employment_change_temp = x_percent_temp }
+            divide_temp_variable = { employment_change_temp = 100 }
+            subtract_from_temp_variable = { employment_change_temp = aristocrats_employed@var:building_token }
+
+            if = { # Caps to unemployment (if positive)
                 limit = {
-                    check_variable = { aristocrats_unemployed > 10000 }
+                    check_variable = { employment_change_temp > aristocrats_unemployed }
                 }
-			    set_temp_variable = { x_percent_temp = aristocrats_unemployed }
-			    divide_temp_variable = { x_percent_temp = aristocrats_jobs@var:building_token }
-			    multiply_temp_variable = { x_percent_temp = 100 }
+			    set_temp_variable = { employment_change_temp = aristocrats_unemployed }
             }
-            else = {
-			    set_temp_variable = { x_percent_temp = aristocrats_unemployed }
-			    multiply_temp_variable = { x_percent_temp = 100 }
-			    divide_temp_variable = { x_percent_temp = aristocrats_jobs@var:building_token }
+            if = { # Caps to jobs (if positive)
+                limit = {
+                    set_temp_variable = { num_after = aristocrats_employed@var:building_token }
+                    add_to_temp_variable = { num_after = employment_change_temp }
+                    check_variable = { num_after > aristocrats_jobs@var:building_token }
+                }
+			    set_temp_variable = { employment_change_temp = aristocrats_employed@var:building_token }
+                subtract_from_temp_variable = { employment_change_temp = aristocrats_jobs@var:building_token }
             }
-
-			# Redoing Prospective Hiring
-            set_temp_variable = { capitalists_to_hire = capitalists_jobs@var:building_token }
-            multiply_temp_variable = { capitalists_to_hire = x_percent_temp }
-            divide_temp_variable = { capitalists_to_hire = 100 }
-
-			set_temp_variable = { prod_break = 1 }
+            if = { # Caps to employment (if negative)
+                limit = {
+                    check_variable = { employment_change_temp < 0 }
+                    set_temp_variable = { neg_temp = employment_change_temp }
+                    multiply_temp_variable = { neg_temp = -1 }
+                    check_variable = { neg_temp > aristocrats_employed@var:building_token }
+                }
+                set_temp_variable = { employment_change_temp = aristocrats_employed@var:building_token }
+                multiply_temp_variable = { employment_change_temp = -1 }
+            }
+            
+            # Adjusting Employment
+            add_to_variable = { aristocrats_employed@var:building_token = employment_change_temp }
+            add_to_variable = { employed@var:building_token = employment_change_temp }
+            
+			add_to_variable = { aristocrats_employed = employment_change_temp }
+			subtract_from_variable = { aristocrats_unemployed = employment_change_temp }
+            add_to_variable = { pops_employed = employment_change_temp }
+            subtract_from_variable = { pops_unemployed = employment_change_temp }
 		}
-		if = {
+		if = { # Capitalists
 			limit = {
-				check_variable = { capitalists_to_hire > capitalists_unemployed }
+				check_variable = { capitalists_jobs@var:building_token > 0 }
 			}
-			# Recorrecting Hiring %
-            if = {
-                limit = {
-                    check_variable = { capitalists_unemployed > 10000 }
-                }
-			    set_temp_variable = { x_percent_temp = capitalists_unemployed }
-			    divide_temp_variable = { x_percent_temp = capitalists_jobs@var:building_token }
-			    multiply_temp_variable = { x_percent_temp = 100 }
-            }
-            else = {
-			    set_temp_variable = { x_percent_temp = capitalists_unemployed }
-			    multiply_temp_variable = { x_percent_temp = 100 }
-			    divide_temp_variable = { x_percent_temp = capitalists_jobs@var:building_token }
-            }
+            # Employment Change
+            set_temp_variable = { employment_change_temp = capitalists_jobs@var:building_token }
+            multiply_temp_variable = { employment_change_temp = x_percent_temp }
+            divide_temp_variable = { employment_change_temp = 100 }
+            subtract_from_temp_variable = { employment_change_temp = capitalists_employed@var:building_token }
 
-			set_temp_variable = { prod_break = 1 }
+            if = { # Caps to unemployment (if positive)
+                limit = {
+                    check_variable = { employment_change_temp > capitalists_unemployed }
+                }
+			    set_temp_variable = { employment_change_temp = capitalists_unemployed }
+            }
+            if = { # Caps to jobs (if positive)
+                limit = {
+                    set_temp_variable = { num_after = capitalists_employed@var:building_token }
+                    add_to_temp_variable = { num_after = employment_change_temp }
+                    check_variable = { num_after > capitalists_jobs@var:building_token }
+                }
+			    set_temp_variable = { employment_change_temp = capitalists_employed@var:building_token }
+                subtract_from_temp_variable = { employment_change_temp = capitalists_jobs@var:building_token }
+            }
+            if = { # Caps to employment (if negative)
+                limit = {
+                    check_variable = { employment_change_temp < 0 }
+                    set_temp_variable = { neg_temp = employment_change_temp }
+                    multiply_temp_variable = { neg_temp = -1 }
+                    check_variable = { neg_temp > capitalists_employed@var:building_token }
+                }
+                set_temp_variable = { employment_change_temp = capitalists_employed@var:building_token }
+                multiply_temp_variable = { employment_change_temp = -1 }
+            }
+            
+            # Adjusting Employment
+            add_to_variable = { capitalists_employed@var:building_token = employment_change_temp }
+            add_to_variable = { employed@var:building_token = employment_change_temp }
+            
+			add_to_variable = { capitalists_employed = employment_change_temp }
+			subtract_from_variable = { capitalists_unemployed = employment_change_temp }
+            add_to_variable = { pops_employed = employment_change_temp }
+            subtract_from_variable = { pops_unemployed = employment_change_temp }
 		}
 
+        # Update Building Values
+        set_variable = { employment_percentage@var:building_token = employed@var:building_token }
+        if = {
+            limit = {
+                check_variable = { employed@var:building_token > 10000 }
+            }
+            divide_variable = { employment_percentage@var:building_token = jobs@var:building_token }
+            multiply_variable = { employment_percentage@var:building_token = 100 }
+        }
+        else = {
+            multiply_variable = { employment_percentage@var:building_token = 100 }
+            divide_variable = { employment_percentage@var:building_token = jobs@var:building_token }
+        }
 
-		if = {
-			limit = {
-				NOT = { check_variable = { x_percent_temp = 0 } }
-			}
-			add_to_variable = { employment_percentage@var:building_token = x_percent_temp }
-			if = {
-				limit = {
-					check_variable = { employment_percentage@var:building_token < 0 }
-				}
-				set_variable = { employment_percentage@var:building_token = 0 }
-			}
-			else_if = {
-				limit = {
-					check_variable = { employment_percentage@var:building_token > 100 }
-				}
-				set_variable = { employment_percentage@var:building_token = 100 }
-			}
-
-			set_temp_variable = { employed_before = employed@var:building_token }
-			set_temp_variable = { peasants_before = peasants_employed@var:building_token }
-			set_temp_variable = { laborers_before = laborers_employed@var:building_token }
-			set_temp_variable = { workers_before = workers_employed@var:building_token }
-			set_temp_variable = { professionals_before = professionals_employed@var:building_token }
-			set_temp_variable = { specialists_before = specialists_employed@var:building_token }
-			set_temp_variable = { aristocrats_before = aristocrats_employed@var:building_token }
-			set_temp_variable = { capitalists_before = capitalists_employed@var:building_token }
-
-            if = {
-                limit = {
-                    check_variable = { jobs@var:building_token > 10000 }
-                }
-			    set_variable = { employed@var:building_token = jobs@var:building_token }
-                divide_variable = { employed@var:building_token = 100 }
-			    multiply_variable = { employed@var:building_token = employment_percentage@var:building_token }
+        set_temp_variable = { total_prod_temp = 0 }
+        set_temp_variable = { production_temp = peasants_employed@var:building_token }
+        multiply_temp_variable = { production_temp = 1 }
+        add_to_temp_variable = { total_prod_temp = production_temp }
+        set_temp_variable = { production_temp = laborers_employed@var:building_token }
+        multiply_temp_variable = { production_temp = 2 }
+        add_to_temp_variable = { total_prod_temp = production_temp }
+        set_temp_variable = { production_temp = workers_employed@var:building_token }
+        multiply_temp_variable = { production_temp = 5 }
+        add_to_temp_variable = { total_prod_temp = production_temp }
+        set_temp_variable = { production_temp = professionals_employed@var:building_token }
+        multiply_temp_variable = { production_temp = 10 }
+        add_to_temp_variable = { total_prod_temp = production_temp }
+        set_temp_variable = { production_temp = specialists_employed@var:building_token }
+        multiply_temp_variable = { production_temp = 20 }
+        add_to_temp_variable = { total_prod_temp = production_temp }
+        set_temp_variable = { production_temp = aristocrats_employed@var:building_token }
+        multiply_temp_variable = { production_temp = 30 }
+        add_to_temp_variable = { total_prod_temp = production_temp }
+        set_temp_variable = { production_temp = capitalists_employed@var:building_token }
+        multiply_temp_variable = { production_temp = 50 }
+        add_to_temp_variable = { total_prod_temp = production_temp }
+        if = {
+            limit = {
+                check_variable = { total_prod_temp > 10000 }
             }
-            else = {
-			    set_variable = { employed@var:building_token = jobs@var:building_token }
-			    multiply_variable = { employed@var:building_token = employment_percentage@var:building_token }
-                divide_variable = { employed@var:building_token = 100 }
-            }
-            if = {
-                limit = {
-                    check_variable = { peasants_jobs@var:building_token > 10000 }
-                }
-			    set_variable = { peasants_employed@var:building_token = peasants_jobs@var:building_token }
-                divide_variable = { peasants_employed@var:building_token = 100 }
-			    multiply_variable = { peasants_employed@var:building_token = employment_percentage@var:building_token }
-            }
-            else = {
-			    set_variable = { peasants_employed@var:building_token = peasants_jobs@var:building_token }
-			    multiply_variable = { peasants_employed@var:building_token = employment_percentage@var:building_token }
-                divide_variable = { peasants_employed@var:building_token = 100 }
-            }
-            if = {
-                limit = {
-                    check_variable = { laborers_jobs@var:building_token > 10000 }
-                }
-			    set_variable = { laborers_employed@var:building_token = laborers_jobs@var:building_token }
-                divide_variable = { laborers_employed@var:building_token = 100 }
-			    multiply_variable = { laborers_employed@var:building_token = employment_percentage@var:building_token }
-            }
-            else = {
-			    set_variable = { laborers_employed@var:building_token = laborers_jobs@var:building_token }
-			    multiply_variable = { laborers_employed@var:building_token = employment_percentage@var:building_token }
-                divide_variable = { laborers_employed@var:building_token = 100 }
-            }
-            if = {
-                limit = {
-                    check_variable = { workers_jobs@var:building_token > 10000 }
-                }
-			    set_variable = { workers_employed@var:building_token = workers_jobs@var:building_token }
-                divide_variable = { workers_employed@var:building_token = 100 }
-			    multiply_variable = { workers_employed@var:building_token = employment_percentage@var:building_token }
-            }
-            else = {
-			    set_variable = { workers_employed@var:building_token = workers_jobs@var:building_token }
-			    multiply_variable = { workers_employed@var:building_token = employment_percentage@var:building_token }
-                divide_variable = { workers_employed@var:building_token = 100 }
-            }
-            if = {
-                limit = {
-                    check_variable = { professionals_jobs@var:building_token > 10000 }
-                }
-			    set_variable = { professionals_employed@var:building_token = professionals_jobs@var:building_token }
-                divide_variable = { professionals_employed@var:building_token = 100 }
-			    multiply_variable = { professionals_employed@var:building_token = employment_percentage@var:building_token }
-            }
-            else = {
-			    set_variable = { professionals_employed@var:building_token = professionals_jobs@var:building_token }
-			    multiply_variable = { professionals_employed@var:building_token = employment_percentage@var:building_token }
-                divide_variable = { professionals_employed@var:building_token = 100 }
-            }
-            if = {
-                limit = {
-                    check_variable = { specialists_jobs@var:building_token > 10000 }
-                }
-			    set_variable = { specialists_employed@var:building_token = specialists_jobs@var:building_token }
-                divide_variable = { specialists_employed@var:building_token = 100 }
-			    multiply_variable = { specialists_employed@var:building_token = employment_percentage@var:building_token }
-            }
-            else = {
-			    set_variable = { specialists_employed@var:building_token = specialists_jobs@var:building_token }
-			    multiply_variable = { specialists_employed@var:building_token = employment_percentage@var:building_token }
-                divide_variable = { specialists_employed@var:building_token = 100 }
-            }
-            if = {
-                limit = {
-                    check_variable = { aristocrats_jobs@var:building_token > 10000 }
-                }
-			    set_variable = { aristocrats_employed@var:building_token = aristocrats_jobs@var:building_token }
-                divide_variable = { aristocrats_employed@var:building_token = 100 }
-			    multiply_variable = { aristocrats_employed@var:building_token = employment_percentage@var:building_token }
-            }
-            else = {
-			    set_variable = { aristocrats_employed@var:building_token = aristocrats_jobs@var:building_token }
-			    multiply_variable = { aristocrats_employed@var:building_token = employment_percentage@var:building_token }
-                divide_variable = { aristocrats_employed@var:building_token = 100 }
-            }
-            if = {
-                limit = {
-                    check_variable = { capitalists_jobs@var:building_token > 10000 }
-                }
-			    set_variable = { capitalists_employed@var:building_token = capitalists_jobs@var:building_token }
-                divide_variable = { capitalists_employed@var:building_token = 100 }
-			    multiply_variable = { capitalists_employed@var:building_token = employment_percentage@var:building_token }
-            }
-            else = {
-			    set_variable = { capitalists_employed@var:building_token = capitalists_jobs@var:building_token }
-			    multiply_variable = { capitalists_employed@var:building_token = employment_percentage@var:building_token }
-                divide_variable = { capitalists_employed@var:building_token = 100 }
-            }
-
-			add_to_variable = { pops_employed = employed@var:building_token }
-			subtract_from_variable = { pops_employed = employed_before }
-			subtract_from_variable = { pops_unemployed = employed@var:building_token }
-			add_to_variable = { pops_unemployed = employed_before }
-			add_to_variable = { peasants_employed = peasants_employed@var:building_token }
-			subtract_from_variable = { peasants_employed = peasants_before }
-			subtract_from_variable = { peasants_unemployed = peasants_employed@var:building_token }
-			add_to_variable = { peasants_unemployed = peasants_before }
-			add_to_variable = { laborers_employed = laborers_employed@var:building_token }
-			subtract_from_variable = { laborers_employed = laborers_before }
-			subtract_from_variable = { laborers_unemployed = laborers_employed@var:building_token }
-			add_to_variable = { laborers_unemployed = laborers_before }
-			add_to_variable = { workers_employed = workers_employed@var:building_token }
-			subtract_from_variable = { workers_employed = workers_before }
-			subtract_from_variable = { workers_unemployed = workers_employed@var:building_token }
-			add_to_variable = { workers_unemployed = workers_before }
-			add_to_variable = { professionals_employed = professionals_employed@var:building_token }
-			subtract_from_variable = { professionals_employed = professionals_before }
-			subtract_from_variable = { professionals_unemployed = professionals_employed@var:building_token }
-			add_to_variable = { professionals_unemployed = professionals_before }
-			add_to_variable = { specialists_employed = specialists_employed@var:building_token }
-			subtract_from_variable = { specialists_employed = specialists_before }
-			subtract_from_variable = { specialists_unemployed = specialists_employed@var:building_token }
-			add_to_variable = { specialists_unemployed = specialists_before }
-			add_to_variable = { aristocrats_employed = aristocrats_employed@var:building_token }
-			subtract_from_variable = { aristocrats_employed = aristocrats_before }
-			subtract_from_variable = { aristocrats_unemployed = aristocrats_employed@var:building_token }
-			add_to_variable = { aristocrats_unemployed = aristocrats_before }
-			add_to_variable = { capitalists_employed = capitalists_employed@var:building_token }
-			subtract_from_variable = { capitalists_employed = capitalists_before }
-			subtract_from_variable = { capitalists_unemployed = capitalists_employed@var:building_token }
-			add_to_variable = { capitalists_unemployed = capitalists_before }
-		}
+            divide_temp_variable = { total_prod_temp = payroll_multiplier@var:building_token }
+            multiply_temp_variable = { total_prod_temp = 100 }
+        }
+        else = {
+            multiply_temp_variable = { total_prod_temp = 100 }
+            divide_temp_variable = { total_prod_temp = payroll_multiplier@var:building_token }
+        }
+        set_variable = { production_percentage@var:building_token = total_prod_temp }
 	}
 
     set_production_method = {
@@ -9484,7 +9365,40 @@
                 multiply_variable = { employment_percentage@var:bu_token = 100 }
             }
 
-			set_variable = { production_percentage@var:bu_token = employment_percentage@var:bu_token }
+            set_temp_variable = { total_prod_temp = 0 }
+            set_temp_variable = { production_temp = peasants_employed@var:bu_token }
+            multiply_temp_variable = { production_temp = 1 }
+            add_to_temp_variable = { total_prod_temp = production_temp }
+            set_temp_variable = { production_temp = laborers_employed@var:bu_token }
+            multiply_temp_variable = { production_temp = 2 }
+            add_to_temp_variable = { total_prod_temp = production_temp }
+            set_temp_variable = { production_temp = workers_employed@var:bu_token }
+            multiply_temp_variable = { production_temp = 5 }
+            add_to_temp_variable = { total_prod_temp = production_temp }
+            set_temp_variable = { production_temp = professionals_employed@var:bu_token }
+            multiply_temp_variable = { production_temp = 10 }
+            add_to_temp_variable = { total_prod_temp = production_temp }
+            set_temp_variable = { production_temp = specialists_employed@var:bu_token }
+            multiply_temp_variable = { production_temp = 20 }
+            add_to_temp_variable = { total_prod_temp = production_temp }
+            set_temp_variable = { production_temp = aristocrats_employed@var:bu_token }
+            multiply_temp_variable = { production_temp = 30 }
+            add_to_temp_variable = { total_prod_temp = production_temp }
+            set_temp_variable = { production_temp = capitalists_employed@var:bu_token }
+            multiply_temp_variable = { production_temp = 50 }
+            add_to_temp_variable = { total_prod_temp = production_temp }
+            if = {
+                limit = {
+                    check_variable = { total_prod_temp > 10000 }
+                }
+                divide_temp_variable = { total_prod_temp = payroll_multiplier@var:bu_token }
+                multiply_temp_variable = { total_prod_temp = 100 }
+            }
+            else = {
+                multiply_temp_variable = { total_prod_temp = 100 }
+                divide_temp_variable = { total_prod_temp = payroll_multiplier@var:building_token }
+            }
+            set_variable = { production_percentage@var:building_token = total_prod_temp }
 		#
             
         #Capacities
@@ -9495,7 +9409,7 @@
             multiply_variable = { industrial_capacity_use@var:bu_token = cap_modifier_temp }
             multiply_variable = { industrial_capacity_use@var:bu_token = input_modifier_temp }
             multiply_variable = { industrial_capacity_use@var:bu_token = throughput_modifier_temp }
-            multiply_variable = { industrial_capacity_use@var:bu_token = employment_percentage@var:bu_token }
+            multiply_variable = { industrial_capacity_use@var:bu_token = production_percentage@var:bu_token }
             divide_variable = { industrial_capacity_use@var:bu_token = 100 }
 
             multiply_variable = { shipping_capacity@var:bu_token = size@var:bu_token }
@@ -9519,9 +9433,8 @@
             }
 
             set_variable = { expenses_payroll@var:bu_token = size@var:bu_token }
-            multiply_variable = { expenses_payroll@var:bu_token = employment_percentage@var:bu_token }
+            multiply_variable = { expenses_payroll@var:bu_token = production_percentage@var:bu_token }
             divide_variable = { expenses_payroll@var:bu_token = 100 }
-            multiply_variable = { expenses_payroll@var:bu_token = payroll_multiplier@var:bu_token }
             multiply_variable = { expenses_payroll@var:bu_token = base_wage }
             
             set_variable = { expenses_industrial_capacity@var:bu_token = industrial_capacity_use@var:bu_token }
@@ -9880,9 +9793,8 @@
                     divide_variable = { average_wage@var:bu_token = jobs@var:bu_token }
                     
                     set_variable = { expenses_payroll@var:bu_token = size@var:bu_token }
-                    multiply_variable = { expenses_payroll@var:bu_token = employment_percentage@var:bu_token }
+                    multiply_variable = { expenses_payroll@var:bu_token = production_percentage@var:bu_token }
                     divide_variable = { expenses_payroll@var:bu_token = 100 }
-                    multiply_variable = { expenses_payroll@var:bu_token = payroll_multiplier@var:bu_token }
                     multiply_variable = { expenses_payroll@var:bu_token = base_wage }
 
                     set_variable = { expenses@var:bu_token = expenses_payroll@var:bu_token }
