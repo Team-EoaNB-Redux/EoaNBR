@@ -115,6 +115,7 @@ NDefines.NAI.DIVISION_DESIGN_COMBAT_WIDTH_TARGET_WEIGHT = -500.0	-- This score i
 NDefines.NAI.DIVISION_MATCH_ROLE_BOOST_FACTOR = 1.2                -- When finding closest matching existing template to a target template, boost the score by this much if the template also has the correct role
 NDefines.NAI.AREA_DEFENSE_IMPORTANCE_FACTOR = 0.5               -- used to balance defensive area importance vs other fronts
 NDefines.NAI.AREA_DEFENSE_BASE_IMPORTANCE = 10                  -- Area defense order base importance value (used for determining order of troop selections)
+NDefines.NAI.EQUIPMENT_MARKET_UPDATE_FREQUENCY_DAYS = 30    -- 11 AI will not ask to purchase equipment more often than this (TODO Market: may want to change how this works)
 
 NDefines.NFocus.FOCUS_POINT_DAYS = 1 -- 7
 NDefines.NMapMode.UI_CONFIGURABLE_SLOT_TO = 12
