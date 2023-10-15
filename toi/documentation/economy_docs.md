@@ -608,7 +608,7 @@ A list of triggers that can be used in limits, focus tree triggers, and anywhere
 </table>
 
 ## Modifiers
-A list of modifiers that can be used in ideas and dynamic modifiers.
+A list of modifiers that can be used in ideas and dynamic modifiers. Each of the example values here can be seen as "equally powerful," to give an idea of the strength of each modifier.
 <table>
     <tr>
         <th>Name</th>
