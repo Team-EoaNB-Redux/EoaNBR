@@ -226,18 +226,18 @@ scripted_gui = {
 			}
 
 			build_building_button_click_enabled = {
-				is_fully_controlled_by = ROOT
+				OR = {
+					is_fully_controlled_by = ROOT
+					has_global_flag = autobuild_flag
+				}
 			}
 
 			building_build_button_visible = {
-				OR = {
-					NOT = { check_variable = { under_construction@var:v > 0 } }
-					ROOT = { has_country_flag = autobuild_flag }
-				}
+				NOT = { check_variable = { under_construction@var:v > 0 } }
 			}
 			building_build_button_click_enabled = {
 				OR = {
-					ROOT = { has_country_flag = autobuild_flag }
+					has_global_flag = autobuild_flag
 					AND = {
 						NOT = { check_variable = { v = token:building_subsistence_farm } }
 						NOT = { check_variable = { v = token:building_rice_paddy } }
@@ -357,10 +357,7 @@ scripted_gui = {
 				}
 			}
 			building_under_construction_icon_visible = {
-				OR = {
-					# NOT = { check_variable = { under_construction@var:v > 0 } }
-					check_variable = { under_construction@var:v > 0 }
-				}
+				check_variable = { under_construction@var:v > 0 }
 			}
 
 			building_pm_button_click_enabled = {
@@ -414,10 +411,10 @@ scripted_gui = {
 			building_build_button_click = {
 				if = {
 					limit = {
-						ROOT = { has_country_flag = autobuild_flag }
+						has_global_flag = autobuild_flag
 					}
 					add_to_variable = { size@var:v = 1  }
-					ROOT = { country_recalc = yes }
+					controller = { country_recalc = yes }
 				}
 				else = {
 					set_temp_variable = { x_temp = 1 }
@@ -434,10 +431,10 @@ scripted_gui = {
 			building_build_button_shift_click = {
 				if = {
 					limit = {
-						ROOT = { has_country_flag = autobuild_flag }
+						has_global_flag = autobuild_flag
 					}
 					add_to_variable = { size@var:v = 5  }
-					ROOT = { country_recalc = yes }
+					controller = { country_recalc = yes }
 				}
 				else = {
 					set_temp_variable = { x_temp = 5 }
@@ -454,10 +451,10 @@ scripted_gui = {
 			building_build_button_control_click = {
 				if = {
 					limit = {
-						ROOT = { has_country_flag = autobuild_flag }
+						has_global_flag = autobuild_flag
 					}
 					add_to_variable = { size@var:v = 20  }
-					ROOT = { country_recalc = yes }
+					controller = { country_recalc = yes }
 				}
 				else = {
 					set_temp_variable = { x_temp = 20 }
@@ -474,28 +471,28 @@ scripted_gui = {
 			building_build_button_right_click = {
 				if = {
 					limit = {
-						ROOT = { has_country_flag = autobuild_flag }
+						has_global_flag = autobuild_flag
 					}
 					subtract_from_variable = { size@var:v = 1  }
-					ROOT = { country_recalc = yes }
+					controller = { country_recalc = yes }
 				}
 			}
 			building_build_button_shift_right_click = {
 				if = {
 					limit = {
-						ROOT = { has_country_flag = autobuild_flag }
+						has_global_flag = autobuild_flag
 					}
 					subtract_from_variable = { size@var:v = 5  }
-					ROOT = { country_recalc = yes }
+					controller = { country_recalc = yes }
 				}
 			}
 			building_build_button_shift_control_right_click = {
 				if = {
 					limit = {
-						ROOT = { has_country_flag = autobuild_flag }
+						has_global_flag = autobuild_flag
 					}
 					subtract_from_variable = { size@var:v = 20  }
-					ROOT = { country_recalc = yes }
+					controller = { country_recalc = yes }
 				}
 			}
 
@@ -569,12 +566,12 @@ scripted_gui = {
 				ROOT = {
 					if = {
 						limit = {
-							has_country_flag = autobuild_flag
+							has_global_flag = autobuild_flag
 						}
-						clr_country_flag = autobuild_flag
+						clr_global_flag = autobuild_flag
 					}
 					else = {
-						set_country_flag = autobuild_flag
+						set_global_flag = autobuild_flag
 					}
 				}
 				every_state = {
@@ -746,7 +743,10 @@ scripted_gui = {
 		context_type = selected_state_context
 
 		visible = {
-			is_fully_controlled_by = ROOT
+			OR = {
+				has_global_flag = autobuild_flag
+				is_fully_controlled_by = ROOT
+			}
 			ROOT = { has_country_flag = construction_view_open }
 		}
 
@@ -862,7 +862,11 @@ scripted_gui = {
 					multiply_temp_variable = { gcpa = price@token:resource_industrial_goods }
 					multiply_temp_variable = { gcpa = global.start_construction_cost_multiplier }
 					divide_temp_variable = { gdpa = ROOT.modifier@government_investment_efficiency_factor }
-					NOT = { check_variable = { gcpa > ROOT.treasury } }
+					OR = {
+						NOT = { check_variable = { gcpa > ROOT.treasury } }
+						has_global_flag = autobuild_flag
+					}
+					
 				#
 			}
 			industry_construction_background_visible = {
@@ -896,10 +900,10 @@ scripted_gui = {
 			construction_entry_background_click = {
 				if = {
 					limit = {
-						ROOT = { has_country_flag = autobuild_flag }
+						has_global_flag = autobuild_flag
 					}
 					add_to_variable = { size@var:v = 1  }
-					ROOT = { country_recalc = yes }
+					controller = { country_recalc = yes }
 					refresh_construction_list = yes
 				}
 				else = {
