@@ -585,13 +585,12 @@
                     add_to_array = {
                         array = gdp_amount_array
                         value = gdp_amount
-                        index = 0
                     }
                     if = {
                         limit = {
                             check_variable = { gdp_amount_array^num > 37 }
                         }
-                        remove_from_array = { array = gdp_amount_array }
+                        remove_from_array = { array = gdp_amount_array index = 0 }
                     }
 
                     # nil secs
@@ -626,12 +625,11 @@
 
                     add_to_variable = { PREV.gdp_amount = gdp_amount }
 
-
+                    econ_rerender_gdp_graph = yes
                     if = {
                         limit = {
                             check_variable = { global.month = 0 }
                         }
-                        create_state_gdp_graph = yes # up to 1 second
                         create_pie_chart_pop_type = yes # 0.2 secs
                     }
                 #
@@ -17387,6 +17385,44 @@
 		}
 		add_to_variable = { update_state_econ_window = 1 }
 	}
+    initialize_gdp_graph = {
+        # run after gdp_update
+        clear_array = gdp_amount_array
+        add_to_array = { gdp_amount_array = gdp_amount }
+        for_loop_effect = {
+            start = 0
+            end = 36
+            value = i
+
+            set_temp_variable = { growth_rate_temp = 1.00 }
+            if = {
+                limit = {
+                    has_variable = controller:initial_gdp_growth_rate
+                }
+                set_temp_variable = { growth_rate_temp = controller:initial_gdp_growth_rate }
+            }
+            add_to_temp_variable = { growth_rate_temp = random }
+            add_to_temp_variable = { growth_rate_temp = 100 }
+            log = "growth_rate_temp: [?growth_rate_temp]"
+        
+            set_temp_variable = { temp_val = gdp_amount_array^0 }
+            if = {
+                limit = {
+                    check_variable = { temp_val > 10000 }
+                }
+                divide_temp_variable = { temp_val = growth_rate_temp }
+                multiply_temp_variable = { temp_val = 100 }
+            }
+            else = {
+                multiply_temp_variable = { temp_val = 100 }
+                divide_temp_variable = { temp_val = growth_rate_temp }
+            }
+            log = "temp_val: [?temp_val]"
+
+            add_to_array = { array = gdp_amount_array index = 0 value = temp_val }
+        }
+        econ_rerender_gdp_graph = yes
+    }
     econ_rerender_gdp_graph = {
         # Code courtesy of TNO (totally not stolen. Sorry, couldn't figure out the graph line thing on my own).
         # Find the maximum and minimum GDP values for the graph
@@ -17418,20 +17454,16 @@
 
         # Get all segments Progress Bar values
         clear_array = gdp_graph_frames
-        set_temp_variable = { num_temp = gdp_amount_array^num }
-        subtract_from_temp_variable = { num_temp = 1 }
         for_loop_effect = {
-            start = num_temp
-            end = 1
+            start = 1
+            end = gdp_amount_array^num
             value = i
-            add = -1
-            compare = greater_than_or_equals
 
             set_temp_variable = { j = i }
             add_to_temp_variable = { j = -1 }
 
-            set_temp_variable = { hi = gdp_amount_array^j }
-            set_temp_variable = { lo = gdp_amount_array^i }
+            set_temp_variable = { hi = gdp_amount_array^i }
+            set_temp_variable = { lo = gdp_amount_array^j }
 
 
             subtract_from_temp_variable = { hi = min }
@@ -17447,6 +17479,37 @@
             add_to_temp_variable = { endpoints = hi }
             add_to_array = { gdp_graph_frames = endpoints }
         }
+        
+		#Correcting the max/min
+        set_variable = { gdp_graph_min = min }
+        set_variable = { gdp_graph_max = max }
+		if = {
+			limit = {
+				check_variable = { gdp_graph_max > 1000 } #gdp_graph_min should always be less than max, so there's no point to checking it
+			}
+			divide_variable = { gdp_graph_min = 1000 }
+			divide_variable = { gdp_graph_max = 1000 }
+			set_state_flag = gdp_graph_thousands
+		}
+		else_if = {
+			limit = {
+				check_variable = { gdp_graph_max > 100 }
+			}
+			divide_variable = { gdp_graph_min = 100 } #This gets rid of some decimals so there's only up to 4 digits
+			divide_variable = { gdp_graph_max = 100 }
+			multiply_variable = { gdp_graph_min = 100 }
+			multiply_variable = { gdp_graph_max = 100 }
+		}
+		else_if = {
+			limit = {
+				check_variable = { gdp_graph_max > 10 }
+			}
+			divide_variable = { gdp_graph_min = 10 } #This gets rid of some decimals so there's only up to 4 digits
+			divide_variable = { gdp_graph_max = 10 }
+			multiply_variable = { gdp_graph_min = 10 }
+			multiply_variable = { gdp_graph_max = 10 }
+		}
+
 		add_to_variable = { update_state_econ_window = 1 }
     }
     create_economy_graph = {
