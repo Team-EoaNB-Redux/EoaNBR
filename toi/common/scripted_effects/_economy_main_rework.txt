@@ -650,13 +650,12 @@
                     add_to_array = {
                         array = gdp_amount_quarterly
                         value = gdp_amount_temp
-                        index = 0
                     }
                     if = {
                         limit = {
                             check_variable = { gdp_amount_array^num > 41 }
                         }
-                        remove_from_array = { array = gdp_amount_quarterly }
+                        remove_from_array = { array = gdp_amount_quarterly index = 0 }
                     }
                     clear_array = gdp_amount_monthly
                 }
@@ -673,18 +672,11 @@
                     add_to_array = {
                         array = gdp_amount_yearly
                         value = gdp_amount_temp
-                        index = 0
                     }
                 }
 
                 #Create the Graph
-				for_each_loop = {
-					array = gdp_amount_quarterly
-					value = v
-
-					add_to_temp_array = { economy_graph_temp_array = v }
-				}
-				create_economy_graph = yes
+                econ_rerender_country_gdp_graph = yes
             #
 
             #Completing Projects
@@ -2769,6 +2761,8 @@
 
             taxes_update = yes
             spending_update = yes
+
+            initialize_country_gdp_graph = yes
         }
 
     }
@@ -17226,164 +17220,6 @@
         }
     }
 
-	create_state_gdp_graph = {
-		set_variable = { gdp_graph_min = 2000000 }
-		set_variable = { gdp_graph_max = 0 }
-		clr_state_flag = gdp_graph_thousands
-		clear_array = gdp_graph_amount_array
-		clear_array = gdp_graph_color_array
-		clear_array = gdp_graph_y_array
-
-		for_each_loop = {
-			array = gdp_amount_array
-			value = vv
-			index = ii
-			if = {
-				limit = {
-					check_variable = { vv > gdp_graph_max }
-				}
-				set_variable = { gdp_graph_max = vv }
-			}
-			if = {
-				limit = {
-					check_variable = { vv < gdp_graph_min }
-				}
-				set_variable = { gdp_graph_min = vv }
-			}
-
-			if = {
-				limit = {
-					check_variable = { ii > 0 }
-				}
-				set_temp_variable = { prev_i = ii }
-				subtract_from_temp_variable = { prev_i = 1 }
-
-				set_temp_variable = { value_temp = vv }
-				add_to_temp_variable = { value_temp = gdp_amount_array^prev_i }
-				divide_temp_variable = { value_temp = 2 }
-                add_to_array = {
-                    array = gdp_graph_amount_array
-                    value = value_temp
-                    index = 0
-                }
-
-				if = {
-					limit = {
-						check_variable = { vv < gdp_amount_array^prev_i }
-					}
-                    add_to_array = {
-                        array = gdp_graph_color_array
-                        value = 1
-                        index = 0
-                    }
-                    add_to_array = {
-                        array = gdp_graph_color_array
-                        value = 1
-                        index = 0
-                    }
-				}
-				else_if = {
-					limit = {
-						check_variable = { vv = gdp_amount_array^prev_i }
-					}
-                    add_to_array = {
-                        array = gdp_graph_color_array
-                        value = 2
-                        index = 0
-                    }
-                    add_to_array = {
-                        array = gdp_graph_color_array
-                        value = 2
-                        index = 0
-                    }
-				}
-				else = {
-                    add_to_array = {
-                        array = gdp_graph_color_array
-                        value = 3
-                        index = 0
-                    }
-                    add_to_array = {
-                        array = gdp_graph_color_array
-                        value = 3
-                        index = 0
-                    }
-				}
-
-                add_to_array = {
-                    array = gdp_graph_amount_array
-                    value = vv
-                    index = 0
-                }
-			}
-			else = {
-                add_to_array = {
-                    array = gdp_graph_amount_array
-                    value = vv
-                    index = 0
-                }
-                add_to_array = {
-                    array = gdp_graph_color_array
-                    value = 2
-                    index = 0
-                }
-			}
-		}
-
-		#Creating the Graph
-		for_each_loop = {
-			array = gdp_graph_amount_array
-			value = vv
-			index = ii
-
-			set_temp_variable = { gdp_per_y_temp = gdp_graph_max }
-			subtract_from_temp_variable = { gdp_per_y_temp = gdp_graph_min }
-			divide_temp_variable = { gdp_per_y_temp = -75 } #75 Pixels, making it negative b/c going from top to bottom
-
-			set_temp_variable = { y_temp = vv }
-			subtract_from_temp_variable = { y_temp = gdp_graph_max }
-			divide_temp_variable = { y_temp = gdp_per_y_temp }
-			round_temp_variable = y_temp
-			if = {
-				limit = {
-					check_variable = { y_temp > 76 }
-				}
-				set_temp_variable = { y_temp = 76 }
-			}
-			add_to_array = { gdp_graph_y_array = y_temp }
-		}
-
-
-
-		#Correcting the max/min
-		if = {
-			limit = {
-				check_variable = { gdp_graph_max > 1000 } #gdp_graph_min should always be less than max, so there's no point to checking it
-			}
-			divide_variable = { gdp_graph_min = 1000 }
-			divide_variable = { gdp_graph_max = 1000 }
-			set_state_flag = gdp_graph_thousands
-		}
-		else_if = {
-			limit = {
-				check_variable = { gdp_graph_max > 100 }
-			}
-			divide_variable = { gdp_graph_min = 100 } #This gets rid of some decimals so there's only up to 4 digits
-			divide_variable = { gdp_graph_max = 100 }
-			multiply_variable = { gdp_graph_min = 100 }
-			multiply_variable = { gdp_graph_max = 100 }
-		}
-		else_if = {
-			limit = {
-				check_variable = { gdp_graph_max > 10 }
-			}
-			divide_variable = { gdp_graph_min = 10 } #This gets rid of some decimals so there's only up to 4 digits
-			divide_variable = { gdp_graph_max = 10 }
-			multiply_variable = { gdp_graph_min = 10 }
-			multiply_variable = { gdp_graph_max = 10 }
-		}
-		add_to_variable = { update_state_econ_window = 1 }
-	}
     initialize_gdp_graph = {
         # run after gdp_update
         clear_array = gdp_amount_array
@@ -17406,7 +17242,6 @@
             divide_temp_variable = { growth_rate_temp = 12 }
             add_to_temp_variable = { growth_rate_temp = 100 }
             add_to_temp_variable = { growth_rate_temp = random_growth_temp }
-            log = "growth_rate_temp: [?growth_rate_temp]"
         
             set_temp_variable = { temp_val = gdp_amount_array^0 }
             if = {
@@ -17420,7 +17255,6 @@
                 multiply_temp_variable = { temp_val = 100 }
                 divide_temp_variable = { temp_val = growth_rate_temp }
             }
-            log = "temp_val: [?temp_val]"
 
             add_to_array = { array = gdp_amount_array index = 0 value = temp_val }
         }
@@ -17515,193 +17349,134 @@
 
 		add_to_variable = { update_state_econ_window = 1 }
     }
-    create_economy_graph = {
-        #INPUT: economy_graph_temp_array - Array that this uses to populate the graph
-        #       down_is_good_flag        - Country flag that is set to indicate that a downward trend in the graph is green
+    initialize_country_gdp_graph = {
+        # run after gdp_update
+        clear_array = gdp_amount_quarterly
+        add_to_array = { gdp_amount_quarterly = gdp_amount }
+        for_loop_effect = {
+            start = 0
+            end = 40
+            value = i
 
-        #Country Scope
-		set_variable = { economy_graph_min = 2000000 }
-		set_variable = { economy_graph_max = 0 }
-		clear_array = economy_graph_amount_array
-		clear_array = economy_graph_color_array
-		clear_array = economy_graph_y_array
+            set_temp_variable = { random_growth_temp = random }
+            subtract_from_temp_variable = { random_growth_temp = 0.5 }
 
-		for_each_loop = {
-			array = economy_graph_temp_array
-			value = vv
-			index = ii
-			if = {
-				limit = {
-					check_variable = { vv > economy_graph_max }
-				}
-				set_variable = { economy_graph_max = vv }
-			}
-			if = {
-				limit = {
-					check_variable = { vv < economy_graph_min }
-				}
-				set_variable = { economy_graph_min = vv }
-			}
-
-			if = {
-				limit = {
-					check_variable = { ii > 0 }
-				}
-				set_temp_variable = { prev_i = ii }
-				subtract_from_temp_variable = { prev_i = 1 }
-
-				set_temp_variable = { value_temp = vv }
-				add_to_temp_variable = { value_temp = economy_graph_temp_array^prev_i }
-				divide_temp_variable = { value_temp = 2 }
-                add_to_array = {
-                    array = economy_graph_amount_array
-                    value = value_temp
-                    index = 0
+            set_temp_variable = { growth_rate_temp = 1.00 }
+            if = {
+                limit = {
+                    has_variable = controller:initial_gdp_growth_rate
                 }
-
-				if = {
-					limit = {
-                        if = {
-                            limit = {
-                                has_country_flag = down_is_good_flag
-                            }
-						    check_variable = { vv > economy_graph_temp_array^prev_i }
-                        }
-                        else = {
-						    check_variable = { vv < economy_graph_temp_array^prev_i }
-                        }
-					}
-                    add_to_array = {
-                        array = economy_graph_color_array
-                        value = 1
-                        index = 0
-                    }
-                    add_to_array = {
-                        array = economy_graph_color_array
-                        value = 1
-                        index = 0
-                    }
-				}
-				else_if = {
-					limit = {
-						check_variable = { vv = economy_amount_array^prev_i }
-					}
-                    add_to_array = {
-                        array = economy_graph_color_array
-                        value = 2
-                        index = 0
-                    }
-                    add_to_array = {
-                        array = economy_graph_color_array
-                        value = 2
-                        index = 0
-                    }
-				}
-				else = {
-                    add_to_array = {
-                        array = economy_graph_color_array
-                        value = 3
-                        index = 0
-                    }
-                    add_to_array = {
-                        array = economy_graph_color_array
-                        value = 3
-                        index = 0
-                    }
-				}
-
-                add_to_array = {
-                    array = economy_graph_amount_array
-                    value = vv
-                    index = 0
-                }
-			}
-			else = {
-                add_to_array = {
-                    array = economy_graph_amount_array
-                    value = vv
-                    index = 0
-                }
-                add_to_array = {
-                    array = economy_graph_color_array
-                    value = 2
-                    index = 0
-                }
-			}
-		}
-
-        set_temp_variable = { economy_graph_max_temp = economy_graph_max }
-
-		set_temp_variable = { economy_per_y_temp = economy_graph_max }
-		subtract_from_temp_variable = { economy_per_y_temp = economy_graph_min }
-        if = {
-            limit = {
-                check_variable = { economy_graph_max < 1000 }
+                set_temp_variable = { growth_rate_temp = initial_gdp_growth_rate }
             }
-            for_each_loop = {
-                array = economy_graph_amount_array
-                value = vv
-                index = ii
-                multiply_variable = { economy_graph_amount_array^ii = 1000 }
+            divide_temp_variable = { growth_rate_temp = 4 }
+            add_to_temp_variable = { growth_rate_temp = 100 }
+            add_to_temp_variable = { growth_rate_temp = random_growth_temp }
+        
+            set_temp_variable = { temp_val = gdp_amount_quarterly^0 }
+            if = {
+                limit = {
+                    check_variable = { temp_val > 10000 }
+                }
+                divide_temp_variable = { temp_val = growth_rate_temp }
+                multiply_temp_variable = { temp_val = 100 }
             }
-            multiply_temp_variable = { economy_per_y_temp = 1000 }
-            multiply_temp_variable = { economy_graph_max_temp = 1000 }
+            else = {
+                multiply_temp_variable = { temp_val = 100 }
+                divide_temp_variable = { temp_val = growth_rate_temp }
+            }
+
+            add_to_array = { array = gdp_amount_quarterly index = 0 value = temp_val }
+        }
+        econ_rerender_country_gdp_graph = yes
+    }
+    econ_rerender_country_gdp_graph = {
+        # Code courtesy of TNO (totally not stolen. Sorry, couldn't figure out the graph line thing on my own).
+        # Find the maximum and minimum GDP values for the graph
+        set_temp_variable = { min = gdp_amount_quarterly^0 }
+        set_temp_variable = { max = gdp_amount_quarterly^0 }
+        for_loop_effect = {
+            start = 0
+            end = gdp_amount_quarterly^num
+            value = i
+
+            if = {
+                limit = { check_variable = { gdp_amount_quarterly^i > max } }
+                set_temp_variable = { max = gdp_amount_quarterly^i }
+            }
+            if = {
+                limit = { check_variable = { gdp_amount_quarterly^i < min } }
+                set_temp_variable = { min = gdp_amount_quarterly^i }
+            }
         }
 
-		divide_temp_variable = { economy_per_y_temp = -75 } #75 Pixels, making it negative b/c going from top to bottom
+        # Our range is (min value / 1.1) - (max value * 1.1)
+        multiply_temp_variable = { max = 1.05 }
+        divide_temp_variable = { min = 1.05 }
 
 
-		#Creating the Graph
-		for_each_loop = {
-			array = economy_graph_amount_array
-			value = vv
-			index = ii
+        set_temp_variable = { range = max }
+        subtract_from_temp_variable = { range = min }
+        divide_temp_variable = { range = 100 }
 
-			set_temp_variable = { y_temp = vv }
-			subtract_from_temp_variable = { y_temp = economy_graph_max_temp }
-			divide_temp_variable = { y_temp = economy_per_y_temp }
-			round_temp_variable = y_temp
+        # Get all segments Progress Bar values
+        clear_array = gdp_graph_frames
+        for_loop_effect = {
+            start = 1
+            end = gdp_amount_quarterly^num
+            value = i
 
-			if = {
-				limit = {
-					check_variable = { y_temp > 76 }
-				}
-				set_temp_variable = { y_temp = 76 }
-			}
-			add_to_array = { economy_graph_y_array = y_temp }
-		}
+            set_temp_variable = { j = i }
+            add_to_temp_variable = { j = -1 }
+
+            set_temp_variable = { hi = gdp_amount_quarterly^i }
+            set_temp_variable = { lo = gdp_amount_quarterly^j }
 
 
+            subtract_from_temp_variable = { hi = min }
+            subtract_from_temp_variable = { lo = min }
+            divide_temp_variable = { hi = range }
+            divide_temp_variable = { lo = range }
 
+            round_temp_variable = hi
+            round_temp_variable = lo
+
+            set_temp_variable = { endpoints = lo }
+            multiply_temp_variable = { endpoints = 1000 }
+            add_to_temp_variable = { endpoints = hi }
+            add_to_array = { gdp_graph_frames = endpoints }
+        }
+        
 		#Correcting the max/min
+        set_variable = { gdp_graph_min = min }
+        set_variable = { gdp_graph_max = max }
 		if = {
 			limit = {
-				check_variable = { economy_graph_max > 1000 } #economy_graph_min should always be less than max, so there's no point to checking it
+				check_variable = { gdp_graph_max > 1000 } #gdp_graph_min should always be less than max, so there's no point to checking it
 			}
-			divide_variable = { economy_graph_min = 1000 }
-			divide_variable = { economy_graph_max = 1000 }
-			set_state_flag = economy_graph_thousands
+			divide_variable = { gdp_graph_min = 1000 }
+			divide_variable = { gdp_graph_max = 1000 }
+			set_state_flag = gdp_graph_thousands
 		}
 		else_if = {
 			limit = {
-				check_variable = { economy_graph_max > 100 }
+				check_variable = { gdp_graph_max > 100 }
 			}
-			divide_variable = { economy_graph_min = 100 } #This gets rid of some decimals so there's only up to 4 digits
-			divide_variable = { economy_graph_max = 100 }
-			multiply_variable = { economy_graph_min = 100 }
-			multiply_variable = { economy_graph_max = 100 }
+			divide_variable = { gdp_graph_min = 100 } #This gets rid of some decimals so there's only up to 4 digits
+			divide_variable = { gdp_graph_max = 100 }
+			multiply_variable = { gdp_graph_min = 100 }
+			multiply_variable = { gdp_graph_max = 100 }
 		}
 		else_if = {
 			limit = {
-				check_variable = { economy_graph_max > 10 }
+				check_variable = { gdp_graph_max > 10 }
 			}
-			divide_variable = { economy_graph_min = 10 } #This gets rid of some decimals so there's only up to 4 digits
-			divide_variable = { economy_graph_max = 10 }
-			multiply_variable = { economy_graph_min = 10 }
-			multiply_variable = { economy_graph_max = 10 }
+			divide_variable = { gdp_graph_min = 10 } #This gets rid of some decimals so there's only up to 4 digits
+			divide_variable = { gdp_graph_max = 10 }
+			multiply_variable = { gdp_graph_min = 10 }
+			multiply_variable = { gdp_graph_max = 10 }
 		}
 
-        clear_temp_array = economy_graph_temp_array
+		add_to_variable = { update_state_econ_window = 1 }
     }
 
     create_buildings_under_construction_list = {
