@@ -17387,6 +17387,68 @@
 		}
 		add_to_variable = { update_state_econ_window = 1 }
 	}
+    econ_rerender_gdp_graph = {
+        # Code courtesy of TNO (totally not stolen. Sorry, couldn't figure out the graph line thing on my own).
+        # Find the maximum and minimum GDP values for the graph
+        set_temp_variable = { min = gdp_amount_array^0 }
+        set_temp_variable = { max = gdp_amount_array^0 }
+        for_loop_effect = {
+            start = 0
+            end = gdp_amount_array^num
+            value = i
+
+            if = {
+                limit = { check_variable = { gdp_amount_array^i > max } }
+                set_temp_variable = { max = gdp_amount_array^i }
+            }
+            if = {
+                limit = { check_variable = { gdp_amount_array^i < min } }
+                set_temp_variable = { min = gdp_amount_array^i }
+            }
+        }
+
+        # Our range is (min value / 1.1) - (max value * 1.1)
+        multiply_temp_variable = { max = 1.1 }
+        divide_temp_variable = { min = 1.1 }
+
+
+        set_temp_variable = { range = max }
+        subtract_from_temp_variable = { range = min }
+        divide_temp_variable = { range = 100 }
+
+        # Get all segments Progress Bar values
+        clear_array = gdp_graph_frames
+        set_temp_variable = { num_temp = gdp_amount_array^num }
+        subtract_from_temp_variable = { num_temp = 1 }
+        for_loop_effect = {
+            start = num_temp
+            end = 1
+            value = i
+            add = -1
+            compare = greater_than_or_equals
+
+            set_temp_variable = { j = i }
+            add_to_temp_variable = { j = -1 }
+
+            set_temp_variable = { hi = gdp_amount_array^j }
+            set_temp_variable = { lo = gdp_amount_array^i }
+
+
+            subtract_from_temp_variable = { hi = min }
+            subtract_from_temp_variable = { lo = min }
+            divide_temp_variable = { hi = range }
+            divide_temp_variable = { lo = range }
+
+            round_temp_variable = hi
+            round_temp_variable = lo
+
+            set_temp_variable = { endpoints = lo }
+            multiply_temp_variable = { endpoints = 1000 }
+            add_to_temp_variable = { endpoints = hi }
+            add_to_array = { gdp_graph_frames = endpoints }
+        }
+		add_to_variable = { update_state_econ_window = 1 }
+    }
     create_economy_graph = {
         #INPUT: economy_graph_temp_array - Array that this uses to populate the graph
         #       down_is_good_flag        - Country flag that is set to indicate that a downward trend in the graph is green
