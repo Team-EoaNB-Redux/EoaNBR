@@ -125,4 +125,4 @@ NDefines.NGraphics.COUNTRY_FLAG_SMALL_TEX_MAX_SIZE = 256
 NDefines.NGraphics.MINIMUM_PROVINCE_SIZE_IN_PIXELS = 1
 NDefines.NGraphics.POLITICAL_GRID_SMALL_BOX_LIMIT = 100
 
-NDefines.NResistance.RESISTANCE_TARGET_BASE = 5.0,							-- base resistance target percentage
+NDefines.NResistance.RESISTANCE_TARGET_BASE = 5.0						-- base resistance target percentage
