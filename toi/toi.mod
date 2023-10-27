@@ -1,5 +1,5 @@
 name="End of a New Beginning Redux ~ Steam Edition"
-version="0.3.6 Ver Tersus"
+version="0.3.7 Ver Tersus"
 tags={
 	"Alternative History"
 	"Events"
