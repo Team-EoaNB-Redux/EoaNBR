@@ -14178,6 +14178,13 @@
 		add_to_variable = { revenue = export_tariff_revenue }
         add_to_variable = { revenue = other_revenue }
 
+        if = {
+            limit = {
+                is_ai = no
+            }
+            create_pie_chart_revenue = yes
+        }
+
 		net_budget_update = yes
 	}
 	spending_update = {
@@ -14433,10 +14440,10 @@
 		add_to_variable = { subsidy_expense = industrial_subsidy_expense }
 		add_to_variable = { subsidy_expense = export_subsidy_expense }
 		add_to_variable = { subsidy_expense = import_subsidy_expense }
-		add_to_variable = { subsidy_expense = research_spending_expense }
 
 		set_variable = { discretionary_spending = subsidy_expense }
 		add_to_variable = { discretionary_spending = construction_spending_expense }
+		add_to_variable = { discretionary_spending = research_spending_expense }
 		add_to_variable = { discretionary_spending = military_spending_expense }
 
         set_variable = { national_debt_interest = debt_level }
@@ -14452,6 +14459,13 @@
         
 		set_variable = { total_spending = discretionary_spending }
 		add_to_variable = { total_spending = mandatory_spending }
+        
+        if = {
+            limit = {
+                is_ai = no
+            }
+            create_pie_chart_spending = yes
+        }
 
 		net_budget_update = yes
 	}
@@ -15208,6 +15222,191 @@
 			}
 		}
 		spending_update = yes
+	}
+    
+	create_pie_chart_revenue = {
+		# this creates a pie chart of revenue - can be easily adapted to show anything that adds up to 100%
+		# This code is much different from Yard's, but I'll credit him anyway
+		# Country Scope
+
+        set_variable = { revenue_piechart_income_percentage = income_tax_revenue }
+        divide_variable = { revenue_piechart_income_percentage = revenue }
+        set_variable = { revenue_piechart_corporate_percentage = corporate_tax_revenue }
+        divide_variable = { revenue_piechart_corporate_percentage = revenue }
+        set_variable = { revenue_piechart_sales_percentage = sales_tax_revenue }
+        divide_variable = { revenue_piechart_sales_percentage = revenue }
+
+        set_variable = { revenue_piechart_other_percentage = 1 }
+        subtract_from_variable = { revenue_piechart_other_percentage = revenue_piechart_income_percentage }
+        subtract_from_variable = { revenue_piechart_other_percentage = revenue_piechart_corporate_percentage }
+        subtract_from_variable = { revenue_piechart_other_percentage = revenue_piechart_sales_percentage }
+
+		clear_array = pie_chart_revenue_type
+		resize_array = {
+			array = pie_chart_revenue_type
+			value = 1 # 1 is value for RGO frame
+			size = 100 # 100 pieces, each percent is one piece
+		}
+
+		clear_temp_array = pie_slices_percentage
+		add_to_temp_array = { pie_slices_percentage = 0 }
+		add_to_temp_array = { pie_slices_percentage = revenue_piechart_other_percentage } # Black
+		add_to_temp_array = { pie_slices_percentage = revenue_piechart_sales_percentage } # Yellow
+		add_to_temp_array = { pie_slices_percentage = 0 } # light Red
+		add_to_temp_array = { pie_slices_percentage = 0 } # Red
+		add_to_temp_array = { pie_slices_percentage = 0 } # Dark Red
+		add_to_temp_array = { pie_slices_percentage = 0 } # Darkest Red
+		add_to_temp_array = { pie_slices_percentage = revenue_piechart_corporate_percentage } # Dark Blue
+		add_to_temp_array = { pie_slices_percentage = revenue_piechart_income_percentage } # Green
+		add_to_temp_array = { pie_slices_percentage = 0 } # Light Blue
+		add_to_temp_array = { pie_slices_percentage = 0 } # Gray
+
+        set_temp_variable = { total_temp = 0 }
+        set_temp_variable = { largest = 0 }
+        for_each_loop = {
+            array = pie_slices_percentage
+            index = rr
+            if = {
+                limit = {
+                    check_variable = { pie_slices_percentage^rr > pie_slices_percentage^largest }
+                }
+                set_temp_variable = { largest = rr }
+            }
+
+            multiply_temp_variable = { pie_slices_percentage^rr = 100 }
+            round_temp_variable = pie_slices_percentage^rr
+            add_to_temp_variable = { total_temp = pie_slices_percentage^rr }
+        }
+
+        if = {
+            limit = {
+                NOT = { check_variable = { total_temp = 100 } }
+            }
+            add_to_temp_variable = { pie_slices_percentage^largest = 100 }
+            subtract_from_temp_variable = { pie_slices_percentage^largest = total_temp }
+        }
+
+		set_temp_variable = { pie_pop = 0 }
+		for_each_loop = {
+			array = pie_slices_percentage
+			index = rr
+			value = vv
+
+			set_variable = { last_idx = pie_pop }
+			set_temp_variable = { pie_pop = vv }
+
+			add_to_temp_variable = { pie_pop = last_idx }
+			#subtract_from_temp_variable = { pie_pop = 1 }
+			if = {
+				limit = {
+					check_variable = { pie_pop > 100 }
+				}
+				set_temp_variable = { pie_pop = 100 }
+			}
+			for_loop_effect = {
+				start = last_idx
+				end = pie_pop
+				set_variable = { pie_chart_revenue_type^v = rr }
+			}
+			set_variable = { last_idx = pie_pop }
+		}
+		clear_variable = last_idx
+
+		add_to_variable = { update_state_econ_window = 1 }
+	}
+	create_pie_chart_spending = {
+		# this creates a pie chart of spending - can be easily adapted to show anything that adds up to 100%
+		# This code is much different from Yard's, but I'll credit him anyway
+		# Country Scope
+
+        set_variable = { spending_piechart_military_percentage = military_spending_expense }
+        add_to_variable = { spending_piechart_military_percentage = military_payroll_spending_expense }
+        add_to_variable = { spending_piechart_military_percentage = military_production_spending_expense }
+        divide_variable = { spending_piechart_military_percentage = total_spending }
+        set_variable = { spending_piechart_government_percentage = administration_spending_expense }
+        add_to_variable = { spending_piechart_government_percentage = research_spending_expense }
+        divide_variable = { spending_piechart_government_percentage = total_spending }
+        set_variable = { spending_piechart_civilian_percentage = subsidy_expense }
+        add_to_variable = { spending_piechart_civilian_percentage = construction_spending_expense }
+        divide_variable = { spending_piechart_civilian_percentage = total_spending }
+
+        set_variable = { spending_piechart_other_percentage = 1 }
+        subtract_from_variable = { spending_piechart_other_percentage = spending_piechart_income_percentage }
+        subtract_from_variable = { spending_piechart_other_percentage = spending_piechart_corporate_percentage }
+        subtract_from_variable = { spending_piechart_other_percentage = spending_piechart_sales_percentage }
+
+		clear_array = pie_chart_spending_type
+		resize_array = {
+			array = pie_chart_spending_type
+			value = 1 # 1 is value for RGO frame
+			size = 100 # 100 pieces, each percent is one piece
+		}
+
+		clear_temp_array = pie_slices_percentage
+		add_to_temp_array = { pie_slices_percentage = 0 }
+		add_to_temp_array = { pie_slices_percentage = spending_piechart_other_percentage } # Black
+		add_to_temp_array = { pie_slices_percentage = spending_piechart_civilian_percentage } # Yellow
+		add_to_temp_array = { pie_slices_percentage = 0 } # light Red
+		add_to_temp_array = { pie_slices_percentage = spending_piechart_military_percentage } # Red
+		add_to_temp_array = { pie_slices_percentage = 0 } # Dark Red
+		add_to_temp_array = { pie_slices_percentage = 0 } # Darkest Red
+		add_to_temp_array = { pie_slices_percentage = 0 } # Dark Blue
+		add_to_temp_array = { pie_slices_percentage = 0 } # Green
+		add_to_temp_array = { pie_slices_percentage = spending_piechart_government_percentage } # Light Blue
+		add_to_temp_array = { pie_slices_percentage = 0 } # Gray
+
+        set_temp_variable = { total_temp = 0 }
+        set_temp_variable = { largest = 0 }
+        for_each_loop = {
+            array = pie_slices_percentage
+            index = rr
+            if = {
+                limit = {
+                    check_variable = { pie_slices_percentage^rr > pie_slices_percentage^largest }
+                }
+                set_temp_variable = { largest = rr }
+            }
+
+            multiply_temp_variable = { pie_slices_percentage^rr = 100 }
+            round_temp_variable = pie_slices_percentage^rr
+            add_to_temp_variable = { total_temp = pie_slices_percentage^rr }
+        }
+
+        if = {
+            limit = {
+                NOT = { check_variable = { total_temp = 100 } }
+            }
+            add_to_temp_variable = { pie_slices_percentage^largest = 100 }
+            subtract_from_temp_variable = { pie_slices_percentage^largest = total_temp }
+        }
+
+		set_temp_variable = { pie_pop = 0 }
+		for_each_loop = {
+			array = pie_slices_percentage
+			index = rr
+			value = vv
+
+			set_variable = { last_idx = pie_pop }
+			set_temp_variable = { pie_pop = vv }
+
+			add_to_temp_variable = { pie_pop = last_idx }
+			#subtract_from_temp_variable = { pie_pop = 1 }
+			if = {
+				limit = {
+					check_variable = { pie_pop > 100 }
+				}
+				set_temp_variable = { pie_pop = 100 }
+			}
+			for_loop_effect = {
+				start = last_idx
+				end = pie_pop
+				set_variable = { pie_chart_spending_type^v = rr }
+			}
+			set_variable = { last_idx = pie_pop }
+		}
+		clear_variable = last_idx
+
+		add_to_variable = { update_state_econ_window = 1 }
 	}
 #
 
