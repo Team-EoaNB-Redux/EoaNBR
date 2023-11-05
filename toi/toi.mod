@@ -1,4 +1,4 @@
-name="End of a New Beginning Redux ~ Steam Edition"
+name="End of a New Beginning Redux ~ GitHub Edition"
 version="0.3.6 Ver Tersus"
 tags={
 	"Alternative History"
