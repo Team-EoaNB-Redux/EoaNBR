@@ -619,6 +619,54 @@ A list of modifiers that can be used in ideas and dynamic modifiers. Each of the
         <th>Scope</th>
     </tr>
     <tr>
+        <td> treasury_gain_monthly </td>
+        <td> </td>
+        <td> <code> modifier = { treasury_gain_monthly = 750 } </code> <br> Will grant an extra 750$ per month as an extra revenue </td>
+        <td> How much cash as a flat value a country should be getting as a bonus, appears as an aggregate positive balance "modifiers" under the other section of the revenues side of the country budget screen </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> treasury_gain_monthly_per_c </td>
+        <td> </td>
+        <td> <code> modifier = { treasury_gain_monthly_per_c = 2 } </code> <br> Will give an increase of 2$ per 1k population as an extra revenue per month </td>
+        <td> How many currency units (i.e. dollars, pounds, marks, yen, francs) a country should get per 1000 inhabitants, appears as an aggregate positive balance "modifiers" under the other section of the revenues side of the country budget screen </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> treasury_gain_monthly_per_gdp </td>
+        <td> </td>
+        <td> <code> modifier = { treasury_gain_monthly_per_gdp = 0.02 } </code> <br> Will give an increase of 2% worth of monthly GDP as an extra revenue per month </td>
+        <td> How many currency units (i.e. dollars, pounds, marks, yen, francs) a country should get as a percent of monthly GDP, appears as an aggregate positive balance "modifiers" under the other section of the revenues side of the country budget screen </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> treasury_cost_monthly </td>
+        <td> </td>
+        <td> <code> modifier = { treasury_gain_monthly = 750 } </code> <br> Will cost an extra 750$ per month as an extra expenditure </td>
+        <td> How much cash as a flat value a country should be losing as a malus, appears as an aggregate negative balance "modifiers" under the other section of the expenditures side of the country budget screen </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> treasury_cost_monthly_per_c </td>
+        <td> </td>
+        <td> <code> modifier = { treasury_cost_monthly_per_c = 2 } </code> <br> Will cost an extra 2$ per 1k population as an extra expenditure per month </td>
+        <td> How many currency units (i.e. dollars, pounds, marks, yen, francs) a country should lose per 1000 inhabitants, appears as an aggregate negative balance "modifiers" under the other section of the expenditures side of the country budget screen </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> treasury_cost_monthly_per_gdp </td>
+        <td> </td>
+        <td> <code> modifier = { treasury_cost_monthly_per_gdp = 0.02 } </code> <br> Will cost an extra 2% worth of monthly GDP as an extra expenditure per month </td>
+        <td> How many currency units (i.e. dollars, pounds, marks, yen, francs) a country should lose as a percent of monthly GDP, appears as an aggregate negative balance "modifiers" under the other section of the expenditures side of the country budget screen </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
         <td> banking_confidence_modifier </td>
         <td> </td>
         <td> </td>
