@@ -65,22 +65,6 @@ A list of effects that can be used in events, focus tree completion rewards, dec
         <td> Country </td>
     </tr>
     <tr>
-        <td> set_budget_maximum </td>
-        <td> <code> upper_tax_temp = integer <br> middle_tax_temp = integer <br> lower_tax_temp = integer <br> sales_tax_temp = integer <br> corporate_tax_temp = integer <br> import_tariff_temp = integer <br> export_tariff_temp = integer <br> <br> military_spending_temp = integer <br> construction_spending_temp = integer <br> import_subsidies_temp = integer <br> export_subsidies_temp = integer <br> research_subsidies_temp = integer </code> <br> What to cap each slider at. Sliders go from 0 to 100. To cap at 0, set integer to any negative value. Values of 0 will be ignored. </td>
-        <td> <code> set_temp_variable = { upper_tax_temp = 50 } <br> set_temp_variable = { middle_tax_temp = 75 } <br> set_budget_maximum = yes </code> </td>
-        <td> Caps the sliders in your budget. Auto adjusts sliders if sliders are over the new maximum. </td>
-        <td> </td>
-        <td> Country </td>
-    </tr>
-    <tr>
-        <td> set_budget_minimum </td>
-        <td> <code> upper_tax_temp = integer <br> middle_tax_temp = integer <br> lower_tax_temp = integer <br> sales_tax_temp = integer <br> corporate_tax_temp = integer <br> import_tariff_temp = integer <br> export_tariff_temp = integer <br> <br> military_spending_temp = integer <br> construction_spending_temp = integer <br> import_subsidies_temp = integer <br> export_subsidies_temp = integer <br> research_subsidies_temp = integer </code> <br> What to cap each slider at. Sliders go from 0 to 100. To cap at 0, set integer to any negative value. Values of 0 will be ignored. </td>
-        <td> <code> set_temp_variable = { upper_tax_temp = -1 } <br> set_temp_variable = { middle_tax_temp = 25 } <br> set_budget_minimum = yes </code> </td>
-        <td> Caps the sliders in your budget. Auto adjusts sliders if sliders are under the new minimum. </td>
-        <td> </td>
-        <td> Country </td>
-    </tr>
-    <tr>
         <td> add_debt </td>
         <td> <code> x_temp = float </code> <br> Amount of debt to add/remove. <br> <code> debt_level_temp = float </code> <br> Amount of debt levels to add/remove. </td>
         <td> <code> set_temp_variable = { x_temp = 500 } <br> add_debt = yes <br> // OR <br> set_temp_variable = { debt_level_temp = 2 } add_debt = yes </code> </td>
@@ -664,6 +648,38 @@ A list of modifiers that can be used in ideas and dynamic modifiers. Each of the
         <td> <code> modifier = { treasury_cost_monthly_per_gdp = 0.02 } </code> <br> Will cost an extra 2% worth of monthly GDP as an extra expenditure per month </td>
         <td> How many currency units (i.e. dollars, pounds, marks, yen, francs) a country should lose as a percent of monthly GDP, appears as an aggregate negative balance "modifiers" under the other section of the expenditures side of the country budget screen </td>
         <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> [Type]_max_modifier </td>
+        <td> Integer <br> Flat number to add to the maximum allowed slider value </td>
+        <td> <code> modifier = { income_tax_max_modifier = -10.0 } </code> </td>
+        <td> Adjusts the maximum allowed slider value for this budget item. Base max values for all items is 100. </td>
+        <td> The different [type]s are: upper_strata_income_tax, middle_strata_income_tax, lower_strata_income_tax, income_tax, sales_tax, corporate_tax, import_tariff, export_tariff, military_spending, research_spending, construction_spending, and subsidies_spending </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> [Type]_max_factor </td>
+        <td> Percentage <br> Percentage factor to adjust the maximum allowed slider value </td>
+        <td> <code> modifier = { income_tax_max_factor = -0.25 } </code> </td>
+        <td> Adjusts the maximum allowed slider value for this budget item. Applies after flat modifiers are applied. </td>
+        <td> The different [type]s are: upper_strata_income_tax, middle_strata_income_tax, lower_strata_income_tax, income_tax, sales_tax, corporate_tax, import_tariff, export_tariff, military_spending, research_spending, construction_spending, and subsidies_spending </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> [Type]_min_modifier </td>
+        <td> Integer <br> Flat number to add to the minimum allowed slider value </td>
+        <td> <code> modifier = { import_tariff_min_modifier = 120.0 } </code> </td>
+        <td> Adjusts the minimum allowed slider value for this budget item. Base min values for non-tariff items is 0. Tariffs are -100. </td>
+        <td> The different [type]s are: upper_strata_income_tax, middle_strata_income_tax, lower_strata_income_tax, income_tax, sales_tax, corporate_tax, import_tariff, export_tariff, military_spending, research_spending, construction_spending, and subsidies_spending </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> [Type]_min_factor </td>
+        <td> Percentage <br> Percentage factor to adjust the minimum allowed slider value </td>
+        <td> <code> modifier = { subsidies_min_factor = 0.25 } </code> </td>
+        <td> Adjusts the minimum allowed slider value for this budget item. Applies after flat modifiers are applied. This factor uses the *remaining* value, so if the min is 10, and 90 remaining, then a factor of 0.5 will result in adding 45 to the min value (working off of the 90 remaining).</td>
+        <td> The different [type]s are: upper_strata_income_tax, middle_strata_income_tax, lower_strata_income_tax, income_tax, sales_tax, corporate_tax, import_tariff, export_tariff, military_spending, research_spending, construction_spending, and subsidies_spending </td>
         <td> Country </td>
     </tr>
     <tr>
