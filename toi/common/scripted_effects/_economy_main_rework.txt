@@ -635,7 +635,41 @@
                 #
             }
 
+            #Completing Projects
+            for_loop_effect = {
+                start = 0
+                end = proj_id^num
+                value = proj_index_temp
+
+                set_temp_variable = { project_token_temp = proj_id^proj_index_temp }
+                set_temp_variable = { project_scope_temp = proj_scope^proj_index_temp }
+
+                # Check if done
+                if = {
+                    limit = {
+                        check_variable = { project_scope_temp:proj_food_fulfilled@var:project_token_temp = project_scope_temp:proj_food_need@var:project_token_temp }
+                        check_variable = { project_scope_temp:proj_consumer_goods_fulfilled@var:project_token_temp = project_scope_temp:proj_consumer_goods_need@var:project_token_temp }
+                        check_variable = { project_scope_temp:proj_luxury_goods_fulfilled@var:project_token_temp = project_scope_temp:proj_luxury_goods_need@var:project_token_temp }
+                        check_variable = { project_scope_temp:proj_services_fulfilled@var:project_token_temp = project_scope_temp:proj_services_need@var:project_token_temp }
+                        check_variable = { project_scope_temp:proj_raw_materials_fulfilled@var:project_token_temp = project_scope_temp:proj_raw_materials_need@var:project_token_temp }
+                        check_variable = { project_scope_temp:proj_energy_materials_fulfilled@var:project_token_temp = project_scope_temp:proj_energy_materials_need@var:project_token_temp }
+                        check_variable = { project_scope_temp:proj_industrial_goods_fulfilled@var:project_token_temp = project_scope_temp:proj_industrial_goods_need@var:project_token_temp }
+                        check_variable = { project_scope_temp:proj_electricity_fulfilled@var:project_token_temp = project_scope_temp:proj_electricity_need@var:project_token_temp }
+                    }
+                    proj_done = yes
+                }
+            }
+            proj_update = yes
+
+            # 0.2 secs
+            calc_demand = yes
+            get_resource_prices = yes
+
+            # 0.1 secs
+            budget_update = yes
+
             #National Statistics - nil secs
+                # GDP
                 set_temp_variable = { gdp_amount_temp = gdp_amount }
                 divide_temp_variable = { gdp_amount_temp = 1000 }
 
@@ -675,42 +709,22 @@
                     }
                 }
 
-                #Create the Graph
-                econ_rerender_country_gdp_graph = yes
-            #
-
-            #Completing Projects
-            for_loop_effect = {
-                start = 0
-                end = proj_id^num
-                value = proj_index_temp
-
-                set_temp_variable = { project_token_temp = proj_id^proj_index_temp }
-                set_temp_variable = { project_scope_temp = proj_scope^proj_index_temp }
-
-                # Check if done
+                # Budget
+                add_to_array = {
+                    array = net_budget_array
+                    value = net_budget
+                }
                 if = {
                     limit = {
-                        check_variable = { project_scope_temp:proj_food_fulfilled@var:project_token_temp = project_scope_temp:proj_food_need@var:project_token_temp }
-                        check_variable = { project_scope_temp:proj_consumer_goods_fulfilled@var:project_token_temp = project_scope_temp:proj_consumer_goods_need@var:project_token_temp }
-                        check_variable = { project_scope_temp:proj_luxury_goods_fulfilled@var:project_token_temp = project_scope_temp:proj_luxury_goods_need@var:project_token_temp }
-                        check_variable = { project_scope_temp:proj_services_fulfilled@var:project_token_temp = project_scope_temp:proj_services_need@var:project_token_temp }
-                        check_variable = { project_scope_temp:proj_raw_materials_fulfilled@var:project_token_temp = project_scope_temp:proj_raw_materials_need@var:project_token_temp }
-                        check_variable = { project_scope_temp:proj_energy_materials_fulfilled@var:project_token_temp = project_scope_temp:proj_energy_materials_need@var:project_token_temp }
-                        check_variable = { project_scope_temp:proj_industrial_goods_fulfilled@var:project_token_temp = project_scope_temp:proj_industrial_goods_need@var:project_token_temp }
-                        check_variable = { project_scope_temp:proj_electricity_fulfilled@var:project_token_temp = project_scope_temp:proj_electricity_need@var:project_token_temp }
+                        check_variable = { net_budget_array^num > 32 }
                     }
-                    proj_done = yes
+                    remove_from_array = { array = net_budget_array index = 0 }
                 }
-            }
-            proj_update = yes
 
-            # 0.2 secs
-            calc_demand = yes
-            get_resource_prices = yes
-
-            # 0.1 secs
-            budget_update = yes
+                #Create the Graphs
+                econ_rerender_country_gdp_graph = yes
+                econ_rerender_country_budget_graph = yes
+            #
 
             clr_country_flag = repaid_debt_flag
             clr_country_flag = borrowed_money_flag
@@ -17489,7 +17503,7 @@
         econ_rerender_gdp_graph = yes
     }
     econ_rerender_gdp_graph = {
-        # Code courtesy of TNO (totally not stolen. Sorry, couldn't figure out the graph line thing on my own).
+        # Code courtesy of TNO (totally not stolen. Sorry, couldn't figure out the graph line thing on my own. I can make complicated economy systems but graphs? Nah).
         # Find the maximum and minimum GDP values for the graph
         set_temp_variable = { min = gdp_amount_array^0 }
         set_temp_variable = { max = gdp_amount_array^0 }
@@ -17618,7 +17632,7 @@
         econ_rerender_country_gdp_graph = yes
     }
     econ_rerender_country_gdp_graph = {
-        # Code courtesy of TNO (totally not stolen. Sorry, couldn't figure out the graph line thing on my own).
+        # Code courtesy of TNO (totally not stolen. Sorry, couldn't figure out the graph line thing on my own. I can make complicated economy systems but graphs? Nah).
         # Find the maximum and minimum GDP values for the graph
         set_temp_variable = { min = gdp_amount_quarterly^0 }
         set_temp_variable = { max = gdp_amount_quarterly^0 }
@@ -17683,7 +17697,7 @@
 			}
 			divide_variable = { gdp_graph_min = 1000 }
 			divide_variable = { gdp_graph_max = 1000 }
-			set_state_flag = gdp_graph_thousands
+			set_country_flag = gdp_graph_thousands
 		}
 		else_if = {
 			limit = {
@@ -17703,6 +17717,119 @@
 			multiply_variable = { gdp_graph_min = 10 }
 			multiply_variable = { gdp_graph_max = 10 }
 		}
+
+		add_to_variable = { update_state_econ_window = 1 }
+    }
+    
+    initialize_country_budget_graph = {
+        # run after budget_update
+        clear_array = net_budget_array
+        add_to_array = { net_budget_array = net_budget }
+        for_loop_effect = {
+            start = 0
+            end = 32
+            value = i
+
+            set_temp_variable = { random_change_temp = random }
+            subtract_from_temp_variable = { random_change_temp = 0.5 }
+            multiply_temp_variable = { random_change_temp = revenue }
+            divide_temp_variable = { random_change_temp = 50 }
+        
+            set_temp_variable = { temp_val = net_budget }
+            add_to_temp_variable = { temp_val = random_change_temp }
+
+            add_to_array = { array = net_budget_array index = 0 value = temp_val }
+        }
+        econ_rerender_country_budget_graph = yes
+    }
+    econ_rerender_country_budget_graph = {
+        # Code courtesy of TNO (totally not stolen. Sorry, couldn't figure out the graph line thing on my own. I can make complicated economy systems but graphs? Nah).
+        # Find the maximum and minimum budget values for the graph
+        set_temp_variable = { min = net_budget_array^0 }
+        set_temp_variable = { max = net_budget_array^0 }
+        for_loop_effect = {
+            start = 0
+            end = net_budget_array^num
+            value = i
+
+            if = {
+                limit = { check_variable = { net_budget_array^i > max } }
+                set_temp_variable = { max = net_budget_array^i }
+            }
+            if = {
+                limit = { check_variable = { net_budget_array^i < min } }
+                set_temp_variable = { min = net_budget_array^i }
+            }
+        }
+
+        # The range is maximum(max, min) * 2 * 1.2
+        if = {
+            limit = {
+                check_variable = { max < 0 }
+            }
+            set_temp_variable = { max = min }
+            multiply_temp_variable = { max = -1 }
+        }
+        else_if = {
+            limit = {
+                check_variable = { min < 0 }
+            }
+            multiply_temp_variable = { min = -1 }
+            if = {
+                limit = {
+                    check_variable = { max > min }
+                }
+                set_temp_variable = { min = max }
+                multiply_temp_variable = { min = -1 }
+            }
+            else = {
+                set_temp_variable = { max = min }
+                multiply_temp_variable = { min = -1 }
+            }
+        }
+        else = {
+            set_temp_variable = { min = max }
+            multiply_temp_variable = { min = -1 }
+        }
+        
+        multiply_temp_variable = { max = 1.2 }
+        multiply_temp_variable = { min = 1.2 }
+
+
+        set_temp_variable = { range = max }
+        subtract_from_temp_variable = { range = min }
+        divide_temp_variable = { range = 100 }
+
+        # Get all segments Progress Bar values
+        clear_array = budget_graph_frames
+        for_loop_effect = {
+            start = 1
+            end = net_budget_array^num
+            value = i
+
+            set_temp_variable = { j = i }
+            add_to_temp_variable = { j = -1 }
+
+            set_temp_variable = { hi = net_budget_array^i }
+            set_temp_variable = { lo = net_budget_array^j }
+
+            subtract_from_temp_variable = { hi = min }
+            subtract_from_temp_variable = { lo = min }
+            
+            divide_temp_variable = { hi = range }
+            divide_temp_variable = { lo = range }
+
+            round_temp_variable = hi
+            round_temp_variable = lo
+
+            set_temp_variable = { endpoints = lo }
+            multiply_temp_variable = { endpoints = 1000 }
+            add_to_temp_variable = { endpoints = hi }
+            add_to_array = { budget_graph_frames = endpoints }
+        }
+        
+        set_variable = { budget_graph_min = min }
+        set_variable = { budget_graph_max = max }
 
 		add_to_variable = { update_state_econ_window = 1 }
     }
