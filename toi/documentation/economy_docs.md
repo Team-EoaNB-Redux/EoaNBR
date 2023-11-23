@@ -741,6 +741,30 @@ A list of modifiers that can be used in ideas and dynamic modifiers. Each of the
         <td> Country </td>
     </tr>
     <tr>
+        <td> administration_cost_factor </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> military_equipment_cost_factor </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> military_payroll_cost_factor </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
         <td> aristocrats_investment_contribution_factor </td>
         <td> </td>
         <td> </td>
