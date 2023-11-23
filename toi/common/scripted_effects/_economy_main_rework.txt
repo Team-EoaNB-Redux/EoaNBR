@@ -160,8 +160,10 @@
                 }
                 add_dynamic_modifier = { modifier = budgetary_spending }
             }
-
+            
             #Budget
+                national_debt_update = yes
+
                 add_to_variable = { treasury = net_budget }
                 if = {
                     limit = {
@@ -187,9 +189,18 @@
                         is_ai = yes
                         check_variable = { net_budget < 0 }
                     }
+                    if = { # USA loves import tariffs
+                        limit = {
+                            tag = USA
+                            check_variable = { import_tariff_percentage < import_tariff_max }
+                        }
+                        set_temp_variable = { percent_change_temp = 100 }
+                        change_import_tariff = yes
+                    }
+
                     if = {
                         limit = {
-                            check_variable = { sales_tax_percentage < 100 }
+                            check_variable = { sales_tax_percentage < sales_tax_max }
                         }
                         set_temp_variable = { percent_change_temp = 5 }
                         if = {
@@ -216,7 +227,7 @@
                     }
                     else_if = {
                         limit = {
-                            check_variable = { income_tax_lower_strata_percentage < 100 }
+                            check_variable = { income_tax_lower_strata_percentage < income_tax_lower_strata_max }
                         }
                         set_temp_variable = { percent_change_temp = 5 }
                         if = {
@@ -243,7 +254,7 @@
                     }
                     else_if = {
                         limit = {
-                            check_variable = { income_tax_middle_strata_percentage < 100 }
+                            check_variable = { income_tax_middle_strata_percentage < income_tax_middle_strata_max }
                         }
                         set_temp_variable = { percent_change_temp = 5 }
                         if = {
@@ -270,7 +281,7 @@
                     }
                     else_if = {
                         limit = {
-                            check_variable = { income_tax_upper_strata_percentage < 100 }
+                            check_variable = { income_tax_upper_strata_percentage < income_tax_upper_strata_max }
                         }
                         set_temp_variable = { percent_change_temp = 5 }
                         if = {
@@ -306,28 +317,28 @@
                     }
                     if = {
                         limit = {
-                            check_variable = { sales_tax_percentage < 100 }
+                            check_variable = { sales_tax_percentage < sales_tax_max }
                         }
                         set_temp_variable = { percent_change_temp = 5 }
                         change_sales_tax = yes
                     }
                     else_if = {
                         limit = {
-                            check_variable = { income_tax_lower_strata_percentage < 100 }
+                            check_variable = { income_tax_lower_strata_percentage < income_tax_lower_strata_max }
                         }
                         set_temp_variable = { percent_change_temp = 5 }
                         change_lower_strata_income_tax = yes
                     }
                     else_if = {
                         limit = {
-                            check_variable = { income_tax_middle_strata_percentage < 100 }
+                            check_variable = { income_tax_middle_strata_percentage < income_tax_middle_strata_max }
                         }
                         set_temp_variable = { percent_change_temp = 5 }
                         change_middle_strata_income_tax = yes
                     }
                     else_if = {
                         limit = {
-                            check_variable = { income_tax_upper_strata_percentage < 100 }
+                            check_variable = { income_tax_upper_strata_percentage < income_tax_upper_strata_max }
                         }
                         set_temp_variable = { percent_change_temp = 5 }
                         change_upper_strata_income_tax = yes
@@ -354,28 +365,28 @@
 
                     if = {
                         limit = {
-                            check_variable = { income_tax_upper_strata_percentage > 100 }
+                            check_variable = { income_tax_upper_strata_percentage > income_tax_upper_strata_min }
                         }
                         set_temp_variable = { percent_change_temp = -5 }
                         change_upper_strata_income_tax = yes
                     }
                     else_if = {
                         limit = {
-                            check_variable = { income_tax_middle_strata_percentage > 0 }
+                            check_variable = { income_tax_middle_strata_percentage > income_tax_middle_strata_min }
                         }
                         set_temp_variable = { percent_change_temp = -5 }
                         change_middle_strata_income_tax = yes
                     }
                     else_if = {
                         limit = {
-                            check_variable = { income_tax_lower_strata_percentage > 0 }
+                            check_variable = { income_tax_lower_strata_percentage > income_tax_lower_strata_min }
                         }
                         set_temp_variable = { percent_change_temp = -5 }
                         change_lower_strata_income_tax = yes
                     }
                     else_if = {
                         limit = {
-                            check_variable = { sales_tax_percentage > 0 }
+                            check_variable = { sales_tax_percentage > sales_tax_min }
                         }
                         set_temp_variable = { percent_change_temp = -5 }
                         change_sales_tax = yes
@@ -668,6 +679,7 @@
 
             # 0.1 secs
             budget_update = yes
+            national_debt_update = yes
 
             #National Statistics - nil secs
                 # GDP
@@ -1624,6 +1636,18 @@
                 set_variable = { offers@var:r_token = 0 }
             }
 
+            if = {
+                limit = {
+                    check_variable = { debt_to_gdp_ratio > 0 }
+                }
+                set_variable = { debt_to_gdp_saved = debt_to_gdp_ratio }
+            }
+            else_if = {
+                limit = {
+                    check_variable = { debt_level > 0 }
+                }
+                set_variable = { debt_level_saved = debt_level }
+            }
 
             clear_array = gdp_amount_monthly
             clear_array = gdp_amount_quarterly
@@ -2598,6 +2622,25 @@
             update_country_pop_stats = yes
 
             budget_update = yes
+            national_debt_update = yes
+
+            if = {
+                limit = {
+                    check_variable = { debt_to_gdp_saved > 0 }
+                }
+                set_temp_variable = { x_temp = debt_to_gdp_saved }
+                set_debt_to_gdp = yes
+                clear_variable = debt_to_gdp_saved
+            }
+            else_if = {
+                limit = {
+                    check_variable = { debt_level_saved > 0 }
+                }
+                set_temp_variable = { x_temp = debt_level_saved }
+                multiply_temp_variable = { x_temp = 4 }
+                set_debt_to_gdp = yes
+                clear_variable = debt_level_saved
+            }
 
             initialize_country_gdp_graph = yes
             initialize_country_budget_graph = yes
@@ -2634,9 +2677,17 @@
         calc_demand = yes
         calc_supply = yes
         get_resource_prices = yes
+
+        set_variable = { gdp_amount = 0 }
+        every_controlled_state = {
+            gdp_update = yes
+
+            add_to_variable = { PREV.gdp_amount = gdp_amount }
+        }
         
         update_country_pop_stats = yes
         budget_update = yes
+        national_debt_update = yes
     }
 
     country_recalc = {
@@ -15824,6 +15875,8 @@
             }
             create_pie_chart_spending = yes
         }
+
+        debt_related_country_content_effects = yes
 	}
 
     set_debt_to_gdp = {
@@ -15831,7 +15884,7 @@
         # Sets the debt to gdp % to x_temp (0-100)
 
         multiply_temp_variable = { x_temp = 0.12 }
-        add_to_temp_variable = { x_temp = 0.001 }
+        add_to_temp_variable = { x_temp = 0.001 } # dunno why this is needed to make it exactly the percentage you give it, but apparently it is
         multiply_temp_variable = { x_temp = gdp_amount }
         divide_temp_variable = { x_temp = 1000 }
         set_debt = yes
@@ -15841,6 +15894,15 @@
         # Sets the debt to x_temp (thousands)
         
         subtract_from_temp_variable = { x_temp = national_debt_k }
+        add_debt = yes
+    }
+    add_debt_to_gdp = {
+        # x_temp
+        # Adds debt to gdp % at x_temp (0-100)
+
+        multiply_temp_variable = { x_temp = 0.12 }
+        multiply_temp_variable = { x_temp = gdp_amount }
+        divide_temp_variable = { x_temp = 1000 }
         add_debt = yes
     }
     add_debt = {
@@ -15856,6 +15918,11 @@
 			}
 
 			set_temp_variable = { borrow_temp_k = x_temp }
+            add_to_temp_variable = { 
+				var = nonsense_var
+                value = borrow_temp_k
+                tooltip = debt_change_negative_tooltip
+            }
 
             if = {
                 limit = {
@@ -15945,6 +16012,11 @@
             #log = "Country: [?country_temp.GetName]"
 
             set_temp_variable = { repay_temp_k = x_temp }
+            subtract_from_temp_variable = { 
+				var = nonsense_var
+                value = repay_temp_k
+                tooltip = debt_change_positive_tooltip
+            }
             if = {
                 limit = {
                     check_variable = { repay_temp_k > debt_to_bank_k@var:country_temp }
@@ -16009,6 +16081,11 @@
                 check_variable = { borrow_temp > 0 }
             }
             add_to_variable = { treasury = borrow_temp }
+            add_to_temp_variable = { 
+                var = nonsense_var
+                value = borrow_temp
+                tooltip = treasury_change_positive_tooltip
+            }
         }
 
 	}
@@ -16040,6 +16117,11 @@
                     check_variable = { repay_temp > 0 }
                 }
                 subtract_from_variable = { treasury = repay_temp }
+                subtract_from_temp_variable = { 
+                    var = nonsense_var
+                    value = repay_temp
+                    tooltip = treasury_change_negative_tooltip
+                }
             }
         }
 	}
