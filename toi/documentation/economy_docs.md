@@ -73,26 +73,50 @@ A list of effects that can be used in events, focus tree completion rewards, dec
         <td> Country </td>
     </tr>
     <tr>
-        <td> add_debt - NOT IMPLEMENTED </td>
-        <td> <code> x_temp = float </code> <br> Amount of debt to add/remove. <br> <code> debt_level_temp = float </code> <br> Amount of debt levels to add/remove. </td>
-        <td> <code> set_temp_variable = { x_temp = 500 } <br> add_debt = yes <br> // OR <br> set_temp_variable = { debt_level_temp = 2 } add_debt = yes </code> </td>
-        <td> Adds or removes debt. Does not affect treasury. Automatically converts into debt level. Checks for bankruptcy on addition.</td>
-        <td> Using both x_temp and debt_level_temp on the same effect will apply both. They are applied first before bankruptcy condition is checked. </td>
+        <td> set_debt </td>
+        <td> <code> x_temp = float </code> <br> Debt amount to set (in thousands). </td>
+        <td> <code> set_temp_variable = { x_temp = 500 } <br> add_debt = yes </td>
+        <td> Sets the amount of debt. Does not affect treasury. Automatically converts into debt level. Checks for bankruptcy on addition.</td>
+        <td> </td>
         <td> Country </td>
     </tr>
     <tr>
-        <td> borrow_money - NOT IMPLEMENTED </td>
-        <td> <code> x_temp = float </code> <br> Amount of money to borrow. Only positive float values accepted. </td>
+        <td> set_debt_to_gdp </td>
+        <td> <code> x_temp = float </code> <br> Debt percentage to set (1.0 = 1.0%). </td>
+        <td> <code> set_temp_variable = { x_temp = 50 } <br> set_debt_to_gdp = yes </td>
+        <td> Sets the amount of debt. Does not affect treasury. Automatically converts into debt level. Checks for bankruptcy on addition.</td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> add_debt </td>
+        <td> <code> x_temp = float </code> <br> Amount of debt to add/remove (in thousands). </td>
+        <td> <code> set_temp_variable = { x_temp = 500 } <br> add_debt = yes </code> </td>
+        <td> Adds or removes debt. Does not affect treasury. Automatically converts into debt level. Checks for bankruptcy on addition.</td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> add_debt_to_gdp </td>
+        <td> <code> x_temp = float </code> <br> Amount of debt to add/remove (1.0 = 1.0%). </td>
+        <td> <code> set_temp_variable = { x_temp = 5 } <br> add_debt_to_gdp = yes </code> </td>
+        <td> Adds or removes debt. Does not affect treasury. Automatically converts into debt level. Checks for bankruptcy on addition.</td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> borrow_money </td>
+        <td> <code> x_temp = float </code> <br> Amount of money to borrow (in thousands). Only positive float values accepted. </td>
         <td> <code> set_temp_variable = { x_temp = 500 } <br> borrow_money = yes </code> </td>
         <td> Adds this amount of debt to the country. Also adds to your treasury. Automatically converts into debt level. </td>
         <td> Bankruptcy clears your treasury. </td>
         <td> Country </td>
     </tr>
     <tr>
-        <td> repay_debt - NOT IMPLEMENTED </td>
-        <td> <code> x_temp = float </code> <br> Amount of money to repay. Only positive float values accepted. </td>
+        <td> repay_debt </td>
+        <td> <code> x_temp = float </code> <br> Amount of money to repay (in thousands). Only positive float values accepted. </td>
         <td> <code> set_temp_variable = { x_temp = 500 } <br> add_treasury = yes </code> </td>
-        <td> Adds or subtracts money to your treasury. Subtracting treasury beyond negatives will add debt. </td>
+        <td> Removes this amount of debt from the countyr. Also subtracts from your treasury. Does not remove more than your treasury. </td>
         <td> </td>
         <td> Country </td>
     </tr>
@@ -758,6 +782,54 @@ A list of modifiers that can be used in ideas and dynamic modifiers. Each of the
     </tr>
     <tr>
         <td> military_payroll_cost_factor </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> interest_rate_modifier </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> interest_rate_factor </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> domestic_interest_rate_modifier </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> domestic_interest_rate_factor </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> foreign_interest_rate_modifier </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> foreign_interest_rate_factor </td>
         <td> </td>
         <td> </td>
         <td> </td>
