@@ -4510,6 +4510,12 @@
                         check_variable = { aristocrats_earnings > 0 }
                     }
                     set_variable = { aristocrats_investment = controller:modifier@aristocrats_investment_contribution_factor }
+                    if = {
+                        limit = {
+                            check_variable = { aristocrats_investment < 0 }
+                        }
+                        set_variable = { aristocrats_investment = 0 }
+                    }
                     multiply_variable = { aristocrats_investment = aristocrats_earnings }
                     subtract_from_variable = { aristocrats_earnings = aristocrats_investment }
                 }
@@ -4595,6 +4601,12 @@
                 
                 set_temp_variable = { investment_reduction_temp = 0.25 } # What % of corp tax spending go into reducing investment
                 add_to_temp_variable = { investment_reduction_temp = controller:modifier@aristocrats_investment_contribution_factor }
+                if = {
+                    limit = {
+                        check_variable = { investment_reduction_temp < 0 }
+                    }
+                    set_temp_variable = { investment_reduction_temp = 0 }
+                }
                 if = { limit = { check_variable = { investment_reduction_temp > 1 } } set_variable = { investment_reduction_temp = 1 } }
                 set_variable = { aristocrats_investment_tax = aristocrats_corporate_tax_spending }
                 multiply_variable = { aristocrats_investment_tax = investment_reduction_temp }
@@ -4656,6 +4668,12 @@
                         check_variable = { capitalists_dividends > 0 }
                     }
                     set_variable = { capitalists_investment = controller:modifier@capitalists_investment_contribution_factor }
+                    if = {
+                        limit = {
+                            check_variable = { capitalists_investment < 0 }
+                        }
+                        set_variable = { capitalists_investment = 0 }
+                    }
                     multiply_variable = { capitalists_investment = capitalists_dividends }
                     subtract_from_variable = { capitalists_earnings = capitalists_investment }
                 }
@@ -4742,6 +4760,12 @@
                 
                 set_temp_variable = { investment_reduction_temp = 0.25 } # What % of corp tax spending go into reducing investment
                 add_to_temp_variable = { investment_reduction_temp = controller:modifier@capitalists_investment_contribution_factor }
+                if = {
+                    limit = {
+                        check_variable = { investment_reduction_temp < 0 }
+                    }
+                    set_temp_variable = { investment_reduction_temp = 0 }
+                }
                 if = { limit = { check_variable = { investment_reduction_temp > 1 } } set_variable = { investment_reduction_temp = 1 } }
                 set_variable = { capitalists_investment_tax = capitalists_corporate_tax_spending }
                 multiply_variable = { capitalists_investment_tax = investment_reduction_temp }
@@ -9484,6 +9508,7 @@
             multiply_variable = { expenses_payroll@var:bu_token = production_percentage@var:bu_token }
             divide_variable = { expenses_payroll@var:bu_token = 100 }
             multiply_variable = { expenses_payroll@var:bu_token = base_wage }
+            multiply_variable = { expenses_payroll@var:bu_token = payroll_multiplier@var:bu_token }
             
             set_variable = { expenses_industrial_capacity@var:bu_token = industrial_capacity_use@var:bu_token }
             multiply_variable = { expenses_industrial_capacity@var:bu_token = price_industrial_capacity }
@@ -9844,6 +9869,7 @@
                     multiply_variable = { expenses_payroll@var:bu_token = production_percentage@var:bu_token }
                     divide_variable = { expenses_payroll@var:bu_token = 100 }
                     multiply_variable = { expenses_payroll@var:bu_token = base_wage }
+                    multiply_variable = { expenses_payroll@var:bu_token = payroll_multiplier@var:bu_token }
 
                     set_variable = { expenses@var:bu_token = expenses_payroll@var:bu_token }
                     add_to_variable = { expenses@var:bu_token = expenses_input@var:bu_token }
@@ -9859,7 +9885,7 @@
                     add_to_variable = { revenue@var:bu_token = revenue_subsidies@var:bu_token }
                     add_to_variable = { profit@var:bu_token = revenue_subsidies@var:bu_token }
 
-                    
+
                     #Money Accumulation
                     set_variable = { money_accumulation@var:bu_token = profit@var:bu_token }
                     divide_variable = { money_accumulation@var:bu_token = 2 }
@@ -14312,6 +14338,20 @@
 	taxes_update = {
 		#Country Scope
 
+        set_temp_variable = { corruption_temp = modifier@corruption_factor }
+        if = {
+            limit = {
+                check_variable = { corruption_temp > 1 }
+            }
+            set_temp_variable = { corruption_temp = 1 }
+        }
+        else_if = {
+            limit = {
+                check_variable = { corruption_temp > 1 }
+            }
+            set_temp_variable = { corruption_temp = 0 }
+        }
+
         # Actual Taxation Percentages
             set_variable = { income_tax_upper_strata_percentage_actual = income_tax_upper_strata_percentage }
             multiply_variable = { income_tax_upper_strata_percentage_actual = modifier@tax_efficiency_factor }
@@ -14581,9 +14621,23 @@
 		    divide_variable = { income_tax_lower_strata_revenue = 100 }
         }
 
+        set_variable = { income_tax_upper_strata_corruption = income_tax_upper_strata_revenue }
+        multiply_variable = { income_tax_upper_strata_corruption = corruption_temp }
+        subtract_from_variable = { income_tax_upper_strata_revenue = income_tax_upper_strata_corruption }
+        set_variable = { income_tax_middle_strata_corruption = income_tax_middle_strata_revenue }
+        multiply_variable = { income_tax_middle_strata_corruption = corruption_temp }
+        subtract_from_variable = { income_tax_middle_strata_revenue = income_tax_middle_strata_corruption }
+        set_variable = { income_tax_lower_strata_corruption = income_tax_lower_strata_revenue }
+        multiply_variable = { income_tax_lower_strata_corruption = corruption_temp }
+        subtract_from_variable = { income_tax_lower_strata_revenue = income_tax_lower_strata_corruption }
+
 		set_variable = { income_tax_revenue = income_tax_upper_strata_revenue }
 		add_to_variable = { income_tax_revenue = income_tax_middle_strata_revenue }
 		add_to_variable = { income_tax_revenue = income_tax_lower_strata_revenue }
+
+		set_variable = { income_tax_corruption = income_tax_upper_strata_corruption }
+		add_to_variable = { income_tax_corruption = income_tax_middle_strata_corruption }
+		add_to_variable = { income_tax_corruption = income_tax_lower_strata_corruption }
 
 		#Sales Tax
 			set_variable = { sales_tax_revenue = 0 }
@@ -14601,6 +14655,10 @@
                 multiply_variable = { sales_tax_revenue = sales_tax_percentage_actual }
                 divide_variable = { sales_tax_revenue = 100 }
             }
+                
+            set_variable = { sales_tax_corruption = sales_tax_revenue }
+            multiply_variable = { sales_tax_corruption = corruption_temp }
+            subtract_from_variable = { sales_tax_revenue = sales_tax_corruption }
 		#
 
 		#Corporate
@@ -14617,6 +14675,10 @@
                 multiply_variable = { corporate_tax_revenue = corporate_tax_percentage_actual }
                 divide_variable = { corporate_tax_revenue = 100 }
             }
+            
+            set_variable = { corporate_tax_corruption = corporate_tax_revenue }
+            multiply_variable = { corporate_tax_corruption = corruption_temp }
+            subtract_from_variable = { corporate_tax_revenue = corporate_tax_corruption }
 		#
 
 		#Tariffs
@@ -14663,13 +14725,30 @@
                     check_variable = { import_tariffs > 0 }
                 }
 			    add_to_variable = { tariff_revenue = import_tariffs }
+
+                set_variable = { import_tariffs_corruption = import_tariffs }
+                multiply_variable = { import_tariffs_corruption = corruption_temp }
+                subtract_from_variable = { import_tariffs = import_tariffs_corruption }
+            }
+            else = {
+                set_variable = { import_tariffs_corruption = 0 }
             }
             if = {
                 limit = {
                     check_variable = { export_tariffs > 0 }
                 }
 			    add_to_variable = { tariff_revenue = export_tariffs }
+
+                set_variable = { export_tariffs_corruption = export_tariffs }
+                multiply_variable = { export_tariffs_corruption = corruption_temp }
+                subtract_from_variable = { export_tariffs = export_tariffs_corruption }
             }
+            else = {
+                set_variable = { export_tariffs_corruption = 0 }
+            }
+			set_variable = { tariff_corruption = import_tariffs_corruption }
+            add_to_variable = { tariff_corruption = export_tariffs_corruption }
+            subtract_from_variable = { net_tariffs = tariff_corruption }
 		#
 
         set_variable = { modifier_revenue = modifier@treasury_gain_monthly }
@@ -14966,6 +15045,37 @@
                 }
 			    subtract_from_variable = { trade_subsidy = export_tariffs }
             }
+            
+			set_variable = { tariff_revenue = 0 }
+            if = {
+                limit = {
+                    check_variable = { import_tariffs > 0 }
+                }
+			    add_to_variable = { tariff_revenue = import_tariffs }
+
+                set_variable = { import_tariffs_corruption = import_tariffs }
+                multiply_variable = { import_tariffs_corruption = corruption_temp }
+                subtract_from_variable = { import_tariffs = import_tariffs_corruption }
+            }
+            else = {
+                set_variable = { import_tariffs_corruption = 0 }
+            }
+            if = {
+                limit = {
+                    check_variable = { export_tariffs > 0 }
+                }
+			    add_to_variable = { tariff_revenue = export_tariffs }
+
+                set_variable = { export_tariffs_corruption = export_tariffs }
+                multiply_variable = { export_tariffs_corruption = corruption_temp }
+                subtract_from_variable = { export_tariffs = export_tariffs_corruption }
+            }
+            else = {
+                set_variable = { export_tariffs_corruption = 0 }
+            }
+			set_variable = { tariff_corruption = import_tariffs_corruption }
+            add_to_variable = { tariff_corruption = export_tariffs_corruption }
+            subtract_from_variable = { net_tariffs = tariff_corruption }
 		#
         # Research Subsidies
             set_variable = { research_spending = global.research_base_expense }

@@ -725,7 +725,7 @@ A list of modifiers that can be used in ideas and dynamic modifiers. Each of the
         <td> Country </td>
     </tr>
     <tr>
-        <td> corruption_factor - NOT IMPLEMENTED </td>
+        <td> corruption_factor </td>
         <td> </td>
         <td> </td>
         <td> </td>
