@@ -1,11 +1,3 @@
-
-
-
-
-
-
-
-
 # Technologies
 A list of technologies that are currently used to add institution progress
 
