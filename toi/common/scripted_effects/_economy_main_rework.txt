@@ -12600,6 +12600,9 @@
 
         set_temp_variable = { equipment_cost_factor_temp = modifier@military_equipment_cost_factor }
         add_to_temp_variable = { equipment_cost_factor_temp = 1 }
+        set_temp_variable = { naval_equipment_cost_factor_temp = modifier@military_equipment_cost_factor }
+        add_to_temp_variable = { naval_equipment_cost_factor_temp = modifier@naval_equipment_cost_factor }
+        add_to_temp_variable = { naval_equipment_cost_factor_temp = 1 }
 
 		#Needs
 			#Reset
@@ -12747,10 +12750,10 @@
 				add_to_variable = { military_need@token:resource_industrial_goods = need_temp }
 
 				#Total
-                multiply_variable = { military_need@token:resource_food = modifier_temp }
-                multiply_variable = { military_need@token:resource_consumer_goods = modifier_temp }
-                multiply_variable = { military_need@token:resource_luxury_goods = modifier_temp }
-                multiply_variable = { military_need@token:resource_industrial_goods = modifier_temp }
+                multiply_variable = { military_need@token:resource_food = naval_equipment_cost_factor_temp }
+                multiply_variable = { military_need@token:resource_consumer_goods = naval_equipment_cost_factor_temp }
+                multiply_variable = { military_need@token:resource_luxury_goods = naval_equipment_cost_factor_temp }
+                multiply_variable = { military_need@token:resource_industrial_goods = naval_equipment_cost_factor_temp }
 
 				set_variable = { military_army_need@token:resource_food = military_need@token:resource_food }
 				set_variable = { military_army_need@token:resource_consumer_goods = military_need@token:resource_consumer_goods }
@@ -12816,10 +12819,10 @@
 				add_to_variable = { military_navy_need@token:resource_industrial_goods = need_temp }
 
 				#Total
-                multiply_variable = { military_navy_need@token:resource_food = modifier_temp }
-                multiply_variable = { military_navy_need@token:resource_consumer_goods = modifier_temp }
-                multiply_variable = { military_navy_need@token:resource_luxury_goods = modifier_temp }
-                multiply_variable = { military_navy_need@token:resource_industrial_goods = modifier_temp }
+                multiply_variable = { military_navy_need@token:resource_food = equipment_cost_factor_temp }
+                multiply_variable = { military_navy_need@token:resource_consumer_goods = equipment_cost_factor_temp }
+                multiply_variable = { military_navy_need@token:resource_luxury_goods = equipment_cost_factor_temp }
+                multiply_variable = { military_navy_need@token:resource_industrial_goods = equipment_cost_factor_temp }
 
 				add_to_variable = { military_need@token:resource_food = military_navy_need@token:resource_food }
 				add_to_variable = { military_need@token:resource_consumer_goods = military_navy_need@token:resource_consumer_goods }
@@ -12840,10 +12843,10 @@
 				set_variable = { military_airforce_need@token:resource_industrial_goods = num_deployed_planes }
 				multiply_variable = { military_airforce_need@token:resource_industrial_goods = global.deployed_planes_need@token:resource_industrial_goods }
                 
-                multiply_variable = { military_airforce_need@token:resource_food = modifier_temp }
-                multiply_variable = { military_airforce_need@token:resource_consumer_goods = modifier_temp }
-                multiply_variable = { military_airforce_need@token:resource_luxury_goods = modifier_temp }
-                multiply_variable = { military_airforce_need@token:resource_industrial_goods = modifier_temp }
+                multiply_variable = { military_airforce_need@token:resource_food = equipment_cost_factor_temp }
+                multiply_variable = { military_airforce_need@token:resource_consumer_goods = equipment_cost_factor_temp }
+                multiply_variable = { military_airforce_need@token:resource_luxury_goods = equipment_cost_factor_temp }
+                multiply_variable = { military_airforce_need@token:resource_industrial_goods = equipment_cost_factor_temp }
 
 				add_to_variable = { military_need@token:resource_food = military_airforce_need@token:resource_food }
 				add_to_variable = { military_need@token:resource_consumer_goods = military_airforce_need@token:resource_consumer_goods }
@@ -14969,9 +14972,19 @@
         #divide_variable = { military_production_payroll_spending = modifier@bureaucratic_efficiency_factor }
         #divide_variable = { public_enterprise_payroll_spending = modifier@bureaucratic_efficiency_factor }
 
+        set_temp_variable = { modifier_temp = modifier@administration_cost_per_c }
+        multiply_temp_variable = { modifier_temp = pops }
+        add_to_variable = { administration_spending = modifier_temp }
+        log = "Admin cost per c: [?modifier_temp]"
+        set_temp_variable = { modifier_temp = modifier@administration_cost_per_gdp }
+        multiply_temp_variable = { modifier_temp = gdp_amount }
+        add_to_variable = { administration_spending = modifier_temp }
+        log = "Admin cost per GDP: [?modifier_temp]"
+
         set_temp_variable = { modifier_temp = modifier@administration_cost_factor }
         add_to_temp_variable = { modifier_temp = 1 }
         multiply_variable = { administration_spending = modifier_temp }
+        
 
         divide_variable = { administration_spending = modifier@bureaucratic_efficiency_factor }
         divide_variable = { construction_spending = modifier@bureaucratic_efficiency_factor }
@@ -15158,6 +15171,44 @@
             divide_variable = { research_spending = 100 }
             multiply_variable = { research_spending = research_spending_percentage }
             divide_variable = { research_spending = modifier@bureaucratic_efficiency_factor }
+
+            set_temp_variable = { research_modifier_temp = modifier@research_cost_factor }
+            add_to_temp_variable = { research_modifier_temp = 1 }
+            multiply_variable = { research_spending = research_modifier_temp }
+        #
+
+        # Order Spending
+            set_variable = { order_and_intel_spending = 0 }
+            set_temp_variable = { modifier_temp = modifier@order_cost_per_c }
+            multiply_temp_variable = { modifier_temp = pops }
+            add_to_variable = { order_and_intel_spending = modifier_temp }
+            set_temp_variable = { modifier_temp = modifier@order_cost_per_gdp }
+            multiply_temp_variable = { modifier_temp = gdp_amount }
+            add_to_variable = { order_and_intel_spending = modifier_temp }
+            divide_variable = { order_and_intel_spending = modifier@bureaucratic_efficiency_factor }
+        #
+
+        # Social Spending
+            set_variable = { education_spending = 0 }
+            set_temp_variable = { modifier_temp = modifier@education_cost_per_c }
+            multiply_temp_variable = { modifier_temp = pops }
+            add_to_variable = { education_spending = modifier_temp }
+            set_temp_variable = { modifier_temp = modifier@education_cost_per_gdp }
+            multiply_temp_variable = { modifier_temp = gdp_amount }
+            add_to_variable = { education_spending = modifier_temp }
+            divide_variable = { education_spending = modifier@bureaucratic_efficiency_factor }
+            
+            set_variable = { healthcare_spending = 0 }
+            set_temp_variable = { modifier_temp = modifier@healthcare_cost_per_c }
+            multiply_temp_variable = { modifier_temp = pops }
+            add_to_variable = { healthcare_spending = modifier_temp }
+            set_temp_variable = { modifier_temp = modifier@healthcare_cost_per_gdp }
+            multiply_temp_variable = { modifier_temp = gdp_amount }
+            add_to_variable = { healthcare_spending = modifier_temp }
+            divide_variable = { healthcare_spending = modifier@bureaucratic_efficiency_factor }
+
+            set_variable = { social_spending = education_spending }
+            add_to_variable = { social_spending = healthcare_spending }
         #
 
 		set_variable = { subsidies_spending = 0 }
@@ -15180,6 +15231,8 @@
 		add_to_variable = { mandatory_spending = administration_spending }
 		add_to_variable = { mandatory_spending = military_payroll_spending }
 		add_to_variable = { mandatory_spending = military_production_spending }
+        add_to_variable = { mandatory_spending = order_and_intel_spending }
+        add_to_variable = { mandatory_spending = social_spending }
 		add_to_variable = { mandatory_spending = other_spending }
         
 		set_variable = { spending = discretionary_spending }
@@ -15647,9 +15700,11 @@
         divide_variable = { spending_piechart_military_percentage = spending }
         set_variable = { spending_piechart_government_percentage = administration_spending }
         add_to_variable = { spending_piechart_government_percentage = research_spending }
+        add_to_variable = { spending_piechart_government_percentage = order_and_intel_spending }
         divide_variable = { spending_piechart_government_percentage = spending }
         set_variable = { spending_piechart_civilian_percentage = subsidies_spending }
         add_to_variable = { spending_piechart_civilian_percentage = construction_spending }
+        add_to_variable = { spending_piechart_civilian_percentage = social_spending }
         divide_variable = { spending_piechart_civilian_percentage = spending }
 
         set_variable = { spending_piechart_other_percentage = 1 }
