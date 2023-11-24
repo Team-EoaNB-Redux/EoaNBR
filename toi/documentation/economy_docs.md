@@ -49,6 +49,14 @@ A list of effects that can be used in events, focus tree completion rewards, dec
         <td> Country </td>
     </tr>
     <tr>
+        <td> add_treasury_gdp </td>
+        <td> <code> x_temp = float </code> <br> Percentage of yearly GDP to add to your treasury. 1.0 = 1.0% </td>
+        <td> <code> set_temp_variable = { x_temp = 4.0 } <br> add_treasury_gdp = yes </code> </td>
+        <td> Adds a % of your yearly gdp to your treasury. Subtracting treasury beyond negatives will add debt. </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
         <td> set_treasury - NOT IMPLEMENTED </td>
         <td> <code> x_temp = float </code> <br> Amount to set treasury to. </td>
         <td> <code> set_temp_variable = { x_temp = 500 } <br> set_treasury = yes </code> </td>
