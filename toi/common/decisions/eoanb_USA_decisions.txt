@@ -3332,6 +3332,9 @@ USA_clayton_bulwer_treaty_decision = {
 		#NOT = {
 		#has_global_flag = eoanb_flag_sow_ongoing
 		has_completed_focus = USA_clayton_bulwer_treaty_focus
+		has_country_leader = {
+			name = "James Buchanan"
+		}
 	#}
 	}
 	allowed = { tag = USA }
@@ -4006,26 +4009,13 @@ USA_gilded_age_captain_robber_influence = {
 		days_remove = 50
 
 		remove_effect = {
-			add_to_variable = {
-				var = USA_standard_oil_opinion
-				value = 4
-			}
-			clamp_variable = {
-				var = USA_standard_oil_opinion
-				min = 0
-				max = 100
-			}
-			add_to_variable = {
-				var = USA_standard_oil_influence
-				value = 2
-			}
-			clamp_variable = {
-				var = USA_standard_oil_influence
-				min = 0
-				max = 100
-			}
-			custom_effect_tooltip = USA_increase_influence_oil_2
-			custom_effect_tooltip = USA_increase_opinion_oil_4
+			# Effects should be applied in order of Influence, Popularity, and then Opinion from top to bottom for consistency
+			# Make sure to fire scripted effects immediately after assigning temp variable to avoid possible errors
+			set_temp_variable = { tycoon_target = 1 } # Rockefeller/Standard Oil
+			set_temp_variable = { tycoon_influence_increase = 2 } # Influence +2
+			USA_tycoon_increase_tycoon_influence = yes
+			set_temp_variable = { tycoon_opinion_increase = 4 } # Opinion +4
+			USA_tycoon_increase_tycoon_opinion = yes
 		}
 
 		ai_will_do = {
@@ -4064,26 +4054,11 @@ USA_gilded_age_captain_robber_influence = {
 		days_remove = 50
 
 		remove_effect = {
-			add_to_variable = {
-				var = USA_steel_opinion
-				value = 4
-			}
-			clamp_variable = {
-				var = USA_steel_opinion
-				min = 0
-				max = 100
-			}
-			add_to_variable = {
-				var = USA_steel_influence
-				value = 2
-			}
-			clamp_variable = {
-				var = USA_steel_influence
-				min = 0
-				max = 100
-			}
-			custom_effect_tooltip = USA_increase_influence_steel_2
-			custom_effect_tooltip = USA_increase_opinion_steel_4
+			set_temp_variable = { tycoon_target = 2 } # Carnegie/Carnegie Steel
+			set_temp_variable = { tycoon_influence_increase = 2 } # Influence +2
+			USA_tycoon_increase_tycoon_influence = yes
+			set_temp_variable = { tycoon_opinion_increase = 4 } # Opinion +4
+			USA_tycoon_increase_tycoon_opinion = yes
 		}
 
 		ai_will_do = {
@@ -4091,6 +4066,92 @@ USA_gilded_age_captain_robber_influence = {
 			modifier = {
 				factor = 0
 				date > 1894.1.1
+			}
+		}
+	}
+	#Provoke Standard Oil
+	eoanb_decision_USA_gilded_age_provoke_oil = {
+
+		icon = oil
+
+		cost = 50
+
+		visible = {
+			check_variable = {
+				var = USA_standard_oil_opinion
+				value = 0
+				compare = greater_than
+			}
+		}
+
+		allowed = {
+			tag = USA
+		}
+
+		# available = {
+		# 	has_political_power > 50
+		# }
+
+		days_re_enable = 365
+
+		days_remove = 50
+
+		remove_effect = {
+			set_temp_variable = { tycoon_target = 1 } # Rockefeller/Standard Oil
+			set_temp_variable = { tycoon_influence_decrease = 2 } # Influence -2
+			USA_tycoon_decrease_tycoon_influence = yes
+			set_temp_variable = { tycoon_opinion_decrease = 4 } # Opinion -4
+			USA_tycoon_decrease_tycoon_opinion = yes
+		}
+
+		ai_will_do = {
+			factor = 100
+			modifier = {
+				factor = 0
+				date < 1894.1.1
+			}
+		}
+	}
+	#Provoke Carnegie
+	eoanb_decision_USA_gilded_age_provoke_steel = {
+
+		icon = steel
+
+		cost = 50
+
+		visible = {
+			check_variable = {
+				var = USA_steel_opinion
+				value = 0
+				compare = greater_than
+			}
+		}
+
+		allowed = {
+			tag = USA
+		}
+
+		# available = {
+		# 	has_political_power > 50
+		# }
+
+		days_re_enable = 365
+
+		days_remove = 50
+
+		remove_effect = {
+			set_temp_variable = { tycoon_target = 2 } # Carnegie/Carnegie Steel
+			set_temp_variable = { tycoon_influence_decrease = 2 } # Influence -2
+			USA_tycoon_decrease_tycoon_influence = yes
+			set_temp_variable = { tycoon_opinion_decrease = 4 } # Opinion -4
+			USA_tycoon_decrease_tycoon_opinion = yes
+		}
+
+		ai_will_do = {
+			factor = 100
+			modifier = {
+				factor = 0
+				date < 1894.1.1
 			}
 		}
 	}
@@ -5165,124 +5226,6 @@ USA_gilded_age_captain_robber_influence = {
 
 		ai_will_do = {
 			factor = 2000
-		}
-	}
-
-	#Provoke Standard Oil
-	eoanb_decision_USA_gilded_age_provoke_oil = {
-
-		icon = oil
-
-		cost = 50
-
-		visible = {
-			check_variable = {
-				var = USA_standard_oil_opinion
-				value = 0
-				compare = greater_than
-			}
-		}
-
-		allowed = {
-			tag = USA
-		}
-
-		# available = {
-		# 	has_political_power > 50
-		# }
-
-		days_re_enable = 365
-
-		days_remove = 50
-
-		remove_effect = {
-			subtract_from_variable = {
-				var = USA_standard_oil_opinion
-				value = 4
-			}
-			clamp_variable = {
-				var = USA_standard_oil_opinion
-				min = 0
-				max = 100
-			}
-			subtract_from_variable = {
-				var = USA_standard_oil_influence
-				value = 2
-			}
-			clamp_variable = {
-				var = USA_standard_oil_influence
-				min = 0
-				max = 100
-			}
-			custom_effect_tooltip = USA_decrease_influence_oil_2
-			custom_effect_tooltip = USA_decrease_opinion_oil_4
-		}
-
-		ai_will_do = {
-			factor = 100
-			modifier = {
-				factor = 0
-				date < 1894.1.1
-			}
-		}
-	}
-
-	#Provoke Carnegie
-	eoanb_decision_USA_gilded_age_provoke_steel = {
-
-		icon = steel
-
-		cost = 50
-
-		visible = {
-			check_variable = {
-				var = USA_steel_opinion
-				value = 0
-				compare = greater_than
-			}
-		}
-
-		allowed = {
-			tag = USA
-		}
-
-		# available = {
-		# 	has_political_power > 50
-		# }
-
-		days_re_enable = 365
-
-		days_remove = 50
-
-		remove_effect = {
-			subtract_from_variable = {
-				var = USA_steel_opinion
-				value = 4
-			}
-			clamp_variable = {
-				var = USA_steel_opinion
-				min = 0
-				max = 100
-			}
-			subtract_from_variable = {
-				var = USA_steel_influence
-				value = 2
-			}
-			clamp_variable = {
-				var = USA_steel_influence
-				min = 0
-				max = 100
-			}
-			custom_effect_tooltip = USA_decrease_influence_steel_2
-			custom_effect_tooltip = USA_decrease_opinion_steel_4
-		}
-
-		ai_will_do = {
-			factor = 100
-			modifier = {
-				factor = 0
-				date < 1894.1.1
-			}
 		}
 	}
 }
@@ -6733,7 +6676,7 @@ USA_decision_category_clayton_conspiracy = {
 	USA_clayton_conspiracy_mission = {
 		
 		available = {
-			# ships_in_area = { area = 178 size > 0 }
+			has_war_with = ENG
 		}
 
 		allowed = { TAG = USA }
@@ -6757,6 +6700,10 @@ USA_decision_category_clayton_conspiracy = {
 		complete_effect = {
 			
 		}
+
+		timeout_effect = {
+			country_event = usa_diplomacy.12
+		}
 	}
 
 	USA_decision_clayton_conspiracy_delay_1 = {
@@ -6769,15 +6716,19 @@ USA_decision_category_clayton_conspiracy = {
 		days_remove = decision_days_var
 
 		available = {
-			NOT = {
-				has_country_flag = clayton_decision_flag
+			custom_trigger_tooltip = {
+				tooltip = clayton_decision_flag_tt
+				NOT = {
+					has_country_flag = clayton_decision_flag
+				}
 			}
+			
 		}
 
 		remove_effect = {
 			activate_targeted_decision = {
 				target = USA
-				decision = USA_clayton_conspiracy_delay_2
+				decision = USA_decision_clayton_conspiracy_delay_2
 			}
 			activate_targeted_decision = {
 				target = USA
@@ -6788,6 +6739,8 @@ USA_decision_category_clayton_conspiracy = {
 				decision = USA_decision_invite_HON
 			}
 			clr_country_flag = clayton_decision_flag
+			clr_country_flag = clayton_stage_1
+			set_country_flag = clayton_stage_2
 		}
 
 		complete_effect = {
@@ -6805,9 +6758,13 @@ USA_decision_category_clayton_conspiracy = {
 		days_remove = decision_days_var
 
 		available = {
-			NOT = {
-				has_country_flag = clayton_decision_flag
+			custom_trigger_tooltip = {
+				tooltip = clayton_decision_flag_tt
+				NOT = {
+					has_country_flag = clayton_decision_flag
+				}
 			}
+			
 		}
 
 		remove_effect = {
@@ -6831,9 +6788,13 @@ USA_decision_category_clayton_conspiracy = {
 		days_remove = decision_days_var
 
 		available = {
-			NOT = {
-				has_country_flag = clayton_decision_flag
+			custom_trigger_tooltip = {
+				tooltip = clayton_decision_flag_tt
+				NOT = {
+					has_country_flag = clayton_decision_flag
+				}
 			}
+			
 		}
 
 		remove_effect = {
@@ -6861,29 +6822,73 @@ USA_decision_category_clayton_conspiracy = {
 		days_remove = decision_days_var
 
 		available = {
-			NOT = {
-				has_country_flag = clayton_decision_flag
+			custom_trigger_tooltip = {
+				tooltip = clayton_decision_flag_tt
+				NOT = {
+					has_country_flag = clayton_decision_flag
+				}
 			}
+			
 		}
 
 		remove_effect = {
-			add_days_mission_timeout = {
-				mission = USA_clayton_conspiracy_mission
-				days = days_var
-			}
 			activate_targeted_decision = {
 				target = USA
-				decision = USA_clayton_conspiracy_delay_3
+				decision = USA_decision_clayton_conspiracy_delay_3
 			}
 			activate_targeted_decision = {
 				target = USA
 				decision = USA_decision_invite_GUA
 			}
+			if = {
+				limit = {
+					NIC = {
+						has_country_flag = clayton_conspiracy_participant
+					}
+				}
+				hidden_effect = {
+					activate_targeted_decision = {
+						target = NIC
+						decision = USA_decision_clayton_send_boat
+					}
+					NIC = {
+						activate_targeted_decision = {
+							target = NIC
+							decision = USA_decision_clayton_conspiracy_secret_conscription
+						}
+					}
+				}
+			}
+			if = {
+				limit = {
+					HON = {
+						has_country_flag = clayton_conspiracy_participant
+					}
+				}
+				hidden_effect = {
+					activate_targeted_decision = {
+						target = HON
+						decision = USA_decision_clayton_send_boat
+					}
+					HON = {
+						activate_targeted_decision = {
+							target = HON
+							decision = USA_decision_clayton_conspiracy_secret_conscription
+						}
+					}
+				}
+			}
 			clr_country_flag = clayton_decision_flag
+			clr_country_flag = clayton_stage_2
+			set_country_flag = clayton_stage_3
 		}
 
 		complete_effect = {
 			set_country_flag = clayton_decision_flag
+			add_days_mission_timeout = {
+				mission = USA_clayton_conspiracy_mission
+				days = days_var
+			}
 		}
 	}
 
@@ -6893,9 +6898,13 @@ USA_decision_category_clayton_conspiracy = {
 		days_remove = decision_days_var
 
 		available = {
-			NOT = {
-				has_country_flag = clayton_decision_flag
+			custom_trigger_tooltip = {
+				tooltip = clayton_decision_flag_tt
+				NOT = {
+					has_country_flag = clayton_decision_flag
+				}
 			}
+			
 		}
 
 		remove_effect = {	
@@ -6920,24 +6929,80 @@ USA_decision_category_clayton_conspiracy = {
 
 		is_good = yes
 
-		days_remove = days_var
+		days_remove = decision_days_var
 
 		available = {
-			NOT = {
-				has_country_flag = clayton_decision_flag
+			custom_trigger_tooltip = {
+				tooltip = clayton_decision_flag_tt
+				NOT = {
+					has_country_flag = clayton_decision_flag
+				}
 			}
+			
 		}
 
 		remove_effect = {
 			clr_country_flag = clayton_decision_flag
+			activate_targeted_decision = {
+				target = USA
+				decision = USA_decision_invite_VEN
+			}
+			if = {
+				limit = {
+					NIC = {
+						has_country_flag = clayton_conspiracy_participant
+					}
+				}
+				hidden_effect = {
+					NIC = {
+						activate_targeted_decision = {
+							target = USA
+							decision = USA_decision_clayton_conspiracy_request_military_support
+						}
+					}
+				}
+			}
+			if = {
+				limit = {
+					HON = {
+						has_country_flag = clayton_conspiracy_participant
+					}
+				}
+				hidden_effect = {
+					HON = {
+						activate_targeted_decision = {
+							target = USA
+							decision = USA_decision_clayton_conspiracy_request_military_support
+						}
+					}
+				}
+			}
+			if = {
+				limit = {
+					GUA = {
+						has_country_flag = clayton_conspiracy_participant
+					}
+				}
+				hidden_effect = {
+					GUA = {
+						activate_targeted_decision = {
+							target = USA
+							decision = USA_decision_clayton_conspiracy_request_military_support
+						}
+					}
+				}
+			}
+			clr_country_flag = clayton_decision_flag
+			clr_country_flag = clayton_stage_3
+			set_country_flag = clayton_stage_4
 		}
 
 		complete_effect = {
+			set_country_flag = clayton_decision_flag
 			add_days_mission_timeout = {
 				mission = USA_clayton_conspiracy_mission
 				days = days_var
 			}
-			set_country_flag = clayton_decision_flag
 		}
 	}
 
@@ -6947,9 +7012,13 @@ USA_decision_category_clayton_conspiracy = {
 		days_remove = decision_days_var
 
 		available = {
-			NOT = {
-				has_country_flag = clayton_decision_flag
+			custom_trigger_tooltip = {
+				tooltip = clayton_decision_flag_tt
+				NOT = {
+					has_country_flag = clayton_decision_flag
+				}
 			}
+			
 		}
 
 		remove_effect = {
@@ -6967,7 +7036,111 @@ USA_decision_category_clayton_conspiracy = {
 		}
 	}
 
-	USA_decision_clayton_send_equipment = {
+	USA_decision_clayton_send_equipment = { #stage 2
+		fire_only_once = no
+
+		allowed = {
+			always = no
+		}
+
+		targets = {
+			GUA
+			NIC
+			HON
+			VEN
+		}
+
+		target_trigger = {
+			has_country_flag = clayton_conspiracy_participant
+		}
+
+		days_remove = decision_days_var
+		days_re_enable = 1
+
+		available = {
+			custom_trigger_tooltip = {
+				tooltip = clayton_decision_flag_tt
+				NOT = {
+					has_country_flag = clayton_decision_flag
+				}
+			}
+			
+		}
+
+		remove_effect = {
+			# USA = {
+				# activate_targeted_decision = {
+				# 	target = FROM
+				# 	decision = USA_decision_clayton_send_equipment
+				# }
+			# }
+			clr_country_flag = clayton_decision_flag
+		}
+
+		complete_effect = {
+			FROM = {
+				country_event = { id = USA_clayton_conspiracy.21 }
+			}
+			set_country_flag = clayton_decision_flag
+		}
+	}
+
+	USA_decision_clayton_request_military_access = { #stage 2
+		fire_only_once = no
+
+		allowed = {
+			always = no
+		}
+
+		targets = {
+			GUA
+			NIC
+			HON
+			VEN
+		}
+
+		target_trigger = {
+			#AND = {
+				# OR = {
+				# 	tag = GUA
+				# 	tag = NIC
+				# 	tag = HON
+				# 	tag = VEN
+				# }
+				has_country_flag = clayton_conspiracy_participant
+			#}
+		}
+
+		days_remove = decision_days_var
+
+		available = {
+			custom_trigger_tooltip = {
+				tooltip = clayton_decision_flag_tt
+				NOT = {
+					has_country_flag = clayton_decision_flag
+				}
+			}
+			NOT = {
+				FROM = {
+					gives_military_access_to = USA
+				}
+			}
+		}
+
+		remove_effect = {
+			clr_country_flag = clayton_decision_flag
+		}
+
+		complete_effect = {
+			set_country_flag = clayton_decision_flag
+			FROM = {
+				country_event = { id = USA_clyaton_conspiracy.22 }
+			}
+		}
+	}
+	
+	#naval support decision?
+	USA_decision_clayton_send_boat = { #vary across stages, at stage 1
 		fire_only_once = no
 
 		allowed = {
@@ -6993,16 +7166,20 @@ USA_decision_category_clayton_conspiracy = {
 		fire_only_once = yes
 
 		available = {
-			NOT = {
-				has_country_flag = clayton_decision_flag
+			custom_trigger_tooltip = {
+				tooltip = clayton_decision_flag_tt
+				NOT = {
+					has_country_flag = clayton_decision_flag
+				}
 			}
+			
 		}
 
 		remove_effect = {
 			USA = {
 				activate_targeted_decision = {
 					target = FROM
-					decision = USA_decision_clayton_send_equipment
+					decision = USA_decision_clayton_send_boat
 				}
 			}
 			clr_country_flag = clayton_decision_flag
@@ -7010,36 +7187,74 @@ USA_decision_category_clayton_conspiracy = {
 
 		complete_effect = {
 			FROM = {
-				country_event = { id = USA_clayton_conspiracy.21 }
+				country_event = { id = USA_clayton_conspiracy.24 }
 			}
+			set_country_flag = clayton_decision_flag
 		}
-		set_country_flag = clayton_decision_flag
 	}
 
-	USA_decision_clayton_request_military_access = {
-		fire_only_once = no
+	USA_decision_clayton_send_cash = { #stage 2
 
 		allowed = {
 			always = no
 		}
 
-		target_trigger = {
-			AND = {
-				OR = {
-					tag = GUA
-					tag = NIC
-					tag = HON
-					tag = VEN
-				}
-				has_country_flag = clayton_conspiracy_participant
-			}
+		targets = {
+			GUA
+			NIC
+			HON
+			VEN
 		}
 
+		target_trigger = {
+			has_country_flag = clayton_conspiracy_participant
+		}
+
+		# available = {
+		# 	has_country_flag = clayton_conspiracy_participant
+		# }
+
 		days_remove = decision_days_var
+		days_re_enable = 1
+		fire_only_once = no
 
 		available = {
-			NOT = {
-				has_country_flag = clayton_decision_flag
+			custom_trigger_tooltip = {
+				tooltip = clayton_decision_flag_tt
+				NOT = {
+					has_country_flag = clayton_decision_flag
+				}
+			}
+			
+		}
+
+		remove_effect = {
+			clr_country_flag = clayton_decision_flag
+		}
+
+		complete_effect = {
+			FROM = {
+				country_event = { id = USA_clayton_conspiracy.29 }
+			}
+			set_country_flag = clayton_decision_flag
+		}
+	}
+
+	#NIC demands extradition of walker
+	NIC_decision_clayton_conspiracy_extradite_walker = {
+		fire_only_once = no
+		days_remove = decision_days_var
+
+		allowed = {
+			always = no
+		}
+
+		available = {
+			custom_trigger_tooltip = {
+				tooltip = clayton_decision_flag_tt
+				NOT = {
+					has_country_flag = clayton_decision_flag
+				}
 			}
 		}
 
@@ -7049,8 +7264,790 @@ USA_decision_category_clayton_conspiracy = {
 
 		complete_effect = {
 			set_country_flag = clayton_decision_flag
+			USA = {
+				country_event = USA_clayton_conspiracy.25
+			}
+		}
+
+		ai_will_do = {
+			base = 50
 		}
 	}
-	#naval support decision?
+
+	#extradite walker
+	USA_mission_clayton_conspiracy_extradite_walker = {
+		available = {
+			always = no
+		}
+
+		activation = {
+			always = no
+		}
+
+		allowed = {
+			always = no
+		}
+
+		selectable_mission = yes
+		is_good = no
+
+		fire_only_once = yes
+
+		days_mission_timeout = 90
+
+		highlight_states = {
+			STATE = 317
+		}
+
+		timeout_effect = {
+
+		}
+
+		complete_effect = {
+			set_global_flag = global_flag_william_walker_dead
+			set_country_flag = {
+				flag = clayton_decision_flag
+				days = var:decision_days_var
+				value = 1
+			}
+		}
+	}
+
+	#mission to complete to send support to conspirator
+	USA_clayton_conspiracy_military_support_mission_NIC = { #probably has to be tag specific
+		
+		available = {
+			divisions_in_state = {
+				size > 0
+				state = 317
+			}
+		}
+
+		allowed = { always = no }
+
+		targets = {
+			NIC
+		}
+
+		target_trigger = {
+			has_country_flag = clayton_conspiracy_participant
+		}
+		
+		activation = {
+			always = no
+		}
+		selectable_mission = no
+		is_good = yes
+
+		fire_only_once = no
+
+		#cost = 0
+
+		days_mission_timeout = decision_days_var
+
+		highlight_states = {
+			STATE = 317
+		}
+
+		timeout_effect = {			
+			set_variable = {
+				var = USA_clayton_willingness_var
+				value = -3
+			}
+			USA_scripted_effect_clayton_change_willingness = yes
+		}
+
+		complete_effect = {
+			set_variable = {
+				var = USA_clayton_willingness_var
+				value = 5
+			}
+			USA_scripted_effect_clayton_change_willingness = yes			
+		}
+	}
+
+	USA_clayton_conspiracy_military_support_mission_HON = {
+		
+		available = {
+			divisions_in_state = {
+				size > 0
+				state = 312 #change to Honduran capital state
+			}
+		}
+
+		allowed = { always = no }
+
+		targets = {
+			HON
+		}
+
+		target_trigger = {
+			has_country_flag = clayton_conspiracy_participant
+		}
+		
+		activation = {
+			always = no
+		}
+		selectable_mission = no
+		is_good = yes
+
+		fire_only_once = no
+
+		#cost = 0
+
+		days_mission_timeout = decision_days_var
+
+		#highlight_states = {
+		#	STATE =
+		#}
+
+		timeout_effect = {			
+			set_variable = {
+				var = USA_clayton_willingness_var
+				value = -3
+			}
+			USA_scripted_effect_clayton_change_willingness = yes
+		}
+
+		complete_effect = {
+			set_variable = {
+				var = USA_clayton_willingness_var
+				value = 5
+			}
+			USA_scripted_effect_clayton_change_willingness = yes			
+		}
+	}
+
+	USA_clayton_conspiracy_military_support_mission_GUA = {
+		
+		available = {
+			divisions_in_state = {
+				size > 0
+				state = 313 #change to Guatemala capital state
+			}
+		}
+
+		allowed = { always = no }
+
+		targets = {
+			GUA
+		}
+
+		target_trigger = {
+			has_country_flag = clayton_conspiracy_participant
+		}
+		
+		activation = {
+			always = no
+		}
+		selectable_mission = no
+		is_good = yes
+
+		fire_only_once = no
+
+		#cost = 0
+
+		days_mission_timeout = decision_days_var
+
+		#highlight_states = {
+		#	STATE =
+		#}
+
+		timeout_effect = {			
+			set_variable = {
+				var = USA_clayton_willingness_var
+				value = -3
+			}
+			USA_scripted_effect_clayton_change_willingness = yes
+		}
+
+		complete_effect = {
+			set_variable = {
+				var = USA_clayton_willingness_var
+				value = 5
+			}
+			USA_scripted_effect_clayton_change_willingness = yes			
+		}
+	}
+
+	USA_clayton_conspiracy_military_support_mission_VEN = {
+		
+		available = {
+			divisions_in_state = {
+				size > 0
+				state = 927 #change to Venezuela capital state
+			}
+		}
+
+		allowed = { always = no }
+
+		targets = {
+			VEN
+		}
+
+		target_trigger = {
+			has_country_flag = clayton_conspiracy_participant
+		}
+		
+		activation = {
+			always = no
+		}
+		selectable_mission = no
+		is_good = yes
+
+		fire_only_once = no
+
+		#cost = 0
+
+		days_mission_timeout = decision_days_var
+
+		#highlight_states = {
+		#	STATE =
+		#}
+
+		timeout_effect = {			
+			set_variable = {
+				var = USA_clayton_willingness_var
+				value = -3
+			}
+			USA_scripted_effect_clayton_change_willingness = yes
+		}
+
+		complete_effect = {
+			set_variable = {
+				var = USA_clayton_willingness_var
+				value = 5
+			}
+			USA_scripted_effect_clayton_change_willingness = yes			
+		}
+	}
+
+	#request equipment
+	USA_decision_clayton_conspiracy_request_equipment = { #stage 2
+		fire_only_once = no
+		days_remove = decision_days_var
+		days_re_enable = 1
+
+		allowed = {
+			always = no
+		}
+
+		available = {
+			custom_trigger_tooltip = {
+				tooltip = clayton_decision_flag_tt
+				NOT = {
+					has_country_flag = clayton_decision_flag
+				}
+			}
+		}
+
+		remove_effect = {
+			clr_country_flag = clayton_decision_flag
+		}
+
+		complete_effect = {
+			set_country_flag = clayton_decision_flag
+			set_country_flag = country_flag_requesting_clayton_equipment@ROOT
+			USA = {
+				country_event = { id = USA_clayton_conspiracy.20 }
+			}
+		}
+
+		ai_will_do = {
+			base = 10
+			modifier = {
+				factor = 0.2
+				stockpile_ratio = {
+					archetype = infantry_equipment
+					ratio > 1.0
+				}
+			}
+			modifier = {
+				factor = 0.2
+				stockpile_ratio = {
+					archetype = uniform_equipment
+					ratio > 1.0
+				}
+			}
+			modifier = {
+				factor = 2
+				stockpile_ratio = {
+					archetype = infantry_equipment
+					ratio < 0.1
+				}
+			}
+			modifier = {
+				factor = 2
+				stockpile_ratio = {
+					archetype = uniform_equipment
+					ratio < 0.1
+				}
+			}
+		}
+	}
+
+	#request cash
+	USA_decision_clayton_conspiracy_request_cash = { #stage 2
+		allowed = {
+			always = no
+		}
+
+		# available = {
+		# 	has_country_flag = clayton_conspiracy_participant
+		# }
+
+		days_remove = decision_days_var
+		days_re_enable = 1
+		fire_only_once = no
+
+		available = {
+			custom_trigger_tooltip = {
+				tooltip = clayton_decision_flag_tt
+				NOT = {
+					has_country_flag = clayton_decision_flag
+				}
+			}
+			
+		}
+
+		remove_effect = {
+			clr_country_flag = clayton_decision_flag
+		}
+
+		complete_effect = {
+			set_country_flag = clayton_decision_flag
+			set_country_flag = country_flag_requesting_clayton_money@ROOT
+			USA = {
+				country_event = { id = USA_clayton_conspiracy.28 }
+			}
+		}
+
+		ai_will_do = {
+			base = 10
+			modifier = {
+				add = -10
+				custom_trigger_tooltip = {
+					set_temp_variable = { x_temp = 0.1 }
+					has_debt_to_gdp = no
+				}
+			}
+			modifier = {
+				add = 10
+				custom_trigger_tooltip = {
+					set_temp_variable = { x_temp = 0.5 }
+					has_debt_to_gdp = yes
+				}
+			}
+			modifier = {
+				add = 10
+				custom_trigger_tooltip = {
+					set_temp_variable = { x_temp = 0.75 }
+					has_debt_to_gdp = yes
+				}
+			}
+			modifier = {
+				add = 10
+				custom_trigger_tooltip = {
+					set_temp_variable = { x_temp = 0.95 }
+					has_debt_to_gdp = yes
+				}
+			}
+		}
+	}
+
+	#recon british
+	USA_decision_clayton_conspiracy_recon_british = { #stage 2
+		fire_only_once = yes
+
+		allowed = {
+			always = no
+		}
+
+		available = {
+			custom_trigger_tooltip = {
+				tooltip = clayton_decision_flag_tt
+				NOT = {
+					has_country_flag = clayton_decision_flag
+				}
+			}
+			has_war_support < 1.0
+		}
+
+		remove_effect = {
+			clr_country_flag = clayton_decision_flag
+		}
+
+		complete_effect = {
+			set_country_flag = clayton_decision_flag
+			add_timed_idea = {
+				idea = USA_idea_clayton_conspiracy_recon_1
+				days = 180
+			}
+		}
+
+		ai_will_do = {
+			base = 10
+			modifier = {
+				add = 5
+				USA = {
+					has_country_flag = clayton_stage_3
+				}
+			}
+			modifier = {
+				add = 15
+				USA = {
+					has_country_flag = clayton_stage_4
+				}
+			}
+		}
+	}
+
+	#propaganda campaign? to raise war support
+	USA_decision_clayton_conspiracy_propaganda_campaign = { #stage 2
+		fire_only_once = yes
+
+		allowed = {
+			always = no
+		}
+
+		available = {
+			custom_trigger_tooltip = {
+				tooltip = clayton_decision_flag_tt
+				NOT = {
+					has_country_flag = clayton_decision_flag
+				}
+			}
+			has_war_support < 1.0
+		}
+
+		remove_effect = {
+			clr_country_flag = clayton_decision_flag
+		}
+
+		complete_effect = {
+			set_country_flag = clayton_decision_flag
+			add_ideas = USA_idea_clayton_propaganda_campaign
+		}
+
+		ai_will_do = {
+			base = 10
+			modifier = {
+				add = 5
+				USA = {
+					has_country_flag = clayton_stage_3
+				}
+			}
+			modifier = {
+				add = 15
+				USA = {
+					has_country_flag = clayton_stage_4
+				}
+			}
+		}
+	}
+
+	#secret conscription
+	USA_decision_clayton_conspiracy_secret_conscription = { #stage 3
+		fire_only_once = yes
+
+		allowed = {
+			always = no
+		}
+
+		available = {
+			custom_trigger_tooltip = {
+				tooltip = clayton_decision_flag_tt
+				NOT = {
+					has_country_flag = clayton_decision_flag
+				}
+			}
+		}
+
+		remove_effect = {
+			clr_country_flag = clayton_decision_flag
+		}
+
+		complete_effect = {
+			set_country_flag = clayton_decision_flag
+			set_variable = {
+				var = local_pop@ROOT
+				value = max_manpower_k
+			}
+			multiply_variable = { local_pop@ROOT = 0.33 }
+			#more multiplys for what stage we're in?
+			add_dynamic_modifier = {
+				modifier = USA_clayton_dynmod_secret_conscription
+			}
+		}
+
+		ai_will_do = {
+			base = 15
+			modifier = {
+				add = 5
+				has_manpower < 5000
+			}
+			modifier = {
+				add = 15
+				has_manpower < 1000
+			}
+			modifier = {
+				add = 15
+				USA = {
+					has_country_flag = clayton_stage_4
+				}
+			}
+		}
+	}
+
+	USA_decision_clayton_conspiracy_request_military_support = { #stage 4
+		fire_only_once = yes
+
+		allowed = {
+			always = no
+		}
+
+		available = {
+			custom_trigger_tooltip = {
+				tooltip = clayton_decision_flag_tt
+				NOT = {
+					has_country_flag = clayton_decision_flag
+				}
+			}
+		}
+
+		remove_effect = {
+			clr_country_flag = clayton_decision_flag
+		}
+
+		complete_effect = {
+			set_country_flag = clayton_decision_flag
+			USA = {
+				country_event = {
+					id = USA_clayton_conspiracy.30
+					days = 1
+				}
+			}
+		}
+
+		ai_will_do = {
+			base = 10
+			modifier = {
+				factor = 2
+				ai_wants_divisions > 1
+			}
+			modifier = {
+				factor = 2
+				ai_wants_divisions > 3
+			}
+			modifier = {
+				factor = 2
+				ai_wants_divisions > 5
+			}
+		}
+	}
+
+
+
+	#war missions for clayton conspiracy
+
+	USA_clayton_conspiracy_seize_claims_war_mission_USA = {
+		activation = {
+			always = no
+		}
+		allowed = {
+			always = no
+		}
+		available = {
+			OR = {
+				controls_state = 1154
+				any_allied_country = {
+					controls_state = 1154
+				}
+			}
+			OR = {
+				controls_state = 1155
+				any_allied_country = {
+					controls_state = 1155
+				}
+			}
+			if = {
+				limit = {
+					ENG = {
+						has_war_with = GUA
+					}
+				}
+				OR = {
+					controls_state = 311
+					any_allied_country = {
+						controls_state = 311
+					}
+				}
+			}
+			if = {
+				limit = {
+					ENG = {
+						has_war_with = VEN
+					}
+				}
+				OR = {
+					controls_state = 687
+					any_allied_country = {
+						controls_state = 687
+					}
+				}
+			}
+			if = {
+				limit = {
+					has_country_flag = clayton_stage_4
+				}
+				OR = {
+					controls_state = 740
+					any_allied_country = {
+						controls_state = 740
+					}
+				}
+			}
+		}
+		cancel_trigger = {
+			surrender_progress > 0.1
+		}
+		
+		is_good = yes
+		days_mission_timeout = 120
+
+		cancel_effect = {
+			custom_effect_tooltip = clayton_conspiracy_US_failure
+			hidden_effect = {
+				country_event = USA_clayton_conspiracy.52
+			}
+		}
+		timeout_effect = {
+			custom_effect_tooltip = clayton_conspiracy_US_partial_victory
+			hidden_effect = {
+				country_event = USA_clayton_conspiracy.52
+			}
+		}
+		complete_effect = {
+			custom_effect_tooltip = clayton_conspiracy_US_total_victory
+			hidden_effect = {
+				country_event = USA_clayton_conspiracy.52
+			}
+		}
+	}
+
+	USA_clayton_conspiracy_seize_claims_war_mission_britain = {
+		activation = {
+			always = no
+		}
+		allowed = {
+			always = no
+		}
+		available = {
+			NOT = {
+				controls_state = 1154
+				controls_state = 1155
+				if = {
+					limit = {
+						has_war_with = GUA
+					}
+					controls_state = 311
+				}
+				if = {
+					limit = {
+						has_war_with = VEN
+					}
+					controls_state = 687
+				}
+				if = {
+					limit = {
+						USA = {
+							has_country_flag = clayton_stage_4
+						}
+					}
+					controls_state = 740
+				}
+			}
+		}
+
+		is_good = no
+		days_mission_timeout = 120
+
+		timeout_effect = {
+			custom_effect_tooltip = clayton_conspiracy_result_britain_doesnt_lose_tt
+		}
+		complete_effect = {
+			custom_effect_tooltip = clayton_conspiracy_result_britain_loses_tt
+		}
+	}
+
+	USA_clayton_conspiracy_seize_claims_war_mission_allies = {
+		activation = {
+			always = no
+		}
+		allowed = {
+			always = no
+		}
+		available = {
+			OR = {
+				controls_state = 1154
+				any_allied_country = {
+					controls_state = 1154
+				}
+			}
+			OR = {
+				controls_state = 1155
+				any_allied_country = {
+					controls_state = 1155
+				}
+			}
+			if = {
+				limit = {
+					ENG = {
+						has_war_with = GUA
+					}
+				}
+				OR = {
+					controls_state = 311
+					any_allied_country = {
+						controls_state = 311
+					}
+				}
+			}
+			if = {
+				limit = {
+					ENG = {
+						has_war_with = VEN
+					}
+				}
+				OR = {
+					controls_state = 687
+					any_allied_country = {
+						controls_state = 687
+					}
+				}
+			}
+			if = {
+				limit = {
+					has_country_flag = clayton_stage_4
+				}
+				OR = {
+					controls_state = 740
+					any_allied_country = {
+						controls_state = 740
+					}
+				}
+			}
+		}
+
+		is_good = yes
+		days_mission_timeout = 120
+
+		timeout_effect = {
+			custom_effect_tooltip = clayton_conspiracy_result_allies_review_gains_tt
+		}
+		complete_effect = {
+			custom_effect_tooltip = clayton_conspiracy_result_allies_win_tt
+		}
+	}
 
 }
