@@ -137,7 +137,7 @@ A list of effects that can be used in events, focus tree completion rewards, dec
         <td> Country </td>
     </tr>
     <tr>
-        <td> improve_economic_situation - NOT IMPLEMENTED </td>
+        <td> improve_economic_situation </td>
         <td> </td>
         <td> <code> improve_economic_situation = yes </code> </td>
         <td> Improves the economic situation by one level. </td>
@@ -145,7 +145,7 @@ A list of effects that can be used in events, focus tree completion rewards, dec
         <td> Country </td>
     </tr>
     <tr>
-        <td> worsen_economic_situation - NOT IMPLEMENTED </td>
+        <td> worsen_economic_situation </td>
         <td> </td>
         <td> <code> worsen_economic_situation = yes </code> </td>
         <td> Worsens the economic situation by one level. </td>
@@ -153,7 +153,7 @@ A list of effects that can be used in events, focus tree completion rewards, dec
         <td> Country </td>
     </tr>
     <tr>
-        <td> set_economic_situation - NOT IMPLEMENTED </td>
+        <td> set_economic_situation </td>
         <td> <code> situation_temp = token:economic_situation </code> <br> Economic situation to set </td>
         <td> <code> set_temp_variable = { situation_temp = token:depression } <br> set_economic_situation = yes </code> </td>
         <td> Sets the economic situation to the given level. </td>
