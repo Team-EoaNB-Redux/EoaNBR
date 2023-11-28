@@ -2415,10 +2415,11 @@ country_event = {
 		trigger = {
 			country_exists = USA
 			country_exists = CSA
+			373 = { is_owned_by = USA }
 			OR = {
 				AND = {
-					373 = { has_state_flag = NA_B_Slave_Kansas }
-					373 = { is_owned_by = USA }
+					383 = { has_state_flag = NA_B_Slave_Kansas }
+					383 = { is_owned_by = USA }
 				}
 				AND = {
 					1410 = { has_state_flag = NA_B_Slave_Kansas }
@@ -4569,7 +4570,13 @@ news_event = {
 				activate_decision = eoanb_decision_acw_reform_west_point1
 				
 				CSA = { 
-					load_oob = CSA_Standard_ACW
+					if = {
+						limit = { owns_state = 373 }
+						load_oob = CSA_Strong_ACW
+					}
+					else = {
+						load_oob = CSA_Standard_ACW
+					}
 					activate_mission = eoanb_decision_acw_csa_surrender_to_usa_dixie
 					activate_mission = eoanb_decision_acw_usa_surrender_to_csa_dixie
 				}
@@ -4616,6 +4623,10 @@ news_event = {
 		if = {
 			limit = { is_ai = no }
 			set_variable = { super_event_displayed = 9 }
+			if = {
+				limit = { is_historical_focus_on = no }
+				country_event = { id = acw_generic.51 days = 1 }
+			}
 		}
 		custom_effect_tooltip = ACW_Union_Generals_Join_tt
 		hidden_effect = {
@@ -4842,9 +4853,8 @@ news_event = {
 		hidden_effect = {
 			if = {
 				limit = { SEM = { exists = yes } }
-				declare_war_on = {
-					target = SEM
-					type = acw_civil_war_wargoal
+				SEM = {
+					country_event = acw_first_nations.7
 				}
 			}
 			if = {
@@ -4854,9 +4864,9 @@ news_event = {
 					}
 				}
 			}
-			else = {
-				country_event = { id = acw_generic.51 days = 1 }
-			}
+			# else = {
+			# 	country_event = { id = acw_generic.51 days = 1 }
+			# }
 			
 		}
 		add_named_threat = {
@@ -5665,6 +5675,10 @@ country_event = {
 		custom_effect_tooltip = 11_ACW_tt
 		ai_chance = { 
 			base = 11
+			modifier = {
+				factor = 0
+				has_global_flag = global_flag_hot_pig_war
+			}
 		}
 	}
 }
@@ -6751,13 +6765,13 @@ country_event = {
 						country_leader = {
 							desc = "POLITICS_FRANKLIN_DELANO_ROOSEVELT_DESC"
 							expire = "1947.1.1"
-							ideology = social_liberal
+							ideology = liberal_social
 						}
 					}
 					promote_character = yes
 				}
 				set_politics = {
-					ruling_party = centrism
+					ruling_party = social_egalitarianism
 					last_election = "1860.11.5"
 					elections_allowed = no
 				}
@@ -13593,6 +13607,11 @@ news_event = {
 				id = acw_lincoln.123
 				days = 242
 			}
+			USA = {
+				load_focus_tree = usa_lincoln_reconstruction_ft
+				USA_tycoon_system_startup = yes
+				mark_focus_tree_layout_dirty = yes
+			}
 		}
 		set_global_flag = ACW_CSA_Lost
 		if = {
@@ -15687,15 +15706,17 @@ country_event = { # Formation of the KKK
 	title = acw_reconstruction.6.t
 	desc = acw_reconstruction.6.desc
 	picture = placeholder
-
-	immediate = {
-		# log = "[THIS.GetTag]: firing = acw_reconstruction.6"
-	}
 	is_triggered_only = yes
 
 	immediate = {
 		# log = "[THIS.GetTag]: firing = acw_reconstruction.6"
 		set_country_flag = usa_kkk_formed_flag
+		hidden_effect = {
+			country_event = {
+				id = acw_reconstruction.24
+				days = 1521
+			}
+		}
 	}
 
 	option = { # How many times do we have to teach them this lesson?
@@ -16557,6 +16578,7 @@ country_event = { # Calling Sherman
 	}
 	option = { # Maintain current levels but still send Sherman
 		name = acw_reconstruction.23.b
+		add_political_power = 25
 		every_subject_country = {
 			limit = {
 				any_owned_state = {
@@ -16565,6 +16587,25 @@ country_event = { # Calling Sherman
 			}
 			add_ideas = USA_sherman_in_the_south
 		}
+	}
+}
+
+country_event = { # Enforcement Act
+	id = acw_reconstruction.24
+	title = acw_reconstruction.24.t
+	desc = acw_reconstruction.24.desc
+	picture = placeholder
+	is_triggered_only = yes
+
+	option = { # Act Passes
+		name = acw_reconstruction.24.a
+		custom_effect_tooltip = USA_first_enforcement_act_passed_tt
+		set_country_flag = USA_first_enforcement_act_passed
+	}
+	option = { # Act Fails
+		name = acw_reconstruction.24.b
+		custom_effect_tooltip = USA_first_enforcement_act_failed_tt
+		set_country_flag = USA_first_enforcement_act_failed
 	}
 }
 
@@ -17269,7 +17310,146 @@ country_event = {
 	}
 }
 
+country_event = { # Seminoles Choose Side
+	id = acw_first_nations.7
+	title = acw_first_nations.7.t
+	desc = acw_first_nations.7.desc
+	picture = GFX_report_event_russian_protests
+	is_triggered_only = yes
 
+	immediate = {
+		log = "[THIS.GetTag]: firing = acw_first_nations.7 "
+	}
+
+	option = { # Stick with the Union
+		log = "option:			name = acw_first_nations.7.a"
+		name = acw_first_nations.7.a
+		ai_chance = {
+			base = 25
+			modifier = {
+				NOT = {
+					OR = {
+						has_idea = slavery
+						has_idea = tribal_slavery
+					}
+				}
+				add = 25
+			}
+		}
+		add_political_power = 25
+		add_war_support = 0.025
+		USA = {
+			country_event = acw_first_nations.8
+		}
+		CSA = {
+			declare_war_on = {
+				target = ROOT
+				type = acw_civil_war_wargoal
+			}
+		}
+	}
+	option = { # Join the Confederacy
+		log = "option:			name = acw_first_nations.7.b"
+		name = acw_first_nations.7.b
+		ai_chance = {
+			base = 75
+			modifier = {
+				NOT = {
+					OR = {
+						has_idea = slavery
+						has_idea = tribal_slavery
+					}
+				}
+				add = -25
+			}
+		}
+		USA = {
+			end_puppet = ROOT
+		}
+		CSA = {
+			puppet = ROOT
+			set_autonomy = {
+				target = ROOT
+				autonomy_state = autonomy_first_nations_reservation
+				end_wars = no
+				end_civil_wars = no
+			}
+		}
+		USA = {
+			country_event = acw_first_nations.9
+		}
+		CSA = {
+			country_event = acw_first_nations.10
+		}
+		hidden_effect = {
+			SEM = {
+				set_political_party = {
+					ideology = fundamentalism
+					popularity = 64
+				}
+				set_politics = {
+					ruling_party = fundamentalism
+					elections_allowed = no
+				}
+				set_cosmetic_tag = SEM_CSA
+			}
+		}
+	}
+}
+
+country_event = { # Seminoles stay with Union
+	id = acw_first_nations.8
+	title = acw_first_nations.8.t
+	desc = acw_first_nations.8.desc
+	picture = GFX_report_event_russian_protests
+	is_triggered_only = yes
+
+	immediate = {
+		log = "[THIS.GetTag]: firing = acw_first_nations.8 "
+	}
+
+	option = { # Excellent
+		log = "option:			name = acw_first_nations.8.a"
+		name = acw_first_nations.8.a
+		add_political_power = 25
+	}
+}
+
+country_event = { # Seminoles join CSA (USA Perspective)
+	id = acw_first_nations.9
+	title = acw_first_nations.9.t
+	desc = acw_first_nations.9.desc
+	picture = GFX_report_event_russian_protests
+	is_triggered_only = yes
+
+	immediate = {
+		log = "[THIS.GetTag]: firing = acw_first_nations.9 "
+	}
+
+	option = { # Traitors!
+		log = "option:			name = acw_first_nations.9.a"
+		name = acw_first_nations.9.a
+		add_political_power = -25
+	}
+}
+
+country_event = { # Seminoles join CSA (CSA Perspective)
+	id = acw_first_nations.10
+	title = acw_first_nations.10.t
+	desc = acw_first_nations.10.desc
+	picture = GFX_report_event_russian_protests
+	is_triggered_only = yes
+
+	immediate = {
+		log = "[THIS.GetTag]: firing = acw_first_nations.10 "
+	}
+
+	option = { # A toast to our newfound friends
+		log = "option:			name = acw_first_nations.10.a"
+		name = acw_first_nations.10.a
+		add_political_power = 25
+	}
+}
 
 # Liberia
 
