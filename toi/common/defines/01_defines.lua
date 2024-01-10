@@ -34,6 +34,13 @@ NDefines.NCountry.BASE_FUEL_GAIN = 1.0						-- base amount of fuel gained hourly
 NDefines.NCountry.BASE_FUEL_CAPACITY = 500						-- base amount of fuel capacity --50k
 
 NDefines.NProduction.MAX_EQUIPMENT_RESOURCES_NEED = 6 	-- Max number of different strategic resources an equipment can be dependent on. --3
+NDefines.NProduction.MAX_CIV_FACTORIES_PER_LINE = 18 -- Max number of factories that can be assigned a single production line.
+NDefines.NProduction.DEFAULT_MAX_NAV_FACTORIES_PER_LINE = 12
+NDefines.NProduction.FLOATING_HARBOR_MAX_NAV_FACTORIES_PER_LINE = 6
+NDefines.NProduction.CONVOY_MAX_NAV_FACTORIES_PER_LINE = 18
+NDefines.NProduction.CAPITAL_SHIP_MAX_NAV_FACTORIES_PER_LINE = 6
+NDefines.NProduction.MAX_MIL_FACTORIES_PER_LINE = 180
+NDefines.NProduction.RAILWAY_GUN_MAX_MIL_FACTORIES_PER_LINE = 6
 NDefines.NProduction.BASE_FACTORY_SPEED_MIL = 2				-- vanilla 5 Base factory speed multiplier (how much hoi3 style IC each factory gives). --4.5
 NDefines.NProduction.BASE_FACTORY_SPEED_MIL = 4       -- vanilla 4.5
 NDefines.NProduction.BASE_FACTORY_SPEED_NAV = 3      -- vanilla 2.5
