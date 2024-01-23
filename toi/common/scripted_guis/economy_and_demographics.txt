@@ -25,6 +25,7 @@ scripted_gui = {
 				else = {
 					ROOT = {
 						clr_country_flag = state_economy_view_open
+						clr_country_flag = pm_view_open
 					}
 				}
 			}
@@ -176,6 +177,7 @@ scripted_gui = {
 				else = {
 					ROOT = {
 						clr_country_flag = state_economy_view_open
+						clr_country_flag = pm_view_open
 					}
 				}
 			}
@@ -383,12 +385,30 @@ scripted_gui = {
 			building_prev_pm_button_click_enabled = {
 				check_variable = { production_method@var:v > controller:earliest_production_method@var:v }
 			}
+
+			rgo_production_method_retooling_icon_visible = {
+				if = { limit = { NOT = { check_variable = { retooling_pm@var:v = 0 } } }
+					is_in_array = { global.building_production_methods@var:v = retooling_pm@var:v }
+				}
+				else = {
+					always = no
+				}
+			}
+			rgo_automation_method_retooling_icon_visible = {
+				if = { limit = { NOT = { check_variable = { retooling_pm@var:v = 0 } } }
+					is_in_array = { global.building_automation_methods@var:v = retooling_pm@var:v }
+				}
+				else = {
+					always = no
+				}
+			}
 		}
 
 		effects = {
 			close_button_click = {
 				ROOT = {
 					clr_country_flag = state_economy_view_open
+					clr_country_flag = pm_view_open
 				}
 			}
 
@@ -556,21 +576,60 @@ scripted_gui = {
 				}
 			}
 
+			rgo_production_method_button_click = {
+				set_temp_variable = { industry_token = v }
+				set_temp_variable = { am_select = 0 }
+				ROOT = {
+					if = {
+						limit = {
+							has_country_flag = pm_view_open
+							check_variable = { selected_industry = v }
+							check_variable = { selected_pm_type = 0 }
+						}
+						clr_country_flag = pm_view_open
+					}
+					else = {
+						set_country_flag = pm_view_open
+						set_variable = { selected_industry = v }
+						set_variable = { selected_pm_type = 0 }
+						refresh_pm_list = yes
+					}
+				}
+			}
+			rgo_automation_method_button_click = {
+				set_temp_variable = { industry_token = v }
+				set_temp_variable = { am_select = 1 }
+				ROOT = {
+					if = {
+						limit = {
+							has_country_flag = pm_view_open
+							check_variable = { selected_industry = v }
+							check_variable = { selected_pm_type = 1 }
+						}
+						clr_country_flag = pm_view_open
+					}
+					else = {
+						set_country_flag = pm_view_open
+						set_variable = { selected_industry = v }
+						set_variable = { selected_pm_type = 1 }
+						refresh_pm_list = yes
+					}
+				}
+			}
+
 			time_button_click = {
-				r_advance_time = yes
+				_advance_time = yes
 				add_to_variable = { update_state_econ_window = 1 }
 			}
 			reset_button_click = {
-				r_reset = yes
+				_reset = yes
 				add_to_variable = { update_state_econ_window = 1 }
 			}
 			extra_button_click = {
 				# add_dynamic_modifier = {
 				# 	modifier = testing_modifier
 				# }
-				set_temp_variable = { x_percent_temp = 90 }
-				set_temp_variable = { building_token = token:building_consumer_goods_factory }
-				set_building_employment_to_x_percent = yes
+				
 			}
 			autobuild_button_click = {
 				ROOT = {
@@ -600,6 +659,10 @@ scripted_gui = {
 			rural_buildings_list = {
 				array = rural_buildings
 				entry_container = building_container
+			}
+			rgos_list = {
+				array = rgos
+				entry_container = rgo_container
 			}
 			statistics_gdp_graph = {
 				array = gdp_graph_amount_array
@@ -637,6 +700,19 @@ scripted_gui = {
 			}
 			building_prev_pm_button = {
 				image = "[GetBuildingPrevPMButton]"
+			}
+
+			rgo_icon = {
+				image = "[GetIconFromV]"
+			}
+			rgo_employment_icon = {
+				image = "[GetIndustryEmploymentIcon]"
+			}
+			rgo_production_method_icon = {
+				image = "[GetIndustryPMIcon]"
+			}
+			rgo_automation_method_icon = {
+				image = "[GetIndustryAMIcon]"
 			}
 
 			pops_life_needs_fulfilled_strip = {
@@ -951,6 +1027,126 @@ scripted_gui = {
 		properties = {
 			construction_entry_resource = {
 				image = "[GetBuildingIcon]"
+			}
+		}
+	}
+	pm_list = {
+		window_name = "building_pm_list_container"
+		parent_window_name = "state_economy_window_container"
+
+		context_type = selected_state_context
+
+		visible = {
+			ROOT = { has_country_flag = pm_view_open }
+			is_in_array = { industries = ROOT.selected_industry }
+		}
+
+		triggers = {
+			pm_entry_background_click_enabled = {
+				set_temp_variable = { industry_token = ROOT.selected_industry }
+
+				NOT = { check_variable = { production_method@var:industry_token = v } }
+				NOT = { check_variable = { automation_method@var:industry_token = v } }
+
+				is_fully_controlled_by = ROOT
+
+				OR = {
+					check_variable = { global.pm_tech_unlock@var:v = 0 }
+					AND = {
+						NOT = { check_variable = { global.pm_tech_unlock@var:v = -1 } }
+						set_temp_variable = { tech_temp = global.pm_tech_unlock@var:v }
+						controller = { has_tech = var:tech_temp }
+					}
+				}
+				OR = {
+					check_variable = { retooling_pm@var:industry_token = v }
+					check_variable = { retooling_pm@var:industry_token = 0 }
+				}
+			}
+			pm_available_icon_visible = {
+				OR = {
+					check_variable = { global.pm_tech_unlock@var:v = 0 }
+					AND = {
+						NOT = { check_variable = { global.pm_tech_unlock@var:v = -1 } }
+						set_temp_variable = { tech_temp = global.pm_tech_unlock@var:v }
+						controller = { has_tech = var:tech_temp }
+					}
+				}
+			}
+			pm_unavailable_icon_visible = {
+				NOT = { check_variable = { global.pm_tech_unlock@var:v = 0 } }
+				OR = {
+					check_variable = { global.pm_tech_unlock@var:v = -1 }
+					set_temp_variable = { tech_temp = global.pm_tech_unlock@var:v }
+					NOT = { controller = { has_tech = var:tech_temp } }
+				}
+			}
+			pm_cancel_retooling_visible = {
+				is_fully_controlled_by = ROOT
+				set_temp_variable = { industry_token = ROOT.selected_industry }
+				check_variable = { retooling_pm@var:industry_token = v }
+			}
+			pm_current_pm_icon_visible = {
+				set_temp_variable = { industry_token = ROOT.selected_industry }
+				OR = {
+					check_variable = { production_method@var:industry_token = v }
+					check_variable = { automation_method@var:industry_token = v }
+				}
+			}
+		}
+
+		effects = {
+			pm_entry_background_click = {
+				set_temp_variable = { industry_token = ROOT.selected_industry }
+				if = {
+					limit = {
+						check_variable = { retooling_pm@var:industry_token = 0 }
+					}
+					set_variable = { retooling_pm@var:industry_token = v }
+					set_temp_variable = { retooling_time_temp = controller:pm_retooling_duration@var:v }
+
+					set_temp_variable = { modifier_temp = 1 }
+					add_to_temp_variable = { modifier_temp = building_retooling_speed_factor }
+
+					divide_temp_variable = { retooling_time_temp = modifier_temp }
+					set_variable = { retooling_time@var:industry_token = retooling_time_temp }
+
+					industries_update_construction_retooling = yes
+					add_to_variable = { update_state_econ_window = 1 }
+					ROOT = {
+						clr_country_flag = pm_view_open
+					}
+				}
+				else = {
+					set_variable = { retooling_pm@var:industry_token = 0 }
+					industries_update_construction_retooling = yes
+					add_to_variable = { update_state_econ_window = 1 }
+					ROOT = {
+						clr_country_flag = pm_view_open
+					}
+				}
+			}
+			pm_cancel_retooling_click = {
+				set_temp_variable = { industry_token = ROOT.selected_industry }
+				set_variable = { retooling_pm@var:industry_token = 0 }
+				industries_update_construction_retooling = yes
+				add_to_variable = { update_state_econ_window = 1 }
+				ROOT = {
+					clr_country_flag = pm_view_open
+				}
+			}
+		}
+
+		dynamic_lists = {
+			pm_list = {
+				array = ROOT.pm_show
+				entry_container = pm_entry
+			}
+		}
+
+		properties = {
+			pm_entry_icon = {
+				image = "[GetPMListIcon]"
 			}
 		}
 	}
@@ -2315,10 +2511,10 @@ scripted_gui = {
 
 
 			time_button_click = {
-				r_advance_time = yes
+				_advance_time = yes
 			}
 			reset_button_click = {
-				r_reset = yes
+				_reset = yes
 			}
 			extra_button_click = {
 				set_temp_variable = { x_temp = 1 }

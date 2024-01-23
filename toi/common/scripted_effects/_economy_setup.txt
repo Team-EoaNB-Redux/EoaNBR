@@ -1,0 +1,1785 @@
+# Eco Setup File
+
+# The setup file for the economy system - All setup related scripts are located here.
+# This includes not only INITIAL setup scripts, for the start of the game, but also setup scripts for tribals westernizing
+# This does NOT include history setup for undiscovered resource deposits, arable land, and others. Those are located in _economy_states_setup_rework.txt
+
+# As a rule, one should be able to reset the economy with every value being the same as before. Note that this will start breaking upon unpausing the game due
+# to resource calculations
+
+# File structure follows the comments in the _reset master script. There are also smaller scripts for initializing parts of the eco system below 
+# the master script specifically for the tribal->eco system switch
+
+_reset = {
+    # Global Variable Init
+    #   Initializes every bit of global data that the economy uses
+    global_variables = yes
+
+    # Project Setup (_economy_projects.txt)
+    #   Initializes project-related global data
+    #proj_setup = yes
+
+    # Initialize State Histories (_economy_states_setup_rework.txt)
+    #set_historical_state_deposits = yes
+    #set_historical_state_buildings = yes
+
+    # Initialize Countries
+    every_country = {
+        limit = { tag = ROOT }
+        # Initializes PMs based on tech
+        update_national_production_methods = yes
+        
+        # Adds necessary country-level dynamic modifiers
+        add_dynamic_modifier = { modifier = resource_trade }
+        add_dynamic_modifier = { modifier = budgetary_spending }
+
+        # Updates country-wide eco modifiers
+        r_update_modifiers_country_effects = yes
+
+        # Initializes subjects as part of your market & sets yourself as market leader & updates your market
+        market_setup = yes
+
+        for_each_loop = {
+            array = global.resource_token_array
+            value = r_token
+            set_variable = { price@var:r_token = global.base_price@var:r_token }
+        }
+    }
+    
+    # Initialize States
+    every_state = {
+        limit = { is_owned_by = ROOT }
+        # Pops & Workforce Counts, state-wide pop variables
+        state_eco_pops_init = yes
+
+        # Sets amount of arable land if it doesn't exist & updates arable land use & available
+        state_eco_arable_land_init = yes
+
+        # Sets initial building & pms
+        state_eco_building_init = yes
+
+        # State Modifiers
+        r_update_modifiers_state_effects = yes
+
+        # Sets up initial employment & population workforce scheme
+        state_eco_employment_init = yes
+
+        # Calculate Base Wage - will mean that industries have to be updated for proper profit margins
+        industry_productivity_sort = yes
+        base_wage_calculation = yes
+
+        # Standard of Living Setup
+        calculate_standard_of_living = yes
+    }
+
+    every_country = {
+        limit = { tag = ROOT }
+
+        # Update market
+        market_leader_check = yes
+        if = {
+            limit = {
+                check_variable = { market_leader = THIS }
+            }
+            calc_shipping_capacity = yes
+            market_update = yes
+            
+            market_calc_gdp = yes
+        }
+    }
+}
+
+
+# Global Variable Init
+    global_variables = {
+        set_variable = { global.month = 0 }
+        set_variable = { global.years_passed = 0 }
+        
+        resources_global_var_setup = yes
+
+        buildings_global_var_setup = yes
+
+        #Investment
+            set_variable = { global.base_aristocrats_investment_contribution = 0.1 }
+            set_variable = { global.base_capitalists_investment_contribution = 0.25 }
+
+            set_variable = { global.base_investment_opportunities_cap = 2 }     # Base amount of investment opportunities
+            set_variable = { global.capitalists_per_investment_opportunity = 2 }    # How many capitalists are needed to add 1 to the investment opportunity cap
+            set_variable = { global.aristocrats_per_investment_opportunity = 20 }   # How many aristocrats are needed to add 1 to the investment opportunity cap
+            set_variable = { global.max_aristocrats_investment_opportunities = 10 } # The maximum that aristocrats can contribute to IOs as a base (basically anti-China/India)
+        #
+
+
+        pops_global_var_setup = yes # Do this AFTER resources
+
+        #Government
+            #Military
+                # When military spending is at 0, what's the maximum of these modifiers
+                set_variable = { global.min_military_spending_supply_consumption_factor = -1 }
+                set_variable = { global.min_military_spending_naval_coordination = -0.5 }
+                set_variable = { global.min_military_spending_training_time_army_factor = 1 }
+                set_variable = { global.min_military_spending_army_org_factor = -0.5 }
+                set_variable = { global.min_military_spending_army_bonus_air_superiority_factor = -0.5 }
+                set_variable = { global.min_military_spending_air_accidents_factor = 1 }
+                set_variable = { global.min_military_spending_attrition = 1 }
+                set_variable = { global.max_military_spending_command_power_gain_mult = 0.25 } # Max at 100%
+                set_variable = { global.min_military_spending_max_command_power_mult = -0.5 }
+                set_variable = { global.min_military_spending_army_morale_factor = -0.5 }
+                set_variable = { global.min_military_spending_naval_morale_factor = -0.5 }
+
+                #Army
+                set_variable = { global.infantry_need@token:resource_food = 0.1 } #Per Regiment
+                set_variable = { global.infantry_need@token:resource_consumer_goods = 0.4 }
+                set_variable = { global.infantry_need@token:resource_luxury_goods = 0.05 }
+                set_variable = { global.infantry_need@token:resource_industrial_goods = 0 }
+
+                set_variable = { global.militia_need@token:resource_food = 0.05 }
+                set_variable = { global.militia_need@token:resource_consumer_goods = 0.1 }
+                set_variable = { global.militia_need@token:resource_luxury_goods = 0 }
+                set_variable = { global.militia_need@token:resource_industrial_goods = 0 }
+
+                set_variable = { global.artillery_need@token:resource_food = 0.05 }
+                set_variable = { global.artillery_need@token:resource_consumer_goods = 0.2 }
+                set_variable = { global.artillery_need@token:resource_luxury_goods = 0.03 }
+                set_variable = { global.artillery_need@token:resource_industrial_goods = 0.5 }
+
+                set_variable = { global.cavalry_need@token:resource_food = 0.1 }
+                set_variable = { global.cavalry_need@token:resource_consumer_goods = 0.2 }
+                set_variable = { global.cavalry_need@token:resource_luxury_goods = 0.08 }
+                set_variable = { global.cavalry_need@token:resource_industrial_goods = 0 }
+
+                set_variable = { global.mobile_need@token:resource_food = 0.1 }
+                set_variable = { global.mobile_need@token:resource_consumer_goods = 0.5 }
+                set_variable = { global.mobile_need@token:resource_luxury_goods = 0.05 }
+                set_variable = { global.mobile_need@token:resource_industrial_goods = 0.5 }
+
+                set_variable = { global.armor_need@token:resource_food = 0.1 }
+                set_variable = { global.armor_need@token:resource_consumer_goods = 1.0 }
+                set_variable = { global.armor_need@token:resource_luxury_goods = 0.08 }
+                set_variable = { global.armor_need@token:resource_industrial_goods = 2.0 }
+
+                set_variable = { global.robotic_need@token:resource_food = 0.02 }
+                set_variable = { global.robotic_need@token:resource_consumer_goods = 0.5 }
+                set_variable = { global.robotic_need@token:resource_luxury_goods = 0.5 }
+                set_variable = { global.robotic_need@token:resource_industrial_goods = 3.0 }
+
+                set_variable = { global.support_need@token:resource_food = 0.02 } #Per Support Company
+                set_variable = { global.support_need@token:resource_consumer_goods = 0.1 }
+                set_variable = { global.support_need@token:resource_luxury_goods = 0.01 }
+                set_variable = { global.support_need@token:resource_industrial_goods = 0 }
+
+                #Navy
+                set_variable = { global.screen_need@token:resource_food = 0.05 } #Per Ship
+                set_variable = { global.screen_need@token:resource_consumer_goods = 0.2 }
+                set_variable = { global.screen_need@token:resource_luxury_goods = 0.05 }
+                set_variable = { global.screen_need@token:resource_industrial_goods = 0.05 }
+
+                set_variable = { global.capital_need@token:resource_food = 0.1 }
+                set_variable = { global.capital_need@token:resource_consumer_goods = 0.4 }
+                set_variable = { global.capital_need@token:resource_luxury_goods = 0.1 }
+                set_variable = { global.capital_need@token:resource_industrial_goods = 0.3 }
+
+                set_variable = { global.submarine_need@token:resource_food = 0.04 }
+                set_variable = { global.submarine_need@token:resource_consumer_goods = 0.2 }
+                set_variable = { global.submarine_need@token:resource_luxury_goods = 0.05 }
+                set_variable = { global.submarine_need@token:resource_industrial_goods = 0.1 }
+
+                #Airforce
+                set_variable = { global.deployed_planes_need@token:resource_food = 0.005 } #Per Deployed Plane
+                set_variable = { global.deployed_planes_need@token:resource_consumer_goods = 0.005 }
+                set_variable = { global.deployed_planes_need@token:resource_luxury_goods = 0.001 }
+                set_variable = { global.deployed_planes_need@token:resource_industrial_goods = 0.003 }
+            #
+            #Projects
+                clear_array = proj_id
+                clear_array = proj_scope
+            #
+            
+            # Research Subsidies
+                set_variable = { global.research_base_expense = 0.15 } # What the base research spending is per pop(k).  
+                set_variable = { global.research_pops_earnings_avg_expense_add = 0.025 } # What portion of the average pops earnings get added to the research base expense value
+                set_variable = { global.max_research_spending_research_speed_factor = 0.1 } # Maxes out at 100% funding
+                set_variable = { global.min_research_spending_research_speed_factor = -0.1 } # Maxes out at 0% funding
+                set_variable = { global.min_research_spending_support_tech = -0.5 } # Maxes out at 0% funding
+                set_variable = { global.min_research_spending_cat_artillery_techs = -0.5 } # Maxes out at 0% funding
+                set_variable = { global.min_research_spending_armor = -0.5 } # Maxes out at 0% funding
+                set_variable = { global.min_research_spending_aviation_tech = -0.5 } # Maxes out at 0% funding
+                set_variable = { global.min_research_spending_air_equipment = -0.5 } # Maxes out at 0% funding
+                set_variable = { global.min_research_spending_cat_projects_techs = -1 } # Maxes out at 0% funding
+                set_variable = { global.min_research_spending_naval_equipment = -0.5 } # Maxes out at 0% funding
+            #
+
+            set_variable = { global.base_government_investment_efficiency = 0.1 }
+            set_variable = { global.base_tax_efficiency = 0.25 }
+            set_variable = { global.base_bureaucratic_efficiency = 0.25 }
+
+            set_variable = { global.administration_base_expense = 0.5 } #Percentage (from 0.0 to 100.0) of pop earnings that are needed for basic administration
+            set_variable = { global.administration_population_expense = 100 } #Below this population amount (in thousands), administration becomes more expensive. Should not be 0
+            set_variable = { global.administration_population_expense_modifier = 2 } #Maximum modifier of admin costs when population is 0
+
+            set_variable = { global.default_interest_rate = 3.0 } #Percent per year - Default national bank interest rate for loans to pops/corporations
+            set_variable = { global.loan_scarcity_rate = 5.0 } #Percent per year - How much interest should be added when you use up all loans you can get
+            set_variable = { global.base_international_interest_rate = 2.0 } #The additional rate that entities pay on getting loans from a foreign national bank
+            set_variable = { global.loan_scarcity_increase_willingness = 0.25 } #When doing the autoborrow, how much scarcity increase is willing to be tolerated?
+
+            #Credit Ratings & Interest Rates for Each
+                #NOTE - Credit Rating is determined by the system.
+                #	  - Actual interest rate can be higher b/c of lack of available funds
+                #AAA - An obligor has EXTREMELY STRONG capacity to meet its financial commitments.
+                set_variable = { global.credit_rating_AAA_base_interest_rate = 2.0 }
+                #AA - An obligor has VERY STRONG capacity to meet its financial commitments. It differs from the highest-rated obligors only to a small degree.
+                set_variable = { global.credit_rating_AA_base_interest_rate = 2.5 }
+                #A - An obligor has STRONG capacity to meet its financial commitments
+                set_variable = { global.credit_rating_A_base_interest_rate = 3.0 }
+                #BBB - An obligor has ADEQUATE capacity to meet its financial commitments
+                set_variable = { global.credit_rating_BBB_base_interest_rate = 3.5 }
+                #BB - An obligor is LESS VULNERABLE in the near term than other lower-rated obligors
+                set_variable = { global.credit_rating_BB_base_interest_rate = 4.0 }
+                #B - An obligor is MORE VULNERABLE than the obligors rated 'BB', but the obligor currently has the capacity to meet its financial commitments.
+                set_variable = { global.credit_rating_B_base_interest_rate = 5.0 }
+                #CCC - An obligor is CURRENTLY VULNERABLE, and is dependent upon favourable business, financial, and economic conditions to meet its financial commitments.
+                set_variable = { global.credit_rating_CCC_base_interest_rate = 6.0 }
+                #CC - An obligor is CURRENTLY HIGHLY-VULNERABLE.
+                set_variable = { global.credit_rating_CC_base_interest_rate = 8.0 }
+                #SD - An obligor has failed to pay one or more of its financial obligations (rated or unrated) when it became due. Sovereign Default / Bankruptcy
+                set_variable = { global.credit_rating_SD_base_interest_rate = 10.0 }
+            #
+        #
+
+        #AI
+            #Trade
+            set_variable = { global.ai_trade_relative_price_condition = 0.05 } # Price difference requirement from base price to be considered
+            set_variable = { global.ai_trade_balance_tolerance = 0.8 } # Multiplied against the trade per route size value to check if trading additional goods of that will tip the balance to the other side. Lower values are more tolerant.
+
+        #
+    }
+    pops_global_var_setup = {
+        #Defined Vars Default Values
+            set_variable = { global.pops_workforce_participation = 0.35 }
+            set_variable = { global.pops_literacy_percentage = 100 } #Unlocks Workers
+            set_variable = { global.pops_schooling_percentage = 100 } #Unlocks Professionals
+            set_variable = { global.pops_education_percentage = 100 } #Unlocks Specialists
+
+            set_variable = { global.pops_natural_birth_base_rate = 3.0 } #Per year rate
+            set_variable = { global.pops_natural_death_base_rate = 2.0 } #Per year rate
+            set_variable = { global.pops_accidents_death_base_rate = 0.05 } #Per year rate
+            set_variable = { global.pops_crime_death_base_rate = 0.005 } #Per year rate
+            set_variable = { global.pops_other_death_base_rate = 0.005 } #Per year rate
+
+            set_variable = { global.pops_maximum_starvation_death_rate = 25.0 } #Per year rate
+
+            set_variable = { global.pops_unemployment_bleed = 0.2 } #What % of unemployed pops become laborers each month
+            set_variable = { global.pops_underpaid_start = 0.5 } #What % of a pop's SoL expenditure will they start to be less inclined to be employed
+            set_variable = { global.pops_underpaid_min = 0.3 } #Minimum % of pops willing to be employed
+            
+            set_variable = { global.pops_capitalists_investment_pool_contribution = 0.3 } # Base rate
+            set_variable = { global.pops_aristocrats_investment_pool_contribution = 0.15 } # Base rate
+        #
+
+        #Spending Patterns
+            #Note: Spending is multiplied by e^0.07s (doubles every 10 Standard of Living)
+            set_variable = { global.pops_base_spending = 0.25 } # At 1 SoL. This doubles every 10 SoL.
+
+            # Food - For living | 1.0
+            clear_array = global.pops_spending_weight_val@token:food # How much weight to add
+            clear_array = global.pops_spending_weight_sol@token:food # What SoL to add at
+            add_to_array = { global.pops_spending_weight_val@token:food = 1.0 }
+            add_to_array = { global.pops_spending_weight_sol@token:food = 0 }
+
+            # Luxuries - Wealthy need | 1.0
+            clear_array = global.pops_spending_weight_val@token:luxuries
+            clear_array = global.pops_spending_weight_sol@token:luxuries
+            add_to_array = { global.pops_spending_weight_val@token:luxuries = 0.05 }
+            add_to_array = { global.pops_spending_weight_sol@token:luxuries = 21 }
+            add_to_array = { global.pops_spending_weight_val@token:luxuries = 0.05 }
+            add_to_array = { global.pops_spending_weight_sol@token:luxuries = 26 }
+            add_to_array = { global.pops_spending_weight_val@token:luxuries = 0.05 }
+            add_to_array = { global.pops_spending_weight_sol@token:luxuries = 31 }
+            add_to_array = { global.pops_spending_weight_val@token:luxuries = 0.05 }
+            add_to_array = { global.pops_spending_weight_sol@token:luxuries = 36 }
+            add_to_array = { global.pops_spending_weight_val@token:luxuries = 0.1 }
+            add_to_array = { global.pops_spending_weight_sol@token:luxuries = 41 }
+            add_to_array = { global.pops_spending_weight_val@token:luxuries = 0.1 }
+            add_to_array = { global.pops_spending_weight_sol@token:luxuries = 51 }
+            add_to_array = { global.pops_spending_weight_val@token:luxuries = 0.1 }
+            add_to_array = { global.pops_spending_weight_sol@token:luxuries = 61 }
+            add_to_array = { global.pops_spending_weight_val@token:luxuries = 0.1 }
+            add_to_array = { global.pops_spending_weight_sol@token:luxuries = 71 }
+            add_to_array = { global.pops_spending_weight_val@token:luxuries = 0.1 }
+            add_to_array = { global.pops_spending_weight_sol@token:luxuries = 81 }
+            add_to_array = { global.pops_spending_weight_val@token:luxuries = 0.15 }
+            add_to_array = { global.pops_spending_weight_sol@token:luxuries = 91 }
+            add_to_array = { global.pops_spending_weight_val@token:luxuries = 0.15 }
+            add_to_array = { global.pops_spending_weight_sol@token:luxuries = 100 }
+            
+            # Wood - For heating & housing | 0.5
+            clear_array = global.pops_spending_weight_val@token:wood
+            clear_array = global.pops_spending_weight_sol@token:wood
+            add_to_array = { global.pops_spending_weight_val@token:wood = 0.3 }
+            add_to_array = { global.pops_spending_weight_sol@token:wood = 0 }
+            add_to_array = { global.pops_spending_weight_val@token:wood = 0.1 }
+            add_to_array = { global.pops_spending_weight_sol@token:wood = 10 }
+            add_to_array = { global.pops_spending_weight_val@token:wood = 0.1 }
+            add_to_array = { global.pops_spending_weight_sol@token:wood = 20 }
+            add_to_array = { global.pops_spending_weight_val@token:wood = 0.1 }
+            add_to_array = { global.pops_spending_weight_sol@token:wood = 30 }
+            add_to_array = { global.pops_spending_weight_val@token:wood = -0.1 }
+            add_to_array = { global.pops_spending_weight_sol@token:wood = 50 }
+            
+            # Fiber - For clothing, replaced by textiles | 0
+            clear_array = global.pops_spending_weight_val@token:fiber
+            clear_array = global.pops_spending_weight_sol@token:fiber
+            add_to_array = { global.pops_spending_weight_val@token:fiber = 0.2 }
+            add_to_array = { global.pops_spending_weight_sol@token:fiber = 0 }
+            add_to_array = { global.pops_spending_weight_val@token:fiber = -0.1 }
+            add_to_array = { global.pops_spending_weight_sol@token:fiber = 11 }
+            add_to_array = { global.pops_spending_weight_val@token:fiber = -0.1 }
+            add_to_array = { global.pops_spending_weight_sol@token:fiber = 21 }
+            
+            # Coal - For heating, can be replaced by electricity | 1.0
+            set_variable = { global.pops_spending_replacement@token:coal = token:electricity }
+            set_variable = { global.pops_spending_electrification_reverse@token:coal = 1 }
+            clear_array = global.pops_spending_weight_val@token:coal
+            clear_array = global.pops_spending_weight_sol@token:coal
+            add_to_array = { global.pops_spending_weight_val@token:coal = 0.05 }
+            add_to_array = { global.pops_spending_weight_sol@token:coal = 9 }
+            add_to_array = { global.pops_spending_weight_val@token:coal = 0.05 }
+            add_to_array = { global.pops_spending_weight_sol@token:coal = 19 }
+            add_to_array = { global.pops_spending_weight_val@token:coal = 0.1 }
+            add_to_array = { global.pops_spending_weight_sol@token:coal = 29 }
+            add_to_array = { global.pops_spending_weight_val@token:coal = 0.1 }
+            add_to_array = { global.pops_spending_weight_sol@token:coal = 39 }
+            add_to_array = { global.pops_spending_weight_val@token:coal = 0.1 }
+            add_to_array = { global.pops_spending_weight_sol@token:coal = 49 }
+            add_to_array = { global.pops_spending_weight_val@token:coal = 0.1 }
+            add_to_array = { global.pops_spending_weight_sol@token:coal = 59 }
+            add_to_array = { global.pops_spending_weight_val@token:coal = 0.1 }
+            add_to_array = { global.pops_spending_weight_sol@token:coal = 69 }
+            add_to_array = { global.pops_spending_weight_val@token:coal = 0.1 }
+            add_to_array = { global.pops_spending_weight_sol@token:coal = 79 }
+            add_to_array = { global.pops_spending_weight_val@token:coal = 0.15 }
+            add_to_array = { global.pops_spending_weight_sol@token:coal = 89 }
+            add_to_array = { global.pops_spending_weight_val@token:coal = 0.15 }
+            add_to_array = { global.pops_spending_weight_sol@token:coal = 99 }
+            
+            # Oil - Fuel for vehicles, requires Internal Combustion Engines tech | 0.5
+            set_variable = { global.pops_spending_tech@token:oil = token:internal_combustion_engine } # Converts into Services need if you don't have this tech
+            set_variable = { global.pops_spending_replacement@token:oil = token:services }
+            clear_array = global.pops_spending_weight_val@token:oil
+            clear_array = global.pops_spending_weight_sol@token:oil
+            add_to_array = { global.pops_spending_weight_val@token:oil = 0.1 }
+            add_to_array = { global.pops_spending_weight_sol@token:oil = 56 }
+            add_to_array = { global.pops_spending_weight_val@token:oil = 0.1 }
+            add_to_array = { global.pops_spending_weight_sol@token:oil = 61 }
+            add_to_array = { global.pops_spending_weight_val@token:oil = 0.1 }
+            add_to_array = { global.pops_spending_weight_sol@token:oil = 66 }
+            add_to_array = { global.pops_spending_weight_val@token:oil = 0.1 }
+            add_to_array = { global.pops_spending_weight_sol@token:oil = 71 }
+            add_to_array = { global.pops_spending_weight_val@token:oil = 0.1 }
+            add_to_array = { global.pops_spending_weight_sol@token:oil = 81 }
+            
+            # Composites - Technological people wood, requires Plexiglass Tech | 0.5
+            set_variable = { global.pops_spending_tech@token:composites = token:modern_ceramics } # Converts into Wood need if you don't have this tech
+            set_variable = { global.pops_spending_replacement@token:composites = token:wood }
+            clear_array = global.pops_spending_weight_val@token:composites
+            clear_array = global.pops_spending_weight_sol@token:composites
+            add_to_array = { global.pops_spending_weight_val@token:composites = 0.1 }
+            add_to_array = { global.pops_spending_weight_sol@token:composites = 50 }
+            add_to_array = { global.pops_spending_weight_val@token:composites = 0.1 }
+            add_to_array = { global.pops_spending_weight_sol@token:composites = 60 }
+            add_to_array = { global.pops_spending_weight_val@token:composites = 0.1 }
+            add_to_array = { global.pops_spending_weight_sol@token:composites = 70 }
+            add_to_array = { global.pops_spending_weight_val@token:composites = 0.1 }
+            add_to_array = { global.pops_spending_weight_sol@token:composites = 80 }
+            add_to_array = { global.pops_spending_weight_val@token:composites = 0.1 }
+            add_to_array = { global.pops_spending_weight_sol@token:composites = 90 }
+            
+            # Consumer Goods - Furniture, Paper, Ceramics, other household items | 1.0
+            clear_array = global.pops_spending_weight_val@token:consumer_goods
+            clear_array = global.pops_spending_weight_sol@token:consumer_goods
+            add_to_array = { global.pops_spending_weight_val@token:consumer_goods = 0.1 }
+            add_to_array = { global.pops_spending_weight_sol@token:consumer_goods = 16 }
+            add_to_array = { global.pops_spending_weight_val@token:consumer_goods = 0.1 }
+            add_to_array = { global.pops_spending_weight_sol@token:consumer_goods = 26 }
+            add_to_array = { global.pops_spending_weight_val@token:consumer_goods = 0.2 }
+            add_to_array = { global.pops_spending_weight_sol@token:consumer_goods = 36 }
+            add_to_array = { global.pops_spending_weight_val@token:consumer_goods = 0.2 }
+            add_to_array = { global.pops_spending_weight_sol@token:consumer_goods = 46 }
+            add_to_array = { global.pops_spending_weight_val@token:consumer_goods = 0.2 }
+            add_to_array = { global.pops_spending_weight_sol@token:consumer_goods = 56 }
+            add_to_array = { global.pops_spending_weight_val@token:consumer_goods = 0.1 }
+            add_to_array = { global.pops_spending_weight_sol@token:consumer_goods = 66 }
+            add_to_array = { global.pops_spending_weight_val@token:consumer_goods = 0.1 }
+            add_to_array = { global.pops_spending_weight_sol@token:consumer_goods = 76 }
+            
+            # Textiles - Clothing | 1.0
+            clear_array = global.pops_spending_weight_val@token:textiles
+            clear_array = global.pops_spending_weight_sol@token:textiles
+            add_to_array = { global.pops_spending_weight_val@token:textiles = 0.2 }
+            add_to_array = { global.pops_spending_weight_sol@token:textiles = 11 }
+            add_to_array = { global.pops_spending_weight_val@token:textiles = 0.2 }
+            add_to_array = { global.pops_spending_weight_sol@token:textiles = 21 }
+            add_to_array = { global.pops_spending_weight_val@token:textiles = 0.2 }
+            add_to_array = { global.pops_spending_weight_sol@token:textiles = 31 }
+            add_to_array = { global.pops_spending_weight_val@token:textiles = 0.2 }
+            add_to_array = { global.pops_spending_weight_sol@token:textiles = 41 }
+            add_to_array = { global.pops_spending_weight_val@token:textiles = 0.2 }
+            add_to_array = { global.pops_spending_weight_sol@token:textiles = 51 }
+            
+            # Vehicles - Cars, Trucks, & Airplanes, requires Internal Combustion Engines tech | 0.5
+            set_variable = { global.pops_spending_tech@token:vehicles = token:internal_combustion_engine } # Converts into Services need if you don't have this tech
+            set_variable = { global.pops_spending_replacement@token:vehicles = token:services }
+            clear_array = global.pops_spending_weight_val@token:vehicles
+            clear_array = global.pops_spending_weight_sol@token:vehicles
+            add_to_array = { global.pops_spending_weight_val@token:vehicles = 0.1 }
+            add_to_array = { global.pops_spending_weight_sol@token:vehicles = 56 }
+            add_to_array = { global.pops_spending_weight_val@token:vehicles = 0.1 }
+            add_to_array = { global.pops_spending_weight_sol@token:vehicles = 61 }
+            add_to_array = { global.pops_spending_weight_val@token:vehicles = 0.1 }
+            add_to_array = { global.pops_spending_weight_sol@token:vehicles = 66 }
+            add_to_array = { global.pops_spending_weight_val@token:vehicles = 0.1 }
+            add_to_array = { global.pops_spending_weight_sol@token:vehicles = 71 }
+            add_to_array = { global.pops_spending_weight_val@token:vehicles = 0.1 }
+            add_to_array = { global.pops_spending_weight_sol@token:vehicles = 81 }
+            
+            # Appliances - Washing Machiners, Dryers, Refrigerators, Telephones, Radios, Televisions, requires Telephone | 0.5
+            set_variable = { global.pops_spending_tech@token:appliances = token:telephone } # Converts into Consumer Goods need if state isn't electrified/don't have this tech
+            set_variable = { global.pops_spending_replacement@token:appliances = token:consumer_goods }
+            set_variable = { global.pops_spending_electrification@token:appliances = 1 }
+            clear_array = global.pops_spending_weight_val@token:appliances
+            clear_array = global.pops_spending_weight_sol@token:appliances
+            add_to_array = { global.pops_spending_weight_val@token:appliances = 0.05 }
+            add_to_array = { global.pops_spending_weight_sol@token:appliances = 54 }
+            add_to_array = { global.pops_spending_weight_val@token:appliances = 0.05 }
+            add_to_array = { global.pops_spending_weight_sol@token:appliances = 58 }
+            add_to_array = { global.pops_spending_weight_val@token:appliances = 0.1 }
+            add_to_array = { global.pops_spending_weight_sol@token:appliances = 64 }
+            add_to_array = { global.pops_spending_weight_val@token:appliances = 0.1 }
+            add_to_array = { global.pops_spending_weight_sol@token:appliances = 68 }
+            add_to_array = { global.pops_spending_weight_val@token:appliances = 0.1 }
+            add_to_array = { global.pops_spending_weight_sol@token:appliances = 74 }
+            add_to_array = { global.pops_spending_weight_val@token:appliances = 0.05 }
+            add_to_array = { global.pops_spending_weight_sol@token:appliances = 84 }
+            add_to_array = { global.pops_spending_weight_val@token:appliances = 0.05 }
+            add_to_array = { global.pops_spending_weight_sol@token:appliances = 94 }
+            
+            # Computers - Laptops, Desktops, requires Early Computers | 0.5
+            set_variable = { global.pops_spending_tech@token:computers = token:early_computers } # Converts into Consumer Goods need if state isn't electrified/don't have this tech
+            set_variable = { global.pops_spending_replacement@token:computers = token:consumer_goods }
+            set_variable = { global.pops_spending_electrification@token:computers = 1 }
+            clear_array = global.pops_spending_weight_val@token:computers
+            clear_array = global.pops_spending_weight_sol@token:computers
+            add_to_array = { global.pops_spending_weight_val@token:computers = 0.05 }
+            add_to_array = { global.pops_spending_weight_sol@token:computers = 68 }
+            add_to_array = { global.pops_spending_weight_val@token:computers = 0.1 }
+            add_to_array = { global.pops_spending_weight_sol@token:computers = 74 }
+            add_to_array = { global.pops_spending_weight_val@token:computers = 0.15 }
+            add_to_array = { global.pops_spending_weight_sol@token:computers = 78 }
+            add_to_array = { global.pops_spending_weight_val@token:computers = 0.1 }
+            add_to_array = { global.pops_spending_weight_sol@token:computers = 88 }
+            add_to_array = { global.pops_spending_weight_val@token:computers = 0.1 }
+            add_to_array = { global.pops_spending_weight_sol@token:computers = 98 }
+            
+            # Electricity - Power for appliances & computers, etc | 1.0
+            set_variable = { global.pops_spending_tech@token:electricity = token:transformer } # Converts into Coal need if state isn't electrified/don't have this tech
+            set_variable = { global.pops_spending_replacement@token:electricity = token:coal }
+            set_variable = { global.pops_spending_electrification@token:electricity = 1 }
+            clear_array = global.pops_spending_weight_val@token:electricity
+            clear_array = global.pops_spending_weight_sol@token:electricity
+            add_to_array = { global.pops_spending_weight_val@token:electricity = 0.05 }
+            add_to_array = { global.pops_spending_weight_sol@token:electricity = 54 }
+            add_to_array = { global.pops_spending_weight_val@token:electricity = 0.05 }
+            add_to_array = { global.pops_spending_weight_sol@token:electricity = 58 }
+            add_to_array = { global.pops_spending_weight_val@token:electricity = 0.1 }
+            add_to_array = { global.pops_spending_weight_sol@token:electricity = 64 }
+            add_to_array = { global.pops_spending_weight_val@token:electricity = 0.15 }
+            add_to_array = { global.pops_spending_weight_sol@token:electricity = 68 }
+            add_to_array = { global.pops_spending_weight_val@token:electricity = 0.2 }
+            add_to_array = { global.pops_spending_weight_sol@token:electricity = 74 }
+            add_to_array = { global.pops_spending_weight_val@token:electricity = 0.15 }
+            add_to_array = { global.pops_spending_weight_sol@token:electricity = 78 }
+            add_to_array = { global.pops_spending_weight_val@token:electricity = 0.05 }
+            add_to_array = { global.pops_spending_weight_sol@token:electricity = 84 }
+            add_to_array = { global.pops_spending_weight_val@token:electricity = 0.1 }
+            add_to_array = { global.pops_spending_weight_sol@token:electricity = 88 }
+            add_to_array = { global.pops_spending_weight_val@token:electricity = 0.05 }
+            add_to_array = { global.pops_spending_weight_sol@token:electricity = 94 }
+            add_to_array = { global.pops_spending_weight_val@token:electricity = 0.1 }
+            add_to_array = { global.pops_spending_weight_sol@token:electricity = 98 }
+            
+            # Services - Transportation, Finance, Healthcare, Real Estate | 4.0
+            clear_array = global.pops_spending_weight_val@token:services
+            clear_array = global.pops_spending_weight_sol@token:services
+            add_to_array = { global.pops_spending_weight_val@token:services = 0.05 }
+            add_to_array = { global.pops_spending_weight_sol@token:services = 13 }
+            add_to_array = { global.pops_spending_weight_val@token:services = 0.05 }
+            add_to_array = { global.pops_spending_weight_sol@token:services = 17 }
+            add_to_array = { global.pops_spending_weight_val@token:services = 0.1 }
+            add_to_array = { global.pops_spending_weight_sol@token:services = 23 }
+            add_to_array = { global.pops_spending_weight_val@token:services = 0.1 }
+            add_to_array = { global.pops_spending_weight_sol@token:services = 27 }
+            add_to_array = { global.pops_spending_weight_val@token:services = 0.1 }
+            add_to_array = { global.pops_spending_weight_sol@token:services = 33 }
+            add_to_array = { global.pops_spending_weight_val@token:services = 0.1 }
+            add_to_array = { global.pops_spending_weight_sol@token:services = 37 }
+            add_to_array = { global.pops_spending_weight_val@token:services = 0.1 }
+            add_to_array = { global.pops_spending_weight_sol@token:services = 43 }
+            add_to_array = { global.pops_spending_weight_val@token:services = 0.2 }
+            add_to_array = { global.pops_spending_weight_sol@token:services = 47 }
+            add_to_array = { global.pops_spending_weight_val@token:services = 0.2 }
+            add_to_array = { global.pops_spending_weight_sol@token:services = 53 }
+            add_to_array = { global.pops_spending_weight_val@token:services = 0.2 }
+            add_to_array = { global.pops_spending_weight_sol@token:services = 57 }
+            add_to_array = { global.pops_spending_weight_val@token:services = 0.2 }
+            add_to_array = { global.pops_spending_weight_sol@token:services = 63 }
+            add_to_array = { global.pops_spending_weight_val@token:services = 0.3 }
+            add_to_array = { global.pops_spending_weight_sol@token:services = 67 }
+            add_to_array = { global.pops_spending_weight_val@token:services = 0.3 }
+            add_to_array = { global.pops_spending_weight_sol@token:services = 73 }
+            add_to_array = { global.pops_spending_weight_val@token:services = 0.3 }
+            add_to_array = { global.pops_spending_weight_sol@token:services = 77 }
+            add_to_array = { global.pops_spending_weight_val@token:services = 0.3 }
+            add_to_array = { global.pops_spending_weight_sol@token:services = 83 }
+            add_to_array = { global.pops_spending_weight_val@token:services = 0.4 }
+            add_to_array = { global.pops_spending_weight_sol@token:services = 87 }
+            add_to_array = { global.pops_spending_weight_val@token:services = 0.5 }
+            add_to_array = { global.pops_spending_weight_sol@token:services = 93 }
+            add_to_array = { global.pops_spending_weight_val@token:services = 0.5 }
+            add_to_array = { global.pops_spending_weight_sol@token:services = 97 }
+            
+            # Entertainment | 1.0
+            clear_array = global.pops_spending_weight_val@token:entertainment
+            clear_array = global.pops_spending_weight_sol@token:entertainment
+            add_to_array = { global.pops_spending_weight_val@token:entertainment = 0.05 }
+            add_to_array = { global.pops_spending_weight_sol@token:entertainment = 29 }
+            add_to_array = { global.pops_spending_weight_val@token:entertainment = 0.05 }
+            add_to_array = { global.pops_spending_weight_sol@token:entertainment = 35 }
+            add_to_array = { global.pops_spending_weight_val@token:entertainment = 0.05 }
+            add_to_array = { global.pops_spending_weight_sol@token:entertainment = 39 }
+            add_to_array = { global.pops_spending_weight_val@token:entertainment = 0.05 }
+            add_to_array = { global.pops_spending_weight_sol@token:entertainment = 45 }
+            add_to_array = { global.pops_spending_weight_val@token:entertainment = 0.05 }
+            add_to_array = { global.pops_spending_weight_sol@token:entertainment = 49 }
+            add_to_array = { global.pops_spending_weight_val@token:entertainment = 0.05 }
+            add_to_array = { global.pops_spending_weight_sol@token:entertainment = 55 }
+            add_to_array = { global.pops_spending_weight_val@token:entertainment = 0.05 }
+            add_to_array = { global.pops_spending_weight_sol@token:entertainment = 59 }
+            add_to_array = { global.pops_spending_weight_val@token:entertainment = 0.05 }
+            add_to_array = { global.pops_spending_weight_sol@token:entertainment = 65 }
+            add_to_array = { global.pops_spending_weight_val@token:entertainment = 0.05 }
+            add_to_array = { global.pops_spending_weight_sol@token:entertainment = 69 }
+            add_to_array = { global.pops_spending_weight_val@token:entertainment = 0.05 }
+            add_to_array = { global.pops_spending_weight_sol@token:entertainment = 75 }
+            add_to_array = { global.pops_spending_weight_val@token:entertainment = 0.1 }
+            add_to_array = { global.pops_spending_weight_sol@token:entertainment = 79 }
+            add_to_array = { global.pops_spending_weight_val@token:entertainment = 0.1 }
+            add_to_array = { global.pops_spending_weight_sol@token:entertainment = 85 }
+            add_to_array = { global.pops_spending_weight_val@token:entertainment = 0.1 }
+            add_to_array = { global.pops_spending_weight_sol@token:entertainment = 89 }
+            add_to_array = { global.pops_spending_weight_val@token:entertainment = 0.1 }
+            add_to_array = { global.pops_spending_weight_sol@token:entertainment = 95 }
+            add_to_array = { global.pops_spending_weight_val@token:entertainment = 0.1 }
+            add_to_array = { global.pops_spending_weight_sol@token:entertainment = 99 }
+
+            # Spending Level at SoL:
+            # 1:   $0.25 per K, requires approx $0.75 wage at full work hours to maintain
+            # 11:  $0.50 per K, requires approx $1.50 wage - Subsistence Farming
+            # 21:  $1.00 per K, requires approx $3.00 wage - 1700s
+            # 31:  $2.00 per K, requires approx $6.00 wage - 1820
+            # 41:  $4.00 per K, requires approx $12.00 wage - 1860
+            # 51:  $8.00 per K, requires approx $24.00 wage - 1900
+            # 61:  $16.00 per K, requires approx $48.00 wage - 1940
+            # 71:  $32.00 per K, requires approx $96.00 wage - 2000
+            # 81:  $64.00 per K, requires approx $192.00 wage - 2040
+            # 91:  $128.00 per K, requires approx $384.50 wage
+            # 101: $256.00 per K, requires approx $768.00 wage
+            # 111: $512.00 per K, requires approx $1536.00 wage
+            # 121: $1024.00 per K, requires approx $3072.00 wage
+            # 131: $2048.00 per K, requires approx $6144.00 wage
+            # 141: $4096.00 per K, requires approx $12288.00 wage
+        #
+        
+        # Spending Calculations
+            # Which resource types are used for pop needs - used to make calculations faster
+            clear_array = global.pop_needs_resources
+
+            for_each_loop = {
+                array = global.resource_token_array
+                value = r_token
+
+                if = {
+                    limit = {
+                        check_variable = { global.pops_spending_weight_val@var:r_token^num > 0 }
+                        check_variable = { global.pops_spending_weight_sol@var:r_token^num > 0 }
+                    }
+                    add_to_array = { global.pop_needs_resources = r_token }
+                }
+            }
+            
+            # Precalculating weights & spending for each SoL up to 200 SoL 
+            for_each_loop = {
+                array = global.pop_needs_resources
+                value = r_token
+
+                clear_array = global.pops_spending_weight_at_sol@var:r_token
+                clear_array = global.pops_spending_need_at_sol@var:r_token
+            }
+            
+            # for_each_loop = {
+            #     array = global.pop_needs_resources
+            #     value = r_token
+
+            #     add_to_array = { global.pops_spending_weight_at_sol@var:r_token = 0 }
+            # }
+
+                
+            clear_array = global.pops_spending_at_sol
+            clear_array = global.pops_spending_weight_at_sol
+            for_loop_effect = { # Pop Spending at SoL
+                start = 0
+                end = 200
+                add = 1
+                value = sol_temp
+                break = b
+                add_to_array = { global.pops_spending_at_sol = 0 }
+                add_to_array = { global.pops_spending_weight_at_sol = 0 }
+                
+                # Spending is multiplied by e^0.07s (doubles every 10 Standard of Living)
+                set_temp_variable = { spending_temp = global.pops_base_spending }
+                set_temp_variable = { sol_dif = sol_temp }
+                subtract_from_temp_variable = { sol_dif = 1 }
+                clamp_temp_variable = { var = sol_dif min = 0 }
+                while_loop_effect = {
+                    limit = {
+                        NOT = { check_variable = { sol_dif < 10 } }
+                    }
+                    multiply_temp_variable = { spending_temp = 2 }
+                    subtract_from_temp_variable = { sol_dif = 10 }
+                }
+
+                set_temp_variable = { x = sol_dif }
+                multiply_temp_variable = { x = 0.07 } #doubles every 10
+
+                set_temp_variable = { xx = x } # x^2 / 2
+                multiply_temp_variable = { xx = x }
+                divide_temp_variable = { xx = 2 }
+
+                set_temp_variable = { xxx = xx } # x^3 / 6
+                multiply_temp_variable = { xxx = x }
+                divide_temp_variable = { xxx = 3 }
+
+                set_temp_variable = { xxxx = xxx } # x^4 / 24
+                multiply_temp_variable = { xxxx = x }
+                divide_temp_variable = { xxxx = 4 }
+
+                set_temp_variable = { xxxxx = xxxx } # x^5 / 120
+                multiply_temp_variable = { xxxxx = x }
+                divide_temp_variable = { xxxxx = 5 }
+
+                set_temp_variable = { taylor_approx = 1 }
+                add_to_temp_variable = { taylor_approx = x }
+                add_to_temp_variable = { taylor_approx = xx }
+                add_to_temp_variable = { taylor_approx = xxx }
+                add_to_temp_variable = { taylor_approx = xxxx }
+                add_to_temp_variable = { taylor_approx = xxxxx }
+                multiply_temp_variable = { spending_temp = taylor_approx }
+                set_variable = { global.pops_spending_at_sol^sol_temp = spending_temp }
+            }
+
+            for_each_loop = { # Setting weights at SoL
+                array = global.pop_needs_resources
+                value = r_token
+                
+                for_loop_effect = {
+                    start = 0
+                    end = 200
+                    add = 1
+                    value = sol_temp
+                    break = b
+
+                    set_temp_variable = { prev_sol = sol_temp }
+                    subtract_from_temp_variable = { prev_sol = 1 }
+                    clamp_temp_variable = { var = prev_sol min = 0 }
+
+                    add_to_array = { global.pops_spending_weight_at_sol@var:r_token = global.pops_spending_weight_at_sol@var:r_token^prev_sol }
+
+                    
+                    for_loop_effect = {
+                        start = 0
+                        end =  global.pops_spending_weight_sol@var:r_token^num
+                        add = 1
+                        value = i_temp
+                        break = br
+
+                        if = {
+                            limit = {
+                                check_variable = { global.pops_spending_weight_sol@var:r_token^i_temp = sol_temp }
+                            }
+                            add_to_variable = { global.pops_spending_weight_at_sol@var:r_token^sol_temp = global.pops_spending_weight_val@var:r_token^i_temp }
+                            set_temp_variable = { br = 1 }
+                        }
+                    }
+
+                    add_to_variable = { global.pops_spending_weight_at_sol^sol_temp = global.pops_spending_weight_at_sol@var:r_token^sol_temp }
+
+                }
+            }
+
+            for_each_loop = { # Need at SoL
+                array = global.pop_needs_resources
+                value = r_token
+                
+                for_loop_effect = {
+                    start = 0
+                    end = 200
+                    add = 1
+                    value = sol_temp
+                    break = b
+
+                    # Need at SoL
+                    set_temp_variable = { spending_per_weight = global.pops_spending_at_sol^sol_temp }
+                    divide_temp_variable = { spending_per_weight = global.pops_spending_weight_at_sol^sol_temp }
+
+                    add_to_array = { global.pops_spending_need_at_sol@var:r_token = global.pops_spending_weight_at_sol@var:r_token^sol_temp }
+                    multiply_variable = { global.pops_spending_need_at_sol@var:r_token^sol_temp = spending_per_weight }
+                    divide_variable = { global.pops_spending_need_at_sol@var:r_token^sol_temp = global.base_price@var:r_token }
+                }
+            }
+                
+            # for_loop_effect = {
+            #     start = 1 
+            #     end = 102
+            #     add = 10
+            #     value = sol_temp
+            #     break = b
+            #     set_temp_variable = { spending_per_weight = global.pops_spending_at_sol^sol_temp }
+            #     divide_temp_variable = { spending_per_weight = global.pops_spending_weight_at_sol^sol_temp }
+            #     # Weight
+            #     # log = "[?sol_temp]: [?global.pops_spending_weight_at_sol^sol_temp] with $[?global.pops_spending_at_sol^sol_temp] spending with $[?spending_per_weight]/w"
+            #     # log = "         Fd [?global.pops_spending_weight_at_sol@token:food^sol_temp] | Lx [?global.pops_spending_weight_at_sol@token:luxuries^sol_temp] | Wd [?global.pops_spending_weight_at_sol@token:wood^sol_temp]"
+            #     # log = "         Fb [?global.pops_spending_weight_at_sol@token:fiber^sol_temp] | Cl [?global.pops_spending_weight_at_sol@token:coal^sol_temp] | Ol [?global.pops_spending_weight_at_sol@token:oil^sol_temp]"
+            #     # log = "         Ct [?global.pops_spending_weight_at_sol@token:composites^sol_temp] | Cg [?global.pops_spending_weight_at_sol@token:consumer_goods^sol_temp] | Tx [?global.pops_spending_weight_at_sol@token:textiles^sol_temp]"
+            #     # log = "         Vh [?global.pops_spending_weight_at_sol@token:vehicles^sol_temp] | Ap [?global.pops_spending_weight_at_sol@token:appliances^sol_temp] | Cr [?global.pops_spending_weight_at_sol@token:computers^sol_temp]"
+            #     # log = "         El [?global.pops_spending_weight_at_sol@token:electricity^sol_temp] | Sv [?global.pops_spending_weight_at_sol@token:services^sol_temp] | En [?global.pops_spending_weight_at_sol@token:entertainment^sol_temp]"
+                
+            #     # Need
+            #     # log = "[?sol_temp]: [?global.pops_spending_weight_at_sol^sol_temp] with $[?global.pops_spending_at_sol^sol_temp] spending with $[?spending_per_weight]/w"
+            #     # log = "         Fd [?global.pops_spending_need_at_sol@token:food^sol_temp] | Lx [?global.pops_spending_need_at_sol@token:luxuries^sol_temp] | Wd [?global.pops_spending_need_at_sol@token:wood^sol_temp]"
+            #     # log = "         Fb [?global.pops_spending_need_at_sol@token:fiber^sol_temp] | Cl [?global.pops_spending_need_at_sol@token:coal^sol_temp] | Ol [?global.pops_spending_need_at_sol@token:oil^sol_temp]"
+            #     # log = "         Ct [?global.pops_spending_need_at_sol@token:composites^sol_temp] | Cg [?global.pops_spending_need_at_sol@token:consumer_goods^sol_temp] | Tx [?global.pops_spending_need_at_sol@token:textiles^sol_temp]"
+            #     # log = "         Vh [?global.pops_spending_need_at_sol@token:vehicles^sol_temp] | Ap [?global.pops_spending_need_at_sol@token:appliances^sol_temp] | Cr [?global.pops_spending_need_at_sol@token:computers^sol_temp]"
+            #     # log = "         El [?global.pops_spending_need_at_sol@token:electricity^sol_temp] | Sv [?global.pops_spending_need_at_sol@token:services^sol_temp] | En [?global.pops_spending_need_at_sol@token:entertainment^sol_temp]"
+            # }
+        #
+    }
+    buildings_global_var_setup = {
+        set_variable = { global.building_money_limit = 1 } #Money limit for an building for its output times the base price of the outputted resource
+        set_variable = { global.base_wage_factor = 0.8 } #What percentage of profits go to pops
+        set_variable = { global.minimum_base_wage = 0.01 } #Minimum base wage (not average) for an building
+        set_variable = { global.buildings_economy_of_scale_factor = 0.01 } #What bonus gets added to throughput for each size building in a state
+        set_variable = { global.base_industrial_capacity = 5 } #Base amount of IC that each state gets
+        set_variable = { global.start_construction_cost_multiplier = 0.25 } #Multiplier on total cost on how much you need to put down to start construction
+
+        # Define Buildings
+        define_arms_factory = yes
+        define_industrial_complex = yes
+        define_dockyard = yes
+
+        define_subsistence_farm = yes
+        
+        # Define RGOs
+        define_wood_rgo = yes
+        define_iron_rgo = yes
+        define_coal_rgo = yes
+        
+        # Define PMs
+        define_pm_simple_forestry = yes
+        define_pm_saw_mills = yes
+        define_pm_chainsaws = yes
+
+        define_pm_muscle_power = yes
+        define_pm_river_power = yes
+        define_pm_steam_power = yes
+        define_pm_logging_electrification = yes
+        define_pm_logging_machines = yes
+
+        define_pm_basic_extraction = yes
+        define_pm_shaft_mining = yes
+        define_pm_blasting = yes
+        define_pm_drilling = yes
+
+        define_pm_hand_picks_and_tools = yes
+        define_pm_steam_pump = yes
+        define_pm_conveyor_belts = yes
+
+        define_pm_subsistence_farming = yes
+        define_pm_manual_farming = yes
+
+        # Initialize building_token_array, industry_token_array
+        clear_array = global.building_token_array
+        clear_array = global.industry_token_array
+        add_to_array = { global.building_token_array = token:arms_factory }
+        add_to_array = { global.building_token_array = token:industrial_complex }
+        add_to_array = { global.building_token_array = token:dockyard }
+        add_to_array = { global.building_token_array = token:subsistence_farm }
+        
+        for_each_loop = {
+            array = global.building_token_array
+            value = b_token
+
+            if = {
+                limit = {
+                    check_variable = { global.building_industry@var:b_token > 0 }
+                }
+                add_to_array = { global.industry_token_array = b_token }
+
+                # Base Output Value
+                set_variable = { global.building_base_output_value@var:b_token = 0 }
+                for_each_loop = {
+                    array = global.building_base_production@var:b_token
+                    value = r_token
+                    index = i_temp
+                        
+                    set_temp_variable = { base_output_val_temp = global.building_base_production_amount@var:b_token^i_temp }
+                    multiply_temp_variable = { base_output_val_temp = global.base_price@var:r_token }
+                    add_to_variable = { global.building_base_output_value@var:b_token = base_output_val_temp }
+                }
+            }
+        }
+
+        # Initialize rgo_token_array
+        clear_array = global.rgo_token_array
+        for_each_loop = {
+            array = global.resource_token_array
+            value = r_token
+
+            if = {
+                limit = {
+                    check_variable = { global.building_base_employees@var:r_token > 0 }
+                }
+                add_to_array = { global.rgo_token_array = r_token }
+                add_to_array = { global.industry_token_array = b_token }
+
+                # Base Production
+                clear_array = global.building_base_production@var:r_token
+                clear_array = global.building_base_production_amount@var:r_token
+                add_to_array = { global.building_base_production@var:r_token = r_token }
+                add_to_array = { global.building_base_production_amount@var:r_token = 1 }
+
+                # Base Output Value
+                set_variable = { global.building_base_output_value@var:r_token = global.base_price@var:r_token }
+            }
+        }
+
+        # Initialize pm_token_array
+        clear_array = global.pm_token_array
+        add_to_array = { global.pm_token_array = token:pm_subsistence_farming }
+        for_each_loop = {
+            array = global.industry_token_array
+            value = r_token
+            
+            for_each_loop = {
+                array = global.building_production_methods@var:r_token
+                value = pm_token
+
+                if = { limit = { NOT = { is_in_array = { global.pm_token_array = pm_token } } } add_to_array = { global.pm_token_array = pm_token } }
+            }
+            for_each_loop = {
+                array = global.building_automation_methods@var:r_token
+                value = pm_token
+
+                if = { limit = { NOT = { is_in_array = { global.pm_token_array = pm_token } } } add_to_array = { global.pm_token_array = pm_token } }
+            }
+        }
+        
+        for_each_loop = { # Loop through PM token array to set locations of resources in list
+            array = global.pm_token_array
+            value = pm_token
+            
+            clear_array = global.pm_input_location@var:pm_token
+            for_each_loop = { # Add inputs
+                array = global.resource_token_array
+                value = r_token
+                index = pm_resource_i
+                add_to_array = { global.pm_input_location@var:pm_token = -1 }
+            }
+
+            for_each_loop = {
+                array = global.pm_input@var:pm_token
+                value = input_token
+                index = pm_input_i
+
+                set_temp_variable = { r_token_loc = global.resource_id@var:input_token }
+                set_variable = { global.pm_input_location@var:pm_token^r_token_loc = pm_input_i }
+            }
+        }
+
+    }
+    resources_global_var_setup = {
+        set_variable = { global.base_price@token:resource_food = 3 }
+        set_variable = { global.base_price@token:resource_raw_materials = 2 }
+        set_variable = { global.base_price@token:resource_energy_materials = 2 }
+        set_variable = { global.base_price@token:resource_consumer_goods = 4 }
+        set_variable = { global.base_price@token:resource_luxury_goods = 8 }
+        set_variable = { global.base_price@token:resource_industrial_goods = 6 }
+        set_variable = { global.base_price@token:resource_services = 5 }
+        set_variable = { global.base_price@token:resource_electricity = 2 }
+        set_variable = { global.base_price@token:resource_valuable_materials = 10 }
+        
+        # DO NOT CHANGE THE ORDERING OF THESE UNLESS YOU KNOW WHAT YOU'RE DOING - There are pm modifiers that rely on these being accurate
+        clear_array = global.resource_token_array
+        add_to_array = { global.resource_token_array = token:food }
+        add_to_array = { global.resource_token_array = token:luxuries }
+        add_to_array = { global.resource_token_array = token:wood }
+        add_to_array = { global.resource_token_array = token:fiber }
+        add_to_array = { global.resource_token_array = token:iron }
+        add_to_array = { global.resource_token_array = token:coal }
+        add_to_array = { global.resource_token_array = token:copper }
+        add_to_array = { global.resource_token_array = token:valuables }
+        add_to_array = { global.resource_token_array = token:oil }
+        add_to_array = { global.resource_token_array = token:rubber }
+        add_to_array = { global.resource_token_array = token:aluminum }
+        add_to_array = { global.resource_token_array = token:tungsten }
+        add_to_array = { global.resource_token_array = token:chromium }
+        add_to_array = { global.resource_token_array = token:titanium }
+        add_to_array = { global.resource_token_array = token:silicon }
+        add_to_array = { global.resource_token_array = token:rare_earths }
+        add_to_array = { global.resource_token_array = token:steel }
+        add_to_array = { global.resource_token_array = token:machinery }
+        add_to_array = { global.resource_token_array = token:chemicals }
+        add_to_array = { global.resource_token_array = token:plastics }
+        add_to_array = { global.resource_token_array = token:composites }
+        add_to_array = { global.resource_token_array = token:electronics }
+        add_to_array = { global.resource_token_array = token:portable_power }
+        add_to_array = { global.resource_token_array = token:robots }
+        add_to_array = { global.resource_token_array = token:consumer_goods }
+        add_to_array = { global.resource_token_array = token:textiles }
+        add_to_array = { global.resource_token_array = token:vehicles }
+        add_to_array = { global.resource_token_array = token:appliances }
+        add_to_array = { global.resource_token_array = token:computers }
+        add_to_array = { global.resource_token_array = token:electricity }
+        add_to_array = { global.resource_token_array = token:services }
+        add_to_array = { global.resource_token_array = token:entertainment }
+        
+        # Location of this in the above array. Used for some arrays for optimization
+        # DO NOT CHANGE THE NUMBERING OF THESE UNLESS YOU KNOW WHAT YOU'RE DOING
+        set_variable = { global.resource_id@token:food = 0 }
+        set_variable = { global.resource_id@token:luxuries = 1 }
+        set_variable = { global.resource_id@token:wood = 2 }
+        set_variable = { global.resource_id@token:fiber = 3 }
+        set_variable = { global.resource_id@token:iron = 4 }
+        set_variable = { global.resource_id@token:coal = 5 }
+        set_variable = { global.resource_id@token:copper = 6 }
+        set_variable = { global.resource_id@token:valuables = 7 }
+
+        set_variable = { global.resource_id@token:oil = 8 }
+        set_variable = { global.resource_id@token:rubber = 9 }
+        set_variable = { global.resource_id@token:aluminum = 10 }
+        set_variable = { global.resource_id@token:tungsten = 11 }
+        set_variable = { global.resource_id@token:chromium = 12 }
+        set_variable = { global.resource_id@token:titanium = 13 }
+        set_variable = { global.resource_id@token:silicon = 14 }
+        set_variable = { global.resource_id@token:rare_earths = 15 }
+
+        set_variable = { global.resource_id@token:steel = 16 }
+        set_variable = { global.resource_id@token:machinery = 17 }
+        set_variable = { global.resource_id@token:chemicals = 18 }
+        set_variable = { global.resource_id@token:plastics = 19 }
+        set_variable = { global.resource_id@token:composites = 20 }
+        set_variable = { global.resource_id@token:electronics = 21 }
+        set_variable = { global.resource_id@token:portable_power = 22 }
+        set_variable = { global.resource_id@token:robots = 23 }
+
+        set_variable = { global.resource_id@token:consumer_goods = 24 }
+        set_variable = { global.resource_id@token:textiles = 25 }
+        set_variable = { global.resource_id@token:vehicles = 26 }
+        set_variable = { global.resource_id@token:appliances = 27 }
+        set_variable = { global.resource_id@token:computers = 28 }
+        set_variable = { global.resource_id@token:electricity = 29 }
+        set_variable = { global.resource_id@token:services = 30 }
+        set_variable = { global.resource_id@token:entertainment = 31 }
+        
+        # Raw material costs are based off of per 200 pounds (in 1900s dollars)
+        # Note, price comparison between 1900 and 1930 are about a factor of 2, and between 1930 and today are a factor of 18
+        set_variable = { global.base_price@token:food = 2.5 } # Wheat: 1 bushel = 60 pounds, $1.40 per bushel (1929), $49 cents (1931), $46.7 per ton
+        set_variable = { global.base_price@token:luxuries = 8.0 } # Sugarcane: 7c/pound, $140 per ton (1919)
+        set_variable = { global.base_price@token:wood = 1.0 } # $19.6 per thousand board feet, 2.1 million thousand board feet sold, 400K cut, $15.9 per ton
+        set_variable = { global.base_price@token:fiber = 10.0 } # Cotton: 9.9 cents per pound, $198 per ton
+        set_variable = { global.base_price@token:iron = 1.0 } # $4.50 per short ton of iron ore (1930), $19.19 per ton of Pig Iron
+        set_variable = { global.base_price@token:coal = 0.5 } # Bitumous Coal: $1.78 per short ton, Anthracite Coal: ~$10 per short ton in 1930s dollars
+        set_variable = { global.base_price@token:copper = 12.0 } # 13.2 cents per pound, $264 per ton
+        set_variable = { global.base_price@token:valuables = 150 } # Gold: $23 per ounce (1930), Silver: $1 per ounce (1930), $552,000 per ton, $276 per pound
+
+        set_variable = { global.base_price@token:oil = 1.0 } # $1.27 a barrel in 1929, 65 cents in 1931, 300 pounds per barrel, $8.47 per ton
+        set_variable = { global.base_price@token:rubber = 10.0 } # 20 cents a pound (1929), 11.9 cents a pound (1930), $400/$238 per ton
+        set_variable = { global.base_price@token:aluminum = 20.0 } # 23 cents a pound (1930), $460 per ton
+        set_variable = { global.base_price@token:tungsten = 10.0 } # $1,851 per short ton (1930)
+        set_variable = { global.base_price@token:chromium = 50.0 } # Chromium: $2,040 per short ton, Manganese: $261 per short ton.
+        set_variable = { global.base_price@token:titanium = 25.0 } # $10,000 per short ton (Today), $500 per ton (1930s dollars)
+        set_variable = { global.base_price@token:silicon = 100.0 } # $34,224 per short ton (Today), $1,901 per ton (1930s dollars)
+        set_variable = { global.base_price@token:rare_earths = 120.0 } # Cobalt: $1.29 per pound (1937), $2580 per ton
+
+        set_variable = { global.base_price@token:steel = 5.0 } # $2.06 per 100 pounds in 1900, $40 per ton, $80 per ton in 1930
+        set_variable = { global.base_price@token:machinery = 100.0 } # Going price for new locomotives in 1900 was ~$20-40 per pound. $60,000 per ton ... probably not a good price XD
+        set_variable = { global.base_price@token:chemicals = 1.0 } # Sulfuric Acid: $150 per tonne in 1998 dollars, $165 per ton, $8.25 per ton in 1900 dollars
+        set_variable = { global.base_price@token:plastics = 4.0 } # $1,285 per ton in 2021, $35.69 per ton in 1900
+        set_variable = { global.base_price@token:composites = 20.0 } # Fiberglass: $7,565 per ton in 2023, $210.1 per ton in 1900
+        set_variable = { global.base_price@token:electronics = 20.0 }
+        set_variable = { global.base_price@token:portable_power = 50.0 }
+        set_variable = { global.base_price@token:robots = 100.0 }
+        
+        set_variable = { global.base_price@token:consumer_goods = 20.0 }
+        set_variable = { global.base_price@token:textiles = 20.0 }
+        set_variable = { global.base_price@token:vehicles = 50.0 } # Modern car price ~$40k, weight is 2 tons, so about $500 per ton in 1900
+        set_variable = { global.base_price@token:appliances = 40.0 }
+        set_variable = { global.base_price@token:computers = 100.0 }
+        set_variable = { global.base_price@token:electricity = 5 } # Per MWh
+        set_variable = { global.base_price@token:services = 20.0 }
+        set_variable = { global.base_price@token:entertainment = 20.0 }
+
+        set_variable = { global.base_price_industrial_capacity = 5 }
+
+        # In Units per 1K employees                                                     # Price, Value per 1k employees. Higher this is, the more lucrative it is to trade
+        set_variable = { global.shipping_amount@token:resource_food = 100 }             # x3 = 300
+        set_variable = { global.shipping_amount@token:resource_raw_materials = 150 }    # x2 = 300
+        set_variable = { global.shipping_amount@token:resource_energy_materials = 150 } # x2 = 300
+        set_variable = { global.shipping_amount@token:resource_consumer_goods = 100 }   # x4 = 400
+        set_variable = { global.shipping_amount@token:resource_luxury_goods = 100 }     # x8 = 800
+        set_variable = { global.shipping_amount@token:resource_industrial_goods = 100 } # x6 = 600
+        set_variable = { global.shipping_amount@token:resource_services = 100 }
+        set_variable = { global.shipping_amount@token:resource_electricity = 200 }
+        set_variable = { global.shipping_amount@token:resource_valuable_materials = 50 }
+
+        set_variable = { global.shipping_amount@token:oil = 50 }                        # x20 = 1000
+        set_variable = { global.shipping_amount@token:aluminum = 40 }                  # x10 = 400
+        set_variable = { global.shipping_amount@token:rubber = 100 }                    # x4 = 400
+        set_variable = { global.shipping_amount@token:tungsten = 15 }                   # x40 = 600
+        set_variable = { global.shipping_amount@token:steel = 50 }                      # x10 = 500
+        set_variable = { global.shipping_amount@token:chromium = 15 }                   # x40 = 600
+        set_variable = { global.shipping_amount@token:coal = 150 }                      # x2 = 300
+        set_variable = { global.shipping_amount@token:wood = 150 }                      # x2 = 300
+        set_variable = { global.shipping_amount@token:textiles = 50 }                     # x8 = 400
+        set_variable = { global.shipping_amount@token:machinery = 10 }              # x80 = 800
+        set_variable = { global.shipping_amount@token:electronics = 10 }                # x120 = 1200
+        set_variable = { global.shipping_amount@token:plastics = 50 }                   # x10 = 500
+        set_variable = { global.shipping_amount@token:composites = 10 }                   # x60 = 600
+        set_variable = { global.shipping_amount@token:portable_power = 5 }              # x200 = 1000
+        set_variable = { global.shipping_amount@token:titanium = 8 }                    # x100 = 800
+        set_variable = { global.shipping_amount@token:iron = 100 }                      # x4 = 400
+        set_variable = { global.shipping_amount@token:fiber = 150 }                    # x4 = 600
+        set_variable = { global.shipping_amount@token:silicon = 40 }                  # x10 = 400
+        set_variable = { global.shipping_amount@token:rare_earths = 10 }          # x50 = 500
+
+        set_variable = { global.shipping_capacity_per_convoy = 2 }
+
+        set_variable = { global.shipping_cost@token:resource_food = 0.2 } # How much shipping per resource
+        set_variable = { global.shipping_cost@token:resource_raw_materials = 0.2 }
+        set_variable = { global.shipping_cost@token:resource_energy_materials = 0.2 }
+        set_variable = { global.shipping_cost@token:resource_consumer_goods = 0.1 }
+        set_variable = { global.shipping_cost@token:resource_luxury_goods = 0.1 }
+        set_variable = { global.shipping_cost@token:resource_industrial_goods = 0.1 }
+        set_variable = { global.shipping_cost@token:resource_services = 0.1 }
+        set_variable = { global.shipping_cost@token:resource_electricity = 0.1 }
+        set_variable = { global.shipping_cost@token:resource_valuable_materials = 0.1 }
+
+        set_variable = { global.shipping_cost@token:oil = 0.5 }
+        set_variable = { global.shipping_cost@token:aluminum = 0.5 }
+        set_variable = { global.shipping_cost@token:rubber = 0.3 }
+        set_variable = { global.shipping_cost@token:tungsten = 1.0 }
+        set_variable = { global.shipping_cost@token:steel = 0.4 }
+        set_variable = { global.shipping_cost@token:chromium = 1.0 }
+        set_variable = { global.shipping_cost@token:coal = 0.2 }
+        set_variable = { global.shipping_cost@token:wood = 0.2 }
+        set_variable = { global.shipping_cost@token:textiles = 0.2 }
+        set_variable = { global.shipping_cost@token:machinery = 1.0 }
+        set_variable = { global.shipping_cost@token:electronics = 0.5 }
+        set_variable = { global.shipping_cost@token:plastics = 0.4 }
+        set_variable = { global.shipping_cost@token:composites = 0.2 }
+        set_variable = { global.shipping_cost@token:portable_power = 0.5 }
+        set_variable = { global.shipping_cost@token:titanium = 1.0 }
+        set_variable = { global.shipping_cost@token:iron = 0.2 }
+        set_variable = { global.shipping_cost@token:fiber = 0.2 }
+        set_variable = { global.shipping_cost@token:silicon = 0.3 }
+        set_variable = { global.shipping_cost@token:rare_earths = 0.2 }
+
+        clear_array = global.non_tradeable_resources
+        add_to_array = { global.non_tradeable_resources = token:resource_services }
+        add_to_array = { global.non_tradeable_resources = token:resource_electricity }
+        add_to_array = { global.non_tradeable_resources = token:resource_valuable_materials }
+    }
+#
+
+# Initialize States
+    state_eco_pops_init = {
+
+        # Pops & Workforce Counts
+        set_variable = { pops = state_population_k }
+        set_variable = { pops_workforce = pops }
+        multiply_variable = { pops_workforce = global.pops_workforce_participation }
+        set_variable = { pops_workforce_participation = global.pops_workforce_participation }
+
+        
+        if = { # Literacy Percentage
+            limit = {
+                NOT = { has_variable = pops_literacy_percentage }
+            }
+            owner = {
+                if = {
+                    limit = {
+                        has_variable = pops_literacy_percentage
+                    }
+                    set_variable = { PREV.pops_literacy_percentage = pops_literacy_percentage }
+                }
+                else = {
+                    set_variable = { PREV.pops_literacy_percentage = global.pops_literacy_percentage }
+                }
+            }
+        }
+        
+        if = { # Schooling Percentage
+            limit = {
+                NOT = { has_variable = pops_schooling_percentage }
+            }
+            owner = {
+                if = {
+                    limit = {
+                        has_variable = pops_schooling_percentage
+                    }
+                    set_variable = { PREV.pops_schooling_percentage = pops_schooling_percentage }
+                }
+                else = {
+                    set_variable = { PREV.pops_schooling_percentage = global.pops_schooling_percentage }
+                }
+            }
+        }
+        
+        if = { # Education Percentage
+            limit = {
+                NOT = { has_variable = pops_education_percentage }
+            }
+            owner = {
+                if = {
+                    limit = {
+                        has_variable = pops_education_percentage
+                    }
+                    set_variable = { PREV.pops_education_percentage = pops_education_percentage }
+                }
+                else = {
+                    set_variable = { PREV.pops_education_percentage = global.pops_education_percentage }
+                }
+            }
+        }
+    }
+    state_eco_arable_land_init = {
+        if = { # If state doesn't have arable land set, set it to a portion of pops_workforce
+            limit = {
+                NOT = { has_variable = arable_land }
+            }
+            set_variable = { arable_land = pops_workforce }
+            divide_variable = { arable_land = 20 }
+            round_variable = arable_land
+            add_to_variable = { arable_land = 1 }
+        }
+
+        # Updates arable land.
+        set_variable = { arable_land_use = 0 }
+        set_variable = { arable_land_available = arable_land }
+    }
+    state_eco_building_init = {
+        # Sets initial building sizes & pms
+        
+        # Industries
+        for_each_loop = {
+            array = global.industry_token_array
+            value = industry_token
+            
+            # Using a meta-effect here since it'll only be used once on startup
+            meta_effect = {
+                text = {
+                    if = { 
+                        limit = { has_variable = [INDUSTRY]_size }
+
+                        set_variable = { size@var:industry_token = [INDUSTRY]_size }
+
+                        if = { limit = { has_variable = [INDUSTRY]_pm } set_variable = { production_method@var:industry_token = [INDUSTRY]_pm } }
+                        else = { set_variable = { production_method@var:industry_token = controller:latest_production_method@var:industry_token } }
+
+                        if = { limit = { has_variable = [INDUSTRY]_am } set_variable = { automation_method@var:industry_token = [INDUSTRY]_am } }
+                        else = { set_variable = { automation_method@var:industry_token = controller:latest_automation_method@var:industry_token } }
+                    }
+                }
+                INDUSTRY = "[?industry_token.GetTokenKey]"
+            }
+        }
+        
+        # RGOs
+        for_each_loop = {
+            array = global.resource_token_array
+            value = r_token
+            set_variable = { resource_cost@var:r_token = 0 }
+            set_variable = { resource_additional_production@var:r_token = 0 }
+        }
+        update_base_resource_count = yes
+
+        for_each_loop = {
+            array = global.rgo_token_array
+            value = rgo_token
+            if = { 
+                limit = { check_variable = { resource@var:rgo_token > 0 } }
+                set_variable = { size@var:rgo_token = base_resource@var:rgo_token }
+
+                # Using a meta-effect here since it'll only be used once on startup
+                meta_effect = {
+                    text = {
+                        if = { limit = { has_variable = [RGO_TOKEN]_pm } set_variable = { production_method@var:rgo_token = [RGO_TOKEN]_pm } }
+                        else = { set_variable = { production_method@var:rgo_token = controller:latest_production_method@var:rgo_token } }
+
+                        if = { limit = { has_variable = [RGO_TOKEN]_am } set_variable = { automation_method@var:rgo_token = [RGO_TOKEN]_am } }
+                        else = { set_variable = { automation_method@var:rgo_token = controller:latest_automation_method@var:rgo_token } }
+                    }
+                    RGO_TOKEN = "[?rgo_token.GetTokenKey]"
+                }
+            }
+        }
+
+        # Special
+            # Infrastructure
+            if = { limit = { has_variable = infrastructure_pm } set_variable = { production_method@token:infrastructure = infrastructure_pm } }
+            else = { set_variable = { production_method@token:infrastructure = controller:latest_production_method@token:infrastructure } }
+
+            # Railway
+            if = { 
+                limit = { has_variable = railway_size }
+
+                set_variable = { size@token:railway = railway_size }
+
+                if = { limit = { has_variable = railway_pm } set_variable = { production_method@token:railway = railway_pm } }
+                else = { set_variable = { production_method@token:railway = controller:latest_production_method@token:railway } }
+                if = { limit = { has_variable = railway_am } set_variable = { automation_method@token:railway = railway_am } }
+                else = { set_variable = { automation_method@token:railway = controller:latest_automation_method@token:railway } }
+            }
+            
+            # Port
+            if = { 
+                limit = { has_variable = port_size }
+
+                set_variable = { size@token:port = port_size }
+
+                if = { limit = { has_variable = port_pm } set_variable = { production_method@token:port = port_pm } }
+                else = { set_variable = { production_method@token:port = controller:latest_production_method@token:port } }
+                if = { limit = { has_variable = port_am } set_variable = { automation_method@token:port = port_am } }
+                else = { set_variable = { automation_method@token:port = controller:latest_automation_method@token:port } }
+            }
+
+            # Military Factory
+            set_variable = { size@token:arms_factory = arms_factory_level }
+            if = { limit = { has_variable = arms_factory_pm } set_variable = { production_method@token:arms_factory = arms_factory_pm } }
+            else = { set_variable = { production_method@token:arms_factory = controller:latest_production_method@token:arms_factory } }
+
+            # Civilian Factory
+            set_variable = { size@token:industrial_complex = industrial_complex_level }
+            if = { limit = { has_variable = industrial_complex_pm } set_variable = { production_method@token:industrial_complex = industrial_complex_pm } }
+            else = { set_variable = { production_method@token:industrial_complex = controller:latest_production_method@token:industrial_complex } }
+
+            # Naval Dockyard
+            set_variable = { size@token:dockyard = building_level@dockyard }
+            if = { limit = { has_variable = dockyard_pm } set_variable = { production_method@token:dockyard = dockyard_pm } }
+            else = { set_variable = { production_method@token:dockyard = controller:latest_production_method@token:dockyard } }
+        #
+
+        # Update visual buildings array
+        reload_industries_array = yes
+
+        # Update for job values
+        subsist_and_arable_update = yes
+        industries_update = yes
+    }
+    state_eco_employment_init = {
+        # Add up all the jobs
+        for_each_loop = {
+            array = industries
+            value = emp_ind_token
+            set_variable = { employment_target@var:emp_ind_token = 100 }
+        }
+        pops_workforce_update = yes
+        
+        # Take chunks out of workforce value until it reaches 0
+        set_variable = { peasants_workforce = pops_workforce }
+
+        if = { # Capitalists
+            limit = {
+                check_variable = { capitalists_jobs > peasants_workforce }
+            }
+            set_variable = { capitalists_workforce = peasants_workforce }
+            set_variable = { peasants_workforce = 0 }
+        }
+        else = {
+            set_variable = { capitalists_workforce = capitalists_jobs }
+            subtract_from_variable = { peasants_workforce = capitalists_workforce }
+        }
+        
+        if = { # Aristocrats
+            limit = {
+                check_variable = { aristocrats_jobs > peasants_workforce }
+            }
+            set_variable = { aristocrats_workforce = peasants_workforce }
+            set_variable = { peasants_workforce = 0 }
+        }
+        else = {
+            set_variable = { aristocrats_workforce = aristocrats_jobs }
+            subtract_from_variable = { peasants_workforce = aristocrats_workforce }
+        }
+        
+        if = { # Specialists
+            limit = {
+                check_variable = { specialists_jobs > peasants_workforce }
+            }
+            set_variable = { specialists_workforce = peasants_workforce }
+            set_variable = { peasants_workforce = 0 }
+        }
+        else = {
+            set_variable = { specialists_workforce = specialists_jobs }
+            subtract_from_variable = { peasants_workforce = specialists_workforce }
+        }
+        
+        if = { # Professionals
+            limit = {
+                check_variable = { professionals_jobs > peasants_workforce }
+            }
+            set_variable = { professionals_workforce = peasants_workforce }
+            set_variable = { peasants_workforce = 0 }
+        }
+        else = {
+            set_variable = { professionals_workforce = professionals_jobs }
+            subtract_from_variable = { peasants_workforce = professionals_workforce }
+        }
+        
+        if = { # Workers
+            limit = {
+                check_variable = { workers_jobs > peasants_workforce }
+            }
+            set_variable = { workers_workforce = peasants_workforce }
+            set_variable = { peasants_workforce = 0 }
+        }
+        else = {
+            set_variable = { workers_workforce = workers_jobs }
+            subtract_from_variable = { peasants_workforce = workers_workforce }
+        }
+        
+        if = { # Laborers
+            limit = {
+                check_variable = { laborers_jobs > peasants_workforce }
+            }
+            set_variable = { laborers_workforce = peasants_workforce }
+            set_variable = { peasants_workforce = 0 }
+        }
+        else = {
+            set_variable = { laborers_workforce = laborers_jobs }
+            subtract_from_variable = { peasants_workforce = laborers_workforce }
+        }
+        
+        # Updates Subsistence Farms
+        subsist_and_arable_update = yes
+        
+        # Updates Jobs Fulfillment
+        pops_workforce_update = yes
+
+        # Fills Industries
+        industries_update = yes
+
+        # Updates Pop Finances/Employment
+        pops_update = yes
+
+        # Sets employment target to employment percentage
+        # TODO - Adjust starting employment based on profitability
+        for_each_loop = {
+            array = industries
+            value = emp_ind_token
+            set_variable = { employment_target@var:emp_ind_token = employment_percentage@var:emp_ind_token }
+        }
+    }
+    calculate_standard_of_living = {
+        #Slaves
+            set_temp_variable = { earnings_temp = slaves_earnings }
+            divide_temp_variable = { earnings_temp = slaves }
+            for_each_loop = {
+                array = global.pops_spending_at_sol
+                index = sol_temp
+                value = col_temp
+                break = b
+
+                if = {
+                    limit = {
+                        check_variable = { earnings_temp < col_temp }
+                    }
+                    set_variable = { slaves_sol = sol_temp }
+                    set_temp_variable = { b = 1 }
+                }
+            }
+            clamp_variable = { var = slaves_sol min = 1 max = 200 }
+        #
+        #Peasants
+            set_temp_variable = { earnings_temp = peasants_earnings }
+            divide_temp_variable = { earnings_temp = peasants }
+            for_each_loop = {
+                array = global.pops_spending_at_sol
+                index = sol_temp
+                value = col_temp
+                break = b
+
+                if = {
+                    limit = {
+                        check_variable = { earnings_temp < col_temp }
+                    }
+                    set_variable = { peasants_sol = sol_temp }
+                    set_temp_variable = { b = 1 }
+                }
+            }
+            clamp_variable = { var = peasants_sol min = 1 max = 200 }
+        #
+        #Laborers
+            set_temp_variable = { earnings_temp = laborers_earnings }
+            divide_temp_variable = { earnings_temp = laborers }
+            for_each_loop = {
+                array = global.pops_spending_at_sol
+                index = sol_temp
+                value = col_temp
+                break = b
+
+                if = {
+                    limit = {
+                        check_variable = { earnings_temp < col_temp }
+                    }
+                    set_variable = { laborers_sol = sol_temp }
+                    set_temp_variable = { b = 1 }
+                }
+            }
+            clamp_variable = { var = laborers_sol min = 1 max = 200 }
+        #
+        #Workers
+            set_temp_variable = { earnings_temp = workers_earnings }
+            divide_temp_variable = { earnings_temp = workers }
+            for_each_loop = {
+                array = global.pops_spending_at_sol
+                index = sol_temp
+                value = col_temp
+                break = b
+
+                if = {
+                    limit = {
+                        check_variable = { earnings_temp < col_temp }
+                    }
+                    set_variable = { workers_sol = sol_temp }
+                    set_temp_variable = { b = 1 }
+                }
+            }
+            clamp_variable = { var = workers_sol min = 1 max = 200 }
+        #
+        #Professionals
+            set_temp_variable = { earnings_temp = professionals_earnings }
+            divide_temp_variable = { earnings_temp = professionals }
+            for_each_loop = {
+                array = global.pops_spending_at_sol
+                index = sol_temp
+                value = col_temp
+                break = b
+
+                if = {
+                    limit = {
+                        check_variable = { earnings_temp < col_temp }
+                    }
+                    set_variable = { professionals_sol = sol_temp }
+                    set_temp_variable = { b = 1 }
+                }
+            }
+            clamp_variable = { var = professionals_sol min = 1 max = 200 }
+        #
+        #Specialists
+            set_temp_variable = { earnings_temp = specialists_earnings }
+            divide_temp_variable = { earnings_temp = specialists }
+            for_each_loop = {
+                array = global.pops_spending_at_sol
+                index = sol_temp
+                value = col_temp
+                break = b
+
+                if = {
+                    limit = {
+                        check_variable = { earnings_temp < col_temp }
+                    }
+                    set_variable = { specialists_sol = sol_temp }
+                    set_temp_variable = { b = 1 }
+                }
+            }
+            clamp_variable = { var = specialists_sol min = 1 max = 200 }
+        #
+        #Aristocrats
+            set_temp_variable = { earnings_temp = aristocrats_earnings }
+            divide_temp_variable = { earnings_temp = aristocrats }
+            for_each_loop = {
+                array = global.pops_spending_at_sol
+                index = sol_temp
+                value = col_temp
+                break = b
+
+                if = {
+                    limit = {
+                        check_variable = { earnings_temp < col_temp }
+                    }
+                    set_variable = { aristocrats_sol = sol_temp }
+                    set_temp_variable = { b = 1 }
+                }
+            }
+            clamp_variable = { var = aristocrats_sol min = 1 max = 200 }
+        #
+        #Capitalists
+            set_temp_variable = { earnings_temp = capitalists_earnings }
+            divide_temp_variable = { earnings_temp = capitalists }
+            for_each_loop = {
+                array = global.pops_spending_at_sol
+                index = sol_temp
+                value = col_temp
+                break = b
+
+                if = {
+                    limit = {
+                        check_variable = { earnings_temp < col_temp }
+                    }
+                    set_variable = { capitalists_sol = sol_temp }
+                    set_temp_variable = { b = 1 }
+                }
+            }
+            clamp_variable = { var = capitalists_sol min = 1 max = 200 }
+        #
+        #Bureaucrats
+            set_temp_variable = { earnings_temp = bureaucrats_earnings }
+            divide_temp_variable = { earnings_temp = bureaucrats }
+            for_each_loop = {
+                array = global.pops_spending_at_sol
+                index = sol_temp
+                value = col_temp
+                break = b
+
+                if = {
+                    limit = {
+                        check_variable = { earnings_temp < col_temp }
+                    }
+                    set_variable = { bureaucrats_sol = sol_temp }
+                    set_temp_variable = { b = 1 }
+                }
+            }
+            clamp_variable = { var = bureaucrats_sol min = 1 max = 200 }
+        #
+        #Soldiers
+            set_temp_variable = { earnings_temp = soldiers_earnings }
+            divide_temp_variable = { earnings_temp = soldiers }
+            for_each_loop = {
+                array = global.pops_spending_at_sol
+                index = sol_temp
+                value = col_temp
+                break = b
+
+                if = {
+                    limit = {
+                        check_variable = { earnings_temp < col_temp }
+                    }
+                    set_variable = { soldiers_sol = sol_temp }
+                    set_temp_variable = { b = 1 }
+                }
+            }
+            clamp_variable = { var = soldiers_sol min = 1 max = 200 }
+        #
+
+        calculate_pop_needs = yes
+        pops_update = yes
+    }
+    readjust_standard_of_living = {
+        pops_update = yes
+
+        if = { #Slaves
+            limit = {
+                check_variable = { slaves_earnings < slaves_spending }
+            }
+            subtract_from_variable = { slaves_sol = 1 }
+        }
+        if = { #Peasants
+            limit = {
+                check_variable = { peasants_earnings < peasants_spending }
+            }
+            subtract_from_variable = { peasants_sol = 1 }
+        }
+        if = { #Laborers
+            limit = {
+                check_variable = { laborers_earnings < laborers_spending }
+            }
+            subtract_from_variable = { laborers_sol = 1 }
+        }
+        if = { #Workers
+            limit = {
+                check_variable = { workers_earnings < workers_spending }
+            }
+            subtract_from_variable = { workers_sol = 1 }
+        }
+        if = { #Professionals
+            limit = {
+                check_variable = { professionals_earnings < professionals_spending }
+            }
+            subtract_from_variable = { professionals_sol = 1 }
+        }
+        if = { #Specialists
+            limit = {
+                check_variable = { specialists_earnings < specialists_spending }
+            }
+            subtract_from_variable = { specialists_sol = 1 }
+        }
+        if = { #Aristocrats
+            limit = {
+                check_variable = { aristocrats_earnings < aristocrats_spending }
+            }
+            subtract_from_variable = { aristocrats_sol = 1 }
+        }
+        if = { #Capitalists
+            limit = {
+                check_variable = { capitalists_earnings < capitalists_spending }
+            }
+            subtract_from_variable = { capitalists_sol = 1 }
+        }
+        if = { #Bureaucrats
+            limit = {
+                check_variable = { bureaucrats_earnings < bureaucrats_spending }
+            }
+            subtract_from_variable = { bureaucrats_sol = 1 }
+        }
+        if = { #Soldiers
+            limit = {
+                check_variable = { soldiers_earnings < soldiers_spending }
+            }
+            subtract_from_variable = { soldiers_sol = 1 }
+        }
+
+        calculate_pop_needs = yes
+    }
+#
+
+# Initialize Countries
+    country_pops_setup = {
+        # Initializes pops
+    }
+
+    country_eco_setup = {
+        # Initializes PMs based on tech
+        update_national_production_methods = yes
+        
+        # Adds necessary country-level dynamic modifiers
+        add_dynamic_modifier = { modifier = resource_trade }
+        add_dynamic_modifier = { modifier = budgetary_spending }
+
+        # Budget
+        if = { limit = { NOT = { has_variable = sales_tax_percentage } } set_variable = { sales_tax_percentage = 50 } }
+        if = { limit = { NOT = { has_variable = military_spending_percentage } } set_variable = { military_spending_percentage = 100 } }
+        if = { limit = { NOT = { has_variable = construction_spending_percentage } } set_variable = { construction_spending_percentage = 100 } }
+
+        # Updates country-wide eco modifiers
+        r_update_modifiers_country_effects = yes
+
+        # Calculates GDP
+        set_variable = { gdp_amount = 0 }
+        every_controlled_state = {
+            gdp_update = yes
+
+            add_to_variable = { PREV.gdp_amount = gdp_amount }
+        }
+
+        # Initializes subjects as part of your market & sets yourself as market leader & updates your market
+        market_setup = yes        
+        if = {
+            limit = {
+                check_variable = { market_leader = THIS }
+            }
+            calc_shipping_capacity = yes
+            market_update = yes
+        }
+
+        # Updates country-level stats
+        update_country_pop_stats = yes
+
+        # Calculates building vals based on latest available
+        #buildings_update_base_latest_vals = yes 
+
+        # Initializes IO cap (requires pop stats), IO generation (requires GDP), and updates IO cost & attractiveness & sorts them (requires latest vals)
+        investment_opportunities_update = yes
+
+        budget_update = yes
+        national_debt_update = yes
+    }
+
+	market_setup = {
+        # Sets up yourself as market leader if non-subject. Also adds all subjects to your market list & any country with you as market leader
+
+        # Auto designate subjects if not subject
+        set_temp_variable = { country_temp = THIS }
+        if = {
+            limit = {
+                is_subject = no
+                OR = {
+                    NOT = { has_variable = market_leader }
+                    check_variable = { market_leader = country_temp }
+                }
+            }
+            # Market Capitals
+            if = {
+                limit = {
+                    NOT = { has_variable = market_capital }
+                }
+                set_variable = { market_capital = country_temp:capital }
+            }
+            set_variable = { market_leader = country_temp }
+            
+            # Market Countries
+            clear_array = market_countries
+            add_to_array = { market_countries = country_temp }
+
+            # Add every subject to your market - subjects will ALWAYS be part of your market
+            every_subject_country = {
+                every_subject_country = {
+                    set_variable = { market_capital = country_temp:capital }
+                    set_variable = { selected_market = country_temp }
+                    add_to_array = { country_temp:market_countries = THIS }
+                    set_variable = { market_leader = country_temp }
+                }
+                set_variable = { market_capital = country_temp:capital }
+                set_variable = { selected_market = country_temp }
+                add_to_array = { country_temp:market_countries = THIS }
+                set_variable = { market_leader = country_temp }
+            }
+
+            # Add every non-subject to your market who is set to be part of your market - for history setup
+            every_country = {
+                limit = {
+                    is_subject = no
+                    check_variable = { market_leader = country_temp }
+                }
+                set_variable = { market_capital = country_temp:capital }
+                set_variable = { selected_market = country_temp }
+                add_to_array = { country_temp:market_countries = THIS }
+                set_variable = { market_leader = country_temp }
+                
+                # Add all of their subjects to your market
+                every_subject_country = {
+                    every_subject_country = {
+                        set_variable = { market_capital = country_temp:capital }
+                        set_variable = { selected_market = country_temp }
+                        add_to_array = { country_temp:market_countries = THIS }
+                        set_variable = { market_leader = country_temp }
+                    }
+                    set_variable = { market_capital = country_temp:capital }
+                    set_variable = { selected_market = country_temp }
+                    add_to_array = { country_temp:market_countries = THIS }
+                    set_variable = { market_leader = country_temp }
+                }
+            }
+            
+            set_variable = { selected_market = country_temp }
+        }
+	}
+#
