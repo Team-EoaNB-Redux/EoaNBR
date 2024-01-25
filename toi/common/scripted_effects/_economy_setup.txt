@@ -25,7 +25,6 @@ _reset = {
 
     # Initialize Countries
     every_country = {
-        limit = { tag = ROOT }
         # Initializes PMs based on tech
         update_national_production_methods = yes
         
@@ -48,7 +47,6 @@ _reset = {
     
     # Initialize States
     every_state = {
-        limit = { is_owned_by = ROOT }
         # Pops & Workforce Counts, state-wide pop variables
         state_eco_pops_init = yes
 
@@ -74,7 +72,6 @@ _reset = {
 
     # Update Markets
     every_country = {
-        limit = { tag = ROOT }
 
         market_leader_check = yes
         if = {
@@ -93,7 +90,6 @@ _reset = {
 
     # Initialize Trade
     every_country = {
-        limit = { tag = ROOT }
         
         if = {
             limit = {
@@ -121,6 +117,102 @@ _reset = {
             }
             trade_update = yes
         }
+    }
+
+    # Update states
+    every_state = {
+        
+        # Update all industries
+        subsist_and_arable_update = yes
+        industries_update = yes
+        industry_productivity_sort = yes
+        base_wage_calculation = yes
+        
+        # Max out cash reserves for all industries
+        for_each_loop = {
+            array = industries
+            value = b_token
+
+            if = {
+                limit = {
+                    check_variable = { profit@var:b_token > 0 }
+                }
+                set_variable = { money@var:b_token = money_limit@var:b_token }
+                set_variable = { dividends@var:b_token = profit@var:b_token }
+            }
+            else = {
+                set_variable = { money@var:b_token = 0 }
+                set_variable = { money_accumulation@var:b_token = profit@var:b_token }
+            }
+        }
+
+        # Readjust for SoL
+        readjust_standard_of_living = yes
+        readjust_standard_of_living = yes
+        readjust_standard_of_living = yes
+        readjust_standard_of_living = yes
+        pops_update = yes
+    }
+
+    # Country Finalization
+    every_country = {
+        if = { # Update market details
+            limit = {
+                check_variable = { market_leader = THIS }
+            }
+            market_update = yes
+            trade_update = yes
+            market_calc_gdp = yes
+        }
+    }
+
+    # State Finalization
+    every_state = {
+        # Update all industries
+        subsist_and_arable_update = yes
+        industries_update = yes
+        industry_productivity_sort = yes
+        base_wage_calculation = yes
+        
+        # Update Pops
+        pops_update = yes
+
+        # Graphs & Displays
+        gdp_update = yes
+        initialize_gdp_graph = yes
+        create_pie_chart_pop_type = yes
+    }
+
+    every_country = {
+        if = { # Finalize market details
+            limit = {
+                check_variable = { market_leader = THIS }
+            }
+            market_update = yes
+            trade_update = yes
+            market_calc_gdp = yes
+        }
+
+        # Update country pop stats
+        update_country_pop_stats = yes
+
+        # Investment Opportunities Setup
+        io_state_list = yes
+        investment_opportunities_update = yes
+        for_loop_effect = {
+            end = investment_opportunities_cap
+            generate_investment_opportunity = yes
+        }
+        investment_fund_update = yes
+        
+        # Budget
+        budget_update = yes
+        national_debt_update = yes
+
+        # Graphs & Displays
+        initialize_country_gdp_graph = yes
+        initialize_country_budget_graph = yes
+        country_update_trade_display = yes
     }
 }
 
@@ -835,7 +927,7 @@ _reset = {
         define_pm_muscle_power = yes
         define_pm_river_power = yes
         define_pm_steam_power = yes
-        define_pm_logging_electrification = yes
+        define_pm_electrical_power = yes
         define_pm_logging_machines = yes
 
         define_pm_basic_extraction = yes
