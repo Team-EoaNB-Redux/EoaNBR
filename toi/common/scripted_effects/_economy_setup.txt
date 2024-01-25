@@ -72,10 +72,10 @@ _reset = {
         calculate_standard_of_living = yes
     }
 
+    # Update Markets
     every_country = {
         limit = { tag = ROOT }
 
-        # Update market
         market_leader_check = yes
         if = {
             limit = {
@@ -85,6 +85,41 @@ _reset = {
             market_update = yes
             
             market_calc_gdp = yes
+        }
+    }
+
+    # Updates the list of market leaders & global variables for markets
+    global_economy_update = yes
+
+    # Initialize Trade
+    every_country = {
+        limit = { tag = ROOT }
+        
+        if = {
+            limit = {
+                check_variable = { market_leader = THIS }
+            }
+            # Loops through resources & sets trade to most profitable point
+            for_each_loop = {
+                array = global.resource_token_array
+                value = r_token
+
+                if = {
+                    limit = {
+                        NOT = { is_in_array = { global.non_tradeable_resources = r_token } }
+                        OR = {
+                            check_variable = { demand@var:r_token > 0 }
+                            check_variable = { supply@var:r_token > 0 }
+                        }
+                    }
+                    set_temp_variable = { resource_temp = r_token }
+                    trade_ai_determine_max_trade = yes
+                    multiply_temp_variable = { amount_temp = 0.95 }
+                    set_temp_variable = { no_update_temp = 1 }
+                    set_trade = yes
+                }
+            }
+            trade_update = yes
         }
     }
 }
