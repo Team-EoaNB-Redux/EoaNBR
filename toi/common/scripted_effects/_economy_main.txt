@@ -35,8 +35,13 @@ _advance_time = {
         if = {
             limit = {
                 NOT = {
-                    has_dynamic_modifier = {
-                        modifier = resource_trade
+                    OR = {
+                        has_dynamic_modifier = {
+                            modifier = resource_trade
+                        }
+                        has_dynamic_modifier = {
+                            modifier = budgetary_spending
+                        }
                     }
                 }
             }
@@ -45,46 +50,13 @@ _advance_time = {
 
         # Budget
         national_debt_update = yes
-        add_to_variable = { treasury = net_budget }
-        if = {
-            limit = {
-                check_variable = { treasury < 0 }
-            }
-            set_temp_variable = { x_temp = treasury }
-            multiply_temp_variable = { x_temp = -0.001 }
-            add_to_temp_variable = { x_temp = 0.001 }
-            set_temp_variable = { country_temp = 0 }
-            borrow_money = yes
-        }
-        else_if = {
-            limit = {
-                is_ai = yes
-                check_variable = { treasury > 100 }
-                check_variable = { national_debt_k > 0 }
-            }
-            set_temp_variable = { x_temp = treasury }
-            divide_temp_variable = { x_temp = 1000 }
-            repay_debt = yes
-        }
+        set_temp_variable = { x_temp = net_budget }
+        add_treasury = yes
 
         if = { limit = { is_ai = yes } ai_budget = yes }
         spending_effects_update = yes
 
         # Projects
-
-        # Helper Vars
-        set_temp_variable = { upper_earnings_limit = pops_earnings_avg }
-        multiply_temp_variable = { upper_earnings_limit = 3 }
-        set_temp_variable = { lower_earnings_limit = pops_earnings_avg }
-
-        set_temp_variable = { upper_income_multiplier = income_tax_upper_strata_percentage_actual }
-        divide_temp_variable = { upper_income_multiplier = 100 }
-        set_temp_variable = { middle_income_multiplier = income_tax_middle_strata_percentage_actual }
-        divide_temp_variable = { middle_income_multiplier = 100 }
-        set_temp_variable = { lower_income_multiplier = income_tax_lower_strata_percentage_actual }
-        divide_temp_variable = { lower_income_multiplier = 100 }
-        set_temp_variable = { sales_tax_multiplier = sales_tax_percentage_actual }
-        divide_temp_variable = { sales_tax_multiplier = 100 }
 
         # 1.2 secs (calc: 1.4)
         update_national_production_methods = yes
@@ -93,8 +65,8 @@ _advance_time = {
         every_controlled_state = {
             r_update_modifiers_state_effects = yes # 0.38 secs
 
-            on_monthly_industries = yes # nil secs
-            on_monthly_pops = yes # 0.2 secs
+            on_monthly_industries = yes # Money Accumulation & Factory Construction - nil secs
+            on_monthly_pops = yes # Pop Finances & Growth - 0.2 secs
 
             # 0.128 secs
             industry_productivity_sort = yes
@@ -105,6 +77,8 @@ _advance_time = {
             #on_monthly_subsistence_farm = yes
             #pops_balance = yes
 
+            ## UPDATING EVERYTHING ##
+            calculate_pop_needs = yes
             calc_industrial_capacity = yes # nil secs
 
             industries_update = yes # 0.5 secs
@@ -135,6 +109,8 @@ _advance_time = {
 
         # Statistics - 0.2 to 1.2 secs
         every_controlled_state = {
+            industries_update_finances = yes
+
             #GDP
             set_variable = { prev_gdp_amount = gdp_amount }
             gdp_update = yes # nil secs
@@ -348,289 +324,65 @@ create_econ_order_array = {
     }
 }
 
-ai_budget = {
-    if = { # AI
-        limit = {
-            is_ai = yes
-            check_variable = { net_budget < 0 }
-        }
-        if = { # USA loves import tariffs
-            limit = {
-                tag = USA
-                check_variable = { import_tariff_percentage < import_tariff_max }
-            }
-            set_temp_variable = { percent_change_temp = 100 }
-            change_import_tariff = yes
-        }
-
-        if = {
-            limit = {
-                check_variable = { sales_tax_percentage < sales_tax_max }
-            }
-            set_temp_variable = { percent_change_temp = 5 }
-            if = {
-                limit = {
-                    check_variable = { sales_tax_percentage > 0 }
-                    check_variable = { sales_tax_revenue > 0 }
-                }
-                set_temp_variable = { st_per = sales_tax_revenue }
-                divide_temp_variable = { st_per = sales_tax_percentage }
-
-                set_temp_variable = { percent_change_temp = net_budget }
-                divide_temp_variable = { percent_change_temp = st_per }
-                multiply_temp_variable = { percent_change_temp = -1 }
-                add_to_temp_variable = { percent_change_temp = 0.5 }
-                round_temp_variable = percent_change_temp
-                if = {
-                    limit = {
-                        check_variable = { percent_change_temp < 5 }
-                    }
-                    set_temp_variable = { percent_change_temp = 5 }
-                }
-            }
-            change_sales_tax = yes
-        }
-        else_if = {
-            limit = {
-                check_variable = { income_tax_lower_strata_percentage < income_tax_lower_strata_max }
-            }
-            set_temp_variable = { percent_change_temp = 5 }
-            if = {
-                limit = {
-                    check_variable = { income_tax_lower_strata_percentage > 0 }
-                    check_variable = { income_tax_lower_strata_revenue > 0 }
-                }
-                set_temp_variable = { st_per = income_tax_lower_strata_revenue }
-                divide_temp_variable = { st_per = income_tax_lower_strata_percentage }
-
-                set_temp_variable = { percent_change_temp = net_budget }
-                divide_temp_variable = { percent_change_temp = st_per }
-                multiply_temp_variable = { percent_change_temp = -1 }
-                add_to_temp_variable = { percent_change_temp = 0.5 }
-                round_temp_variable = percent_change_temp
-                if = {
-                    limit = {
-                        check_variable = { percent_change_temp < 5 }
-                    }
-                    set_temp_variable = { percent_change_temp = 5 }
-                }
-            }
-            change_lower_strata_income_tax = yes
-        }
-        else_if = {
-            limit = {
-                check_variable = { income_tax_middle_strata_percentage < income_tax_middle_strata_max }
-            }
-            set_temp_variable = { percent_change_temp = 5 }
-            if = {
-                limit = {
-                    check_variable = { income_tax_middle_strata_percentage > 0 }
-                    check_variable = { income_tax_middle_strata_revenue > 0 }
-                }
-                set_temp_variable = { st_per = income_tax_middle_strata_revenue }
-                divide_temp_variable = { st_per = income_tax_middle_strata_percentage }
-
-                set_temp_variable = { percent_change_temp = net_budget }
-                divide_temp_variable = { percent_change_temp = st_per }
-                multiply_temp_variable = { percent_change_temp = -1 }
-                add_to_temp_variable = { percent_change_temp = 0.5 }
-                round_temp_variable = percent_change_temp
-                if = {
-                    limit = {
-                        check_variable = { percent_change_temp < 5 }
-                    }
-                    set_temp_variable = { percent_change_temp = 5 }
-                }
-            }
-            change_middle_strata_income_tax = yes
-        }
-        else_if = {
-            limit = {
-                check_variable = { income_tax_upper_strata_percentage < income_tax_upper_strata_max }
-            }
-            set_temp_variable = { percent_change_temp = 5 }
-            if = {
-                limit = {
-                    check_variable = { income_tax_upper_strata_percentage > 0 }
-                    check_variable = { income_tax_upper_strata_revenue > 0 }
-                }
-                set_temp_variable = { st_per = income_tax_upper_strata_revenue }
-                divide_temp_variable = { st_per = income_tax_upper_strata_percentage }
-
-                set_temp_variable = { percent_change_temp = net_budget }
-                divide_temp_variable = { percent_change_temp = st_per }
-                multiply_temp_variable = { percent_change_temp = -1 }
-                add_to_temp_variable = { percent_change_temp = 0.5 }
-                round_temp_variable = percent_change_temp
-                if = {
-                    limit = {
-                        check_variable = { percent_change_temp < 5 }
-                    }
-                    set_temp_variable = { percent_change_temp = 5 }
-                }
-            }
-            change_upper_strata_income_tax = yes
-        }
-    }
-    else_if = { # AI debt repayment
-        limit = {
-            is_ai = yes
-            check_variable = { national_debt_k > 0 }
-            set_temp_variable = { debt_amount_temp = 0.025 }
-            multiply_temp_variable = { debt_amount_temp = gdp_amount }
-            check_variable = { net_budget < debt_amount_temp }
-        }
-        if = {
-            limit = {
-                check_variable = { sales_tax_percentage < sales_tax_max }
-            }
-            set_temp_variable = { percent_change_temp = 5 }
-            change_sales_tax = yes
-        }
-        else_if = {
-            limit = {
-                check_variable = { income_tax_lower_strata_percentage < income_tax_lower_strata_max }
-            }
-            set_temp_variable = { percent_change_temp = 5 }
-            change_lower_strata_income_tax = yes
-        }
-        else_if = {
-            limit = {
-                check_variable = { income_tax_middle_strata_percentage < income_tax_middle_strata_max }
-            }
-            set_temp_variable = { percent_change_temp = 5 }
-            change_middle_strata_income_tax = yes
-        }
-        else_if = {
-            limit = {
-                check_variable = { income_tax_upper_strata_percentage < income_tax_upper_strata_max }
-            }
-            set_temp_variable = { percent_change_temp = 5 }
-            change_upper_strata_income_tax = yes
-        }
-    }
-    else_if = { # AI lowers taxes if no debt OR if has debt and is earning wayyy too much
-        limit = {
-            is_ai = yes
-            OR = {
-                AND = {
-                    check_variable = { national_debt_k = 0 }
-                    set_temp_variable = { debt_amount_temp = 0.005 }
-                    multiply_temp_variable = { debt_amount_temp = gdp_amount }
-                    check_variable = { net_budget > debt_amount_temp }
-                }
-                AND = {
-                    check_variable = { national_debt_k > 0 }
-                    set_temp_variable = { debt_amount_temp = 0.04 }
-                    multiply_temp_variable = { debt_amount_temp = gdp_amount }
-                    check_variable = { net_budget > debt_amount_temp }
-                }
-            }
-        }
-
-        if = {
-            limit = {
-                check_variable = { income_tax_upper_strata_percentage > income_tax_upper_strata_min }
-            }
-            set_temp_variable = { percent_change_temp = -5 }
-            change_upper_strata_income_tax = yes
-        }
-        else_if = {
-            limit = {
-                check_variable = { income_tax_middle_strata_percentage > income_tax_middle_strata_min }
-            }
-            set_temp_variable = { percent_change_temp = -5 }
-            change_middle_strata_income_tax = yes
-        }
-        else_if = {
-            limit = {
-                check_variable = { income_tax_lower_strata_percentage > income_tax_lower_strata_min }
-            }
-            set_temp_variable = { percent_change_temp = -5 }
-            change_lower_strata_income_tax = yes
-        }
-        else_if = {
-            limit = {
-                check_variable = { sales_tax_percentage > sales_tax_min }
-            }
-            set_temp_variable = { percent_change_temp = -5 }
-            change_sales_tax = yes
-        }
-    }
-    if = { # AI always funds its military
-        limit = {
-            is_ai = yes
-            check_variable = { military_spending_percentage < 100 }
-        }
-        set_temp_variable = { percent_change_temp = 100 }
-        change_military_spending = yes
-    }
-}
 
 
 on_monthly_industries = {
-    #Building Construction
-        #buildings_update_construction = yes
-
-        for_each_loop = {
-            array = buildings
-            value = om_building
-
-            if = {
-                limit = {
-                    check_variable = { under_construction@var:om_building > 0 }
-                }
-                subtract_from_variable = { construction_amount@var:om_building = construction_speed@var:om_building }
-                if = {
-                    limit = {
-                        check_variable = { construction_amount@var:om_building < 0.001 }
-                    }
-                    set_variable = { construction_amount@var:om_building = 0 }
-                    add_to_variable = { size@var:om_building = under_construction@var:om_building }
-                    if = {
-                        limit = {
-                            check_variable = { om_building = token:building_military_industry }
-                        }
-                        set_temp_variable = { const_amount = under_construction@var:om_building }
-                        add_building_construction = {
-                            type = arms_factory
-                            level = var:const_amount
-                            instant_build = yes
-                        }
-                    }
-                    else_if = {
-                        limit = {
-                            check_variable = { om_building = token:building_civilian_industry }
-                        }
-                        set_temp_variable = { const_amount = under_construction@var:om_building }
-                        add_building_construction = {
-                            type = industrial_complex
-                            level = var:const_amount
-                            instant_build = yes
-                        }
-                    }
-                    else_if = {
-                        limit = {
-                            check_variable = { om_building = token:building_naval_industry }
-                        }
-                        set_temp_variable = { const_amount = under_construction@var:om_building }
-                        add_building_construction = {
-                            type = dockyard
-                            level = var:const_amount
-                            instant_build = yes
-                        }
-                    }
-                    set_variable = { under_construction@var:om_building = 0 }
-                }
-            }
-        }
-    #
-
-    for_each_loop = {
+    for_each_loop = { # Building Construction
         array = industries
         value = om_building
 
-        #Money Accumulation
+        if = {
+            limit = {
+                check_variable = { under_construction@var:om_building > 0 }
+            }
+            subtract_from_variable = { construction_amount@var:om_building = construction_speed@var:om_building }
+            if = {
+                limit = {
+                    check_variable = { construction_amount@var:om_building < 0.001 }
+                }
+                set_variable = { construction_amount@var:om_building = 0 }
+                add_to_variable = { size@var:om_building = under_construction@var:om_building }
+                if = {
+                    limit = {
+                        check_variable = { om_building = token:building_military_industry }
+                    }
+                    set_temp_variable = { const_amount = under_construction@var:om_building }
+                    add_building_construction = {
+                        type = arms_factory
+                        level = var:const_amount
+                        instant_build = yes
+                    }
+                }
+                else_if = {
+                    limit = {
+                        check_variable = { om_building = token:building_civilian_industry }
+                    }
+                    set_temp_variable = { const_amount = under_construction@var:om_building }
+                    add_building_construction = {
+                        type = industrial_complex
+                        level = var:const_amount
+                        instant_build = yes
+                    }
+                }
+                else_if = {
+                    limit = {
+                        check_variable = { om_building = token:building_naval_industry }
+                    }
+                    set_temp_variable = { const_amount = under_construction@var:om_building }
+                    add_building_construction = {
+                        type = dockyard
+                        level = var:const_amount
+                        instant_build = yes
+                    }
+                }
+                set_variable = { under_construction@var:om_building = 0 }
+            }
+        }
+    }
+    for_each_loop = { # Money Accumulation
+        array = industries
+        value = om_building
+
         add_to_variable = { money@var:om_building = money_accumulation@var:om_building }
         if = { #Excess goes to owners
             limit = {
@@ -1326,6 +1078,235 @@ on_monthly_pops = {
 }
 
 # AI
+    ai_budget = {
+        if = {
+            limit = {
+                is_ai = yes
+                check_variable = { treasury > 100 }
+                check_variable = { national_debt_k > 0 }
+            }
+            set_temp_variable = { x_temp = treasury }
+            divide_temp_variable = { x_temp = 1000 }
+            repay_debt = yes
+        }
+        
+        if = { # AI
+            limit = {
+                is_ai = yes
+                check_variable = { net_budget < 0 }
+            }
+            if = { # USA loves import tariffs
+                limit = {
+                    tag = USA
+                    check_variable = { import_tariff_percentage < import_tariff_max }
+                }
+                set_temp_variable = { percent_change_temp = 100 }
+                change_import_tariff = yes
+            }
+
+            if = {
+                limit = {
+                    check_variable = { sales_tax_percentage < sales_tax_max }
+                }
+                set_temp_variable = { percent_change_temp = 5 }
+                if = {
+                    limit = {
+                        check_variable = { sales_tax_percentage > 0 }
+                        check_variable = { sales_tax_revenue > 0 }
+                    }
+                    set_temp_variable = { st_per = sales_tax_revenue }
+                    divide_temp_variable = { st_per = sales_tax_percentage }
+
+                    set_temp_variable = { percent_change_temp = net_budget }
+                    divide_temp_variable = { percent_change_temp = st_per }
+                    multiply_temp_variable = { percent_change_temp = -1 }
+                    add_to_temp_variable = { percent_change_temp = 0.5 }
+                    round_temp_variable = percent_change_temp
+                    if = {
+                        limit = {
+                            check_variable = { percent_change_temp < 5 }
+                        }
+                        set_temp_variable = { percent_change_temp = 5 }
+                    }
+                }
+                change_sales_tax = yes
+            }
+            else_if = {
+                limit = {
+                    check_variable = { income_tax_lower_strata_percentage < income_tax_lower_strata_max }
+                }
+                set_temp_variable = { percent_change_temp = 5 }
+                if = {
+                    limit = {
+                        check_variable = { income_tax_lower_strata_percentage > 0 }
+                        check_variable = { income_tax_lower_strata_revenue > 0 }
+                    }
+                    set_temp_variable = { st_per = income_tax_lower_strata_revenue }
+                    divide_temp_variable = { st_per = income_tax_lower_strata_percentage }
+
+                    set_temp_variable = { percent_change_temp = net_budget }
+                    divide_temp_variable = { percent_change_temp = st_per }
+                    multiply_temp_variable = { percent_change_temp = -1 }
+                    add_to_temp_variable = { percent_change_temp = 0.5 }
+                    round_temp_variable = percent_change_temp
+                    if = {
+                        limit = {
+                            check_variable = { percent_change_temp < 5 }
+                        }
+                        set_temp_variable = { percent_change_temp = 5 }
+                    }
+                }
+                change_lower_strata_income_tax = yes
+            }
+            else_if = {
+                limit = {
+                    check_variable = { income_tax_middle_strata_percentage < income_tax_middle_strata_max }
+                }
+                set_temp_variable = { percent_change_temp = 5 }
+                if = {
+                    limit = {
+                        check_variable = { income_tax_middle_strata_percentage > 0 }
+                        check_variable = { income_tax_middle_strata_revenue > 0 }
+                    }
+                    set_temp_variable = { st_per = income_tax_middle_strata_revenue }
+                    divide_temp_variable = { st_per = income_tax_middle_strata_percentage }
+
+                    set_temp_variable = { percent_change_temp = net_budget }
+                    divide_temp_variable = { percent_change_temp = st_per }
+                    multiply_temp_variable = { percent_change_temp = -1 }
+                    add_to_temp_variable = { percent_change_temp = 0.5 }
+                    round_temp_variable = percent_change_temp
+                    if = {
+                        limit = {
+                            check_variable = { percent_change_temp < 5 }
+                        }
+                        set_temp_variable = { percent_change_temp = 5 }
+                    }
+                }
+                change_middle_strata_income_tax = yes
+            }
+            else_if = {
+                limit = {
+                    check_variable = { income_tax_upper_strata_percentage < income_tax_upper_strata_max }
+                }
+                set_temp_variable = { percent_change_temp = 5 }
+                if = {
+                    limit = {
+                        check_variable = { income_tax_upper_strata_percentage > 0 }
+                        check_variable = { income_tax_upper_strata_revenue > 0 }
+                    }
+                    set_temp_variable = { st_per = income_tax_upper_strata_revenue }
+                    divide_temp_variable = { st_per = income_tax_upper_strata_percentage }
+
+                    set_temp_variable = { percent_change_temp = net_budget }
+                    divide_temp_variable = { percent_change_temp = st_per }
+                    multiply_temp_variable = { percent_change_temp = -1 }
+                    add_to_temp_variable = { percent_change_temp = 0.5 }
+                    round_temp_variable = percent_change_temp
+                    if = {
+                        limit = {
+                            check_variable = { percent_change_temp < 5 }
+                        }
+                        set_temp_variable = { percent_change_temp = 5 }
+                    }
+                }
+                change_upper_strata_income_tax = yes
+            }
+        }
+        else_if = { # AI debt repayment
+            limit = {
+                is_ai = yes
+                check_variable = { national_debt_k > 0 }
+                set_temp_variable = { debt_amount_temp = 0.025 }
+                multiply_temp_variable = { debt_amount_temp = gdp_amount }
+                check_variable = { net_budget < debt_amount_temp }
+            }
+            if = {
+                limit = {
+                    check_variable = { sales_tax_percentage < sales_tax_max }
+                }
+                set_temp_variable = { percent_change_temp = 5 }
+                change_sales_tax = yes
+            }
+            else_if = {
+                limit = {
+                    check_variable = { income_tax_lower_strata_percentage < income_tax_lower_strata_max }
+                }
+                set_temp_variable = { percent_change_temp = 5 }
+                change_lower_strata_income_tax = yes
+            }
+            else_if = {
+                limit = {
+                    check_variable = { income_tax_middle_strata_percentage < income_tax_middle_strata_max }
+                }
+                set_temp_variable = { percent_change_temp = 5 }
+                change_middle_strata_income_tax = yes
+            }
+            else_if = {
+                limit = {
+                    check_variable = { income_tax_upper_strata_percentage < income_tax_upper_strata_max }
+                }
+                set_temp_variable = { percent_change_temp = 5 }
+                change_upper_strata_income_tax = yes
+            }
+        }
+        else_if = { # AI lowers taxes if no debt OR if has debt and is earning wayyy too much
+            limit = {
+                is_ai = yes
+                OR = {
+                    AND = {
+                        check_variable = { national_debt_k = 0 }
+                        set_temp_variable = { debt_amount_temp = 0.005 }
+                        multiply_temp_variable = { debt_amount_temp = gdp_amount }
+                        check_variable = { net_budget > debt_amount_temp }
+                    }
+                    AND = {
+                        check_variable = { national_debt_k > 0 }
+                        set_temp_variable = { debt_amount_temp = 0.04 }
+                        multiply_temp_variable = { debt_amount_temp = gdp_amount }
+                        check_variable = { net_budget > debt_amount_temp }
+                    }
+                }
+            }
+
+            if = {
+                limit = {
+                    check_variable = { income_tax_upper_strata_percentage > income_tax_upper_strata_min }
+                }
+                set_temp_variable = { percent_change_temp = -5 }
+                change_upper_strata_income_tax = yes
+            }
+            else_if = {
+                limit = {
+                    check_variable = { income_tax_middle_strata_percentage > income_tax_middle_strata_min }
+                }
+                set_temp_variable = { percent_change_temp = -5 }
+                change_middle_strata_income_tax = yes
+            }
+            else_if = {
+                limit = {
+                    check_variable = { income_tax_lower_strata_percentage > income_tax_lower_strata_min }
+                }
+                set_temp_variable = { percent_change_temp = -5 }
+                change_lower_strata_income_tax = yes
+            }
+            else_if = {
+                limit = {
+                    check_variable = { sales_tax_percentage > sales_tax_min }
+                }
+                set_temp_variable = { percent_change_temp = -5 }
+                change_sales_tax = yes
+            }
+        }
+        if = { # AI always funds its military
+            limit = {
+                is_ai = yes
+                check_variable = { military_spending_percentage < 100 }
+            }
+            set_temp_variable = { percent_change_temp = 100 }
+            change_military_spending = yes
+        }
+    }
     on_monthly_industry_ai = { # Adjusts employment_target
         set_temp_variable = { icm_temp = controller:modifier@investment_confidence_modifier }
         divide_temp_variable = { icm_temp = 100 }
