@@ -3,6 +3,1409 @@
 # This includes the master script used to tick by every month, _advance_time, and the related weekly trade calculation, _weekly_trade
 # The scripts that are used at the start of the game to setup the game are in _economy_setup.txt
 
-_advance_time = {
+# The _advance_time script consistes of two main portions:
+#   Enact changes from the previous month
+#   Update everything for the next month
 
+_advance_time = {
+    # Create econ order array 
+    random_country = {
+        if = {
+            limit = {
+                check_variable = { global.month > 11 }
+            }
+            set_variable = { global.month = 0 }
+            add_to_variable = { global.years_passed = 1 }
+        }
+
+        create_econ_order_array = yes
+
+        #Reset
+            set_variable = { global.highest_state_gdp = 0 }
+            set_variable = { global.highest_state_gdp_c = 0 }
+        #
+    }
+
+    for_each_scope_loop = {
+        array = global.econ_order_array
+
+        ## ENACTING CHANGES ##
+
+        # If you don't have eco modifiers, initialize your eco
+        if = {
+            limit = {
+                NOT = {
+                    OR = {
+                        has_dynamic_modifier = {
+                            modifier = resource_trade
+                        }
+                        has_dynamic_modifier = {
+                            modifier = budgetary_spending
+                        }
+                    }
+                }
+            }
+            country_eco_setup = yes
+        }
+
+        # Budget
+        national_debt_update = yes
+        set_temp_variable = { x_temp = net_budget }
+        add_treasury = yes
+
+        if = { limit = { is_ai = yes } ai_budget = yes }
+        spending_effects_update = yes
+
+        # Projects
+
+        # 1.2 secs (calc: 1.4)
+        update_national_production_methods = yes
+        r_update_modifiers_country_effects = yes
+        #buildings_update_base_latest_vals = yes
+        every_controlled_state = {
+            r_update_modifiers_state_effects = yes # 0.38 secs
+
+            on_monthly_industries = yes # Money Accumulation & Factory Construction - nil secs
+            on_monthly_pops = yes # Pop Finances & Growth - 0.2 secs
+
+            # 0.128 secs
+            industry_productivity_sort = yes
+            base_wage_calculation = yes
+            on_monthly_industry_ai = yes # Adjusts employment_target
+            #on_monthly_building_employment = yes
+
+            #on_monthly_subsistence_farm = yes
+            #pops_balance = yes
+
+            ## UPDATING EVERYTHING ##
+            calculate_pop_needs = yes
+            calc_industrial_capacity = yes # nil secs
+
+            industries_update = yes # 0.5 secs
+            pops_update = yes # 0.2 secs
+        }
+
+        # Investment
+        investment_opportunities_update = yes
+        investment_fund_update = yes
+        #investment_funds_monthly = yes
+        #investment_opportunities_monthly = yes
+
+        ## UPDATING EVERYTHING ##
+        update_country_pop_stats = yes
+
+        # 0.2 secs
+        market_leader_check = yes
+        if = {
+            limit = {
+                check_variable = { market_leader = THIS }
+            }
+            market_update = yes
+        }
+
+        # 0.1 secs
+        budget_update = yes
+        national_debt_update = yes
+
+        # Statistics - 0.2 to 1.2 secs
+        every_controlled_state = {
+            industries_update_finances = yes
+
+            #GDP
+            set_variable = { prev_gdp_amount = gdp_amount }
+            gdp_update = yes # nil secs
+
+            # nil secs
+            add_to_array = {
+                array = gdp_amount_array
+                value = gdp_amount
+            }
+            if = {
+                limit = {
+                    check_variable = { gdp_amount_array^num > 37 }
+                }
+                remove_from_array = { array = gdp_amount_array index = 0 }
+            }
+
+            # nil secs
+            set_temp_variable = { num_temp = 12 }
+            if = {
+                limit = {
+                    check_variable = { gdp_amount_array^num < num_temp }
+                }
+                set_temp_variable = { num_temp = gdp_amount_array^num }
+            }
+            subtract_from_temp_variable = { num_temp = 1 }
+
+            # 0.1 secs
+            set_variable = { gdp_growth = gdp_amount }
+            if = {
+                limit = {
+                    OR = {
+                        check_variable = { gdp_amount > 1000 }
+                        check_variable = { gdp_amount_array^num_temp > 1000 }
+                    }
+                }
+                set_temp_variable = { gdp_temp = gdp_amount_array^num_temp }
+                divide_temp_variable = { gdp_temp = 100 }
+                divide_variable = { gdp_growth = gdp_temp }
+            }
+            else = {
+                set_variable = { gdp_growth = gdp_amount }
+                multiply_variable = { gdp_growth = 100 }
+                divide_variable = { gdp_growth = gdp_amount_array^num_temp }
+            }
+            subtract_from_variable = { gdp_growth = 100 }
+
+            add_to_variable = { PREV.gdp_amount = gdp_amount }
+
+            econ_rerender_gdp_graph = yes
+            if = {
+                limit = {
+                    check_variable = { global.month = 0 }
+                }
+                create_pie_chart_pop_type = yes # 0.2 secs
+            }
+        }
+
+        #National Statistics - nil secs
+            # GDP
+            set_temp_variable = { gdp_amount_temp = gdp_amount }
+            divide_temp_variable = { gdp_amount_temp = 1000 }
+
+            add_to_array = { gdp_amount_monthly = gdp_amount_temp }
+            if = {
+                limit = {
+                    check_variable = { gdp_amount_monthly^num > 2 }
+                }
+                set_temp_variable = { gdp_amount_temp = gdp_amount_monthly^0 }
+                add_to_temp_variable = { gdp_amount_temp = gdp_amount_monthly^1 }
+                add_to_temp_variable = { gdp_amount_temp = gdp_amount_monthly^2 }
+                add_to_array = {
+                    array = gdp_amount_quarterly
+                    value = gdp_amount_temp
+                }
+                if = {
+                    limit = {
+                        check_variable = { gdp_amount_array^num > 41 }
+                    }
+                    remove_from_array = { array = gdp_amount_quarterly index = 0 }
+                }
+                clear_array = gdp_amount_monthly
+            }
+
+            if = {
+                limit = {
+                    check_variable = { global.month = 0 }
+                    check_variable = { global.years_passed > 0 }
+                }
+                set_temp_variable = { gdp_amount_temp = gdp_amount_quarterly^0 }
+                add_to_temp_variable = { gdp_amount_temp = gdp_amount_quarterly^1 }
+                add_to_temp_variable = { gdp_amount_temp = gdp_amount_quarterly^2 }
+                add_to_temp_variable = { gdp_amount_temp = gdp_amount_quarterly^3 }
+                add_to_array = {
+                    array = gdp_amount_yearly
+                    value = gdp_amount_temp
+                }
+            }
+
+            # Budget
+            add_to_array = {
+                array = net_budget_array
+                value = net_budget
+            }
+            if = {
+                limit = {
+                    check_variable = { net_budget_array^num > 32 }
+                }
+                remove_from_array = { array = net_budget_array index = 0 }
+            }
+
+            #Create the Graphs
+            econ_rerender_country_gdp_graph = yes
+            econ_rerender_country_budget_graph = yes
+        #
+    }
 }
+
+create_econ_order_array = {
+    clear_array = global.econ_gp_list_array
+    #add_to_array = { global.econ_gp_list_array = ENG }
+    add_to_array = { global.econ_gp_list_array = USA }
+    # add_to_array = { global.econ_gp_list_array = BRA }
+    # add_to_array = { global.econ_gp_list_array = MEX }
+    # add_to_array = { global.econ_gp_list_array = COL }
+    # add_to_array = { global.econ_gp_list_array = VEN }
+    # add_to_array = { global.econ_gp_list_array = CAN }
+    # add_to_array = { global.econ_gp_list_array = CHL }
+    # add_to_array = { global.econ_gp_list_array = BOL }
+    # add_to_array = { global.econ_gp_list_array = PRU }
+    # add_to_array = { global.econ_gp_list_array = ARG }
+    # add_to_array = { global.econ_gp_list_array = BUE }
+    # add_to_array = { global.econ_gp_list_array = HBC }
+    # add_to_array = { global.econ_gp_list_array = URG }
+    # add_to_array = { global.econ_gp_list_array = PAR }
+    # # #
+    # add_to_array = { global.econ_gp_list_array = ECU }
+    # # #
+    # add_to_array = { global.econ_gp_list_array = UTA }
+    # add_to_array = { global.econ_gp_list_array = NVS }
+    # add_to_array = { global.econ_gp_list_array = VAN }
+    # add_to_array = { global.econ_gp_list_array = BRK }
+    # add_to_array = { global.econ_gp_list_array = NFL }
+    # add_to_array = { global.econ_gp_list_array = BCO }
+    # add_to_array = { global.econ_gp_list_array = QCI }
+    # # #
+    # add_to_array = { global.econ_gp_list_array = GUA }
+    # add_to_array = { global.econ_gp_list_array = HON }
+    # add_to_array = { global.econ_gp_list_array = NIC }
+    # add_to_array = { global.econ_gp_list_array = COS }
+    # add_to_array = { global.econ_gp_list_array = ELS }
+    # add_to_array = { global.econ_gp_list_array = DOM }
+    # add_to_array = { global.econ_gp_list_array = HAI }
+    # #
+    # #Primitives
+    # add_to_array = { global.econ_gp_list_array = SIX }
+    # add_to_array = { global.econ_gp_list_array = CHY }
+    # add_to_array = { global.econ_gp_list_array = COM }
+    # add_to_array = { global.econ_gp_list_array = SHO }
+    # add_to_array = { global.econ_gp_list_array = APA }
+    # add_to_array = { global.econ_gp_list_array = CRW }
+    # add_to_array = { global.econ_gp_list_array = BFT }
+    # add_to_array = { global.econ_gp_list_array = NAV }
+    # add_to_array = { global.econ_gp_list_array = NEZ }
+    # add_to_array = { global.econ_gp_list_array = SEM }
+    
+    # Update the score_tag_array so that new countries can immediately use the eco 
+    eoanb_score_system_calc = yes
+    eoanb_ledger_system_calc = yes
+
+    clear_array = global.econ_order_array
+    clear_array = global.econ_value_array
+
+    for_each_scope_loop = {
+        array = global.score_tag_array #global.econ_gp_list_array #global.score_tag_array
+
+        if = {
+            limit = {
+                NOT = { has_variable = has_afr_empire_mechanic_system }
+            }
+            for_each_loop = {
+                array = global.econ_value_array
+                index = ii
+                value = vv
+                break = bb
+
+                if = {
+                    limit = {
+                        check_variable = { vv < industrial_power }
+                    }
+                    add_to_array = {
+                        array = global.econ_value_array
+                        value = industrial_power
+                        index = ii
+                    }
+                    add_to_array = {
+                        array = global.econ_order_array
+                        value = THIS
+                        index = ii
+                    }
+                    set_temp_variable = { bb = 1 }
+                }
+            }
+            if = {
+                limit = {
+                    check_variable = { bb = 0 }
+                }
+                add_to_array = { global.econ_value_array = industrial_power }
+                add_to_array = { global.econ_order_array = THIS }
+            }
+        }
+    }
+}
+
+
+
+on_monthly_industries = {
+    for_each_loop = { # Building Construction
+        array = industries
+        value = om_building
+
+        if = {
+            limit = {
+                check_variable = { under_construction@var:om_building > 0 }
+            }
+            subtract_from_variable = { construction_amount@var:om_building = construction_speed@var:om_building }
+            if = {
+                limit = {
+                    check_variable = { construction_amount@var:om_building < 0.001 }
+                }
+                set_variable = { construction_amount@var:om_building = 0 }
+                add_to_variable = { size@var:om_building = under_construction@var:om_building }
+                if = {
+                    limit = {
+                        check_variable = { om_building = token:building_military_industry }
+                    }
+                    set_temp_variable = { const_amount = under_construction@var:om_building }
+                    add_building_construction = {
+                        type = arms_factory
+                        level = var:const_amount
+                        instant_build = yes
+                    }
+                }
+                else_if = {
+                    limit = {
+                        check_variable = { om_building = token:building_civilian_industry }
+                    }
+                    set_temp_variable = { const_amount = under_construction@var:om_building }
+                    add_building_construction = {
+                        type = industrial_complex
+                        level = var:const_amount
+                        instant_build = yes
+                    }
+                }
+                else_if = {
+                    limit = {
+                        check_variable = { om_building = token:building_naval_industry }
+                    }
+                    set_temp_variable = { const_amount = under_construction@var:om_building }
+                    add_building_construction = {
+                        type = dockyard
+                        level = var:const_amount
+                        instant_build = yes
+                    }
+                }
+                set_variable = { under_construction@var:om_building = 0 }
+            }
+        }
+    }
+    for_each_loop = { # Money Accumulation
+        array = industries
+        value = om_building
+
+        add_to_variable = { money@var:om_building = money_accumulation@var:om_building }
+        if = { #Excess goes to owners
+            limit = {
+                check_variable = { money@var:om_building > money_limit@var:om_building }
+            }
+            set_variable = { money@var:om_building = money_limit@var:om_building }
+        }
+    }
+}
+on_monthly_pops = {
+    #Finances
+        # Slaves
+            if = {
+                limit = {
+                    check_variable = { slaves_workforce > 0 }
+                }
+                set_temp_variable = { money_temp = slaves_earnings }
+                subtract_from_temp_variable = { money_temp = slaves_spending }
+                if = {
+                    limit = {
+                        check_variable = { money_temp > 0 }
+                    }
+                    #Put money in the bank
+                }
+
+                #Standard of Living Progress
+                set_temp_variable = { net_target_temp = slaves_spending_target }
+                subtract_from_temp_variable = { net_target_temp = slaves_spending }
+                divide_temp_variable = { net_target_temp = slaves_needs_spending }
+                multiply_temp_variable = { net_target_temp = 3 }
+                if = {
+                    limit = {
+                        OR = { 
+                            check_variable = { net_target_temp > 0.33 }
+                            check_variable = { net_target_temp < -0.33 }
+                        }
+                    }
+                    add_to_variable = { slaves_sol_progress = net_target_temp }
+                }
+                if = {
+                    limit = {
+                        check_variable = { slaves_sol = 1 }
+                        check_variable = { slaves_sol_progress < 0 }
+                    }
+                    set_variable = { slaves_sol_progress = 0 }
+                }
+
+                #Standard of Living Changes
+                if = {
+                    limit = {
+                        check_variable = { slaves_sol_progress > 0.999 }
+                    }
+                    set_variable = { slaves_sol_progress = 0 }
+                    add_to_variable = { slaves_sol = 1 }
+                }
+                else_if = {
+                    limit = {
+                        check_variable = { slaves_sol_progress < -0.999 }
+                    }
+                    set_variable = { slaves_sol_progress = 0 }
+                    subtract_from_variable = { slaves_sol = 1 }
+                }
+
+                if = {
+                    limit = {
+                        check_variable = { slaves_sol < 1 }
+                    }
+                    set_variable = { slaves_sol = 1 }
+                }
+            }
+            else = {
+                set_variable = { slaves_spending = 0 }
+                set_variable = { slaves_income_tax_spending = 0 }
+                set_variable = { slaves_sales_tax_spending = 0 }
+                set_variable = { slaves_debt_interest_spending = 0 }
+
+                set_variable = { slaves_sol_progress = 0 }
+            }
+        #
+        # Peasants
+            if = {
+                limit = {
+                    check_variable = { peasants_workforce > 0 }
+                }
+                set_temp_variable = { money_temp = peasants_earnings }
+                subtract_from_temp_variable = { money_temp = peasants_spending }
+                if = {
+                    limit = {
+                        check_variable = { money_temp > 0 }
+                    }
+                    #Put money in the bank
+                }
+
+                #Standard of Living Progress
+                set_temp_variable = { net_target_temp = peasants_spending_target }
+                subtract_from_temp_variable = { net_target_temp = peasants_spending }
+                divide_temp_variable = { net_target_temp = peasants_needs_spending }
+                multiply_temp_variable = { net_target_temp = 3 }
+                if = {
+                    limit = {
+                        OR = { 
+                            check_variable = { net_target_temp > 0.33 }
+                            check_variable = { net_target_temp < -0.33 }
+                        }
+                    }
+                    add_to_variable = { peasants_sol_progress = net_target_temp }
+                }
+                if = {
+                    limit = {
+                        check_variable = { peasants_sol = 1 }
+                        check_variable = { peasants_sol_progress < 0 }
+                    }
+                    set_variable = { peasants_sol_progress = 0 }
+                }
+
+                #Standard of Living Changes
+                if = {
+                    limit = {
+                        check_variable = { peasants_sol_progress > 0.999 }
+                    }
+                    set_variable = { peasants_sol_progress = 0 }
+                    add_to_variable = { peasants_sol = 1 }
+                }
+                else_if = {
+                    limit = {
+                        check_variable = { peasants_sol_progress < -0.999 }
+                    }
+                    set_variable = { peasants_sol_progress = 0 }
+                    subtract_from_variable = { peasants_sol = 1 }
+                }
+
+                if = {
+                    limit = {
+                        check_variable = { peasants_sol < 1 }
+                    }
+                    set_variable = { peasants_sol = 1 }
+                }
+            }
+            else = {
+                set_variable = { peasants_spending = 0 }
+                set_variable = { peasants_income_tax_spending = 0 }
+                set_variable = { peasants_sales_tax_spending = 0 }
+                set_variable = { peasants_debt_interest_spending = 0 }
+
+                set_variable = { peasants_sol_progress = 0 }
+            }
+        #
+        # Laborers
+            if = {
+                limit = {
+                    check_variable = { laborers_workforce > 0 }
+                }
+                set_temp_variable = { money_temp = laborers_earnings }
+                subtract_from_temp_variable = { money_temp = laborers_spending }
+                if = {
+                    limit = {
+                        check_variable = { money_temp > 0 }
+                    }
+                    #Put money in the bank
+                }
+
+                #Standard of Living Progress
+                set_temp_variable = { net_target_temp = laborers_spending_target }
+                subtract_from_temp_variable = { net_target_temp = laborers_spending }
+                divide_temp_variable = { net_target_temp = laborers_needs_spending }
+                multiply_temp_variable = { net_target_temp = 3 }
+                if = {
+                    limit = {
+                        OR = { 
+                            check_variable = { net_target_temp > 0.33 }
+                            check_variable = { net_target_temp < -0.33 }
+                        }
+                    }
+                    add_to_variable = { laborers_sol_progress = net_target_temp }
+                }
+                if = {
+                    limit = {
+                        check_variable = { laborers_sol = 1 }
+                        check_variable = { laborers_sol_progress < 0 }
+                    }
+                    set_variable = { laborers_sol_progress = 0 }
+                }
+
+                #Standard of Living Changes
+                if = {
+                    limit = {
+                        check_variable = { laborers_sol_progress > 0.999 }
+                    }
+                    set_variable = { laborers_sol_progress = 0 }
+                    add_to_variable = { laborers_sol = 1 }
+                }
+                else_if = {
+                    limit = {
+                        check_variable = { laborers_sol_progress < -0.999 }
+                    }
+                    set_variable = { laborers_sol_progress = 0 }
+                    subtract_from_variable = { laborers_sol = 1 }
+                }
+
+                if = {
+                    limit = {
+                        check_variable = { laborers_sol < 1 }
+                    }
+                    set_variable = { laborers_sol = 1 }
+                }
+            }
+            else = {
+                set_variable = { laborers_spending = 0 }
+                set_variable = { laborers_income_tax_spending = 0 }
+                set_variable = { laborers_sales_tax_spending = 0 }
+                set_variable = { laborers_debt_interest_spending = 0 }
+
+                set_variable = { laborers_sol_progress = 0 }
+            }
+        #
+        # Workers
+            if = {
+                limit = {
+                    check_variable = { workers_workforce > 0 }
+                }
+                set_temp_variable = { money_temp = workers_earnings }
+                subtract_from_temp_variable = { money_temp = workers_spending }
+                if = {
+                    limit = {
+                        check_variable = { money_temp > 0 }
+                    }
+                    #Put money in the bank
+                }
+
+                #Standard of Living Progress
+                set_temp_variable = { net_target_temp = workers_spending_target }
+                subtract_from_temp_variable = { net_target_temp = workers_spending }
+                divide_temp_variable = { net_target_temp = workers_needs_spending }
+                multiply_temp_variable = { net_target_temp = 3 }
+                if = {
+                    limit = {
+                        OR = { 
+                            check_variable = { net_target_temp > 0.33 }
+                            check_variable = { net_target_temp < -0.33 }
+                        }
+                    }
+                    add_to_variable = { workers_sol_progress = net_target_temp }
+                }
+                else_if = {
+                    limit = {
+                        check_variable = { workers_sol = 1 }
+                        check_variable = { workers_sol_progress < 0 }
+                    }
+                    set_variable = { workers_sol_progress = 0 }
+                }
+
+                #Standard of Living Changes
+                if = {
+                    limit = {
+                        check_variable = { workers_sol_progress > 0.999 }
+                    }
+                    set_variable = { workers_sol_progress = 0 }
+                    add_to_variable = { workers_sol = 1 }
+                }
+                else_if = {
+                    limit = {
+                        check_variable = { workers_sol_progress < -0.999 }
+                    }
+                    set_variable = { workers_sol_progress = 0 }
+                    subtract_from_variable = { workers_sol = 1 }
+                }
+
+                if = {
+                    limit = {
+                        check_variable = { workers_sol < 1 }
+                    }
+                    set_variable = { workers_sol = 1 }
+                }
+            }
+            else = {
+                set_variable = { workers_spending = 0 }
+                set_variable = { workers_income_tax_spending = 0 }
+                set_variable = { workers_sales_tax_spending = 0 }
+                set_variable = { workers_debt_interest_spending = 0 }
+
+                set_variable = { workers_sol_progress = 0 }
+            }
+        #
+        # Professionals
+            if = {
+                limit = {
+                    check_variable = { professionals_workforce > 0 }
+                }
+                set_temp_variable = { money_temp = professionals_earnings }
+                subtract_from_temp_variable = { money_temp = professionals_spending }
+                if = {
+                    limit = {
+                        check_variable = { money_temp > 0 }
+                    }
+                    #Put money in the bank
+                }
+
+                #Standard of Living Progress
+                set_temp_variable = { net_target_temp = professionals_spending_target }
+                subtract_from_temp_variable = { net_target_temp = professionals_spending }
+                divide_temp_variable = { net_target_temp = professionals_needs_spending }
+                multiply_temp_variable = { net_target_temp = 3 }
+                if = {
+                    limit = {
+                        OR = { 
+                            check_variable = { net_target_temp > 0.33 }
+                            check_variable = { net_target_temp < -0.33 }
+                        }
+                    }
+                    add_to_variable = { professionals_sol_progress = net_target_temp }
+                }
+                if = {
+                    limit = {
+                        check_variable = { professionals_sol = 1 }
+                        check_variable = { professionals_sol_progress < 0 }
+                    }
+                    set_variable = { professionals_sol_progress = 0 }
+                }
+
+                #Standard of Living Changes
+                if = {
+                    limit = {
+                        check_variable = { professionals_sol_progress > 0.999 }
+                    }
+                    set_variable = { professionals_sol_progress = 0 }
+                    add_to_variable = { professionals_sol = 1 }
+                }
+                else_if = {
+                    limit = {
+                        check_variable = { professionals_sol_progress < -0.999 }
+                    }
+                    set_variable = { professionals_sol_progress = 0 }
+                    subtract_from_variable = { professionals_sol = 1 }
+                }
+
+                if = {
+                    limit = {
+                        check_variable = { professionals_sol < 1 }
+                    }
+                    set_variable = { professionals_sol = 1 }
+                }
+            }
+            else = {
+                set_variable = { professionals_spending = 0 }
+                set_variable = { professionals_income_tax_spending = 0 }
+                set_variable = { professionals_sales_tax_spending = 0 }
+                set_variable = { professionals_debt_interest_spending = 0 }
+
+                set_variable = { professionals_sol_progress = 0 }
+            }
+        #
+        # Specialists
+            if = {
+                limit = {
+                    check_variable = { specialists_workforce > 0 }
+                }
+                set_temp_variable = { money_temp = specialists_earnings }
+                subtract_from_temp_variable = { money_temp = specialists_spending }
+                if = {
+                    limit = {
+                        check_variable = { money_temp > 0 }
+                    }
+                    #Put money in the bank
+                }
+
+                #Standard of Living Progress
+                set_temp_variable = { net_target_temp = specialists_spending_target }
+                subtract_from_temp_variable = { net_target_temp = specialists_spending }
+                divide_temp_variable = { net_target_temp = specialists_needs_spending }
+                multiply_temp_variable = { net_target_temp = 3 }
+                if = {
+                    limit = {
+                        OR = { 
+                            check_variable = { net_target_temp > 0.33 }
+                            check_variable = { net_target_temp < -0.33 }
+                        }
+                    }
+                    add_to_variable = { specialists_sol_progress = net_target_temp }
+                }
+                else_if = {
+                    limit = {
+                        check_variable = { specialists_sol = 1 }
+                        check_variable = { specialists_sol_progress < 0 }
+                    }
+                    set_variable = { specialists_sol_progress = 0 }
+                }
+
+                #Standard of Living Changes
+                if = {
+                    limit = {
+                        check_variable = { specialists_sol_progress > 0.999 }
+                    }
+                    set_variable = { specialists_sol_progress = 0 }
+                    add_to_variable = { specialists_sol = 1 }
+                }
+                else_if = {
+                    limit = {
+                        check_variable = { specialists_sol_progress < -0.999 }
+                    }
+                    set_variable = { specialists_sol_progress = 0 }
+                    subtract_from_variable = { specialists_sol = 1 }
+                }
+
+                if = {
+                    limit = {
+                        check_variable = { specialists_sol < 1 }
+                    }
+                    set_variable = { specialists_sol = 1 }
+                }
+            }
+            else = {
+                set_variable = { specialists_spending = 0 }
+                set_variable = { specialists_income_tax_spending = 0 }
+                set_variable = { specialists_sales_tax_spending = 0 }
+                set_variable = { specialists_debt_interest_spending = 0 }
+
+                set_variable = { specialists_sol_progress = 0 }
+            }
+        #
+        # Capitalists
+            if = {
+                limit = {
+                    check_variable = { capitalists_workforce > 0 }
+                }
+                set_temp_variable = { money_temp = capitalists_earnings }
+                subtract_from_temp_variable = { money_temp = capitalists_spending }
+                if = {
+                    limit = {
+                        check_variable = { money_temp > 0 }
+                    }
+                    #Put money in the bank
+                }
+
+                #Standard of Living Progress
+                set_temp_variable = { net_target_temp = capitalists_spending_target }
+                subtract_from_temp_variable = { net_target_temp = capitalists_spending }
+                divide_temp_variable = { net_target_temp = capitalists_needs_spending }
+                multiply_temp_variable = { net_target_temp = 3 }
+                if = {
+                    limit = {
+                        OR = { 
+                            check_variable = { net_target_temp > 0.33 }
+                            check_variable = { net_target_temp < -0.33 }
+                        }
+                    }
+                    add_to_variable = { capitalists_sol_progress = net_target_temp }
+                }
+                if = {
+                    limit = {
+                        check_variable = { capitalists_sol = 1 }
+                        check_variable = { capitalists_sol_progress < 0 }
+                    }
+                    set_variable = { capitalists_sol_progress = 0 }
+                }
+
+                #Standard of Living Changes
+                if = {
+                    limit = {
+                        check_variable = { capitalists_sol_progress > 0.999 }
+                    }
+                    set_variable = { capitalists_sol_progress = 0 }
+                    add_to_variable = { capitalists_sol = 1 }
+                }
+                else_if = {
+                    limit = {
+                        check_variable = { capitalists_sol_progress < -0.999 }
+                    }
+                    set_variable = { capitalists_sol_progress = 0 }
+                    subtract_from_variable = { capitalists_sol = 1 }
+                }
+
+                if = {
+                    limit = {
+                        check_variable = { capitalists_sol < 1 }
+                    }
+                    set_variable = { capitalists_sol = 1 }
+                }
+            }
+            else = {
+                set_variable = { capitalists_spending = 0 }
+                set_variable = { capitalists_income_tax_spending = 0 }
+                set_variable = { capitalists_sales_tax_spending = 0 }
+                set_variable = { capitalists_debt_interest_spending = 0 }
+
+                set_variable = { capitalists_sol_progress = 0 }
+            }
+        #
+        # Aristocrats
+            if = {
+                limit = {
+                    check_variable = { aristocrats_workforce > 0 }
+                }
+                set_temp_variable = { money_temp = aristocrats_earnings }
+                subtract_from_temp_variable = { money_temp = aristocrats_spending }
+                if = {
+                    limit = {
+                        check_variable = { money_temp > 0 }
+                    }
+                    #Put money in the bank
+                }
+
+                #Standard of Living Progress
+                set_temp_variable = { net_target_temp = aristocrats_spending_target }
+                subtract_from_temp_variable = { net_target_temp = aristocrats_spending }
+                divide_temp_variable = { net_target_temp = aristocrats_needs_spending }
+                multiply_temp_variable = { net_target_temp = 3 }
+                if = {
+                    limit = {
+                        OR = { 
+                            check_variable = { net_target_temp > 0.33 }
+                            check_variable = { net_target_temp < -0.33 }
+                        }
+                    }
+                    add_to_variable = { aristocrats_sol_progress = net_target_temp }
+                }
+                if = {
+                    limit = {
+                        check_variable = { aristocrats_sol = 1 }
+                        check_variable = { aristocrats_sol_progress < 0 }
+                    }
+                    set_variable = { aristocrats_sol_progress = 0 }
+                }
+
+                #Standard of Living Changes
+                if = {
+                    limit = {
+                        check_variable = { aristocrats_sol_progress > 0.999 }
+                    }
+                    set_variable = { aristocrats_sol_progress = 0 }
+                    add_to_variable = { aristocrats_sol = 1 }
+                }
+                else_if = {
+                    limit = {
+                        check_variable = { aristocrats_sol_progress < -0.999 }
+                    }
+                    set_variable = { aristocrats_sol_progress = 0 }
+                    subtract_from_variable = { aristocrats_sol = 1 }
+                }
+
+                if = {
+                    limit = {
+                        check_variable = { aristocrats_sol < 1 }
+                    }
+                    set_variable = { aristocrats_sol = 1 }
+                }
+            }
+            else = {
+                set_variable = { aristocrats_spending = 0 }
+                set_variable = { aristocrats_income_tax_spending = 0 }
+                set_variable = { aristocrats_sales_tax_spending = 0 }
+                set_variable = { aristocrats_debt_interest_spending = 0 }
+
+                set_variable = { aristocrats_sol_progress = 0 }
+            }
+        #
+        # Soldiers
+            if = {
+                limit = {
+                    check_variable = { soldiers_workforce > 0 }
+                }
+                set_temp_variable = { money_temp = soldiers_earnings }
+                subtract_from_temp_variable = { money_temp = soldiers_spending }
+                if = {
+                    limit = {
+                        check_variable = { money_temp > 0 }
+                    }
+                    #Put money in the bank
+                }
+
+                #Standard of Living Progress
+                set_temp_variable = { net_target_temp = soldiers_spending_target }
+                subtract_from_temp_variable = { net_target_temp = soldiers_spending }
+                divide_temp_variable = { net_target_temp = soldiers_needs_spending }
+                multiply_temp_variable = { net_target_temp = 3 }
+                if = {
+                    limit = {
+                        OR = { 
+                            check_variable = { net_target_temp > 0.33 }
+                            check_variable = { net_target_temp < -0.33 }
+                        }
+                    }
+                    add_to_variable = { soldiers_sol_progress = net_target_temp }
+                }
+                if = {
+                    limit = {
+                        check_variable = { soldiers_sol = 1 }
+                        check_variable = { soldiers_sol_progress < 0 }
+                    }
+                    set_variable = { soldiers_sol_progress = 0 }
+                }
+
+                #Standard of Living Changes
+                if = {
+                    limit = {
+                        check_variable = { soldiers_sol_progress > 0.999 }
+                    }
+                    set_variable = { soldiers_sol_progress = 0 }
+                    add_to_variable = { soldiers_sol = 1 }
+                }
+                else_if = {
+                    limit = {
+                        check_variable = { soldiers_sol_progress < -0.999 }
+                    }
+                    set_variable = { soldiers_sol_progress = 0 }
+                    subtract_from_variable = { soldiers_sol = 1 }
+                }
+
+                if = {
+                    limit = {
+                        check_variable = { soldiers_sol < 1 }
+                    }
+                    set_variable = { soldiers_sol = 1 }
+                }
+            }
+            else = {
+                set_variable = { soldiers_spending = 0 }
+                set_variable = { soldiers_income_tax_spending = 0 }
+                set_variable = { soldiers_sales_tax_spending = 0 }
+                set_variable = { soldiers_debt_interest_spending = 0 }
+
+                set_variable = { soldiers_sol_progress = 0 }
+            }
+        #
+        # Bureaucrats
+            if = {
+                limit = {
+                    check_variable = { bureaucrats_workforce > 0 }
+                }
+                set_temp_variable = { money_temp = bureaucrats_earnings }
+                subtract_from_temp_variable = { money_temp = bureaucrats_spending }
+                if = {
+                    limit = {
+                        check_variable = { money_temp > 0 }
+                    }
+                    #Put money in the bank
+                }
+
+                #Standard of Living Progress
+                set_temp_variable = { net_target_temp = bureaucrats_spending_target }
+                subtract_from_temp_variable = { net_target_temp = bureaucrats_spending }
+                divide_temp_variable = { net_target_temp = bureaucrats_needs_spending }
+                multiply_temp_variable = { net_target_temp = 3 }
+                if = {
+                    limit = {
+                        OR = { 
+                            check_variable = { net_target_temp > 0.33 }
+                            check_variable = { net_target_temp < -0.33 }
+                        }
+                    }
+                    add_to_variable = { bureaucrats_sol_progress = net_target_temp }
+                }
+                if = {
+                    limit = {
+                        check_variable = { bureaucrats_sol = 1 }
+                        check_variable = { bureaucrats_sol_progress < 0 }
+                    }
+                    set_variable = { bureaucrats_sol_progress = 0 }
+                }
+
+                #Standard of Living Changes
+                if = {
+                    limit = {
+                        check_variable = { bureaucrats_sol_progress > 0.999 }
+                    }
+                    set_variable = { bureaucrats_sol_progress = 0 }
+                    add_to_variable = { bureaucrats_sol = 1 }
+                }
+                else_if = {
+                    limit = {
+                        check_variable = { bureaucrats_sol_progress < -0.999 }
+                    }
+                    set_variable = { bureaucrats_sol_progress = 0 }
+                    subtract_from_variable = { bureaucrats_sol = 1 }
+                }
+
+                if = {
+                    limit = {
+                        check_variable = { bureaucrats_sol < 1 }
+                    }
+                    set_variable = { bureaucrats_sol = 1 }
+                }
+            }
+            else = {
+                set_variable = { bureaucrats_spending = 0 }
+                set_variable = { bureaucrats_income_tax_spending = 0 }
+                set_variable = { bureaucrats_sales_tax_spending = 0 }
+                set_variable = { bureaucrats_debt_interest_spending = 0 }
+
+                set_variable = { bureaucrats_sol_progress = 0 }
+            }
+        #
+    #
+}
+
+# AI
+    ai_budget = {
+        if = {
+            limit = {
+                is_ai = yes
+                check_variable = { treasury > 100 }
+                check_variable = { national_debt_k > 0 }
+            }
+            set_temp_variable = { x_temp = treasury }
+            divide_temp_variable = { x_temp = 1000 }
+            repay_debt = yes
+        }
+        
+        if = { # AI
+            limit = {
+                is_ai = yes
+                check_variable = { net_budget < 0 }
+            }
+            if = { # USA loves import tariffs
+                limit = {
+                    tag = USA
+                    check_variable = { import_tariff_percentage < import_tariff_max }
+                }
+                set_temp_variable = { percent_change_temp = 100 }
+                change_import_tariff = yes
+            }
+
+            if = {
+                limit = {
+                    check_variable = { sales_tax_percentage < sales_tax_max }
+                }
+                set_temp_variable = { percent_change_temp = 5 }
+                if = {
+                    limit = {
+                        check_variable = { sales_tax_percentage > 0 }
+                        check_variable = { sales_tax_revenue > 0 }
+                    }
+                    set_temp_variable = { st_per = sales_tax_revenue }
+                    divide_temp_variable = { st_per = sales_tax_percentage }
+
+                    set_temp_variable = { percent_change_temp = net_budget }
+                    divide_temp_variable = { percent_change_temp = st_per }
+                    multiply_temp_variable = { percent_change_temp = -1 }
+                    add_to_temp_variable = { percent_change_temp = 0.5 }
+                    round_temp_variable = percent_change_temp
+                    if = {
+                        limit = {
+                            check_variable = { percent_change_temp < 5 }
+                        }
+                        set_temp_variable = { percent_change_temp = 5 }
+                    }
+                }
+                change_sales_tax = yes
+            }
+            else_if = {
+                limit = {
+                    check_variable = { income_tax_lower_strata_percentage < income_tax_lower_strata_max }
+                }
+                set_temp_variable = { percent_change_temp = 5 }
+                if = {
+                    limit = {
+                        check_variable = { income_tax_lower_strata_percentage > 0 }
+                        check_variable = { income_tax_lower_strata_revenue > 0 }
+                    }
+                    set_temp_variable = { st_per = income_tax_lower_strata_revenue }
+                    divide_temp_variable = { st_per = income_tax_lower_strata_percentage }
+
+                    set_temp_variable = { percent_change_temp = net_budget }
+                    divide_temp_variable = { percent_change_temp = st_per }
+                    multiply_temp_variable = { percent_change_temp = -1 }
+                    add_to_temp_variable = { percent_change_temp = 0.5 }
+                    round_temp_variable = percent_change_temp
+                    if = {
+                        limit = {
+                            check_variable = { percent_change_temp < 5 }
+                        }
+                        set_temp_variable = { percent_change_temp = 5 }
+                    }
+                }
+                change_lower_strata_income_tax = yes
+            }
+            else_if = {
+                limit = {
+                    check_variable = { income_tax_middle_strata_percentage < income_tax_middle_strata_max }
+                }
+                set_temp_variable = { percent_change_temp = 5 }
+                if = {
+                    limit = {
+                        check_variable = { income_tax_middle_strata_percentage > 0 }
+                        check_variable = { income_tax_middle_strata_revenue > 0 }
+                    }
+                    set_temp_variable = { st_per = income_tax_middle_strata_revenue }
+                    divide_temp_variable = { st_per = income_tax_middle_strata_percentage }
+
+                    set_temp_variable = { percent_change_temp = net_budget }
+                    divide_temp_variable = { percent_change_temp = st_per }
+                    multiply_temp_variable = { percent_change_temp = -1 }
+                    add_to_temp_variable = { percent_change_temp = 0.5 }
+                    round_temp_variable = percent_change_temp
+                    if = {
+                        limit = {
+                            check_variable = { percent_change_temp < 5 }
+                        }
+                        set_temp_variable = { percent_change_temp = 5 }
+                    }
+                }
+                change_middle_strata_income_tax = yes
+            }
+            else_if = {
+                limit = {
+                    check_variable = { income_tax_upper_strata_percentage < income_tax_upper_strata_max }
+                }
+                set_temp_variable = { percent_change_temp = 5 }
+                if = {
+                    limit = {
+                        check_variable = { income_tax_upper_strata_percentage > 0 }
+                        check_variable = { income_tax_upper_strata_revenue > 0 }
+                    }
+                    set_temp_variable = { st_per = income_tax_upper_strata_revenue }
+                    divide_temp_variable = { st_per = income_tax_upper_strata_percentage }
+
+                    set_temp_variable = { percent_change_temp = net_budget }
+                    divide_temp_variable = { percent_change_temp = st_per }
+                    multiply_temp_variable = { percent_change_temp = -1 }
+                    add_to_temp_variable = { percent_change_temp = 0.5 }
+                    round_temp_variable = percent_change_temp
+                    if = {
+                        limit = {
+                            check_variable = { percent_change_temp < 5 }
+                        }
+                        set_temp_variable = { percent_change_temp = 5 }
+                    }
+                }
+                change_upper_strata_income_tax = yes
+            }
+        }
+        else_if = { # AI debt repayment
+            limit = {
+                is_ai = yes
+                check_variable = { national_debt_k > 0 }
+                set_temp_variable = { debt_amount_temp = 0.025 }
+                multiply_temp_variable = { debt_amount_temp = gdp_amount }
+                check_variable = { net_budget < debt_amount_temp }
+            }
+            if = {
+                limit = {
+                    check_variable = { sales_tax_percentage < sales_tax_max }
+                }
+                set_temp_variable = { percent_change_temp = 5 }
+                change_sales_tax = yes
+            }
+            else_if = {
+                limit = {
+                    check_variable = { income_tax_lower_strata_percentage < income_tax_lower_strata_max }
+                }
+                set_temp_variable = { percent_change_temp = 5 }
+                change_lower_strata_income_tax = yes
+            }
+            else_if = {
+                limit = {
+                    check_variable = { income_tax_middle_strata_percentage < income_tax_middle_strata_max }
+                }
+                set_temp_variable = { percent_change_temp = 5 }
+                change_middle_strata_income_tax = yes
+            }
+            else_if = {
+                limit = {
+                    check_variable = { income_tax_upper_strata_percentage < income_tax_upper_strata_max }
+                }
+                set_temp_variable = { percent_change_temp = 5 }
+                change_upper_strata_income_tax = yes
+            }
+        }
+        else_if = { # AI lowers taxes if no debt OR if has debt and is earning wayyy too much
+            limit = {
+                is_ai = yes
+                OR = {
+                    AND = {
+                        check_variable = { national_debt_k = 0 }
+                        set_temp_variable = { debt_amount_temp = 0.005 }
+                        multiply_temp_variable = { debt_amount_temp = gdp_amount }
+                        check_variable = { net_budget > debt_amount_temp }
+                    }
+                    AND = {
+                        check_variable = { national_debt_k > 0 }
+                        set_temp_variable = { debt_amount_temp = 0.04 }
+                        multiply_temp_variable = { debt_amount_temp = gdp_amount }
+                        check_variable = { net_budget > debt_amount_temp }
+                    }
+                }
+            }
+
+            if = {
+                limit = {
+                    check_variable = { income_tax_upper_strata_percentage > income_tax_upper_strata_min }
+                }
+                set_temp_variable = { percent_change_temp = -5 }
+                change_upper_strata_income_tax = yes
+            }
+            else_if = {
+                limit = {
+                    check_variable = { income_tax_middle_strata_percentage > income_tax_middle_strata_min }
+                }
+                set_temp_variable = { percent_change_temp = -5 }
+                change_middle_strata_income_tax = yes
+            }
+            else_if = {
+                limit = {
+                    check_variable = { income_tax_lower_strata_percentage > income_tax_lower_strata_min }
+                }
+                set_temp_variable = { percent_change_temp = -5 }
+                change_lower_strata_income_tax = yes
+            }
+            else_if = {
+                limit = {
+                    check_variable = { sales_tax_percentage > sales_tax_min }
+                }
+                set_temp_variable = { percent_change_temp = -5 }
+                change_sales_tax = yes
+            }
+        }
+        if = { # AI always funds its military
+            limit = {
+                is_ai = yes
+                check_variable = { military_spending_percentage < 100 }
+            }
+            set_temp_variable = { percent_change_temp = 100 }
+            change_military_spending = yes
+        }
+    }
+    on_monthly_industry_ai = { # Adjusts employment_target
+        set_temp_variable = { icm_temp = controller:modifier@investment_confidence_modifier }
+        divide_temp_variable = { icm_temp = 100 }
+        divide_temp_variable = { icm_temp = 2 }
+        add_to_temp_variable = { icm_temp = 0.5 }
+        
+        set_temp_variable = { prod_ubound = base_wage }
+        divide_temp_variable = { prod_ubound = icm_temp } # >100 should decrease it
+
+        set_temp_variable = { prod_ubound2 = prod_ubound }
+        multiply_temp_variable = { prod_ubound2 = 1.25 }
+
+        set_temp_variable = { prod_lbound = base_wage }
+        multiply_temp_variable = { prod_lbound = 0.8 }
+        divide_temp_variable = { prod_lbound = icm_temp }  # >100 should decrease it
+
+        for_each_loop = {
+            array = industries
+            value = om_building
+            break = prod_break
+
+            if = {
+                limit = {
+                    OR = {
+                        check_variable = { om_building = token:building_civilian_industry }
+                        check_variable = { om_building = token:building_military_industry }
+                        check_variable = { om_building = token:building_naval_industry }
+                    }
+                }
+				set_variable = { employment_target@var:om_building = 100 }
+            }
+            else_if = {
+                limit = {
+                    OR = {
+                        check_variable = { om_building = token:building_subsistence_farm }
+                        check_variable = { om_building = token:building_rice_paddy }
+                    }
+                }
+                if = {
+                    limit = {
+                        check_variable = { peasants_workforce > peasants_jobs@var:om_building }
+                    }
+				    set_variable = { employment_target@var:om_building = 100 }
+                }
+                else = {
+                    set_variable = { employment_target@var:om_building = peasants_workforce }
+                    set_temp_variable = { emp_temp = peasants_jobs@var:om_building }
+                    divide_temp_variable = { emp_temp = 100 }
+                    divide_variable = { employment_target@var:om_building = emp_temp }
+                }
+            }
+            else_if = {
+                limit = {
+                    check_variable = { base_productivity@var:om_building > prod_ubound }
+                }
+                if = {
+                    limit = {
+                        check_variable = { base_productivity@var:om_building > prod_ubound2 }
+                    }
+                    add_to_variable = { employment_target@var:om_building = 5 }
+                }
+
+                add_to_variable = { employment_target@var:om_building = 5 }
+                if = {
+                    limit = {
+					    check_variable = { employment_target@var:om_building > 100 }
+                    }
+				}
+				set_variable = { employment_target@var:om_building = 100 }
+			}
+            else_if = {
+                limit = {
+                    check_variable = { base_productivity@var:om_building < prod_lbound }
+                }
+
+                if = {
+                    limit = {
+                        check_variable = { base_productivity@var:om_building > 0.5 }
+                    }
+                    subtract_from_variable = { employment_target@var:om_building = 5 }
+                }
+                else_if = {
+                    limit = {
+                        check_variable = { base_productivity@var:om_building > 0 }
+                    }
+                    subtract_from_variable = { employment_target@var:om_building = 10 }
+                }
+                else = {
+                    subtract_from_variable = { employment_target@var:om_building = 20 }
+                }
+
+                
+                if = {
+                    limit = {
+                        check_variable = { employment_target@var:om_building < 0 }
+                    }
+                    set_variable = { employment_target@var:om_building = 0 }
+                }
+            }
+        }
+	}
+#

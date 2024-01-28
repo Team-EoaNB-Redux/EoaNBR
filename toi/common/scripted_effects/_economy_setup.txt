@@ -72,10 +72,10 @@ _reset = {
         calculate_standard_of_living = yes
     }
 
+    # Update Markets
     every_country = {
         limit = { tag = ROOT }
 
-        # Update market
         market_leader_check = yes
         if = {
             limit = {
@@ -86,6 +86,141 @@ _reset = {
             
             market_calc_gdp = yes
         }
+    }
+
+    # Updates the list of market leaders & global variables for markets
+    global_economy_update = yes
+
+    # Initialize Trade
+    every_country = {
+        limit = { tag = ROOT }
+        
+        if = {
+            limit = {
+                check_variable = { market_leader = THIS }
+            }
+            # Loops through resources & sets trade to most profitable point
+            for_each_loop = {
+                array = global.resource_token_array
+                value = r_token
+
+                if = {
+                    limit = {
+                        NOT = { is_in_array = { global.non_tradeable_resources = r_token } }
+                        OR = {
+                            check_variable = { demand@var:r_token > 0 }
+                            check_variable = { supply@var:r_token > 0 }
+                        }
+                    }
+                    set_temp_variable = { resource_temp = r_token }
+                    trade_ai_determine_max_trade = yes
+                    multiply_temp_variable = { amount_temp = 0.95 }
+                    set_temp_variable = { no_update_temp = 1 }
+                    set_trade = yes
+                }
+            }
+            trade_update = yes
+        }
+    }
+
+    # Update states
+    every_state = {
+        limit = { is_owned_by = ROOT }
+        
+        # Update all industries
+        subsist_and_arable_update = yes
+        industries_update = yes
+        industry_productivity_sort = yes
+        base_wage_calculation = yes
+        
+        # Max out cash reserves for all industries
+        for_each_loop = {
+            array = industries
+            value = b_token
+
+            if = {
+                limit = {
+                    check_variable = { profit@var:b_token > 0 }
+                }
+                set_variable = { money@var:b_token = money_limit@var:b_token }
+                set_variable = { dividends@var:b_token = profit@var:b_token }
+            }
+            else = {
+                set_variable = { money@var:b_token = 0 }
+                set_variable = { money_accumulation@var:b_token = profit@var:b_token }
+            }
+        }
+
+        # Readjust for SoL
+        readjust_standard_of_living = yes
+        readjust_standard_of_living = yes
+        readjust_standard_of_living = yes
+        readjust_standard_of_living = yes
+        pops_update = yes
+    }
+
+    # Country Finalization
+    every_country = {
+        limit = { tag = ROOT }
+        if = { # Update market details
+            limit = {
+                check_variable = { market_leader = THIS }
+            }
+            market_update = yes
+            trade_update = yes
+            market_calc_gdp = yes
+        }
+    }
+
+    # State Finalization
+    every_state = {
+        limit = { is_owned_by = ROOT }
+        # Update all industries
+        subsist_and_arable_update = yes
+        industries_update = yes
+        industry_productivity_sort = yes
+        base_wage_calculation = yes
+        
+        # Update Pops
+        pops_update = yes
+
+        # Graphs & Displays
+        gdp_update = yes
+        initialize_gdp_graph = yes
+        create_pie_chart_pop_type = yes
+    }
+
+    every_country = {
+        limit = { tag = ROOT }
+        if = { # Finalize market details
+            limit = {
+                check_variable = { market_leader = THIS }
+            }
+            market_update = yes
+            trade_update = yes
+            market_calc_gdp = yes
+        }
+
+        # Update country pop stats
+        update_country_pop_stats = yes
+
+        # Investment Opportunities Setup
+        io_state_list = yes
+        investment_opportunities_update = yes
+        for_loop_effect = {
+            end = investment_opportunities_cap
+            generate_investment_opportunity = yes
+        }
+        investment_fund_update = yes
+        
+        # Budget
+        budget_update = yes
+        national_debt_update = yes
+
+        # Graphs & Displays
+        initialize_country_gdp_graph = yes
+        initialize_country_budget_graph = yes
+        country_update_trade_display = yes
     }
 }
 
@@ -784,54 +919,334 @@ _reset = {
         define_arms_factory = yes
         define_industrial_complex = yes
         define_dockyard = yes
+        
+        define_steel_foundry = yes
+        define_mechanical_works = yes
+        define_chemical_plant = yes
+        define_plastics_plant = yes
+        define_composites_manufactory = yes
+        define_electronics_factory = yes
+        define_battery_plant = yes
+        define_tooling_workshop = yes
+        
+        define_consumer_goods_factory = yes
+        define_textile_mill = yes
+        define_appliance_factory = yes
+        define_vehicle_assembly_plant = yes
+        define_computer_fab_facility = yes
+        define_power_plant = yes
+        
+        define_synthetic_fiber_plant = yes
+        define_synthetic_rubber_refinery = yes
+        define_synthetic_oil_refinery = yes
+        
+        define_urban_center = yes
+        define_entertainment_hub = yes
+        
+        define_subsistence_farm = yes
+        define_crop_farm = yes
+        define_rice_paddy = yes
+        define_livestock_ranch = yes
+        define_cotton_plantation = yes
+        define_luxuries_plantation = yes
+        define_rubber_plantation = yes
 
         define_subsistence_farm = yes
         
         # Define RGOs
+        define_food_rgo = yes
+        define_luxuries_rgo = yes
         define_wood_rgo = yes
+        define_fiber_rgo = yes
         define_iron_rgo = yes
         define_coal_rgo = yes
+        define_copper_rgo = yes
+        define_valuables_rgo = yes
+        
+        define_oil_rgo = yes
+        define_rubber_rgo = yes
+        define_aluminum_rgo = yes
+        define_tungsten_rgo = yes
+        define_chromium_rgo = yes
+        define_titanium_rgo = yes
+        define_silicon_rgo = yes
+        define_rare_earths_rgo = yes
+        
+        define_steel_rgo = yes
+        define_tools_rgo = yes
+        define_machinery_rgo = yes
+        define_chemicals_rgo = yes
+        define_plastics_rgo = yes
+        define_composites_rgo = yes
+        define_electronics_rgo = yes
+        define_portable_power_rgo = yes
+        
+        define_consumer_goods_rgo = yes
+        define_textiles_rgo = yes
+        define_vehicles_rgo = yes
+        define_appliances_rgo = yes
+        define_computers_rgo = yes
+        define_electricity_rgo = yes
+        define_services_rgo = yes
+        define_entertainment_rgo = yes
         
         # Define PMs
         define_pm_simple_forestry = yes
         define_pm_saw_mills = yes
         define_pm_chainsaws = yes
+        define_pm_precision_forestry = yes
 
         define_pm_muscle_power = yes
         define_pm_river_power = yes
         define_pm_steam_power = yes
-        define_pm_logging_electrification = yes
+        define_pm_electrical_power = yes
         define_pm_logging_machines = yes
 
         define_pm_basic_extraction = yes
         define_pm_shaft_mining = yes
         define_pm_blasting = yes
         define_pm_drilling = yes
+        define_pm_excavating = yes
+        define_pm_precision_mining = yes
+        define_pm_mantle_extraction = yes
 
         define_pm_hand_picks_and_tools = yes
         define_pm_steam_pump = yes
         define_pm_conveyor_belts = yes
+        define_pm_mine_electrification = yes
+        define_pm_mine_computerization = yes
+        define_pm_mining_automation = yes
+        
+        define_pm_basic_oil_production = yes
+        define_pm_crude_oil_distillation = yes
+        define_pm_cracking = yes
+        define_pm_catalytic_cracking = yes
+        
+        define_pm_basic_oil_extraction = yes
+        define_pm_oil_drilling = yes
+        define_pm_steam_powered_derricks = yes
+        define_pm_diesel_powered_derricks = yes
+        define_pm_smart_drilling = yes
 
         define_pm_subsistence_farming = yes
+        
+        define_pm_basic_planting = yes
+        define_pm_intensive_agriculture = yes
+        define_pm_chemical_fertilizers = yes
+        define_pm_precision_agriculture = yes
+
         define_pm_manual_farming = yes
+        define_pm_farm_equipment = yes
+        define_pm_automatic_irrigation = yes
+        define_pm_plantation_machinery = yes
+        define_pm_automated_agriculture = yes
+        
+        define_pm_traction_engine = yes
+        define_pm_tractors = yes
+        define_pm_agricultural_machines = yes
+        
+        define_pm_animal_husbandry = yes
+        define_pm_slaughterhouses = yes
+        define_pm_factory_farms = yes
+        define_pm_lab_grown_meat = yes
+
+        define_pm_open_field = yes
+        define_pm_ranching = yes
+        define_pm_barbed_wire = yes
+        define_pm_milking_machines = yes
+        
+        define_pm_manual_sewing = yes
+        define_pm_spinning_machines = yes
+        define_pm_sewing_machines = yes
+        define_pm_spinnerets = yes
+        define_pm_3d_printed_textiles = yes
+        
+        define_pm_primitive_steelmaking = yes
+        define_pm_blister_steel_process = yes
+        define_pm_hot_blast_process = yes
+        define_pm_bessemer_process = yes
+        define_pm_electric_arc_process = yes
+        define_pm_oxygen_converter_process = yes
+        define_pm_energy_optimizing_process = yes
+        define_pm_hydrogen_steel_process = yes
+
+        define_pm_machine_tools = yes
+        define_pm_specialized_machinery = yes
+        define_pm_modern_machinery = yes
+        define_pm_machining_robots = yes
+        define_pm_assembly_robots = yes
+        define_pm_smart_robots = yes
+        define_pm_mobile_robots = yes
+        define_pm_intelligent_robots = yes
+        
+        define_pm_crude_tools = yes
+        define_pm_iron_tools = yes
+        define_pm_steel_tools = yes
+        define_pm_power_tools = yes
+        define_pm_cordless_tools = yes
+        define_pm_smart_tools = yes
+
+        define_pm_lightbulbs = yes
+        define_pm_vacuum_tubes = yes
+        define_pm_transistors = yes
+        define_pm_integrated_circuits = yes
+        
+        define_pm_lead_acid_battery = yes
+        define_pm_nickel_cadmium_battery = yes
+        define_pm_alkaline_battery = yes
+        define_pm_lithium_ion_battery = yes
+        define_pm_portable_generators = yes
+        
+        define_pm_basic_consumer_goods = yes
+        define_pm_luxury_goods = yes
+        define_pm_plastic_goods = yes
+        define_pm_composite_goods = yes
+        
+        define_pm_telephones = yes
+        define_pm_radios = yes
+        define_pm_television = yes
+        define_pm_mobile_phones = yes
+        define_pm_haptics = yes
+        
+        define_pm_gasoline_automobiles = yes
+        define_pm_diesel_automobiles = yes
+        define_pm_propeller_aircraft = yes
+        define_pm_jet_aircraft = yes
+        define_pm_hybrid_cars = yes
+        define_pm_electric_cars = yes
+        
+        define_pm_electro_mechanical_computers = yes
+        define_pm_electronic_computers = yes
+        define_pm_supercomputers = yes
+        define_pm_quantum_computers = yes
+        
+        define_pm_polymer_synthesis = yes
+        define_pm_polyethylene_synthesis = yes
+        define_pm_polypropylene_synthesis = yes
+        define_pm_electroactive_polymer_synthesis = yes
+        define_pm_bioplastic_synthesis = yes
+        
+        define_pm_nylon = yes
+        define_pm_polyester = yes
+        define_pm_carbon_fiber = yes
+        define_pm_smart_fabric = yes
+        
+        define_pm_methyl_isoprene = yes
+        define_pm_neoprene = yes
+        define_pm_silicone = yes
+        define_pm_thermoplastic_elastomers = yes
+        
+        define_pm_leblanc_process = yes
+        define_pm_ammonia_soda_process = yes
+        define_pm_brine_electrolysis = yes
+        define_pm_petrochemicals = yes
+        
+        define_pm_fiberglass = yes
+        define_pm_nanomaterials = yes
+        define_pm_smart_materials = yes
+        
+        define_pm_coal_liquefaction = yes
+        
+        define_pm_hydroelectric_dam = yes
+        define_pm_coal_fired_plant = yes
+        define_pm_steam_turbine_plant = yes
+        define_pm_oil_fired_plant = yes
+        define_pm_fission_reactor_plant = yes
+        define_pm_fusion_reactor_plant = yes
+        
+        define_pm_steam_engine = yes
+        define_pm_industrial_machinery = yes
+        define_pm_industrial_electrification = yes
+        define_pm_assembly_lines = yes
+        define_pm_robots = yes
+        define_pm_internet = yes
+        define_pm_artificial_intelligence = yes
+        define_pm_mass_automation = yes
+        
+        define_pm_wooden_buildings = yes
+        define_pm_brick_buildings = yes
+        define_pm_iron_frame_buildings = yes
+        define_pm_steel_frame_buildings = yes
+        define_pm_high_rise_buildings = yes
+        define_pm_skyscrapers = yes
+        define_pm_megatall_skycrapers = yes
+        define_pm_starscrapers = yes
+        
+        define_pm_gas_streetlights = yes
+        define_pm_public_transit = yes
+        define_pm_urban_electrification = yes
+        define_pm_subways = yes
+        define_pm_airports = yes
+        define_pm_integrated_transit_network = yes
+        define_pm_smart_city = yes
+        
+        define_pm_live_theater = yes
+        define_pm_exhibits = yes
+        define_pm_photography = yes
+        define_pm_movies = yes
+        define_pm_sports = yes
+        define_pm_video_games = yes
+        define_pm_virtual_reality = yes
+        
+        define_pm_newspapers = yes
+        define_pm_electrification = yes
+        define_pm_radio_broadcasting = yes
+        define_pm_television_broadcasting = yes
+        define_pm_internet_broadcasting = yes
+        define_pm_ai_generated_media = yes
 
         # Initialize building_token_array, industry_token_array
         clear_array = global.building_token_array
         clear_array = global.industry_token_array
+        add_to_array = { global.building_token_array = token:subsistence_farm }
+        add_to_array = { global.building_token_array = token:infrastructure }
+        add_to_array = { global.building_token_array = token:railway }
+        add_to_array = { global.building_token_array = token:port }
+
         add_to_array = { global.building_token_array = token:arms_factory }
         add_to_array = { global.building_token_array = token:industrial_complex }
         add_to_array = { global.building_token_array = token:dockyard }
+        
+        add_to_array = { global.building_token_array = token:steel_foundry }
+        add_to_array = { global.building_token_array = token:mechanical_works }
+        add_to_array = { global.building_token_array = token:chemical_plant }
+        add_to_array = { global.building_token_array = token:plastics_plant }
+        add_to_array = { global.building_token_array = token:composites_manufactory }
+        add_to_array = { global.building_token_array = token:electronics_factory }
+        add_to_array = { global.building_token_array = token:battery_plant }
+        add_to_array = { global.building_token_array = token:tooling_workshop }
+        
+        add_to_array = { global.building_token_array = token:consumer_goods_factory }
+        add_to_array = { global.building_token_array = token:textile_mill }
+        add_to_array = { global.building_token_array = token:appliance_factory }
+        add_to_array = { global.building_token_array = token:vehicle_assembly_plant }
+        add_to_array = { global.building_token_array = token:computer_fab_facility }
+        
+        add_to_array = { global.building_token_array = token:synthetic_fiber_plant }
+        add_to_array = { global.building_token_array = token:synthetic_rubber_refinery }
+        add_to_array = { global.building_token_array = token:synthetic_oil_refinery }
+        
+        add_to_array = { global.building_token_array = token:urban_center }
+        add_to_array = { global.building_token_array = token:power_plant }
+        add_to_array = { global.building_token_array = token:entertainment_hub }
+        
         add_to_array = { global.building_token_array = token:subsistence_farm }
+        add_to_array = { global.building_token_array = token:crop_farm }
+        add_to_array = { global.building_token_array = token:rice_paddy }
+        add_to_array = { global.building_token_array = token:livestock_ranch }
+        add_to_array = { global.building_token_array = token:cotton_plantation }
+        add_to_array = { global.building_token_array = token:luxuries_plantation }
+        add_to_array = { global.building_token_array = token:rubber_plantation }
         
         for_each_loop = {
             array = global.building_token_array
             value = b_token
+            add_to_array = { global.industry_token_array = b_token }
 
             if = {
                 limit = {
                     check_variable = { global.building_industry@var:b_token > 0 }
                 }
-                add_to_array = { global.industry_token_array = b_token }
 
                 # Base Output Value
                 set_variable = { global.building_base_output_value@var:b_token = 0 }
@@ -858,7 +1273,7 @@ _reset = {
                     check_variable = { global.building_base_employees@var:r_token > 0 }
                 }
                 add_to_array = { global.rgo_token_array = r_token }
-                add_to_array = { global.industry_token_array = b_token }
+                add_to_array = { global.industry_token_array = r_token }
 
                 # Base Production
                 clear_array = global.building_base_production@var:r_token
@@ -945,13 +1360,13 @@ _reset = {
         add_to_array = { global.resource_token_array = token:silicon }
         add_to_array = { global.resource_token_array = token:rare_earths }
         add_to_array = { global.resource_token_array = token:steel }
+        add_to_array = { global.resource_token_array = token:tools }
         add_to_array = { global.resource_token_array = token:machinery }
         add_to_array = { global.resource_token_array = token:chemicals }
         add_to_array = { global.resource_token_array = token:plastics }
         add_to_array = { global.resource_token_array = token:composites }
         add_to_array = { global.resource_token_array = token:electronics }
         add_to_array = { global.resource_token_array = token:portable_power }
-        add_to_array = { global.resource_token_array = token:robots }
         add_to_array = { global.resource_token_array = token:consumer_goods }
         add_to_array = { global.resource_token_array = token:textiles }
         add_to_array = { global.resource_token_array = token:vehicles }
@@ -982,13 +1397,13 @@ _reset = {
         set_variable = { global.resource_id@token:rare_earths = 15 }
 
         set_variable = { global.resource_id@token:steel = 16 }
-        set_variable = { global.resource_id@token:machinery = 17 }
-        set_variable = { global.resource_id@token:chemicals = 18 }
-        set_variable = { global.resource_id@token:plastics = 19 }
-        set_variable = { global.resource_id@token:composites = 20 }
-        set_variable = { global.resource_id@token:electronics = 21 }
-        set_variable = { global.resource_id@token:portable_power = 22 }
-        set_variable = { global.resource_id@token:robots = 23 }
+        set_variable = { global.resource_id@token:tools = 17 }
+        set_variable = { global.resource_id@token:machinery = 18 }
+        set_variable = { global.resource_id@token:chemicals = 19 }
+        set_variable = { global.resource_id@token:plastics = 20 }
+        set_variable = { global.resource_id@token:composites = 21 }
+        set_variable = { global.resource_id@token:electronics = 22 }
+        set_variable = { global.resource_id@token:portable_power = 23 }
 
         set_variable = { global.resource_id@token:consumer_goods = 24 }
         set_variable = { global.resource_id@token:textiles = 25 }
@@ -1020,13 +1435,13 @@ _reset = {
         set_variable = { global.base_price@token:rare_earths = 120.0 } # Cobalt: $1.29 per pound (1937), $2580 per ton
 
         set_variable = { global.base_price@token:steel = 5.0 } # $2.06 per 100 pounds in 1900, $40 per ton, $80 per ton in 1930
+        set_variable = { global.base_price@token:tools = 20.0 }
         set_variable = { global.base_price@token:machinery = 100.0 } # Going price for new locomotives in 1900 was ~$20-40 per pound. $60,000 per ton ... probably not a good price XD
         set_variable = { global.base_price@token:chemicals = 1.0 } # Sulfuric Acid: $150 per tonne in 1998 dollars, $165 per ton, $8.25 per ton in 1900 dollars
         set_variable = { global.base_price@token:plastics = 4.0 } # $1,285 per ton in 2021, $35.69 per ton in 1900
         set_variable = { global.base_price@token:composites = 20.0 } # Fiberglass: $7,565 per ton in 2023, $210.1 per ton in 1900
         set_variable = { global.base_price@token:electronics = 20.0 }
         set_variable = { global.base_price@token:portable_power = 50.0 }
-        set_variable = { global.base_price@token:robots = 100.0 }
         
         set_variable = { global.base_price@token:consumer_goods = 20.0 }
         set_variable = { global.base_price@token:textiles = 20.0 }
