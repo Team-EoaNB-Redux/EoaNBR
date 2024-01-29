@@ -56,7 +56,7 @@ NDefines.NPolitics.BASE_POLITICAL_POWER_INCREASE = 1.0
 
 NDefines.NBuildings.MAX_SHARED_SLOTS = 81 -- 25
 NDefines.NBuildings.SUPPLY_ROUTE_RESOURCE_BONUS = 0 -- Needs to be 0 for eco calculations to work
-NDefines.NBuildings.INFRASTRUCTURE_RESOURCE_BONUS = 0.1 -- 10% per level
+NDefines.NBuildings.INFRASTRUCTURE_RESOURCE_BONUS = 0.0 -- 0% per level, Disabled for eco
 
 NDefines.NMilitary.WAR_SCORE_PROVINCE_FACTOR = 0.3 -- 2.0
 NDefines.NMilitary.WAR_SCORE_LEND_LEASE_GIVEN_IC_FACTOR = 0.1 -- 0.001

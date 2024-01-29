@@ -402,6 +402,25 @@ scripted_gui = {
 					always = no
 				}
 			}
+			building_construction_icon_visible = {
+				NOT = { check_variable = { under_construction@var:v = 0 } }
+			}
+			building_production_method_retooling_icon_visible = {
+				if = { limit = { NOT = { check_variable = { retooling_pm@var:v = 0 } } }
+					is_in_array = { global.building_production_methods@var:v = retooling_pm@var:v }
+				}
+				else = {
+					always = no
+				}
+			}
+			building_automation_method_retooling_icon_visible = {
+				if = { limit = { NOT = { check_variable = { retooling_pm@var:v = 0 } } }
+					is_in_array = { global.building_automation_methods@var:v = retooling_pm@var:v }
+				}
+				else = {
+					always = no
+				}
+			}
 		}
 
 		effects = {
@@ -616,6 +635,46 @@ scripted_gui = {
 					}
 				}
 			}
+			building_production_method_button_click = {
+				set_temp_variable = { industry_token = v }
+				set_temp_variable = { am_select = 0 }
+				ROOT = {
+					if = {
+						limit = {
+							has_country_flag = pm_view_open
+							check_variable = { selected_industry = v }
+							check_variable = { selected_pm_type = 0 }
+						}
+						clr_country_flag = pm_view_open
+					}
+					else = {
+						set_country_flag = pm_view_open
+						set_variable = { selected_industry = v }
+						set_variable = { selected_pm_type = 0 }
+						refresh_pm_list = yes
+					}
+				}
+			}
+			building_automation_method_button_click = {
+				set_temp_variable = { industry_token = v }
+				set_temp_variable = { am_select = 1 }
+				ROOT = {
+					if = {
+						limit = {
+							has_country_flag = pm_view_open
+							check_variable = { selected_industry = v }
+							check_variable = { selected_pm_type = 1 }
+						}
+						clr_country_flag = pm_view_open
+					}
+					else = {
+						set_country_flag = pm_view_open
+						set_variable = { selected_industry = v }
+						set_variable = { selected_pm_type = 1 }
+						refresh_pm_list = yes
+					}
+				}
+			}
 
 			time_button_click = {
 				_advance_time = yes
@@ -656,10 +715,6 @@ scripted_gui = {
 				array = buildings
 				entry_container = building_container
 			}
-			rural_buildings_list = {
-				array = rural_buildings
-				entry_container = building_container
-			}
 			rgos_list = {
 				array = rgos
 				entry_container = rgo_container
@@ -688,6 +743,15 @@ scripted_gui = {
 
 			building_icon = {
 				image = "[GetIconFromV]"
+			}
+			building_employment_icon = {
+				image = "[GetIndustryEmploymentIcon]"
+			}
+			building_production_method_icon = {
+				image = "[GetIndustryPMIcon]"
+			}
+			building_automation_method_icon = {
+				image = "[GetIndustryAMIcon]"
 			}
 
 			rgo_icon = {
