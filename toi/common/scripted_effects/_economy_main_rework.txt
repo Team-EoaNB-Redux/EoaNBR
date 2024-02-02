@@ -3218,6 +3218,14 @@
         subtract_from_variable = { professionals_workforce_balance = professionals_jobs_available }
         set_variable = { specialists_workforce_balance = specialists_workforce }
         subtract_from_variable = { specialists_workforce_balance = specialists_jobs_available }
+        
+        set_variable = { jobs_available = peasants_jobs_available }
+        add_to_variable = { jobs_available = laborers_jobs_available }
+        add_to_variable = { jobs_available = workers_jobs_available }
+        add_to_variable = { jobs_available = professionals_jobs_available }
+        add_to_variable = { jobs_available = specialists_jobs_available }
+        add_to_variable = { jobs_available = capitalists_jobs }
+        add_to_variable = { jobs_available = aristocrats_jobs }
     }
 
     calculate_pop_needs = {
@@ -3579,7 +3587,6 @@
 		# Peasants & Subsistence Farms have to be handled seperately
 		
 		set_temp_variable = { total_workers_temp = laborers_workforce }
-		add_to_temp_variable = { total_workers_temp = peasants_unemployed }
 		add_to_temp_variable = { total_workers_temp = workers_workforce }
 		add_to_temp_variable = { total_workers_temp = professionals_workforce }
 		add_to_temp_variable = { total_workers_temp = specialists_workforce }
@@ -3597,9 +3604,6 @@
 		divide_temp_variable = { workers_jobs_ratio = total_jobs_temp }
 
 		# log = "wjr: [?workers_jobs_ratio]"
-
-        set_temp_variable = { peasants_change = peasants_unemployed }
-        multiply_temp_variable = { peasants_change = -1 }
 
 		set_temp_variable = { laborers_change = laborers_jobs }
 		multiply_temp_variable = { laborers_change = workers_jobs_ratio }
@@ -4207,6 +4211,59 @@
 		if = { limit = { check_variable = { soldiers_change > 0 } } add_to_temp_variable = { positive_change_total = soldiers_change } }
 		else = { subtract_from_temp_variable = { negative_change_total = soldiers_change } }
 	}
+    fix_negative_workforce = {
+        # Fixes negative aristocrats/capitalists by sourcing from peasants/laborers
+        if = {
+            limit = {
+                check_variable = { aristocrats_workforce < 0 }
+            }
+            add_to_variable = { peasants_workforce = aristocrats_workforce }
+            set_variable = { aristocrats_workforce = 0 }
+        }
+        if = {
+            limit = {
+                check_variable = { capitalists_workforce < 0 }
+            }
+            add_to_variable = { laborers_workforce = capitalists_workforce }
+            set_variable = { capitalists_workforce = 0 }
+        }
+
+        # Fixes negative workforce by sourcing from higher-tier pops
+        if = {
+            limit = {
+                check_variable = { peasants_workforce < 0 }
+            }
+            add_to_variable = { laborers_workforce = peasants_workforce }
+            set_variable = { peasants_workforce = 0 }
+        }
+        if = {
+            limit = {
+                check_variable = { laborers_workforce < 0 }
+            }
+            add_to_variable = { workers_workforce = laborers_workforce }
+            set_variable = { laborers_workforce = 0 }
+        }
+        if = {
+            limit = {
+                check_variable = { workers_workforce < 0 }
+            }
+            add_to_variable = { professionals_workforce = workers_workforce }
+            set_variable = { workers_workforce = 0 }
+        }
+        if = {
+            limit = {
+                check_variable = { professionals_workforce < 0 }
+            }
+            add_to_variable = { specialists_workforce = professionals_workforce }
+            set_variable = { professionals_workforce = 0 }
+        }
+        if = {
+            limit = {
+                check_variable = { specialists_workforce < 0 }
+            }
+            set_variable = { specialists_workforce = 0 }
+        }
+    }
 
     update_country_pop_stats = {
         set_variable = { pops = 0 }

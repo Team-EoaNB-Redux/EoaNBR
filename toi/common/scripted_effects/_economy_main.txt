@@ -73,8 +73,8 @@ _advance_time = {
             base_wage_calculation = yes
             on_monthly_industry_ai = yes # Adjusts employment_target
 
-            #on_monthly_subsistence_farm = yes
-            #pops_balance = yes
+            pops_balance = yes
+            fix_negative_workforce = yes
 
             ## UPDATING EVERYTHING ##
             calculate_pop_needs = yes
@@ -1075,6 +1075,50 @@ on_monthly_pops = {
                 set_variable = { bureaucrats_sol_progress = 0 }
             }
         #
+    #
+
+    # Population Growth
+        # Adds additional population from between months
+        set_temp_variable = { pop_growth_temp = state_population_k }
+        subtract_from_temp_variable = { pop_growth_temp = pops }
+        multiply_temp_variable = { pop_growth_temp = pops_workforce_participation }
+        add_to_variable = { laborers_workforce = pop_growth_temp }
+        add_to_variable = { pops_workforce = pop_growth_temp }
+    #
+
+    # Peasant Adjustment
+        # If there's not enough jobs available, then laborers will become peasants
+            # If there aren't enough laborers, nothing happens
+        # If there's not enough workers for the jobs available, then peasants will become laborers
+    
+        # jobs_available_temp - Jobs available at non-subsistence farm buildings
+        # target_peasants_temp - Number of peasants that ought to be around
+        set_temp_variable = { jobs_available_temp = jobs_available }
+        subtract_from_temp_variable = { jobs_available_temp = jobs@token:subsistence_farm }
+
+        set_temp_variable = { target_peasants_temp = pops_workforce }
+        subtract_from_temp_variable = { target_peasants_temp = jobs_available_temp }
+
+        set_temp_variable = { pops_change_temp = arable_land_available }
+        divide_temp_variable = { pops_change_temp = 5 }
+        clamp_temp_variable = { var = pops_change_temp min = 0 max = peasants_workforce }
+        
+        if = {
+            limit = {
+                check_variable = { target_peasants_temp < peasants_workforce }
+                check_variable = { peasants_workforce > 0 }
+            }
+            subtract_from_variable = { peasants_workforce = pops_change_temp }
+            add_to_variable = { laborers_workforce = pops_change_temp }
+        }
+        else_if = {
+            limit = {
+                check_variable = { laborers_workforce > pops_change_temp }
+                check_variable = { target_peasants_temp > peasants_workforce }
+            }
+            add_to_variable = { peasants_workforce = pops_change_temp }
+            subtract_from_variable = { laborers_workforce = pops_change_temp }
+        }
     #
 }
 
