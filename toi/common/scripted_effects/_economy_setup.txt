@@ -26,6 +26,11 @@ _reset = {
     # Initialize Countries
     every_country = {
         limit = { tag = ROOT }
+
+        # For certain eco things
+        set_variable = { controller = THIS }
+        set_variable = { owner = THIS }
+
         # Initializes PMs based on tech
         update_national_production_methods = yes
         
@@ -1222,20 +1227,21 @@ country_pops_recalc = {
         define_pm_electrification = yes
         define_pm_radio_broadcasting = yes
         define_pm_television_broadcasting = yes
-        define_pm_data_servers_broadcasting = yes
+        define_pm_internet_broadcasting = yes
         define_pm_ai_generated_media = yes
 
-        # Initialize building_token_array, industry_token_array
+        # Initialize special_token_array, building_token_array, industry_token_array
+        clear_array = global.special_token_array
         clear_array = global.building_token_array
         clear_array = global.industry_token_array
-        add_to_array = { global.building_token_array = token:subsistence_farm }
-        add_to_array = { global.building_token_array = token:infrastructure }
-        add_to_array = { global.building_token_array = token:railway }
-        add_to_array = { global.building_token_array = token:port }
+        add_to_array = { global.special_token_array = token:subsistence_farm }
+        add_to_array = { global.special_token_array = token:infrastructure }
+        add_to_array = { global.special_token_array = token:railway }
+        add_to_array = { global.special_token_array = token:port }
 
-        add_to_array = { global.building_token_array = token:arms_factory }
-        add_to_array = { global.building_token_array = token:industrial_complex }
-        add_to_array = { global.building_token_array = token:dockyard }
+        add_to_array = { global.special_token_array = token:arms_factory }
+        add_to_array = { global.special_token_array = token:industrial_complex }
+        add_to_array = { global.special_token_array = token:dockyard }
         
         add_to_array = { global.building_token_array = token:steel_foundry }
         add_to_array = { global.building_token_array = token:mechanical_works }
@@ -1260,7 +1266,6 @@ country_pops_recalc = {
         add_to_array = { global.building_token_array = token:power_plant }
         add_to_array = { global.building_token_array = token:entertainment_hub }
         
-        add_to_array = { global.building_token_array = token:subsistence_farm }
         add_to_array = { global.building_token_array = token:crop_farm }
         add_to_array = { global.building_token_array = token:rice_paddy }
         add_to_array = { global.building_token_array = token:livestock_ranch }
@@ -1270,6 +1275,23 @@ country_pops_recalc = {
         
         for_each_loop = {
             array = global.building_token_array
+            value = b_token
+            add_to_array = { global.industry_token_array = b_token }
+
+            # Base Output Value
+            set_variable = { global.building_base_output_value@var:b_token = 0 }
+            for_each_loop = {
+                array = global.building_base_production@var:b_token
+                value = r_token
+                index = i_temp
+                    
+                set_temp_variable = { base_output_val_temp = global.building_base_production_amount@var:b_token^i_temp }
+                multiply_temp_variable = { base_output_val_temp = global.base_price@var:r_token }
+                add_to_variable = { global.building_base_output_value@var:b_token = base_output_val_temp }
+            }
+        }
+        for_each_loop = {
+            array = global.special_token_array
             value = b_token
             add_to_array = { global.industry_token_array = b_token }
 
@@ -1721,6 +1743,7 @@ country_pops_recalc = {
 
         # Update for job values
         subsist_and_arable_update = yes
+        reload_industries_array = yes
         industries_update = yes
     }
     state_eco_employment_init = {
@@ -2106,6 +2129,10 @@ country_pops_recalc = {
     }
 
     country_eco_setup = {
+        # For certain eco things
+        set_variable = { controller = THIS }
+        set_variable = { owner = THIS }
+
         # Initializes PMs based on tech
         update_national_production_methods = yes
         

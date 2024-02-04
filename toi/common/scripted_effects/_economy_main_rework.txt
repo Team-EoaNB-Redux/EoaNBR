@@ -3039,10 +3039,9 @@
                 add_to_variable = { specialists_jobs_available = jobs_available_temp }
             }
             
-            set_temp_variable = { jobs_temp = size@var:pops_bld_token }
-            multiply_temp_variable = { jobs_temp = global.building_base_employees@var:pops_bld_token }
+            set_temp_variable = { jobs_temp = owner_jobs@var:pops_bld_token }
             multiply_temp_variable = { jobs_temp = employment_target@var:pops_bld_token }
-            divide_temp_variable = { jobs_temp = 1000 }
+            divide_temp_variable = { jobs_temp = 100 }
             if = {
                 limit = {
                     is_in_array = { buildings = pops_bld_token }
@@ -4389,446 +4388,7 @@
 	}
 #
 
-#RGOs
-    update_base_resource_count = {
-        for_each_loop = {
-            array = global.resource_token_array
-            value = r_token
-
-            # Base = (resource@token + Resource Cost) / Infra - Additional Resources
-            set_temp_variable = { infra_bonus_temp = non_damaged_building_level@infrastructure }
-            multiply_temp_variable = { infra_bonus_temp = 0.1 }
-            add_to_temp_variable = { infra_bonus_temp = 1 }
-
-            set_variable = { base_resource@var:r_token = resource@var:r_token }
-            add_to_variable = { base_resource@var:r_token = resource_cost@var:r_token }
-            divide_variable = { base_resource@var:r_token = infra_bonus_temp }
-            subtract_from_variable = { base_resource@var:r_token = resource_additional_production@var:r_token }
-            round_variable = base_resource@var:r_token
-        }
-    }
-    reload_industries_array = {
-        clear_array = buildings
-        clear_array = industries
-        clear_array = rgos
-
-        # RGOs
-        for_each_loop = {
-            array = global.rgo_token_array
-            value = rgo_token
-            if = {
-                limit = {
-                    check_variable = { size@var:rgo_token > 0 }
-                }
-                add_to_array = { industries = rgo_token }
-                add_to_array = { rgos = rgo_token }
-            }
-        }
-
-        # Buildings
-        for_each_loop = {
-            array = global.building_token_array
-            value = building_token
-            if = {
-                limit = {
-                    check_variable = { size@var:building_token > 0 }
-                }
-                add_to_array = { industries = building_token }
-                add_to_array = { buildings = building_token }
-            }
-        }
-    }
-#
-
 #Buildings
-    on_monthly_buildings = {
-        #Building Construction
-            buildings_update_construction = yes
-
-            for_each_loop = {
-                array = buildings
-                value = om_building
-
-                if = {
-                    limit = {
-                        check_variable = { under_construction@var:om_building > 0 }
-                    }
-                    subtract_from_variable = { construction_amount@var:om_building = construction_speed@var:om_building }
-                    if = {
-                        limit = {
-                            check_variable = { construction_amount@var:om_building < 0.001 }
-                        }
-                        set_variable = { construction_amount@var:om_building = 0 }
-                        add_to_variable = { size@var:om_building = under_construction@var:om_building }
-                        if = {
-                            limit = {
-                                check_variable = { om_building = token:building_military_industry }
-                            }
-                            set_temp_variable = { const_amount = under_construction@var:om_building }
-                            add_building_construction = {
-                                type = arms_factory
-                                level = var:const_amount
-                                instant_build = yes
-                            }
-                        }
-                        else_if = {
-                            limit = {
-                                check_variable = { om_building = token:building_civilian_industry }
-                            }
-                            set_temp_variable = { const_amount = under_construction@var:om_building }
-                            add_building_construction = {
-                                type = industrial_complex
-                                level = var:const_amount
-                                instant_build = yes
-                            }
-                        }
-                        else_if = {
-                            limit = {
-                                check_variable = { om_building = token:building_naval_industry }
-                            }
-                            set_temp_variable = { const_amount = under_construction@var:om_building }
-                            add_building_construction = {
-                                type = dockyard
-                                level = var:const_amount
-                                instant_build = yes
-                            }
-                        }
-                        set_variable = { under_construction@var:om_building = 0 }
-                    }
-                }
-            }
-        #
-
-        set_variable = { capitalists_dividends = 0 }
-        set_variable = { aristocrats_dividends = 0 }
-        clear_temp_array = buildings_wage_sort
-        for_each_loop = {
-            array = buildings
-            value = om_building
-
-            #Money Accumulation
-            add_to_variable = { money@var:om_building = money_accumulation@var:om_building }
-            if = { #Excess goes to owners
-                limit = {
-                    check_variable = { money@var:om_building > money_limit@var:om_building }
-                }
-                set_variable = { money@var:om_building = money_limit@var:om_building }
-            }
-        }
-    }
-    building_productivity_sort = {
-        # Puts industries into an array sorted by the base productivity
-
-        clear_array = buildings_productivity_sort
-        for_each_loop = {
-            array = buildings
-            value = om_building
-            
-            set_temp_variable = { effective_wage_om = base_productivity@var:om_building }
-
-            for_each_loop = {
-                array = buildings_productivity_sort
-                index = ii
-                value = vv
-                break = bb
-
-                set_temp_variable = { effective_wage_vv = base_productivity@var:vv }
-
-                if = {
-                    limit = {
-                        check_variable = { effective_wage_vv < effective_wage_om }
-                    }
-                    add_to_array = { 
-                        array = buildings_productivity_sort 
-                        value = om_building
-                        index = ii
-                    }
-                    set_temp_variable = { bb = 1 }
-                }
-            }
-            if = {
-                limit = {
-                    check_variable = { bb = 0 }
-                }
-                add_to_array = { buildings_productivity_sort = om_building }
-            }
-        }
-    }
-    on_monthly_building_adjust_employment_target = {
-        set_temp_variable = { icm_temp = controller:modifier@investment_confidence_modifier }
-        divide_temp_variable = { icm_temp = 100 }
-        divide_temp_variable = { icm_temp = 2 }
-        add_to_temp_variable = { icm_temp = 0.5 }
-        
-        set_temp_variable = { prod_ubound = base_wage }
-        divide_temp_variable = { prod_ubound = icm_temp } # >100 should decrease it
-
-        set_temp_variable = { prod_ubound2 = prod_ubound }
-        multiply_temp_variable = { prod_ubound2 = 1.25 }
-
-        set_temp_variable = { prod_lbound = base_wage }
-        multiply_temp_variable = { prod_lbound = 0.8 }
-        divide_temp_variable = { prod_lbound = icm_temp }  # >100 should decrease it
-
-        for_each_loop = {
-            array = buildings
-            value = om_building
-            break = prod_break
-
-            if = {
-                limit = {
-                    OR = {
-                        check_variable = { om_building = token:building_civilian_industry }
-                        check_variable = { om_building = token:building_military_industry }
-                        check_variable = { om_building = token:building_naval_industry }
-                    }
-                }
-				set_variable = { employment_target@var:om_building = 100 }
-            }
-            else_if = {
-                limit = {
-                    OR = {
-                        check_variable = { om_building = token:building_subsistence_farm }
-                        check_variable = { om_building = token:building_rice_paddy }
-                    }
-                }
-                if = {
-                    limit = {
-                        check_variable = { peasants_workforce > peasants_jobs@var:om_building }
-                    }
-				    set_variable = { employment_target@var:om_building = 100 }
-                }
-                else = {
-                    set_variable = { employment_target@var:om_building = peasants_workforce }
-                    set_temp_variable = { emp_temp = peasants_jobs@var:om_building }
-                    divide_temp_variable = { emp_temp = 100 }
-                    divide_variable = { employment_target@var:om_building = emp_temp }
-                }
-            }
-            else_if = {
-                limit = {
-                    check_variable = { base_productivity@var:om_building > prod_ubound }
-                }
-                if = {
-                    limit = {
-                        check_variable = { base_productivity@var:om_building > prod_ubound2 }
-                    }
-                    add_to_variable = { employment_target@var:om_building = 5 }
-                }
-
-                add_to_variable = { employment_target@var:om_building = 5 }
-                if = {
-                    limit = {
-					    check_variable = { employment_target@var:om_building > 100 }
-                    }
-				}
-				set_variable = { employment_target@var:om_building = 100 }
-			}
-            else_if = {
-                limit = {
-                    check_variable = { base_productivity@var:om_building < prod_lbound }
-                }
-
-                if = {
-                    limit = {
-                        check_variable = { base_productivity@var:om_building > 0.5 }
-                    }
-                    subtract_from_variable = { employment_target@var:om_building = 5 }
-                }
-                else_if = {
-                    limit = {
-                        check_variable = { base_productivity@var:om_building > 0 }
-                    }
-                    subtract_from_variable = { employment_target@var:om_building = 10 }
-                }
-                else = {
-                    subtract_from_variable = { employment_target@var:om_building = 20 }
-                }
-
-                
-                if = {
-                    limit = {
-                        check_variable = { employment_target@var:om_building < 0 }
-                    }
-                    set_variable = { employment_target@var:om_building = 0 }
-                }
-            }
-        }
-	}
-    on_monthly_building_employment = {	
-        # The pool of available jobs is added up from positively productive buildings. Then 
-        # 	there is a general "hiring" of the population. This pool of hired personnel then 
-        # 	gets distributed weighted by available jobs and PPP among positively produtive buildings.
-
-        # Firing
-        for_each_loop = {
-            array = buildings_productivity_sort
-            value = building_token
-            break = prod_break
-
-            if = {
-                limit = {
-                    NOT = { check_variable = { building_token = token:building_subsistence_farm } }
-                    NOT = { check_variable = { building_token = token:building_rice_paddy } }
-                    check_variable = { employment_target@var:building_token < employment_percentage@var:building_token }
-                }
-                # x_percent_temp is the percentage of building jobs to fire (as it is negative in this context)
-                set_temp_variable = { x_percent_temp = employment_target@var:building_token }
-                subtract_from_temp_variable = { x_percent_temp = employment_percentage@var:building_token }
-
-                change_building_employment_by_x_percent = yes # Firing
-            }
-        }
-
-        pops_open_jobs_calc = yes # Adds up the pool of open jobs from positively productive buildings
-
-        # Hiring
-        for_each_loop = {
-            array = buildings_productivity_sort
-            value = building_token
-            break = prod_break
-
-            if = {
-                limit = {
-                    NOT = { check_variable = { building_token = token:building_subsistence_farm } }
-                    NOT = { check_variable = { building_token = token:building_rice_paddy } }
-                }
-                if = {
-                    limit = {
-                        check_variable = { base_productivity@var:building_token > 0 }
-                        check_variable = { employment_target@var:building_token > employment_percentage@var:building_token }
-                    }
-                    set_temp_variable = { hiring_percentage_mult = 1 }
-                    if = {
-                        limit = {
-                            check_variable = { base_productivity@var:building_token < base_wage }
-                        }
-                        multiply_temp_variable = { hiring_percentage_mult = base_productivity@var:building_token }
-                        divide_temp_variable = { hiring_percentage_mult = base_wage }
-                    }
-
-                    if = {
-                        limit = {
-                            check_variable = { hiring_percentage_mult > 1 }
-                        }
-                        set_temp_variable = { hiring_percentage_mult = 1 }
-                    }
-
-                    # x_percent_temp is the percentage of building jobs to hire
-                    set_temp_variable = { x_percent_temp = employment_target@var:building_token }
-                    subtract_from_temp_variable = { x_percent_temp = employment_percentage@var:building_token }
-                    multiply_temp_variable = { x_percent_temp = hiring_percentage_mult }
-
-                    change_building_employment_by_x_percent = yes # Hiring
-                }
-                else_if = {
-                    limit = {
-                        check_variable = { base_productivity@var:building_token < 0 }
-                    }
-                    set_temp_variable = { prod_break = 1 }
-                }
-            }
-        }
-    }
-	pops_open_jobs_calc = {
-		# Adds up the pool of open jobs from positively productive buildings
-		set_variable = { laborers_open_jobs = 0 }
-		set_variable = { workers_open_jobs = 0 }
-		set_variable = { professionals_open_jobs = 0 }
-		set_variable = { specialists_open_jobs = 0 }
-		set_variable = { aristocrats_open_jobs = 0 }
-		set_variable = { capitalists_open_jobs = 0 }
-
-		for_each_loop = {
-			array = buildings_productivity_sort
-			value = om_industry
-			break = prod_break
-
-			if = {
-				limit = {
-					check_variable = { base_productivity@var:om_industry > 0 }
-				}
-
-				add_to_variable = { laborers_open_jobs = laborers_open_jobs@var:om_industry }
-				add_to_variable = { workers_open_jobs = workers_open_jobs@var:om_industry }
-				add_to_variable = { professionals_open_jobs = professionals_open_jobs@var:om_industry }
-				add_to_variable = { specialists_open_jobs = specialists_open_jobs@var:om_industry }
-				add_to_variable = { aristocrats_open_jobs = aristocrats_open_jobs@var:om_industry }
-				add_to_variable = { capitalists_open_jobs = capitalists_open_jobs@var:om_industry }
-			}
-			else = {
-				set_temp_variable = { prod_break = 1 }
-			}
-		}
-	}
-
-    on_monthly_subsistence_farm = {
-        # Changes subsistence farm employment
-
-        set_temp_variable = { subsistence_farm_temp = token:building_subsistence_farm }
-        if = {
-            limit = {
-                has_state_flag = uses_rice_paddies
-            }
-            set_temp_variable = { subsistence_farm_temp = token:building_rice_paddy }
-        }
-
-        set_temp_variable = { workers_temp = peasants_workforce }
-        add_to_temp_variable = { workers_temp = laborers_workforce }
-        add_to_temp_variable = { workers_temp = workers_workforce }
-        add_to_temp_variable = { workers_temp = professionals_workforce }
-        add_to_temp_variable = { workers_temp = specialists_workforce }
-        subtract_from_temp_variable = { workers_temp = employed@var:subsistence_farm_temp }
-
-        if = {
-            limit = {
-                check_variable = { employed@var:subsistence_farm_temp > 0 }
-                check_variable = { non_subs_jobs_buildings > workers_temp  }
-            }
-            if = {
-                limit = {
-                    check_variable = { peasants_employed@var:subsistence_farm_temp > 1 }
-                }
-                subtract_from_variable = { peasants_employed@var:subsistence_farm_temp = 1 }
-            }
-            else = {
-                set_variable = { peasants_employed@var:subsistence_farm_temp = 0 }
-            }
-        }
-        else_if = {
-            limit = {
-                check_variable = { non_subs_jobs_buildings < workers_temp  }
-                check_variable = { laborers_unemployed > 1.0  }
-            }
-            add_to_variable = { peasants_workforce = 1 }
-            subtract_from_variable = { laborers_unemployed = 1.0 }
-            subtract_from_variable = { laborers_workforce = 1.0 }
-            add_to_variable = { peasants_employed@var:subsistence_farm_temp = 1 }
-        }
-
-        if = {
-            limit = {
-                check_variable = { peasants_jobs@var:subsistence_farm_temp > 1000 }
-            }
-            set_temp_variable = { jobs_temp = peasants_jobs@var:subsistence_farm_temp }
-            divide_temp_variable = { jobs_temp = 100 }
-            set_variable = { employment_percentage@var:subsistence_farm_temp = peasants_employed@var:subsistence_farm_temp }
-            divide_variable = { employment_percentage@var:subsistence_farm_temp = jobs_temp }
-        }
-        else_if = {
-            limit = {
-                check_variable = { peasants_jobs@var:subsistence_farm_temp > 0 }
-            }
-            set_variable = { employment_percentage@var:subsistence_farm_temp = peasants_employed@var:subsistence_farm_temp }
-            multiply_variable = { employment_percentage@var:subsistence_farm_temp = 100 }
-            divide_variable = { employment_percentage@var:subsistence_farm_temp = peasants_jobs@var:subsistence_farm_temp }
-        }
-        else = {
-            set_variable = { employment_percentage@var:subsistence_farm_temp = 0 }
-        }
-    }
-
-
     construct_x_buildings_no_update = {
 		# x_temp, financer_temp, building_token, production_method_temp
 		# State
@@ -7619,119 +7179,19 @@
             #
         }
     }
-
-    subsist_and_arable_update = {
-        # State Scope
-        # Updates arable land use & subsistence farms
-        
-        set_variable = { arable_land_use = 0 }
-		for_each_loop = {
-			array = buildings
-			value = bu_token
-			index = ind
-			break = ind_break
-
-			# Add up arable land use
-            add_to_variable = { arable_land_use = arable_land_use@var:bu_token }
-        }
-
-        set_variable = { arable_land_available = arable_land }
-        subtract_from_variable = { arable_land_available = arable_land_use }
-
-        ## Subsistence Farming ##
-
-        # Productive Capacity
-        set_variable = { peasants_jobs@token:subsistence_farm = arable_land_available }
-        multiply_variable = { peasants_jobs@token:subsistence_farm = global.building_base_employees@token:subsistence_farm }
-        multiply_variable = { peasants_jobs@token:subsistence_farm = controller:pm_workforce_peasants@token:pm_subsistence_farming }
-        
-        set_variable = { jobs@token:subsistence_farm = peasants_jobs@token:subsistence_farm }
-
-        # Peasant Workforce
-        set_variable = { peasants_employed@token:subsistence_farm = peasants_workforce }
-        clamp_variable = { var = peasants_employed@token:subsistence_farm min = 0 max = peasants_jobs@token:subsistence_farm }
-        set_variable = { employed@token:subsistence_farm = peasants_employed@token:subsistence_farm }
-
-        # Marginal Land Usage
-        set_variable = { peasants_marginal_land = peasants_workforce }
-        subtract_from_variable = { peasants_marginal_land = peasants_employed@token:subsistence_farm }
-        clamp_variable = { var = peasants_marginal_land min = 0 max = peasants_workforce }
-
-        # Subsistence Farm Production & Income
-        set_temp_variable = { revenue_temp = 0 }
-        set_variable = { revenue_goods@token:subsistence_farm = 0 }
-        clear_array = production@token:subsistence_farm
-        for_each_loop = {
-            array = global.building_base_production@token:subsistence_farm
-            value = r_token
-            index = ii
-
-            # Production
-            set_temp_variable = { prod_temp = global.building_base_production_amount@token:subsistence_farm^ii }    # Base resource production per base employee count
-            multiply_temp_variable = { prod_temp = controller:pm_output_multiplier@token:pm_subsistence_farming }   # Multiply by PM Output Multiplier
-            multiply_temp_variable = { prod_temp = peasants_employed@token:subsistence_farm }                       # Multiply by Employee count
-            
-            #   Peasants excess of productive capacity are 1/2 as productive
-            set_temp_variable = { marginal_temp = peasants_marginal_land }
-            divide_temp_variable = { marginal_temp = 2 }
-            add_to_temp_variable = { prod_temp = marginal_temp }
-
-            divide_temp_variable = { prod_temp = global.building_base_employees@token:subsistence_farm }            # Divide by Base Employee Count (to get per K)
-            divide_temp_variable = { prod_temp = controller:pm_workforce_peasants@token:pm_subsistence_farming }    # Divide by PM Workforce Multiplier
-
-            # Goods Revenue
-            set_temp_variable = { money_temp = prod_temp }
-            multiply_temp_variable = { money_temp = controller:price@var:r_token }
-            
-            add_to_array = { production@token:subsistence_farm = prod_temp }
-            add_to_array = { revenue_goods@token:subsistence_farm = money_temp }
-            add_to_variable = { revenue_goods@token:subsistence_farm = money_temp }
-
-            # For productivity
-            set_temp_variable = { productivity_temp = global.building_base_production_amount@token:subsistence_farm^ii }
-            multiply_temp_variable = { productivity_temp = controller:pm_output_multiplier@token:pm_subsistence_farming }
-            divide_temp_variable = { productivity_temp = global.building_base_employees@token:subsistence_farm }
-            divide_temp_variable = { productivity_temp = controller:pm_workforce_peasants@token:pm_subsistence_farming }
-            multiply_temp_variable = { productivity_temp = controller:price@var:r_token }
-            add_to_temp_variable = { revenue_temp = productivity_temp }
-        }
-
-        # Revenue
-        set_variable = { revenue@token:subsistence_farm = revenue_goods@token:subsistence_farm }
-        if = { limit = { check_variable = { revenue_goods@token:subsistence_farm > 0 } } set_temp_variable = { revenue_temp = revenue_goods@token:subsistence_farm } }
-
-        # Expenses
-        set_variable = { expenses_payroll@token:subsistence_farm = revenue@token:subsistence_farm }
-        multiply_variable = { expenses_payroll@token:subsistence_farm = 0.8 }                 # Aristocrats take 20%
-        set_variable = { expenses@token:subsistence_farm = expenses_payroll@token:subsistence_farm }
-        
-        set_variable = { average_wage@token:subsistence_farm = expenses_payroll@token:subsistence_farm }
-        if = { limit = { check_variable = { peasants_workforce > 0 } } divide_variable = { average_wage@token:subsistence_farm = peasants_workforce } }
-
-        # Dividends
-        set_variable = { dividends@token:subsistence_farm = revenue@token:subsistence_farm }
-        subtract_from_variable = { dividends@token:subsistence_farm = expenses@token:subsistence_farm }
-
-        # Productivity
-        set_variable = { productivity@token:subsistence_farm = revenue_temp }
-        if = { limit = { check_variable = { peasants_workforce > 0 } } divide_variable = { productivity@token:subsistence_farm = peasants_workforce } }
-        
-        
-        set_variable = { profit@token:subsistence_farm = 0 }
-    }
 #
 
 # Production Methods Update
     update_national_production_methods = {
-        for_each_loop = { # Buildings
-            array = global.building_token_array
-            value = building_token
+        for_each_loop = { # Industries
+            array = global.industry_token_array
+            value = industry_token
 
             # UNLOCKED PRODUCTION METHODS
-            set_variable = { latest_production_method@var:building_token = 0 }
-            clear_array = building_unlocked_pms@var:building_token
+            set_variable = { latest_production_method@var:industry_token = 0 }
+            clear_array = building_unlocked_pms@var:industry_token
             for_each_loop = {
-                array = global.building_production_methods@var:building_token
+                array = global.building_production_methods@var:industry_token
                 value = pm_token
                 if = {
                     limit = {
@@ -7744,14 +7204,15 @@
                             }
                         }
                     }
-                    add_to_array = { building_unlocked_pms@var:building_token = pm_token }
-                    set_variable = { latest_production_method@var:building_token = pm_token }
+                    add_to_array = { building_unlocked_pms@var:industry_token = pm_token }
+                    set_variable = { latest_production_method@var:industry_token = pm_token }
                 }
             }
             # UNLOCKED AUTOMATION METHODS
-            set_variable = { latest_automation_method@var:building_token = 0 }
+            set_variable = { latest_automation_method@var:industry_token = 0 }
+            clear_array = building_unlocked_ams@var:industry_token
             for_each_loop = {
-                array = global.building_automation_methods@var:building_token
+                array = global.building_automation_methods@var:industry_token
                 value = pm_token
                 if = {
                     limit = {
@@ -7764,54 +7225,8 @@
                             }
                         }
                     }
-                    add_to_array = { building_unlocked_pms@var:building_token = pm_token }
-                    set_variable = { latest_automation_method@var:building_token = pm_token }
-                }
-            }
-        }
-        for_each_loop = { # RGOs
-            array = global.rgo_token_array
-            value = rgo_token
-
-            # UNLOCKED PRODUCTION METHODS
-            set_variable = { latest_production_method@var:rgo_token = 0 }
-            clear_array = building_unlocked_pms@var:rgo_token
-            for_each_loop = {
-                array = global.building_production_methods@var:rgo_token
-                value = pm_token
-                if = {
-                    limit = {
-                        OR = {
-                            check_variable = { global.pm_tech_unlock@var:pm_token = 0 }
-                            AND = {
-                                NOT = { check_variable = { global.pm_tech_unlock@var:pm_token = -1 } }
-                                set_temp_variable = { tech_temp = global.pm_tech_unlock@var:pm_token }
-                                has_tech = var:tech_temp
-                            }
-                        }
-                    }
-                    add_to_array = { building_unlocked_pms@var:rgo_token = pm_token }
-                    set_variable = { latest_production_method@var:rgo_token = pm_token }
-                }
-            }
-            # UNLOCKED AUTOMATION METHODS
-            set_variable = { latest_automation_method@var:rgo_token = 0 }
-            for_each_loop = {
-                array = global.building_automation_methods@var:rgo_token
-                value = pm_token
-                if = {
-                    limit = {
-                        OR = {
-                            check_variable = { global.pm_tech_unlock@var:pm_token = 0 }
-                            AND = {
-                                NOT = { check_variable = { global.pm_tech_unlock@var:pm_token = -1 } }
-                                set_temp_variable = { tech_temp = global.pm_tech_unlock@var:pm_token }
-                                has_tech = var:tech_temp
-                            }
-                        }
-                    }
-                    add_to_array = { building_unlocked_pms@var:rgo_token = pm_token }
-                    set_variable = { latest_automation_method@var:rgo_token = pm_token }
+                    add_to_array = { building_unlocked_ams@var:industry_token = pm_token }
+                    set_variable = { latest_automation_method@var:industry_token = pm_token }
                 }
             }
         }
@@ -9090,13 +8505,22 @@
             }
             if = { # Retooling
                 limit = { NOT = { check_variable = { retooling_pm@var:b_type = 0 } } }
-                set_temp_variable = { pm_temp = retooling_pm@var:b_type }
                 for_each_loop = {
-                    array = controller:pm_input@var:pm_temp
+                    array = retooling_resources@var:b_type
                     value = br_token
                     index = ii
 
                     add_to_variable = { demand@var:br_token = retooling_amount@var:b_type^ii }
+                }
+            }
+            if = { # Construction
+                limit = { NOT = { check_variable = { construction@var:b_type = 0 } } }
+                for_each_loop = {
+                    array = construction_resources@var:b_type
+                    value = br_token
+                    index = ii
+
+                    add_to_variable = { demand@var:br_token = construction_amount@var:b_type^ii }
                 }
             }
         }
@@ -17410,7 +16834,7 @@
         add_to_array = { global.building_automation_methods@token:entertainment_hub = token:pm_electrification }
         add_to_array = { global.building_automation_methods@token:entertainment_hub = token:pm_radio_broadcasting }
         add_to_array = { global.building_automation_methods@token:entertainment_hub = token:pm_television_broadcasting }
-        add_to_array = { global.building_automation_methods@token:entertainment_hub = token:pm_data_servers_broadcasting }
+        add_to_array = { global.building_automation_methods@token:entertainment_hub = token:pm_internet_broadcasting }
         add_to_array = { global.building_automation_methods@token:entertainment_hub = token:pm_ai_generated_media }
     }
     
@@ -21904,21 +21328,399 @@
     #
     # ENTERTAINMENT HUB
         # Production
-        # define_pm_live_theater
-        # define_pm_exhibits - Industrial Society (1700)
-        # define_pm_photography - Daguerrotype (1840)
-        # define_pm_movies - Cinematograph (1890)
-        # define_pm_sports
-        # define_pm_video_games
-        # define_pm_virtual_reality - VR (2015)
+        define_pm_live_theater = {  # 1500
+            set_variable = { global.pm_tech_unlock@token:pm_live_theater = token:manufactories }
+            set_variable = { global.pm_output_multiplier@token:pm_live_theater = 2.1 }
+
+            set_variable = { global.pm_construction_duration@token:pm_live_theater = 12 }
+            clear_array = global.pm_construction_input@token:pm_live_theater
+            clear_array = global.pm_construction_input_amount@token:pm_live_theater
+            add_to_array = { global.pm_construction_input@token:pm_live_theater = token:wood }
+            add_to_array = { global.pm_construction_input_amount@token:pm_live_theater = 1.6 }
+            add_to_array = { global.pm_construction_input@token:pm_live_theater = token:fiber }
+            add_to_array = { global.pm_construction_input_amount@token:pm_live_theater = 0.5 }
+
+            set_variable = { global.pm_retooling_duration@token:pm_live_theater = 6 }
+            
+            clear_array = global.pm_input@token:pm_live_theater
+            clear_array = global.pm_input_amount@token:pm_live_theater
+            add_to_array = { global.pm_input@token:pm_live_theater = token:wood }
+            add_to_array = { global.pm_input_amount@token:pm_live_theater = 0.3 }
+            add_to_array = { global.pm_input@token:pm_live_theater = token:fiber }
+            add_to_array = { global.pm_input_amount@token:pm_live_theater = 0.1 }
+
+            # per resource / base price
+            set_variable = { global.pm_workforce_laborers@token:pm_live_theater = 1.0 } # x1.0 = 1.0 peasant wages
+            
+            # Profit: 1.7 (1.7)
+        }
+        define_pm_exhibits = {  # 1700
+            set_variable = { global.pm_tech_unlock@token:pm_exhibits = token:tech_humanities_industrial_society }
+            set_variable = { global.pm_output_multiplier@token:pm_exhibits = 3.1 }
+
+            set_variable = { global.pm_construction_duration@token:pm_exhibits = 12 }
+            clear_array = global.pm_construction_input@token:pm_exhibits
+            clear_array = global.pm_construction_input_amount@token:pm_exhibits
+            add_to_array = { global.pm_construction_input@token:pm_exhibits = token:wood }
+            add_to_array = { global.pm_construction_input_amount@token:pm_exhibits = 1.6 }
+            add_to_array = { global.pm_construction_input@token:pm_exhibits = token:fiber }
+            add_to_array = { global.pm_construction_input_amount@token:pm_exhibits = 0.5 }
+
+            set_variable = { global.pm_retooling_duration@token:pm_exhibits = 6 }
+            
+            clear_array = global.pm_input@token:pm_exhibits
+            clear_array = global.pm_input_amount@token:pm_exhibits
+            add_to_array = { global.pm_input@token:pm_exhibits = token:consumer_goods }
+            add_to_array = { global.pm_input_amount@token:pm_exhibits = 0.5 }
+            add_to_array = { global.pm_input@token:pm_exhibits = token:textiles }
+            add_to_array = { global.pm_input_amount@token:pm_exhibits = 0.2 }
+
+            # per resource / base price
+            set_variable = { global.pm_workforce_laborers@token:pm_exhibits = 0.9 } # x1.0 = 0.9 peasant wages
+            set_variable = { global.pm_workforce_workers@token:pm_exhibits = 0.1 } # x2.5 = 0.25 peasant wages
+            
+            # Profit: 2.4 (2.1)
+        }
+        define_pm_photography = {  # 1840
+            set_variable = { global.pm_tech_unlock@token:pm_photography = token:daguerreotype }
+            set_variable = { global.pm_output_multiplier@token:pm_photography = 5.4 }
+
+            set_variable = { global.pm_construction_duration@token:pm_photography = 12 }
+            clear_array = global.pm_construction_input@token:pm_photography
+            clear_array = global.pm_construction_input_amount@token:pm_photography
+            add_to_array = { global.pm_construction_input@token:pm_photography = token:wood }
+            add_to_array = { global.pm_construction_input_amount@token:pm_photography = 1.6 }
+            add_to_array = { global.pm_construction_input@token:pm_photography = token:fiber }
+            add_to_array = { global.pm_construction_input_amount@token:pm_photography = 0.5 }
+
+            set_variable = { global.pm_retooling_duration@token:pm_photography = 6 }
+            
+            clear_array = global.pm_input@token:pm_photography
+            clear_array = global.pm_input_amount@token:pm_photography
+            add_to_array = { global.pm_input@token:pm_photography = token:consumer_goods }
+            add_to_array = { global.pm_input_amount@token:pm_photography = 0.6 }
+            add_to_array = { global.pm_input@token:pm_photography = token:chemicals }
+            add_to_array = { global.pm_input_amount@token:pm_photography = 0.4 }
+            add_to_array = { global.pm_input@token:pm_photography = token:textiles }
+            add_to_array = { global.pm_input_amount@token:pm_photography = 0.2 }
+            add_to_array = { global.pm_input@token:pm_photography = token:copper }
+            add_to_array = { global.pm_input_amount@token:pm_photography = 0.2 }
+
+            # per resource / base price
+            set_variable = { global.pm_workforce_laborers@token:pm_photography = 0.8 } # x1.0 = 0.8 peasant wages
+            set_variable = { global.pm_workforce_workers@token:pm_photography = 0.2 } # x2.5 = 0.5 peasant wages
+            
+            # Profit: 3.8 (2.9)
+        }
+        define_pm_movies = {  # 1890
+            set_variable = { global.pm_tech_unlock@token:pm_movies = token:cinematograph }
+            set_variable = { global.pm_output_multiplier@token:pm_movies = 12.9 }
+
+            set_variable = { global.pm_construction_duration@token:pm_movies = 12 }
+            clear_array = global.pm_construction_input@token:pm_movies
+            clear_array = global.pm_construction_input_amount@token:pm_movies
+            add_to_array = { global.pm_construction_input@token:pm_movies = token:wood }
+            add_to_array = { global.pm_construction_input_amount@token:pm_movies = 1.6 }
+            add_to_array = { global.pm_construction_input@token:pm_movies = token:fiber }
+            add_to_array = { global.pm_construction_input_amount@token:pm_movies = 0.5 }
+
+            set_variable = { global.pm_retooling_duration@token:pm_movies = 6 }
+            
+            clear_array = global.pm_input@token:pm_movies
+            clear_array = global.pm_input_amount@token:pm_movies
+            add_to_array = { global.pm_input@token:pm_movies = token:electricity }
+            add_to_array = { global.pm_input_amount@token:pm_movies = 2.0 }
+            add_to_array = { global.pm_input@token:pm_movies = token:consumer_goods }
+            add_to_array = { global.pm_input_amount@token:pm_movies = 1.5 }
+            add_to_array = { global.pm_input@token:pm_movies = token:appliances }
+            add_to_array = { global.pm_input_amount@token:pm_movies = 1.0 }
+
+            # per resource / base price
+            set_variable = { global.pm_workforce_laborers@token:pm_movies = 0.5 } # x1.0 = 0.5 peasant wages
+            set_variable = { global.pm_workforce_workers@token:pm_movies = 0.4 } # x2.5 = 1.0 peasant wages
+            set_variable = { global.pm_workforce_professionals@token:pm_movies = 0.1 } # x5.0 = 0.5 peasant wages
+            
+            # Profit: 8.4 (4.2)
+        }
+        define_pm_sports = {  # 1910
+            set_variable = { global.pm_tech_unlock@token:pm_sports = token:tech_humanities_petroleum_society }
+            set_variable = { global.pm_output_multiplier@token:pm_sports = 15.8 }
+
+            set_variable = { global.pm_construction_duration@token:pm_sports = 12 }
+            clear_array = global.pm_construction_input@token:pm_sports
+            clear_array = global.pm_construction_input_amount@token:pm_sports
+            add_to_array = { global.pm_construction_input@token:pm_sports = token:wood }
+            add_to_array = { global.pm_construction_input_amount@token:pm_sports = 1.6 }
+            add_to_array = { global.pm_construction_input@token:pm_sports = token:fiber }
+            add_to_array = { global.pm_construction_input_amount@token:pm_sports = 0.5 }
+
+            set_variable = { global.pm_retooling_duration@token:pm_sports = 6 }
+            
+            clear_array = global.pm_input@token:pm_sports
+            clear_array = global.pm_input_amount@token:pm_sports
+            add_to_array = { global.pm_input@token:pm_sports = token:consumer_goods }
+            add_to_array = { global.pm_input_amount@token:pm_sports = 2.5 }
+            add_to_array = { global.pm_input@token:pm_sports = token:electricity }
+            add_to_array = { global.pm_input_amount@token:pm_sports = 2.0 }
+            add_to_array = { global.pm_input@token:pm_sports = token:appliances }
+            add_to_array = { global.pm_input_amount@token:pm_sports = 1.0 }
+            add_to_array = { global.pm_input@token:pm_sports = token:rubber }
+            add_to_array = { global.pm_input_amount@token:pm_sports = 0.2 }
+
+            # per resource / base price
+            set_variable = { global.pm_workforce_laborers@token:pm_sports = 0.5 } # x1.0 = 0.5 peasant wages
+            set_variable = { global.pm_workforce_workers@token:pm_sports = 0.3 } # x2.5 = 0.75 peasant wages
+            set_variable = { global.pm_workforce_professionals@token:pm_sports = 0.2 } # x5.0 = 1.0 peasant wages
+            
+            # Profit: 10.1 (4.5)
+        }
+        define_pm_video_games = {  # 1975
+            set_variable = { global.pm_tech_unlock@token:pm_video_games = token:early_computers }
+            set_variable = { global.pm_output_multiplier@token:pm_video_games = 33.7 }
+
+            set_variable = { global.pm_construction_duration@token:pm_video_games = 12 }
+            clear_array = global.pm_construction_input@token:pm_video_games
+            clear_array = global.pm_construction_input_amount@token:pm_video_games
+            add_to_array = { global.pm_construction_input@token:pm_video_games = token:wood }
+            add_to_array = { global.pm_construction_input_amount@token:pm_video_games = 1.6 }
+            add_to_array = { global.pm_construction_input@token:pm_video_games = token:fiber }
+            add_to_array = { global.pm_construction_input_amount@token:pm_video_games = 0.5 }
+
+            set_variable = { global.pm_retooling_duration@token:pm_video_games = 6 }
+            
+            clear_array = global.pm_input@token:pm_video_games
+            clear_array = global.pm_input_amount@token:pm_video_games
+            add_to_array = { global.pm_input@token:pm_video_games = token:electricity }
+            add_to_array = { global.pm_input_amount@token:pm_video_games = 5.0 }
+            add_to_array = { global.pm_input@token:pm_video_games = token:computers }
+            add_to_array = { global.pm_input_amount@token:pm_video_games = 5.0 }
+            add_to_array = { global.pm_input@token:pm_video_games = token:consumer_goods }
+            add_to_array = { global.pm_input_amount@token:pm_video_games = 4.5 }
+
+            # per resource / base price
+            set_variable = { global.pm_workforce_laborers@token:pm_video_games = 0.5 } # x1.0 = 0.5 peasant wages
+            set_variable = { global.pm_workforce_workers@token:pm_video_games = 0.2 } # x2.5 = 0.5 peasant wages
+            set_variable = { global.pm_workforce_professionals@token:pm_video_games = 0.2 } # x5.0 = 1.0 peasant wages
+            set_variable = { global.pm_workforce_specialists@token:pm_video_games = 0.1 } # x10.0 = 1.0 peasant wages
+            
+            # Profit: 19.2 (6.4)
+        }
+        define_pm_virtual_reality = {  # 2015
+            set_variable = { global.pm_tech_unlock@token:pm_virtual_reality = token:vr }
+            set_variable = { global.pm_output_multiplier@token:pm_virtual_reality = 56.0 }
+
+            set_variable = { global.pm_construction_duration@token:pm_virtual_reality = 12 }
+            clear_array = global.pm_construction_input@token:pm_virtual_reality
+            clear_array = global.pm_construction_input_amount@token:pm_virtual_reality
+            add_to_array = { global.pm_construction_input@token:pm_virtual_reality = token:wood }
+            add_to_array = { global.pm_construction_input_amount@token:pm_virtual_reality = 1.6 }
+            add_to_array = { global.pm_construction_input@token:pm_virtual_reality = token:fiber }
+            add_to_array = { global.pm_construction_input_amount@token:pm_virtual_reality = 0.5 }
+
+            set_variable = { global.pm_retooling_duration@token:pm_virtual_reality = 6 }
+            
+            clear_array = global.pm_input@token:pm_virtual_reality
+            clear_array = global.pm_input_amount@token:pm_virtual_reality
+            add_to_array = { global.pm_input@token:pm_virtual_reality = token:electricity }
+            add_to_array = { global.pm_input_amount@token:pm_virtual_reality = 13.0 }
+            add_to_array = { global.pm_input@token:pm_virtual_reality = token:computers }
+            add_to_array = { global.pm_input_amount@token:pm_virtual_reality = 7.0 }
+            add_to_array = { global.pm_input@token:pm_virtual_reality = token:consumer_goods }
+            add_to_array = { global.pm_input_amount@token:pm_virtual_reality = 5.0 }
+            add_to_array = { global.pm_input@token:pm_virtual_reality = token:appliances }
+            add_to_array = { global.pm_input_amount@token:pm_virtual_reality = 3.0 }
+
+            # per resource / base price
+            set_variable = { global.pm_workforce_laborers@token:pm_virtual_reality = 0.5 } # x1.0 = 0.5 peasant wages
+            set_variable = { global.pm_workforce_workers@token:pm_virtual_reality = 0.2 } # x2.5 = 0.5 peasant wages
+            set_variable = { global.pm_workforce_professionals@token:pm_virtual_reality = 0.1 } # x5.0 = 0.5 peasant wages
+            set_variable = { global.pm_workforce_specialists@token:pm_virtual_reality = 0.2 } # x10.0 = 2.0 peasant wages
+            
+            # Profit: 28.0 (8.0)
+        }
         
         # Automation
-        # define_pm_no_automation
-        # define_pm_newspapers - Corliss Steam Engine (1840)
-        # define_pm_electrification - Transformers (1885)
-        # define_pm_radio_broadcasting - Commercial Radio Broadcasting Equipment (1920)
-        # define_pm_television_broadcasting - Black and White TV (1935)
-        # define_pm_data_servers_broadcasting - Internet (1990)
-        # define_pm_ai_generated_media - Advanced AI Systems (2020)
+        define_pm_newspapers = {  # 1700
+            set_variable = { global.pm_tech_unlock@token:pm_newspapers = token:tech_humanities_industrial_society }
+
+            set_variable = { global.pm_construction_duration@token:pm_newspapers = 3 }
+            clear_array = global.pm_construction_input@token:pm_newspapers
+            clear_array = global.pm_construction_input_amount@token:pm_newspapers
+            add_to_array = { global.pm_construction_input@token:pm_newspapers = token:wood }
+            add_to_array = { global.pm_construction_input_amount@token:pm_newspapers = 0.3 }
+            add_to_array = { global.pm_construction_input@token:pm_newspapers = token:machinery }
+            add_to_array = { global.pm_construction_input_amount@token:pm_newspapers = 0.2 }
+
+            set_variable = { global.pm_retooling_duration@token:pm_newspapers = 3 }
+
+            # per resource / base price
+            clear_array = global.pm_input@token:pm_newspapers
+            clear_array = global.pm_input_amount@token:pm_newspapers
+            add_to_array = { global.pm_input@token:pm_newspapers = token:consumer_goods }
+            add_to_array = { global.pm_input_amount@token:pm_newspapers = 0.2 }
+            add_to_array = { global.pm_input@token:pm_newspapers = token:machinery }
+            add_to_array = { global.pm_input_amount@token:pm_newspapers = 0.2 }
+
+            # per resource / base price
+            set_variable = { global.pm_workforce_laborers@token:pm_newspapers = -0.2 } # x1.0 = -0.2 peasant wages
+
+            # Profit: -0.4 (break-even when wage > 2.0 )
+        }
+        define_pm_electrification = {  # 1885
+            set_variable = { global.pm_tech_unlock@token:pm_electrification = token:transformer }
+
+            set_variable = { global.pm_construction_duration@token:pm_electrification = 3 }
+            clear_array = global.pm_construction_input@token:pm_electrification
+            clear_array = global.pm_construction_input_amount@token:pm_electrification
+            add_to_array = { global.pm_construction_input@token:pm_electrification = token:wood }
+            add_to_array = { global.pm_construction_input_amount@token:pm_electrification = 0.3 }
+            add_to_array = { global.pm_construction_input@token:pm_electrification = token:machinery }
+            add_to_array = { global.pm_construction_input_amount@token:pm_electrification = 0.2 }
+
+            set_variable = { global.pm_retooling_duration@token:pm_electrification = 3 }
+
+            # per resource / base price
+            clear_array = global.pm_input@token:pm_electrification
+            clear_array = global.pm_input_amount@token:pm_electrification
+            add_to_array = { global.pm_input@token:pm_electrification = token:electricity }
+            add_to_array = { global.pm_input_amount@token:pm_electrification = 0.8 }
+            add_to_array = { global.pm_input@token:pm_electrification = token:electronics }
+            add_to_array = { global.pm_input_amount@token:pm_electrification = 0.4 }
+            add_to_array = { global.pm_input@token:pm_electrification = token:consumer_goods }
+            add_to_array = { global.pm_input_amount@token:pm_electrification = 0.4 }
+            add_to_array = { global.pm_input@token:pm_electrification = token:machinery }
+            add_to_array = { global.pm_input_amount@token:pm_electrification = 0.4 }
+
+            # per resource / base price
+            set_variable = { global.pm_workforce_laborers@token:pm_electrification = -0.5 } # x1.0 = -0.5 peasant wages
+            set_variable = { global.pm_workforce_workers@token:pm_electrification = -0.1 } # x5.0 = -0.25 peasant wages
+            set_variable = { global.pm_workforce_professionals@token:pm_electrification = 0.05 } # x5.0 = 0.25 peasant wages
+
+            # Profit: -2.0 (break-even when wage > 4.0 )
+        }
+        define_pm_radio_broadcasting = {  # 1920
+            set_variable = { global.pm_tech_unlock@token:pm_radio_broadcasting = token:early_radio }
+
+            set_variable = { global.pm_construction_duration@token:pm_radio_broadcasting = 3 }
+            clear_array = global.pm_construction_input@token:pm_radio_broadcasting
+            clear_array = global.pm_construction_input_amount@token:pm_radio_broadcasting
+            add_to_array = { global.pm_construction_input@token:pm_radio_broadcasting = token:wood }
+            add_to_array = { global.pm_construction_input_amount@token:pm_radio_broadcasting = 0.3 }
+            add_to_array = { global.pm_construction_input@token:pm_radio_broadcasting = token:machinery }
+            add_to_array = { global.pm_construction_input_amount@token:pm_radio_broadcasting = 0.2 }
+
+            set_variable = { global.pm_retooling_duration@token:pm_radio_broadcasting = 3 }
+
+            # per resource / base price
+            clear_array = global.pm_input@token:pm_radio_broadcasting
+            clear_array = global.pm_input_amount@token:pm_radio_broadcasting
+            add_to_array = { global.pm_input@token:pm_radio_broadcasting = token:electricity }
+            add_to_array = { global.pm_input_amount@token:pm_radio_broadcasting = 1.0 }
+            add_to_array = { global.pm_input@token:pm_radio_broadcasting = token:appliances }
+            add_to_array = { global.pm_input_amount@token:pm_radio_broadcasting = 0.5 }
+            add_to_array = { global.pm_input@token:pm_radio_broadcasting = token:consumer_goods }
+            add_to_array = { global.pm_input_amount@token:pm_radio_broadcasting = 0.5 }
+            add_to_array = { global.pm_input@token:pm_radio_broadcasting = token:machinery }
+            add_to_array = { global.pm_input_amount@token:pm_radio_broadcasting = 0.5 }
+
+            # per resource / base price
+            set_variable = { global.pm_workforce_laborers@token:pm_radio_broadcasting = -0.5 } # x1.0 = -0.5 peasant wages
+            set_variable = { global.pm_workforce_workers@token:pm_radio_broadcasting = -0.2 } # x5.0 = -0.5 peasant wages
+            set_variable = { global.pm_workforce_professionals@token:pm_radio_broadcasting = 0.1 } # x5.0 = 0.5 peasant wages
+
+            # Profit: -2.5 (break-even when wage > 5.0 )
+        }
+        define_pm_television_broadcasting = {  # 1935
+            set_variable = { global.pm_tech_unlock@token:pm_television_broadcasting = token:black_and_white_tv }
+
+            set_variable = { global.pm_construction_duration@token:pm_television_broadcasting = 3 }
+            clear_array = global.pm_construction_input@token:pm_television_broadcasting
+            clear_array = global.pm_construction_input_amount@token:pm_television_broadcasting
+            add_to_array = { global.pm_construction_input@token:pm_television_broadcasting = token:wood }
+            add_to_array = { global.pm_construction_input_amount@token:pm_television_broadcasting = 0.3 }
+            add_to_array = { global.pm_construction_input@token:pm_television_broadcasting = token:machinery }
+            add_to_array = { global.pm_construction_input_amount@token:pm_television_broadcasting = 0.2 }
+
+            set_variable = { global.pm_retooling_duration@token:pm_television_broadcasting = 3 }
+
+            # per resource / base price
+            clear_array = global.pm_input@token:pm_television_broadcasting
+            clear_array = global.pm_input_amount@token:pm_television_broadcasting
+            add_to_array = { global.pm_input@token:pm_television_broadcasting = token:electricity }
+            add_to_array = { global.pm_input_amount@token:pm_television_broadcasting = 1.2 }
+            add_to_array = { global.pm_input@token:pm_television_broadcasting = token:appliances }
+            add_to_array = { global.pm_input_amount@token:pm_television_broadcasting = 0.6 }
+            add_to_array = { global.pm_input@token:pm_television_broadcasting = token:consumer_goods }
+            add_to_array = { global.pm_input_amount@token:pm_television_broadcasting = 0.6 }
+            add_to_array = { global.pm_input@token:pm_television_broadcasting = token:machinery }
+            add_to_array = { global.pm_input_amount@token:pm_television_broadcasting = 0.6 }
+
+            # per resource / base price
+            set_variable = { global.pm_workforce_laborers@token:pm_television_broadcasting = -0.5 } # x1.0 = -0.5 peasant wages
+            set_variable = { global.pm_workforce_workers@token:pm_television_broadcasting = -0.2 } # x5.0 = -0.5 peasant wages
+            set_variable = { global.pm_workforce_specialists@token:pm_television_broadcasting = 0.05 } # x10.0 = 0.5 peasant wages
+
+            # Profit: -3.0 (break-even when wage > 6.0 )
+        }
+        define_pm_internet_broadcasting = {  # 1990
+            set_variable = { global.pm_tech_unlock@token:pm_internet_broadcasting = token:internet }
+
+            set_variable = { global.pm_construction_duration@token:pm_internet_broadcasting = 3 }
+            clear_array = global.pm_construction_input@token:pm_internet_broadcasting
+            clear_array = global.pm_construction_input_amount@token:pm_internet_broadcasting
+            add_to_array = { global.pm_construction_input@token:pm_internet_broadcasting = token:wood }
+            add_to_array = { global.pm_construction_input_amount@token:pm_internet_broadcasting = 0.3 }
+            add_to_array = { global.pm_construction_input@token:pm_internet_broadcasting = token:machinery }
+            add_to_array = { global.pm_construction_input_amount@token:pm_internet_broadcasting = 0.2 }
+
+            set_variable = { global.pm_retooling_duration@token:pm_internet_broadcasting = 3 }
+
+            # per resource / base price
+            clear_array = global.pm_input@token:pm_internet_broadcasting
+            clear_array = global.pm_input_amount@token:pm_internet_broadcasting
+            add_to_array = { global.pm_input@token:pm_internet_broadcasting = token:electricity }
+            add_to_array = { global.pm_input_amount@token:pm_internet_broadcasting = 2.0 }
+            add_to_array = { global.pm_input@token:pm_internet_broadcasting = token:appliances }
+            add_to_array = { global.pm_input_amount@token:pm_internet_broadcasting = 0.5 }
+            add_to_array = { global.pm_input@token:pm_internet_broadcasting = token:computers }
+            add_to_array = { global.pm_input_amount@token:pm_internet_broadcasting = 1.0 }
+
+            # per resource / base price
+            set_variable = { global.pm_workforce_laborers@token:pm_internet_broadcasting = -0.5 } # x1.0 = -0.5 peasant wages
+            set_variable = { global.pm_workforce_workers@token:pm_internet_broadcasting = -0.2 } # x5.0 = -0.5 peasant wages
+            set_variable = { global.pm_workforce_professionals@token:pm_internet_broadcasting = -0.1 } # x5.0 = -0.5 peasant wages
+            set_variable = { global.pm_workforce_specialists@token:pm_internet_broadcasting = 0.1 } # x10.0 = 1.0 peasant wages
+
+            # Profit: -3.5 (break-even when wage > 7.0 )
+        }
+        define_pm_ai_generated_media = {  # 2025
+            set_variable = { global.pm_tech_unlock@token:pm_ai_generated_media = token:internet }
+
+            set_variable = { global.pm_construction_duration@token:pm_ai_generated_media = 3 }
+            clear_array = global.pm_construction_input@token:pm_ai_generated_media
+            clear_array = global.pm_construction_input_amount@token:pm_ai_generated_media
+            add_to_array = { global.pm_construction_input@token:pm_ai_generated_media = token:wood }
+            add_to_array = { global.pm_construction_input_amount@token:pm_ai_generated_media = 0.3 }
+            add_to_array = { global.pm_construction_input@token:pm_ai_generated_media = token:machinery }
+            add_to_array = { global.pm_construction_input_amount@token:pm_ai_generated_media = 0.2 }
+
+            set_variable = { global.pm_retooling_duration@token:pm_ai_generated_media = 3 }
+
+            # per resource / base price
+            clear_array = global.pm_input@token:pm_ai_generated_media
+            clear_array = global.pm_input_amount@token:pm_ai_generated_media
+            add_to_array = { global.pm_input@token:pm_ai_generated_media = token:electricity }
+            add_to_array = { global.pm_input_amount@token:pm_ai_generated_media = 4.0 }
+            add_to_array = { global.pm_input@token:pm_ai_generated_media = token:computers }
+            add_to_array = { global.pm_input_amount@token:pm_ai_generated_media = 4.0 }
+
+            # per resource / base price
+            set_variable = { global.pm_workforce_laborers@token:pm_ai_generated_media = -0.5 } # x1.0 = -0.5 peasant wages
+            set_variable = { global.pm_workforce_workers@token:pm_ai_generated_media = -0.2 } # x5.0 = -0.5 peasant wages
+            set_variable = { global.pm_workforce_professionals@token:pm_ai_generated_media = -0.1 } # x5.0 = -0.5 peasant wages
+            set_variable = { global.pm_workforce_specialists@token:pm_ai_generated_media = 0.05 } # x10.0 = 0.5 peasant wages
+
+            # Profit: -8.0 (break-even when wage > 8.0 )
+        }
     #
 #
