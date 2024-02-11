@@ -951,6 +951,10 @@ country_pops_recalc = {
         set_variable = { global.additional_base_industrial_complex_building_productivity = 1.5 } # Base productivity of Mil/Civ/Dockyards
 
         # Define Buildings
+        define_infrastructure = yes
+        define_railway = yes
+        define_port = yes
+
         define_arms_factory = yes
         define_industrial_complex = yes
         define_dockyard = yes
@@ -1030,7 +1034,29 @@ country_pops_recalc = {
         define_pm_arms_factory = yes
         define_pm_dockyard = yes
 
+        define_pm_dirt_paths = yes
+        define_pm_gravel_roads = yes
+        define_pm_paved_streets = yes
+        define_pm_highways = yes
+        define_pm_motorways = yes
+
+        define_pm_steam_locomotives = yes
+        define_pm_diesel_locomotives = yes
+        define_pm_electric_locomotives = yes
+        define_pm_high_speed_rail = yes
+        define_pm_maglev_rail = yes
+        
         define_pm_no_automation = yes
+        define_pm_semaphores = yes
+        define_pm_color_light_signals = yes
+        define_pm_rail_computerization = yes
+        define_pm_rail_automation = yes
+
+        define_pm_anchorage = yes
+        define_pm_cargo_port = yes
+        define_pm_industrial_port = yes
+        define_pm_container_port = yes
+        define_pm_smart_port = yes
 
         define_pm_simple_forestry = yes
         define_pm_saw_mills = yes
@@ -1652,6 +1678,13 @@ country_pops_recalc = {
     }
     state_eco_building_init = {
         # Sets initial building sizes & pms
+
+        # Infrastructure
+        set_variable = { size@token:infrastructure = pops }
+        divide_variable = { size@token:infrastructure = 100 }
+        round_variable = size@token:infrastructure
+        add_to_variable = { size@token:infrastructure = 1 }
+        set_variable = { price_industrial_capacity = global.base_price_industrial_capacity }
         
         # Industries
         for_each_loop = {
@@ -1754,6 +1787,68 @@ country_pops_recalc = {
         }
 
         # Special
+            # Railway
+            if = {
+                limit = {
+                    NOT = { is_core_of = var:controller }
+                    has_variable = controller:non_core_starting_pm@token:railway
+                }
+                set_variable = { production_method@token:railway = controller:non_core_starting_pm@token:railway }
+            }
+            else_if = {
+                limit = {
+                    has_variable = controller:starting_pm@token:railway
+                }
+                set_variable = { production_method@token:railway = controller:starting_pm@token:railway }
+            }
+            else = { set_variable = { production_method@token:railway = controller:latest_production_method@token:railway } }
+            
+            if = {
+                limit = {
+                    NOT = { is_core_of = var:controller }
+                    has_variable = controller:non_core_starting_am@token:railway
+                }
+                set_variable = { automation_method@token:railway = controller:non_core_starting_am@token:railway }
+            }
+            else_if = {
+                limit = {
+                    has_variable = controller:starting_am@token:railway
+                }
+                set_variable = { automation_method@token:railway = controller:starting_am@token:railway }
+            }
+            else = { set_variable = { automation_method@token:railway = controller:latest_automation_method@token:railway } }
+            
+            # Port
+            if = {
+                limit = {
+                    NOT = { is_core_of = var:controller }
+                    has_variable = controller:non_core_starting_pm@token:port
+                }
+                set_variable = { production_method@token:port = controller:non_core_starting_pm@token:port }
+            }
+            else_if = {
+                limit = {
+                    has_variable = controller:starting_pm@token:port
+                }
+                set_variable = { production_method@token:port = controller:starting_pm@token:port }
+            }
+            else = { set_variable = { production_method@token:port = controller:latest_production_method@token:port } }
+            
+            if = {
+                limit = {
+                    NOT = { is_core_of = var:controller }
+                    has_variable = controller:non_core_starting_am@token:port
+                }
+                set_variable = { automation_method@token:port = controller:non_core_starting_am@token:port }
+            }
+            else_if = {
+                limit = {
+                    has_variable = controller:starting_am@token:port
+                }
+                set_variable = { automation_method@token:port = controller:starting_am@token:port }
+            }
+            else = { set_variable = { automation_method@token:port = controller:latest_automation_method@token:port } }
+
             # Military Factory
             set_variable = { size@token:arms_factory = arms_factory_level }
             if = { limit = { has_variable = arms_factory_pm } set_variable = { production_method@token:arms_factory = arms_factory_pm } }

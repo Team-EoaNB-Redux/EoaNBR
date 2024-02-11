@@ -106,6 +106,13 @@
             }
             set_variable = { size@var:bu_token = base_resource@var:bu_token }
         }
+        else_if = {
+            limit ={ check_variable = { bu_token = token:infrastructure } }
+            set_variable = { size@var:bu_token = pops }
+            divide_variable = { size@var:bu_token = 100 }
+            round_variable = size@var:bu_token
+            add_to_variable = { size@var:bu_token = 1 }
+        }
         
         # Production & Automation Method Jobs
         set_temp_variable = { base_jobs_temp = global.building_base_employees@var:bu_token }
@@ -317,10 +324,12 @@
         #Capacities
             set_variable = { industrial_capacity_use@var:bu_token = controller:pm_industrial_capacity_use@var:production_method_temp }
             add_to_variable = { industrial_capacity_use@var:bu_token = controller:pm_industrial_capacity_use@var:automation_method_temp }
+            multiply_variable = { industrial_capacity_use@var:bu_token = global.building_base_output_value@var:bu_token }
             multiply_variable = { industrial_capacity_use@var:bu_token = cap_modifier_temp }
             multiply_variable = { industrial_capacity_use@var:bu_token = input_modifier_temp }
             multiply_variable = { industrial_capacity_use@var:bu_token = throughput_modifier_temp }
             multiply_variable = { industrial_capacity_use@var:bu_token = eco_of_scale_modifier_temp }
+            divide_variable = { industrial_capacity_use@var:bu_token = global.base_price_industrial_capacity }
             
             set_variable = { industrial_capacity_use_max@var:bu_token = industrial_capacity_use@var:bu_token }
 
@@ -336,9 +345,11 @@
             
             set_variable = { industrial_capacity@var:bu_token = controller:pm_industrial_capacity@var:production_method_temp }
             add_to_variable = { industrial_capacity@var:bu_token = controller:pm_industrial_capacity@var:automation_method_temp }
+            multiply_variable = { industrial_capacity@var:bu_token = global.building_base_output_value@var:bu_token }
             multiply_variable = { industrial_capacity@var:bu_token = output_modifier_temp }
             multiply_variable = { industrial_capacity@var:bu_token = throughput_modifier_temp }
             multiply_variable = { industrial_capacity@var:bu_token = eco_of_scale_modifier_temp }
+            divide_variable = { industrial_capacity@var:bu_token = global.base_price_industrial_capacity }
 
             set_variable = { industrial_capacity_max@var:bu_token = industrial_capacity@var:bu_token }
 
@@ -859,14 +870,16 @@
     }
     special_buildings_update = {
         # Infrastructure, Railway, Port
+        calc_industrial_capacity = yes # nil secs
+        
         set_temp_variable = { bu_token = token:infrastructure }
-        # industry_update = yes
+        industry_update = yes
 
         set_temp_variable = { bu_token = token:railway }
-        # industry_update = yes
+        industry_update = yes
 
         set_temp_variable = { bu_token = token:port }
-        # industry_update = yes
+        industry_update = yes
 
         # Civilian/Military/Naval Industry
         set_temp_variable = { bu_token = token:industrial_complex }
@@ -1316,7 +1329,7 @@
             value = rgo_token
             if = {
                 limit = {
-                    check_variable = { size@var:rgo_token > 0 }
+                    check_variable = { base_resource@var:rgo_token > 0 }
                 }
                 add_to_array = { industries = rgo_token }
                 add_to_array = { rgos = rgo_token }
@@ -1329,7 +1342,10 @@
             value = building_token
             if = {
                 limit = {
-                    check_variable = { size@var:building_token > 0 }
+                    OR = {
+                        check_variable = { size@var:building_token > 0 }
+                        check_variable = { construction@var:building_token > 0 }
+                    }
                 }
                 add_to_array = { industries = building_token }
                 add_to_array = { buildings = building_token }
@@ -1340,12 +1356,7 @@
         for_each_loop = {
             array = global.special_token_array
             value = building_token
-            if = {
-                limit = {
-                    check_variable = { size@var:building_token > 0 }
-                }
-                add_to_array = { industries = building_token }
-            }
+            add_to_array = { industries = building_token }
         }
     }
 #
