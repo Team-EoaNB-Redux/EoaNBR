@@ -86,6 +86,10 @@ NDefines.NMilitary.EXPERIENCE_COMBAT_FACTOR = 0.05
 NDefines.NMilitary.LOW_ORG_FOR_ATTACK = 0.5                    -- at what org % we start affecting speed when doign hostile moves. scales down ZERO_ORG_MOVEMENT_MODIFIER
 NDefines.NMilitary.MIN_DIVISION_DEPLOYMENT_TRAINING = 0.05			-- Min level of division training
 NDefines.NMilitary.BORDER_WAR_WIN_DAYS_AGAINST_EMPTY_OPPONENTS = 30		-- border wars will be automatically won if no opponent shows up for this duration
+NDefines.NMilitary.CORPS_COMMANDER_DIVISIONS_CAP = 6			-- how many divisions a corps commander is limited to. 0 = inf, < 0 = blocked, changed to 12
+NDefines.NMilitary.DIVISION_SIZE_FOR_XP = 6                   -- how many battalions should a division have to count as a full divisions when calculating XP stuff, changed to 6, or 2 full brigades with victorian starting doctrine
+NDefines.NMilitary.FIELD_MARSHAL_ARMIES_CAP = 2				-- how many armies a field marshall is limited to. 0 = inf, < 0 = blocked
+NDefines.NMilitary.MIN_DIVISION_BRIGADE_HEIGHT = 2		-- Min height of regiments in division designer, set to 2, 3 with starting victorian doctrine
 
 NDefines.NAir.TOP_SPEED_DAMAGE_BONUS_FACTOR = 0.02 -- 0.025
 NDefines.NAir.COMBAT_BETTER_SPEED_DAMAGE_INCREASE = 0.45 -- 0.60

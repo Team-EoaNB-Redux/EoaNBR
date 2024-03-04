@@ -78,17 +78,19 @@ _advance_time = {
 
             ## UPDATING EVERYTHING ##
             calculate_pop_needs = yes
-            calc_industrial_capacity = yes # nil secs
 
             subsist_and_arable_update = yes
             pops_workforce_update = yes
+            industries_update_construction_retooling = yes
             industries_update = yes # 0.5 secs
             pops_update = yes # 0.2 secs
+            
+            set_variable = { prev_gdp_amount = gdp_amount }
         }
 
         # Investment
-        investment_opportunities_update = yes
-        investment_fund_update = yes
+        # investment_opportunities_update = yes
+        # investment_fund_update = yes
         #investment_funds_monthly = yes
         #investment_opportunities_monthly = yes
 
@@ -102,6 +104,7 @@ _advance_time = {
                 check_variable = { market_leader = THIS }
             }
             market_update = yes
+            market_calc_gdp = yes
         }
 
         # 0.1 secs
@@ -111,10 +114,6 @@ _advance_time = {
         # Statistics - 0.2 to 1.2 secs
         every_controlled_state = {
             industries_update_finances = yes
-
-            #GDP
-            set_variable = { prev_gdp_amount = gdp_amount }
-            gdp_update = yes # nil secs
 
             # nil secs
             add_to_array = {
@@ -157,8 +156,6 @@ _advance_time = {
                 divide_variable = { gdp_growth = gdp_amount_array^num_temp }
             }
             subtract_from_variable = { gdp_growth = 100 }
-
-            add_to_variable = { PREV.gdp_amount = gdp_amount }
 
             econ_rerender_gdp_graph = yes
             if = {
@@ -231,8 +228,8 @@ _advance_time = {
 
 create_econ_order_array = {
     clear_array = global.econ_gp_list_array
-    #add_to_array = { global.econ_gp_list_array = ENG }
-    add_to_array = { global.econ_gp_list_array = USA }
+    add_to_array = { global.econ_gp_list_array = ENG }
+    # add_to_array = { global.econ_gp_list_array = USA }
     # add_to_array = { global.econ_gp_list_array = BRA }
     # add_to_array = { global.econ_gp_list_array = MEX }
     # add_to_array = { global.econ_gp_list_array = COL }
@@ -328,26 +325,31 @@ create_econ_order_array = {
 
 
 on_monthly_industries = {
-    for_each_loop = { # Building Construction
+    for_each_loop = { # Building Construction & Retooling
         array = industries
         value = om_building
 
         if = {
             limit = {
-                check_variable = { under_construction@var:om_building > 0 }
+                check_variable = { construction@var:om_building > 0 }
             }
-            subtract_from_variable = { construction_amount@var:om_building = construction_speed@var:om_building }
+            set_temp_variable = { const_speed = construction@var:om_building }
+            set_temp_variable = { construction_speed_temp = 1 }
+            add_to_temp_variable = { construction_speed_temp = building_construction_speed_factor }
+            multiply_temp_variable = { const_speed = construction_speed_temp }
+
+            add_to_variable = { construction_progress@var:om_building = const_speed }
+            subtract_from_variable = { construction_time_left@var:om_building = const_speed }
             if = {
                 limit = {
-                    check_variable = { construction_amount@var:om_building < 0.001 }
+                    check_variable = { construction_time_left@var:om_building < 0.001 }
                 }
-                set_variable = { construction_amount@var:om_building = 0 }
-                add_to_variable = { size@var:om_building = under_construction@var:om_building }
+                add_to_variable = { size@var:om_building = construction@var:om_building }
                 if = {
                     limit = {
-                        check_variable = { om_building = token:building_military_industry }
+                        check_variable = { om_building = token:arms_factory }
                     }
-                    set_temp_variable = { const_amount = under_construction@var:om_building }
+                    set_temp_variable = { const_amount = construction@var:om_building }
                     add_building_construction = {
                         type = arms_factory
                         level = var:const_amount
@@ -356,9 +358,9 @@ on_monthly_industries = {
                 }
                 else_if = {
                     limit = {
-                        check_variable = { om_building = token:building_civilian_industry }
+                        check_variable = { om_building = token:industrial_complex }
                     }
-                    set_temp_variable = { const_amount = under_construction@var:om_building }
+                    set_temp_variable = { const_amount = construction@var:om_building }
                     add_building_construction = {
                         type = industrial_complex
                         level = var:const_amount
@@ -367,16 +369,38 @@ on_monthly_industries = {
                 }
                 else_if = {
                     limit = {
-                        check_variable = { om_building = token:building_naval_industry }
+                        check_variable = { om_building = token:dockyard }
                     }
-                    set_temp_variable = { const_amount = under_construction@var:om_building }
+                    set_temp_variable = { const_amount = construction@var:om_building }
                     add_building_construction = {
                         type = dockyard
                         level = var:const_amount
                         instant_build = yes
                     }
                 }
-                set_variable = { under_construction@var:om_building = 0 }
+                set_variable = { construction@var:om_building = 0 }
+            }
+        }
+        if = {
+            limit = {
+                NOT = { check_variable = { retooling_pm@var:om_building = 0 } }
+            }
+            set_temp_variable = { const_speed = 1 }
+            add_to_temp_variable = { const_speed = building_retooling_speed_factor }
+
+            add_to_variable = { retooling_progress@var:om_building = const_speed }
+            subtract_from_variable = { retooling_time_left@var:om_building = const_speed }
+            if = {
+                limit = {
+                    check_variable = { retooling_time_left@var:om_building < 0.001 }
+                }
+                if = { limit = { is_in_array = { global.building_production_methods@var:om_building = retooling_pm@var:om_building }}
+                    set_variable = { production_method@var:om_building = retooling_pm@var:om_building }
+                }
+                else = {
+                    set_variable = { automation_method@var:om_building = retooling_pm@var:om_building }
+                }
+                set_variable = { retooling_pm@var:om_building = 0 }
             }
         }
     }
@@ -390,6 +414,12 @@ on_monthly_industries = {
                 check_variable = { money@var:om_building > money_limit@var:om_building }
             }
             set_variable = { money@var:om_building = money_limit@var:om_building }
+        }
+        if = {
+            limit = {
+                check_variable = { money@var:om_building < 0 }
+            }
+            set_variable = { money@var:om_building = 0 }
         }
     }
 }
@@ -1091,31 +1121,27 @@ on_monthly_pops = {
             # If there aren't enough laborers, nothing happens
         # If there's not enough workers for the jobs available, then peasants will become laborers
     
-        # jobs_available_temp - Jobs available at non-subsistence farm buildings
-        # target_peasants_temp - Number of peasants that ought to be around
-        set_temp_variable = { jobs_available_temp = jobs_available }
-        subtract_from_temp_variable = { jobs_available_temp = jobs@token:subsistence_farm }
-
-        set_temp_variable = { target_peasants_temp = pops_workforce }
-        subtract_from_temp_variable = { target_peasants_temp = jobs_available_temp }
-
         set_temp_variable = { pops_change_temp = arable_land_available }
         divide_temp_variable = { pops_change_temp = 5 }
-        clamp_temp_variable = { var = pops_change_temp min = 0 max = peasants_workforce }
         
         if = {
             limit = {
-                check_variable = { target_peasants_temp < peasants_workforce }
+                check_variable = { laborers_workforce_balance < 0 }
                 check_variable = { peasants_workforce > 0 }
             }
+            clamp_temp_variable = { var = pops_change_temp min = 0 max = peasants_workforce }
             subtract_from_variable = { peasants_workforce = pops_change_temp }
             add_to_variable = { laborers_workforce = pops_change_temp }
         }
         else_if = {
             limit = {
-                check_variable = { laborers_workforce > pops_change_temp }
-                check_variable = { target_peasants_temp > peasants_workforce }
+                check_variable = { laborers_workforce_balance > 0 }
+                OR = {
+                    check_variable = { peasants_marginal_land = 0 }
+                    check_variable = { laborers_unemployed > 0 }
+                }
             }
+            clamp_temp_variable = { var = pops_change_temp min = 0 max = laborers_workforce_balance }
             add_to_variable = { peasants_workforce = pops_change_temp }
             subtract_from_variable = { laborers_workforce = pops_change_temp }
         }
@@ -1376,9 +1402,9 @@ on_monthly_pops = {
             if = {
                 limit = {
                     OR = {
-                        check_variable = { om_building = token:building_civilian_industry }
-                        check_variable = { om_building = token:building_military_industry }
-                        check_variable = { om_building = token:building_naval_industry }
+                        check_variable = { om_building = token:industrial_complex }
+                        check_variable = { om_building = token:arms_factory }
+                        check_variable = { om_building = token:dockyard }
                     }
                 }
 				set_variable = { employment_target@var:om_building = 100 }
@@ -1386,30 +1412,17 @@ on_monthly_pops = {
             else_if = {
                 limit = {
                     OR = {
-                        check_variable = { om_building = token:building_subsistence_farm }
-                        check_variable = { om_building = token:building_rice_paddy }
+                        check_variable = { om_building = token:subsistence_farm }
                     }
-                }
-                if = {
-                    limit = {
-                        check_variable = { peasants_workforce > peasants_jobs@var:om_building }
-                    }
-				    set_variable = { employment_target@var:om_building = 100 }
-                }
-                else = {
-                    set_variable = { employment_target@var:om_building = peasants_workforce }
-                    set_temp_variable = { emp_temp = peasants_jobs@var:om_building }
-                    divide_temp_variable = { emp_temp = 100 }
-                    divide_variable = { employment_target@var:om_building = emp_temp }
                 }
             }
             else_if = {
                 limit = {
-                    check_variable = { base_productivity@var:om_building > prod_ubound }
+                    check_variable = { productivity@var:om_building > prod_ubound }
                 }
                 if = {
                     limit = {
-                        check_variable = { base_productivity@var:om_building > prod_ubound2 }
+                        check_variable = { productivity@var:om_building > prod_ubound2 }
                     }
                     add_to_variable = { employment_target@var:om_building = 5 }
                 }
@@ -1424,18 +1437,18 @@ on_monthly_pops = {
 			}
             else_if = {
                 limit = {
-                    check_variable = { base_productivity@var:om_building < prod_lbound }
+                    check_variable = { productivity@var:om_building < prod_lbound }
                 }
 
                 if = {
                     limit = {
-                        check_variable = { base_productivity@var:om_building > 0.5 }
+                        check_variable = { productivity@var:om_building > 0.5 }
                     }
                     subtract_from_variable = { employment_target@var:om_building = 5 }
                 }
                 else_if = {
                     limit = {
-                        check_variable = { base_productivity@var:om_building > 0 }
+                        check_variable = { productivity@var:om_building > 0 }
                     }
                     subtract_from_variable = { employment_target@var:om_building = 10 }
                 }
