@@ -9616,35 +9616,40 @@
         
         round_temp_variable = amount_temp
         
-        # Max & Min Trade
-        set_temp_variable = { trade_max_temp = trade_supply@var:resource_temp } # Imports - Max is from global supply
-        multiply_temp_variable = { trade_max_temp = 3 }
-        subtract_from_temp_variable = { trade_max_temp = trade_demand@var:resource_temp }
         if = {
             limit = {
-                check_variable = { trade@var:resource_temp > 0 }
+                NOT = { has_global_flag = debug_trade }
             }
-            add_to_temp_variable = { trade_max_temp = trade@var:resource_temp }
-        }
-        clamp_temp_variable = { var = trade_max_temp min = 0 }
-
-        set_temp_variable = { trade_min_temp = supply@var:resource_temp } # Exports - Min is from local supply
-        multiply_temp_variable = { trade_min_temp = -3 }
-        add_to_temp_variable = { trade_min_temp = need@var:resource_temp }
-        clamp_temp_variable = { var = trade_min_temp max = 0 }
-
-        if = {
-            limit = {
-                check_variable = { global_market_price_compared_to_base@var:resource_temp > -0.75 }
+            # Max & Min Trade
+            set_temp_variable = { trade_max_temp = trade_supply@var:resource_temp } # Imports - Max is from global supply
+            multiply_temp_variable = { trade_max_temp = 3 }
+            subtract_from_temp_variable = { trade_max_temp = trade_demand@var:resource_temp }
+            if = {
+                limit = {
+                    check_variable = { trade@var:resource_temp > 0 }
+                }
+                add_to_temp_variable = { trade_max_temp = trade@var:resource_temp }
             }
-            clamp_temp_variable = { var = amount_temp max = trade_max_temp min = trade_min_temp }
-        }
-        else = {
-            set_temp_variable = { trade_max_temp = need@var:resource_temp }
-            multiply_temp_variable = { trade_max_temp = 2.5 }
-            subtract_from_temp_variable = { trade_max_temp = production@var:resource_temp }
             clamp_temp_variable = { var = trade_max_temp min = 0 }
-            clamp_temp_variable = { var = amount_temp max = trade_max_temp min = trade_min_temp }
+
+            set_temp_variable = { trade_min_temp = supply@var:resource_temp } # Exports - Min is from local supply
+            multiply_temp_variable = { trade_min_temp = -3 }
+            add_to_temp_variable = { trade_min_temp = need@var:resource_temp }
+            clamp_temp_variable = { var = trade_min_temp max = 0 }
+
+            if = {
+                limit = {
+                    check_variable = { global_market_price_compared_to_base@var:resource_temp > -0.75 }
+                }
+                clamp_temp_variable = { var = amount_temp max = trade_max_temp min = trade_min_temp }
+            }
+            else = {
+                set_temp_variable = { trade_max_temp = need@var:resource_temp }
+                multiply_temp_variable = { trade_max_temp = 2.5 }
+                subtract_from_temp_variable = { trade_max_temp = production@var:resource_temp }
+                clamp_temp_variable = { var = trade_max_temp min = 0 }
+                clamp_temp_variable = { var = amount_temp max = trade_max_temp min = trade_min_temp }
+            }
         }
 
         # Set Offers
@@ -9749,6 +9754,7 @@
             if = {
                 limit = {
                     check_variable = { shipping_capacity_use > shipping_capacity }
+                    NOT = { has_global_flag = debug_trade }
                 }
                 set_variable = { shipping_efficiency = shipping_capacity }
                 divide_variable = { shipping_efficiency = shipping_capacity_use }
@@ -9788,7 +9794,10 @@
                 divide_temp_variable = { trade_portion_temp = trade_demand@var:r_type }
                 if = {
                     limit = {
-                        check_variable = { trade_portion_temp > 1 }
+                        OR  ={
+                            check_variable = { trade_portion_temp > 1 }
+                            has_global_flag = debug_trade
+                        }
                     }
                     set_temp_variable = { trade_portion_temp = 1 }
                 }
@@ -9804,7 +9813,10 @@
                 divide_temp_variable = { trade_portion_temp = trade_supply@var:r_type }
                 if = {
                     limit = {
-                        check_variable = { trade_portion_temp > 1 }
+                        OR  ={
+                            check_variable = { trade_portion_temp > 1 }
+                            has_global_flag = debug_trade
+                        }
                     }
                     set_temp_variable = { trade_portion_temp = 1 }
                 }
