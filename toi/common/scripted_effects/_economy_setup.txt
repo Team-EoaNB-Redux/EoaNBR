@@ -25,72 +25,17 @@ _reset = {
 
     # Initialize Countries
     every_country = {
-        # limit = { tag = ROOT }
-
-        # For certain eco things
-        set_variable = { controller = THIS }
-        set_variable = { owner = THIS }
-
-        # Initializes PMs based on tech
-        update_national_production_methods = yes
-        
-        # Adds necessary country-level dynamic modifiers
-        add_dynamic_modifier = { modifier = resource_trade }
-        add_dynamic_modifier = { modifier = budgetary_spending }
-
-        # Updates country-wide eco modifiers
-        r_update_modifiers_country_effects = yes
-
-        # Initializes subjects as part of your market & sets yourself as market leader & updates your market
-        market_setup = yes
-
-        for_each_loop = {
-            array = global.resource_token_array
-            value = r_token
-            set_variable = { price@var:r_token = global.base_price@var:r_token }
-        }
+        _init_country = yes
     }
     
     # Initialize States
     every_state = {
-        # limit = { is_owned_by = ROOT }
-        # Pops & Workforce Counts, state-wide pop variables
-        state_eco_pops_init = yes
-
-        # Sets amount of arable land if it doesn't exist & updates arable land use & available
-        state_eco_arable_land_init = yes
-
-        # Sets initial building & pms
-        state_eco_building_init = yes
-
-        # State Modifiers
-        r_update_modifiers_state_effects = yes
-
-        # Sets up initial employment & population workforce scheme
-        state_eco_employment_init = yes
-
-        # Calculate Base Wage - will mean that industries have to be updated for proper profit margins
-        industry_productivity_sort = yes
-        base_wage_calculation = yes
-
-        # Standard of Living Setup
-        calculate_standard_of_living = yes
+        _init_state = yes
     }
 
     # Update Markets
     every_country = {
-        # limit = { tag = ROOT }
-
-        market_leader_check = yes
-        if = {
-            limit = {
-                check_variable = { market_leader = THIS }
-            }
-            calc_shipping_capacity = yes
-            market_update = yes
-            
-            market_calc_gdp = yes
-        }
+        _update_market = yes
     }
 
     # Updates the list of market leaders & global variables for markets
@@ -98,134 +43,236 @@ _reset = {
 
     # Initialize Trade
     every_country = {
-        limit = { tag = ROOT }
-        
-        if = {
-            limit = {
-                check_variable = { market_leader = THIS }
-            }
-            # Loops through resources & sets trade to most profitable point
-            for_each_loop = {
-                array = global.resource_token_array
-                value = r_token
-
-                if = {
-                    limit = {
-                        NOT = { is_in_array = { global.non_tradeable_resources = r_token } }
-                        OR = {
-                            check_variable = { demand@var:r_token > 0 }
-                            check_variable = { supply@var:r_token > 0 }
-                        }
-                    }
-                    set_temp_variable = { resource_temp = r_token }
-                    trade_ai_determine_max_trade = yes
-                    multiply_temp_variable = { amount_temp = 0.95 }
-                    set_temp_variable = { no_update_temp = 1 }
-                    set_trade = yes
-                }
-            }
-            trade_update = yes
-        }
+        _init_trade = yes
     }
 
     # Update states
     every_state = {
-        # limit = { is_owned_by = ROOT }
-        
-        # Update all industries
-        subsist_and_arable_update = yes
-        industries_update = yes
-        industry_productivity_sort = yes
-        base_wage_calculation = yes
-        
-        # Max out cash reserves for all industries
-        for_each_loop = {
-            array = industries
-            value = b_token
-
-            if = {
-                limit = {
-                    check_variable = { profit@var:b_token > 0 }
-                }
-                set_variable = { money@var:b_token = money_limit@var:b_token }
-                set_variable = { dividends@var:b_token = profit@var:b_token }
-            }
-            else = {
-                set_variable = { money@var:b_token = 0 }
-                set_variable = { money_accumulation@var:b_token = profit@var:b_token }
-            }
-        }
-
-        # Readjust for SoL
-        calculate_standard_of_living = yes
+        _update_state = yes
     }
 
     country_pops_recalc = yes
     country_pops_recalc = yes
 
-    # Country Finalization
+    # Update Market Again
     every_country = {
-        # limit = { tag = ROOT }
-        if = { # Update market details
-            limit = {
-                check_variable = { market_leader = THIS }
-            }
-            market_update = yes
-            trade_update = yes
-            market_calc_gdp = yes
-        }
+        _update_market = yes
     }
 
     # State Finalization
     every_state = {
-        # limit = { is_owned_by = ROOT }
-        # Update all industries
-        subsist_and_arable_update = yes
-        industries_update = yes
-        industry_productivity_sort = yes
-        base_wage_calculation = yes
-        
-        # Update Pops
-        pops_update = yes
-
-        # Graphs & Displays
-        gdp_update = yes
-        initialize_gdp_graph = yes
-        create_pie_chart_pop_type = yes
+        _state_fin = yes
     }
 
+    # Country Finalization
     every_country = {
-        # limit = { tag = ROOT }
-        if = { # Finalize market details
-            limit = {
-                check_variable = { market_leader = THIS }
-            }
-            market_update = yes
-            trade_update = yes
-            market_calc_gdp = yes
-        }
-
-        # Update country pop stats
-        update_country_pop_stats = yes
-
-        # Investment Opportunities Setup
-        io_state_list = yes
-        investment_opportunities_update = yes
-        for_loop_effect = {
-            end = investment_opportunities_cap
-            generate_investment_opportunity = yes
-        }
-        investment_fund_update = yes
-        
-        # Budget
-        budget_update = yes
-        national_debt_update = yes
-
-        # Graphs & Displays
-        initialize_country_gdp_graph = yes
-        initialize_country_budget_graph = yes
-        country_update_trade_display = yes
+        _country_fin = yes
     }
+}
+_init_country = {
+    # Country
+
+    # For certain eco things
+    set_variable = { controller = THIS }
+    set_variable = { owner = THIS }
+
+    # Initializes PMs based on tech
+    update_national_production_methods = yes
+    
+    # Adds necessary country-level dynamic modifiers
+    add_dynamic_modifier = { modifier = resource_trade }
+    add_dynamic_modifier = { modifier = budgetary_spending }
+
+    # Updates country-wide eco modifiers
+    r_update_modifiers_country_effects = yes
+
+    # Initializes subjects as part of your market & sets yourself as market leader & updates your market
+    market_setup = yes
+
+    for_each_loop = {
+        array = global.resource_token_array
+        value = r_token
+        set_variable = { price@var:r_token = global.base_price@var:r_token }
+    }
+}
+_init_state = {
+    # State
+
+    # Pops & Workforce Counts, state-wide pop variables
+    state_eco_pops_init = yes
+
+    # Sets amount of arable land if it doesn't exist & updates arable land use & available
+    state_eco_arable_land_init = yes
+
+    # Sets initial building & pms
+    state_eco_building_init = yes
+
+    # State Modifiers
+    r_update_modifiers_state_effects = yes
+
+    # Sets up initial employment & population workforce scheme
+    state_eco_employment_init = yes
+
+    # Calculate Base Wage - will mean that industries have to be updated for proper profit margins
+    industry_productivity_sort = yes
+    base_wage_calculation = yes
+
+    # Standard of Living Setup
+    calculate_standard_of_living = yes
+}
+_update_market = {
+    # Country
+
+    market_leader_check = yes
+    if = {
+        limit = {
+            check_variable = { market_leader = THIS }
+        }
+        calc_shipping_capacity = yes
+        market_update = yes
+        
+        market_calc_gdp = yes
+    }
+}
+_init_trade = {
+    # Country
+    if = {
+        limit = {
+            check_variable = { market_leader = THIS }
+        }
+        # Loops through resources & sets trade to most profitable point
+        for_each_loop = {
+            array = global.resource_token_array
+            value = r_token
+
+            if = {
+                limit = {
+                    NOT = { is_in_array = { global.non_tradeable_resources = r_token } }
+                    OR = {
+                        check_variable = { demand@var:r_token > 0 }
+                        check_variable = { supply@var:r_token > 0 }
+                    }
+                }
+                set_temp_variable = { resource_temp = r_token }
+                trade_ai_determine_max_trade = yes
+                multiply_temp_variable = { amount_temp = 0.95 }
+                set_temp_variable = { no_update_temp = 1 }
+                set_trade = yes
+            }
+        }
+        trade_update = yes
+    }
+}
+_update_state = {
+    # State
+    
+    # Update all industries
+    subsist_and_arable_update = yes
+    industries_update = yes
+    industry_productivity_sort = yes
+    base_wage_calculation = yes
+    
+    # Max out cash reserves for all industries
+    for_each_loop = {
+        array = industries
+        value = b_token
+
+        if = {
+            limit = {
+                check_variable = { profit@var:b_token > 0 }
+            }
+            set_variable = { money@var:b_token = money_limit@var:b_token }
+            set_variable = { dividends@var:b_token = profit@var:b_token }
+        }
+        else = {
+            set_variable = { money@var:b_token = 0 }
+            set_variable = { money_accumulation@var:b_token = profit@var:b_token }
+        }
+    }
+
+    # Readjust for SoL
+    calculate_standard_of_living = yes
+}
+_state_fin = {
+    # State
+
+    # Update all industries
+    subsist_and_arable_update = yes
+    industries_update = yes
+    industry_productivity_sort = yes
+    base_wage_calculation = yes
+    
+    # Update Pops
+    pops_update = yes
+
+    # Graphs & Displays
+    gdp_update = yes
+    initialize_gdp_graph = yes
+    create_pie_chart_pop_type = yes
+}
+_country_fin = {
+    # Country
+
+    if = { # Finalize market details
+        limit = {
+            check_variable = { market_leader = THIS }
+        }
+        market_update = yes
+        trade_update = yes
+        market_calc_gdp = yes
+    }
+
+    # Update country pop stats
+    update_country_pop_stats = yes
+
+    # Investment Opportunities Setup
+    io_state_list = yes
+    investment_opportunities_update = yes
+    for_loop_effect = {
+        end = investment_opportunities_cap
+        generate_investment_opportunity = yes
+    }
+    investment_fund_update = yes
+    
+    # Budget
+    budget_update = yes
+    national_debt_update = yes
+
+    # Graphs & Displays
+    initialize_country_gdp_graph = yes
+    initialize_country_budget_graph = yes
+    country_update_trade_display = yes
+}
+
+_country_reset = {
+    
+    _init_country = yes    
+
+    # Initialize States
+    every_controlled_state = {
+        _init_state = yes
+    }
+
+    _update_market = yes
+
+    # Update states
+    every_controlled_state = {
+        _update_state = yes
+    }
+
+    country_pops_recalc = yes
+    country_pops_recalc = yes
+
+    # Update Market Again
+    _update_market = yes
+
+    # State Finalization
+    every_controlled_state = {
+        _state_fin = yes
+    }
+
+    # Country Finalization
+    _country_fin = yes
 }
 
 country_pops_recalc = {
@@ -1517,7 +1564,7 @@ country_pops_recalc = {
         set_variable = { global.base_price@token:composites = 5.0 } # Fiberglass: $7,565 per ton in 2023, $210.1 per ton in 1900
         set_variable = { global.base_price@token:electronics = 5.0 }
         set_variable = { global.base_price@token:portable_power = 10.0 }
-        
+
         set_variable = { global.base_price@token:consumer_goods = 8.0 }
         set_variable = { global.base_price@token:textiles = 8.0 }
         set_variable = { global.base_price@token:vehicles = 20.0 } # Modern car price ~$40k, weight is 2 tons, so about $500 per ton in 1900
@@ -1529,36 +1576,42 @@ country_pops_recalc = {
 
         set_variable = { global.base_price_industrial_capacity = 5 }
 
-        # In Units per 1K employees                                                     # Price, Value per 1k employees. Higher this is, the more lucrative it is to trade
-        set_variable = { global.shipping_amount@token:resource_food = 100 }             # x3 = 300
-        set_variable = { global.shipping_amount@token:resource_raw_materials = 150 }    # x2 = 300
-        set_variable = { global.shipping_amount@token:resource_energy_materials = 150 } # x2 = 300
-        set_variable = { global.shipping_amount@token:resource_consumer_goods = 100 }   # x4 = 400
-        set_variable = { global.shipping_amount@token:resource_luxury_goods = 100 }     # x8 = 800
-        set_variable = { global.shipping_amount@token:resource_industrial_goods = 100 } # x6 = 600
-        set_variable = { global.shipping_amount@token:resource_services = 100 }
-        set_variable = { global.shipping_amount@token:resource_electricity = 200 }
-        set_variable = { global.shipping_amount@token:resource_valuable_materials = 50 }
+        # In Units per 1K employees                                             # Value per 1k employees. Higher this is, the more lucrative it is to trade
+        set_variable = { global.shipping_amount@token:food = 50 }               # 125
+        set_variable = { global.shipping_amount@token:luxuries = 50 }           # 200
+        set_variable = { global.shipping_amount@token:wood = 100 }              # 100
+        set_variable = { global.shipping_amount@token:fiber = 50 }              # 200
+        set_variable = { global.shipping_amount@token:iron = 50 }               # 100
+        set_variable = { global.shipping_amount@token:coal = 50 }               # 100
+        set_variable = { global.shipping_amount@token:copper = 25 }             # 150
+        set_variable = { global.shipping_amount@token:valuables = 20 }          # 1000
 
-        set_variable = { global.shipping_amount@token:oil = 50 }                        # x20 = 1000
-        set_variable = { global.shipping_amount@token:aluminum = 40 }                  # x10 = 400
-        set_variable = { global.shipping_amount@token:rubber = 100 }                    # x4 = 400
-        set_variable = { global.shipping_amount@token:tungsten = 15 }                   # x40 = 600
-        set_variable = { global.shipping_amount@token:steel = 50 }                      # x10 = 500
-        set_variable = { global.shipping_amount@token:chromium = 15 }                   # x40 = 600
-        set_variable = { global.shipping_amount@token:coal = 150 }                      # x2 = 300
-        set_variable = { global.shipping_amount@token:wood = 150 }                      # x2 = 300
-        set_variable = { global.shipping_amount@token:textiles = 50 }                     # x8 = 400
-        set_variable = { global.shipping_amount@token:machinery = 10 }              # x80 = 800
-        set_variable = { global.shipping_amount@token:electronics = 10 }                # x120 = 1200
-        set_variable = { global.shipping_amount@token:plastics = 50 }                   # x10 = 500
-        set_variable = { global.shipping_amount@token:composites = 10 }                   # x60 = 600
-        set_variable = { global.shipping_amount@token:portable_power = 5 }              # x200 = 1000
-        set_variable = { global.shipping_amount@token:titanium = 8 }                    # x100 = 800
-        set_variable = { global.shipping_amount@token:iron = 100 }                      # x4 = 400
-        set_variable = { global.shipping_amount@token:fiber = 150 }                    # x4 = 600
-        set_variable = { global.shipping_amount@token:silicon = 40 }                  # x10 = 400
-        set_variable = { global.shipping_amount@token:rare_earths = 10 }          # x50 = 500
+        set_variable = { global.shipping_amount@token:oil = 250 }                # 500
+        set_variable = { global.shipping_amount@token:rubber = 50 }              # 200
+        set_variable = { global.shipping_amount@token:aluminum = 30 }            # 150
+        set_variable = { global.shipping_amount@token:tungsten = 25 }            # 250
+        set_variable = { global.shipping_amount@token:chromium = 25 }            # 250
+        set_variable = { global.shipping_amount@token:titanium = 25 }            # 250
+        set_variable = { global.shipping_amount@token:silicon = 10 }             # 200
+        set_variable = { global.shipping_amount@token:rare_earths = 25 }         # 625
+
+        set_variable = { global.shipping_amount@token:steel = 50 }               # 250
+        set_variable = { global.shipping_amount@token:tools = 50 }               # 500
+        set_variable = { global.shipping_amount@token:machinery = 50 }           # 1250
+        set_variable = { global.shipping_amount@token:chemicals = 150 }          # 300
+        set_variable = { global.shipping_amount@token:plastics = 50 }            # 200
+        set_variable = { global.shipping_amount@token:composites = 50 }          # 250
+        set_variable = { global.shipping_amount@token:electronics = 100 }        # 500
+        set_variable = { global.shipping_amount@token:portable_power = 50 }      # 500
+
+        set_variable = { global.shipping_amount@token:consumer_goods = 50 }      # 400
+        set_variable = { global.shipping_amount@token:textiles = 50 }            # 400
+        set_variable = { global.shipping_amount@token:vehicles = 25 }            # 500
+        set_variable = { global.shipping_amount@token:appliances = 50 }          # 500
+        set_variable = { global.shipping_amount@token:computers = 50 }           # 1250
+        set_variable = { global.shipping_amount@token:electricity = 25 }         # 125
+        set_variable = { global.shipping_amount@token:services = 50 }            # 250
+        set_variable = { global.shipping_amount@token:entertainment = 100 }      # 500
 
         set_variable = { global.shipping_capacity_per_convoy = 2 }
 
