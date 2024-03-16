@@ -1517,9 +1517,11 @@
                 is_in_array = { global.industry_token_array = industry_token }
                 if = {
                     limit = {
-                        NOT = { is_in_array = { industries = industry_token } }
+                        is_in_array = { global.building_token_array = industry_token }
+                        NOT = { is_in_array = { buildings = industry_token } }
                     }
-                    check_variable = { industries^num < 8 }
+                    check_variable = { buildings^num < 8 }
+                    check_variable = { buildings^num < modifier@local_industry_slots }
                     is_in_array = { controller:building_unlocked_pms@var:industry_token = production_method_temp }
                     is_in_array = { controller:building_unlocked_ams@var:industry_token = automation_method_temp }
                 }
@@ -1589,6 +1591,105 @@
                     subtract_from_variable = { controller:investment_fund = initial_cost_temp }
                 }
                 add_to_variable = { construction_investment@var:industry_token = initial_cost_temp }
+            }
+            add_to_variable = { update_state_econ_window = 1 }
+        }
+    }
+    retool_industry_no_update = {
+		# financer_temp
+        # industry_token
+        # production_method_temp - only one of these two
+        # automation_method_temp - only one of these two
+        # no_cost_temp
+
+        # State
+
+        if = {
+            limit = {
+                is_in_array = { global.industry_token_array = industry_token }
+                is_in_array = { industries = industry_token }
+                OR = {
+                    NOT = { check_variable = { production_method_temp = 0 } }
+                    NOT = { check_variable = { automation_method_temp = 0 } }
+                }
+                if = {
+                    limit = {
+                        NOT = { check_variable = { production_method_temp = 0 } }
+                    }
+                    is_in_array = { controller:building_unlocked_pms@var:industry_token = production_method_temp }
+                    check_variable = { automation_method_temp = 0 }
+                }
+                if = {
+                    limit = {
+                        NOT = { check_variable = { automation_method_temp = 0 } }
+                    }
+                    is_in_array = { controller:building_unlocked_ams@var:industry_token = automation_method_temp }
+                    check_variable = { production_method_temp = 0 }
+                }
+                if = {
+                    limit = {
+                        check_variable = { financer_temp < 0 } #Corporation
+                    }
+                }
+                else_if = {
+                    limit = {
+                        check_variable = { financer_temp > 0 } #Government
+                    }
+                    country_exists = var:financer_temp
+
+                }
+                else = { #Local
+
+                }
+            }
+
+            #Financer
+            if = {
+                limit = {
+                    NOT = { check_variable = { retooling_pm@var:industry_token = 0 } }
+                }
+                set_variable = { retooling_financier@var:industry_token = financer_temp }
+            }
+            else = {
+                set_temp_variable = { financer_temp = retooling_financier@var:industry_token }
+            }
+        
+            if = {
+                limit = {
+                    NOT = { check_variable = { production_method_temp = 0 } }
+                }
+                set_temp_variable = { retooling_pm@var:industry_token = production_method_temp }
+            }
+            else = {
+                set_temp_variable = { retooling_pm@var:industry_token = automation_method_temp }
+            }
+
+            # Cost
+            set_temp_variable = { iuc_industry = industry_token }
+            industry_update_construction_retooling = yes
+
+            if = {
+                limit = {
+                    check_variable = { no_cost_temp = 0 }
+                }
+                set_temp_variable = { initial_cost_temp = retooling_cost@var:industry_token }
+                multiply_temp_variable = { initial_cost_temp = global.start_construction_cost_multiplier }
+                if = {
+                    limit = {
+                        check_variable = { financer_temp < 0 } #Corporation
+                    }
+                }
+                else_if = {
+                    limit = {
+                        check_variable = { financer_temp > 0 } #Government
+                    }
+                    divide_temp_variable = { initial_cost_temp = financer_temp:modifier@government_investment_efficiency_factor }
+                    subtract_from_variable = { financer_temp:treasury = initial_cost_temp }
+                }
+                else = { #Local
+                    subtract_from_variable = { controller:investment_fund = initial_cost_temp }
+                }
+                add_to_variable = { retooling_investment@var:industry_token = initial_cost_temp }
             }
             add_to_variable = { update_state_econ_window = 1 }
         }
