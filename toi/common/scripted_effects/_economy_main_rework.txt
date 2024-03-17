@@ -8411,7 +8411,7 @@
         
     }
     io_state_list = {
-        # Regenerates the list of states for potential investment (in order of workforce)
+        # Regenerates the list of states for potential investment (in order of workforce, modified by gdp/c & other factors)
 
         for_each_loop = {
             array = investment_states_array
@@ -8430,13 +8430,15 @@
             if = { limit = { NOT = { is_owned_by = PREV } } multiply_temp_variable = { investment_weight_temp = 0.1 } }
 
             # Wealthy states get invested in more often
-            set_temp_variable = { sol_temp = pops_sol }
-            divide_temp_variable = { sol_temp = 100 }
-            multiply_temp_variable = { investment_weight_temp = sol_temp }
+            set_temp_variable = { gdp_temp = gdp_per_capita }
+            if = { limit = { check_variable = { gdp_temp < 0.1 } } set_temp_variable = { gdp_temp = 0.1 } }
+            divide_temp_variable = { gdp_temp = 10 }
+            multiply_temp_variable = { investment_weight_temp = gdp_temp }
             
             set_variable = { PREV.investment_weight@THIS = investment_weight_temp }
             add_to_variable = { PREV.investment_weight_total = investment_weight_temp }
 
+            # Add to investment_states_array sorted
             for_each_loop = {
                 array = PREV.investment_states_array
                 index = ii
@@ -8678,6 +8680,7 @@
         set_variable = { investment_fund_aristocrats_investment = 0 }
         set_variable = { investment_fund_spending_corporate_tax = 0 }
         set_variable = { investment_fund_spending_construction = 0 }
+        set_variable = { investment_fund_spending_retooling = 0 }
 		every_controlled_state = {
             add_to_variable = { PREV.investment_fund_capitalists_investment = capitalists_investment }
             add_to_variable = { PREV.investment_fund_aristocrats_investment = aristocrats_investment }
@@ -8692,10 +8695,17 @@
                 #Construction
                 if = {
                     limit = {
-                        check_variable = { under_construction@var:sp_token > 0 }
-                        check_variable = { financer@var:sp_token = 0 }
+                        check_variable = { construction@var:sp_token > 0 }
+                        check_variable = { construction_financier@var:sp_token = 0 }
                     }
-                    add_to_variable = { PREV.investment_fund_spending_construction = construction_expenses@var:sp_token }
+                    add_to_variable = { PREV.investment_fund_spending_construction = construction_cost@var:sp_token }
+                }
+                if = {
+                    limit = {
+                        NOT = { check_variable = { retooling_pm@var:sp_token = 0 } }
+                        check_variable = { retooling_financier@var:sp_token = 0 }
+                    }
+                    add_to_variable = { PREV.investment_fund_spending_retooling = retooling_cost@var:sp_token }
                 }
             }
 		}
@@ -8712,7 +8722,7 @@
         divide_variable = { investment_fund_target_spending = 100 }
         multiply_variable = { investment_fund_target_spending = investment_fund_income }
 
-        set_temp_variable = { ifts_temp = investment_fund }
+        set_temp_variable = { ifts_temp = investment_fund } # Add 5% of stored funds to target spending
         multiply_temp_variable = { ifts_temp = 0.05 }
         add_to_variable = { investment_fund_target_spending = ifts_temp }
 
@@ -8741,7 +8751,7 @@
             set_temp_variable = { spending_amount_temp = investment_opportunity_cost@var:state_temp }
             subtract_from_temp_variable = { spending_amount_temp = investment_opportunity_investment@var:state_temp }
 
-            if = {
+            if = { # Enough money
                 limit = {
                     check_variable = { spending_cap_temp > spending_amount_temp }
                 }
@@ -8750,7 +8760,7 @@
                 set_variable = { investment_opportunity_investment@var:state_temp = investment_opportunity_cost@var:state_temp }
                 evaluate_investment_opportunity = yes
             }
-            else = {
+            else = { # Not enough money
                 subtract_from_variable = { investment_fund = spending_cap_temp }
                 add_to_variable = { investment_opportunity_investment@var:state_temp = spending_cap_temp }
                 set_temp_variable = { spending_cap_temp = 0 }
@@ -13541,7 +13551,7 @@
 		add_to_variable = { support_battalions = num_battalions_with_type@steam_car_support_company }
 		add_to_variable = { support_battalions = num_battalions_with_type@flamethrower_support_company }
 		add_to_variable = { support_battalions = num_battalions_with_type@sniper_team_support }
-		add_to_variable = { support_battalions = num_battalions_with_type@armor_train_company }
+		add_to_variable = { support_battalions = num_battalions_with_type@armored_train_company }
 
 		set_variable = { total_battalions = infantry_battalions }
 		add_to_variable = { total_battalions = artillery_battalions }
@@ -13790,9 +13800,9 @@
 		add_to_variable = { support_battalions_weighted = num_battalions_with_type@steam_car_support_company }
 		add_to_variable = { support_battalions_weighted = num_battalions_with_type@flamethrower_support_company }
 		add_to_variable = { support_battalions_weighted = num_battalions_with_type@sniper_team_support }
-		add_to_variable = { support_battalions_weighted = num_battalions_with_type@armor_train_company }
-		add_to_variable = { support_battalions_weighted = num_battalions_with_type@armor_train_company }
-		add_to_variable = { support_battalions_weighted = num_battalions_with_type@armor_train_company }
+		add_to_variable = { support_battalions_weighted = num_battalions_with_type@armored_train_company }
+		add_to_variable = { support_battalions_weighted = num_battalions_with_type@armored_train_company }
+		add_to_variable = { support_battalions_weighted = num_battalions_with_type@armored_train_company }
 
 
 		set_variable = { screen_ships_weighted = num_ships_with_type@corvette }
@@ -14292,7 +14302,7 @@
             add_to_variable = { army_manpower_k = manpower_temp }
         #
         # train
-            set_temp_variable = { manpower_temp = num_battalions_with_type@armor_train_company }
+            set_temp_variable = { manpower_temp = num_battalions_with_type@armored_train_company }
             multiply_temp_variable = { manpower_temp = 0.4 }
             add_to_variable = { army_manpower_k = manpower_temp }
         #
