@@ -958,7 +958,7 @@ focus_tree = {
 		id = PRS_focus_king_army_prs
 		icon = GFX_goal_focus_prussia_von_moltke
 		relative_position_id = PRS_focus_army_with_state
-		x = 0
+		x = -1
 		y = 1
 		cost = 70
 		search_filters = {
@@ -1010,7 +1010,7 @@ focus_tree = {
 		id = PRS_focus_heeresreform
 		icon = GFX_goal_focus_prussian_militarism
 		relative_position_id = PRS_focus_king_army_prs
-		x = 0
+		x = 1
 		y = 1
 		cost = 70
 		search_filters = {
@@ -1020,7 +1020,7 @@ focus_tree = {
 		available = { date > 1860.1.1 }
 		ai_will_do = { base = 200 }
 
-		prerequisite = { focus = PRS_focus_king_army_prs }
+		prerequisite = { focus = PRS_focus_king_army_prs focus = PRS_focus_advance_cannon_tech }
 
 		completion_reward = {
 			country_event = { days = 1 id = prussiaconscrisis.1 }
@@ -1782,7 +1782,7 @@ focus_tree = {
 	focus = {
 		id = PRS_focus_north_german_confederation
 		icon = GFX_goal_focus_king_army_prs
-		x = 40
+		x = 35
 		y = 0
 		cost = 1
 		search_filters = {
@@ -1836,18 +1836,17 @@ focus_tree = {
 	focus = {
 		id = PRS_focus_advance_cannon_tech
 		icon = GFX_focus_ger_oppose_hitler
-		relative_position_id = PRS_focus_north_german_confederation
-		x = -5
+		relative_position_id = PRS_focus_army_with_state
+		x = 1
 		y = 1
 		cost = 26
 		search_filters = {
 			FOCUS_FILTER_MILITARY
 			FOCUS_FILTER_RESEARCH
 		}
+		available = { has_completed_focus = PRS_focus_north_german_confederation }
 		ai_will_do = { base = 100 }
-
-		prerequisite = { focus = PRS_focus_north_german_confederation }
-
+		prerequisite = { focus = PRS_focus_army_with_state }
 		completion_reward = {
 			# custom_effect_tooltip = unfinished_tooltip
 			add_tech_bonus = {
@@ -1864,7 +1863,7 @@ focus_tree = {
 		id = PRS_focus_ngc_constitutive_reichstag
 		icon = GFX_focus_generic_self_management
 		relative_position_id = PRS_focus_north_german_confederation
-		x = -3
+		x = 2
 		y = 1
 		cost = 26
 		search_filters = {
@@ -1876,7 +1875,6 @@ focus_tree = {
 		}
 		ai_will_do = { base = 100 }
 
-		mutually_exclusive = { focus = PRS_More_To_Be_Learned }
 
 		prerequisite = { focus = PRS_focus_north_german_confederation }
 
@@ -2348,7 +2346,7 @@ focus = {
 		id = PRS_Focus_Radicalization_of_the_Nation
 		icon = placeholder
 		relative_position_id = PRS_Lost_In_Seven_Week_War
-		x = 2
+		x = 5
 		y = 1
 		cost = 70 #placeholder
 		search_filters = {
@@ -2796,6 +2794,9 @@ focus = {
 				}
 			}
 		}
+		hidden_effect = {  ### SALEM TO DO !!!
+			# Event to either continue as Bismarck or Revolutionaries
+		}
 	}
 
 	focus = {
@@ -2842,60 +2843,32 @@ focus = {
 		}
 	}
 
-	focus = {
-		id = PRS_More_To_Be_Learned
-		icon = placeholder
-		relative_position_id = PRS_focus_north_german_confederation
-		x = 5
-		y = 1
-		cost = 70 #placeholder
-		search_filters = {
-			FOCUS_FILTER_POLITICAL
-			FOCUS_FILTER_ALTHISTORY
-			FOCUS_FILTER_MILITARY
-		}
-
-		available = {
-			#
-		}
-		ai_will_do = {
-			base = 100
-		}
-
-		mutually_exclusive = { focus = PRS_focus_ngc_constitutive_reichstag } 
-
-
-		prerequisite = { focus = PRS_focus_north_german_confederation }
-
-		completion_reward = {
-			# placeholder
-			custom_effect_tooltip = unfinished_tooltip
-			custom_effect_tooltip = alternate_historical_tooltip
-		}
-	}
 	focus = { # TBD
 		id = PRS_Focus_External_Help
 		icon = placeholder
-		relative_position_id = PRS_More_To_Be_Learned
-		x = -3
+		relative_position_id = PRS_Expand_Our_Knowledge
+		x = 2
 		y = 1
 		cost = 70 #placeholder
 		search_filters = {
 			FOCUS_FILTER_POLITICAL
 			FOCUS_FILTER_ALTHISTORY
 		}
-
+		allow_branch = {
+			OR = {
+				has_country_flag = eoanb_flag_PRS_lost_7WW
+				has_country_flag = eoanb_flag_PRS_decentralized_ngc
+			}
+		}
 		available = {
-			#
+			NOT = {
+				has_completed_focus = PRS_Focus_Learn_From_Within
+			}
 		}
 		ai_will_do = {
 			base = 500
 		}
-
-		mutually_exclusive = { focus = PRS_Focus_Learn_From_Within } 
-
-		prerequisite = { focus = PRS_More_To_Be_Learned }
-
+		prerequisite = { focus = PRS_Expand_Our_Knowledge }
 		completion_reward = {
 			# placeholder
 			custom_effect_tooltip = unfinished_tooltip
@@ -2906,9 +2879,9 @@ focus = {
 	focus = {
 		id = PRS_Focus_Learn_From_Within
 		icon = placeholder
-		relative_position_id = PRS_focus_ngc_bundesprasidium
-		x = -8
-		y = -1
+		relative_position_id = PRS_Expand_Our_Knowledge
+		x = -2
+		y = 1
 		cost = 70 #placeholder
 		search_filters = {
 			FOCUS_FILTER_POLITICAL
@@ -2922,15 +2895,14 @@ focus = {
 			}
 		}
 		available = {
-			#
+			NOT = {
+				has_completed_focus = PRS_Focus_External_Help
+			}
 		}
 		ai_will_do = {
 			base = 100
 		}
-
-		mutually_exclusive = { focus = PRS_Focus_External_Help }
-
-		prerequisite = { focus = PRS_More_To_Be_Learned focus = PRS_Lost_In_Seven_Week_War }
+		prerequisite = { focus = PRS_Expand_Our_Knowledge }
 
 		completion_reward = {
 			# placeholder
@@ -2950,16 +2922,13 @@ focus = {
 			FOCUS_FILTER_POLITICAL
 			FOCUS_FILTER_ALTHISTORY
 		}
-	
 		available = {
 			#
 		}
 		ai_will_do = {
 			base = 100
 		}
-	
 		prerequisite = { focus = PRS_Focus_Learn_From_Within }
-	
 		completion_reward = {
 			# placeholder
 			custom_effect_tooltip = unfinished_tooltip
@@ -3145,6 +3114,45 @@ focus = {
 		prerequisite = { focus = PRS_Focus_Accidental_Overstep }
 		completion_reward = {
 			# placeholder
+			custom_effect_tooltip = unfinished_tooltip
+			custom_effect_tooltip = alternate_historical_tooltip		}
+	}
+
+	focus = {
+		id = PRS_Expand_Our_Knowledge
+		icon = placeholder
+		relative_position_id = PRS_Lost_In_Seven_Week_War
+		x = -4
+		y = 1
+		cost = 70 #placeholder
+		search_filters = {
+			FOCUS_FILTER_POLITICAL
+			FOCUS_FILTER_ALTHISTORY
+			FOCUS_FILTER_MILITARY
+			FOCUS_FILTER_ANNEXATION
+		}
+		available = {
+			custom_trigger_tooltip = {
+				tooltip = GENERIC_Triggered_By_Event_tt
+				always = no
+			}
+		}
+		allow_branch = {
+			OR = {
+				has_country_flag = eoanb_flag_PRS_lost_7WW
+				has_country_flag = eoanb_flag_PRS_decentralized_ngc
+			}
+		}
+		ai_will_do = {
+			base = 100
+		}
+		prerequisite = { focus = PRS_Lost_In_Seven_Week_War focus = PRS_focus_north_german_confederation }
+		completion_reward = {
+			custom_effect_tooltip = alternate_historical_tooltip
+			country_event = { id = xandy }
+		}
+		hidden_effect = {
+			
 		}
 	}
 
@@ -4655,7 +4663,7 @@ focus = {
 		id = PRS_focus_foreign_politics_branch
 		icon = GFX_Focus_Government_Reform_Administration
 		relative_position_id = PRS_focus_powerful_economy
-		x = 0
+		x = -2
 		y = 4
 		cost = 70
 
@@ -4905,7 +4913,7 @@ focus = {
 		id = PRS_focus_foreign_politics_FRA
 		icon = GFX_Focus_Diplomatic_Ally_FRA
 		relative_position_id = PRS_focus_foreign_politics_branch
-		x = 4
+		x = 6
 		y = 1
 		cost = 70
 
