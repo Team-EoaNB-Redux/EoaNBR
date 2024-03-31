@@ -52,7 +52,7 @@ _reset = {
     }
 
     country_pops_recalc = yes
-    country_pops_recalc = yes
+    # country_pops_recalc = yes
 
     # Update Market Again
     every_country = {
@@ -261,7 +261,7 @@ _country_reset = {
     }
 
     country_pops_recalc = yes
-    country_pops_recalc = yes
+    # country_pops_recalc = yes
 
     # Update Market Again
     _update_market = yes
@@ -293,6 +293,18 @@ country_pops_recalc = {
         # Update all industries
         subsist_and_arable_update = yes
         industries_update = yes
+        industry_productivity_sort = yes
+        base_wage_calculation = yes
+
+        # Readjust Industries
+        readjust_industries = yes
+        industries_update = yes
+        pops_update = yes
+
+        state_eco_employment_init = yes
+        pops_update = yes
+        industries_update = yes
+
         industry_productivity_sort = yes
         base_wage_calculation = yes
         
@@ -576,7 +588,7 @@ country_pops_recalc = {
             add_to_array = { global.pops_spending_weight_sol@token:coal = 99 }
             
             # Oil - Fuel for vehicles, requires Internal Combustion Engines tech | 0.5
-            set_variable = { global.pops_spending_tech@token:oil = token:internal_combustion_engine } # Converts into Services need if you don't have this tech
+            set_variable = { global.pops_spending_tech@token:oil = token:tech_internal_combustion_engine } # Converts into Services need if you don't have this tech
             set_variable = { global.pops_spending_replacement@token:oil = token:services }
             clear_array = global.pops_spending_weight_val@token:oil
             clear_array = global.pops_spending_weight_sol@token:oil
@@ -592,7 +604,7 @@ country_pops_recalc = {
             add_to_array = { global.pops_spending_weight_sol@token:oil = 81 }
             
             # Composites - Technological people wood, requires Plexiglass Tech | 0.5
-            set_variable = { global.pops_spending_tech@token:composites = token:modern_ceramics } # Converts into Wood need if you don't have this tech
+            set_variable = { global.pops_spending_tech@token:composites = token:tech_fiberglass } # Converts into Wood need if you don't have this tech
             set_variable = { global.pops_spending_replacement@token:composites = token:wood }
             clear_array = global.pops_spending_weight_val@token:composites
             clear_array = global.pops_spending_weight_sol@token:composites
@@ -640,7 +652,7 @@ country_pops_recalc = {
             add_to_array = { global.pops_spending_weight_sol@token:textiles = 51 }
             
             # Vehicles - Cars, Trucks, & Airplanes, requires Internal Combustion Engines tech | 0.5
-            set_variable = { global.pops_spending_tech@token:vehicles = token:internal_combustion_engine } # Converts into Services need if you don't have this tech
+            set_variable = { global.pops_spending_tech@token:vehicles = token:tech_internal_combustion_engine } # Converts into Services need if you don't have this tech
             set_variable = { global.pops_spending_replacement@token:vehicles = token:services }
             clear_array = global.pops_spending_weight_val@token:vehicles
             clear_array = global.pops_spending_weight_sol@token:vehicles
@@ -2301,6 +2313,74 @@ country_pops_recalc = {
         else_if = { limit = { check_variable = { soldiers_earnings > soldiers_spending } } add_to_variable = { soldiers_sol = 1 } }
 
         calculate_pop_needs = yes
+    }
+    readjust_industries = {
+        # Checks if PMs are most productive. Swaps if not
+
+        for_each_loop = {
+            array = industries
+            value = industry_token
+            set_temp_variable = { highest_productivity_temp = 0 }
+            set_temp_variable = { highest_pm_temp = global.building_production_methods@var:industry_token^0 }
+
+            for_each_loop = {
+                array = global.building_production_methods@var:industry_token
+                value = pm_temp
+
+                if = {
+                    limit = {
+                        is_in_array = { controller:building_unlocked_pms@var:industry_token = pm_temp }
+                        get_pm_values = yes
+                        check_variable = { highest_productivity_temp < productivity_temp }
+                    }
+                    set_temp_variable = { highest_productivity_temp = productivity_temp }
+                    set_temp_variable = { highest_pm_temp = pm_temp }
+                }
+            }
+            if = {
+                limit = {
+                    NOT = { check_variable = { production_method@var:industry_token = highest_pm_temp } }
+                    NOT = { has_variable = controller:starting_pm@var:industry_token }
+                    NOT = {
+                        NOT = { is_core_of = var:controller }
+                        has_variable = controller:non_core_starting_pm@var:industry_token
+                    }
+                }
+                # log = "[?industry_token.GetTokenLocalizedKey]: [?highest_pm_temp.GetTokenLocalizedKey]"
+                set_variable = { production_method@var:industry_token = highest_pm_temp }
+            }
+
+            set_temp_variable = { highest_productivity_temp = 0 }
+            set_temp_variable = { highest_pm_temp = global.building_automation_methods@var:industry_token^0 }
+
+            for_each_loop = {
+                array = global.building_automation_methods@var:industry_token
+                value = pm_temp
+
+                if = {
+                    limit = {
+                        is_in_array = { controller:building_unlocked_ams@var:industry_token = pm_temp }
+                        get_pm_values = yes
+                        check_variable = { highest_productivity_temp < productivity_temp }
+                        check_variable = { productivity_temp < base_wage }
+                    }
+                    set_temp_variable = { highest_productivity_temp = productivity_temp }
+                    set_temp_variable = { highest_pm_temp = pm_temp }
+                }
+            }
+            if = {
+                limit = {
+                    NOT = { check_variable = { automation_method@var:industry_token = highest_pm_temp } }
+                    NOT = { has_variable = controller:starting_am@var:industry_token }
+                    NOT = {
+                        NOT = { is_core_of = var:controller }
+                        has_variable = controller:non_core_starting_am@var:industry_token
+                    }
+                }
+                # log = "[?industry_token.GetTokenLocalizedKey]: [?highest_pm_temp.GetTokenLocalizedKey]"
+                set_variable = { automation_method@var:industry_token = highest_pm_temp }
+            }
+        }
     }
 #
 
