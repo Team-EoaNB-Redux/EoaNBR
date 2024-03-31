@@ -33,7 +33,7 @@ NDefines.NCountry.BASE_FUEL_GAIN_PER_OIL = 0.25						-- base amount of fuel gain
 NDefines.NCountry.BASE_FUEL_GAIN = 1.0						-- base amount of fuel gained hourly, independent of excess oil --2
 NDefines.NCountry.BASE_FUEL_CAPACITY = 500						-- base amount of fuel capacity --50k
 
-NDefines.NProduction.MAX_EQUIPMENT_RESOURCES_NEED = 6 	-- Max number of different strategic resources an equipment can be dependent on. --3
+NDefines.NProduction.MAX_EQUIPMENT_RESOURCES_NEED = 9 	-- Max number of different strategic resources an equipment can be dependent on. --3
 NDefines.NProduction.MAX_CIV_FACTORIES_PER_LINE = 18 -- Max number of factories that can be assigned a single production line.
 NDefines.NProduction.DEFAULT_MAX_NAV_FACTORIES_PER_LINE = 12
 NDefines.NProduction.FLOATING_HARBOR_MAX_NAV_FACTORIES_PER_LINE = 6
