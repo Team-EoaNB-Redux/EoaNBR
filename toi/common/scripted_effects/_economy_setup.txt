@@ -51,8 +51,9 @@ _reset = {
         _update_state = yes
     }
 
-    country_pops_recalc = yes
-    # country_pops_recalc = yes
+    every_country = {
+        market_pops_industry_recalc = yes
+    }
 
     # Update Market Again
     every_country = {
@@ -260,8 +261,7 @@ _country_reset = {
         _update_state = yes
     }
 
-    country_pops_recalc = yes
-    # country_pops_recalc = yes
+    market_pops_industry_recalc = yes
 
     # Update Market Again
     _update_market = yes
@@ -275,21 +275,31 @@ _country_reset = {
     _country_fin = yes
 }
 
-country_pops_recalc = {
-    every_country = {
-        limit = { tag = ROOT }
-        if = { # Update market details
-            limit = {
-                check_variable = { market_leader = THIS }
-            }
-            market_update = yes
-            trade_update = yes
-            market_calc_gdp = yes
+market_pops_industry_recalc = {
+    if = {
+        limit = {
+            check_variable = { market_leader = THIS }
+        }
+        market_update = yes
+        trade_update = yes
+        market_calc_gdp = yes
+
+        for_each_scope_loop = {
+            array = market_countries
+            
+            country_pops_industry_recalc = yes
         }
     }
+}
 
-    every_state = {
-        limit = { is_owned_by = ROOT }
+country_pops_industry_recalc = {
+    set_temp_variable = { max_count_temp = controlled_states^num }
+    divide_temp_variable = { max_count_temp = 10 }
+    round_temp_variable = max_count_temp
+    add_to_temp_variable = { max_count_temp = 1 }
+    set_temp_variable = { count_temp = 0 }
+
+    every_controlled_state = {
         # Update all industries
         subsist_and_arable_update = yes
         industries_update = yes
@@ -312,6 +322,36 @@ country_pops_recalc = {
         readjust_standard_of_living = yes
         readjust_standard_of_living = yes
         pops_update = yes
+
+        # Updates national market after only updating this state
+        state_market_update = yes
+        add_to_temp_variable = { count_temp = 1 }
+        if = {
+            limit ={
+                check_variable = { count_temp < max_count_temp }
+            }
+            set_temp_variable = { count_temp = 0 }
+            PREV = {
+                national_market_update = yes
+
+                var:market_leader = {
+                    set_temp_variable = { ignore_national_market_temp = 1 }
+                    market_update = yes
+                }
+            }
+        }
+    }
+    if = {
+        limit ={
+            check_variable = { count_temp > 0 }
+        }
+        set_temp_variable = { count_temp = 0 }
+        national_market_update = yes
+
+        var:market_leader = {
+            set_temp_variable = { ignore_national_market_temp = 1 }
+            market_update = yes
+        }
     }
 }
 
@@ -2352,6 +2392,8 @@ country_pops_recalc = {
 
             set_temp_variable = { highest_productivity_temp = 0 }
             set_temp_variable = { highest_pm_temp = global.building_automation_methods@var:industry_token^0 }
+            set_temp_variable = { base_wage_temp = base_wage }
+            multiply_temp_variable = { base_wage_temp = 0.8 }
 
             for_each_loop = {
                 array = global.building_automation_methods@var:industry_token
@@ -2361,8 +2403,9 @@ country_pops_recalc = {
                     limit = {
                         is_in_array = { controller:building_unlocked_ams@var:industry_token = pm_temp }
                         get_pm_values = yes
+                        # log = "[?industry_token.GetTokenLocalizedKey]: [?productivity_temp] < [?base_wage_temp]"
                         check_variable = { highest_productivity_temp < productivity_temp }
-                        check_variable = { productivity_temp < base_wage }
+                        check_variable = { productivity_temp < base_wage_temp }
                     }
                     set_temp_variable = { highest_productivity_temp = productivity_temp }
                     set_temp_variable = { highest_pm_temp = pm_temp }

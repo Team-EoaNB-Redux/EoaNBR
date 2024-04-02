@@ -8321,7 +8321,7 @@
         io_state_build = yes # Pick a state
 
         if = { limit = { NOT = { check_variable = { chosen_state = 0 } } } # State was chosen
-            log = "BUILD: [?chosen_state.GetName]"
+            # log = "BUILD: [?chosen_state.GetName]"
 
             # Pick building type
             for_each_loop = {
@@ -8531,7 +8531,7 @@
         set_temp_variable = { investment_weight_temp = investment_weight_total }
         multiply_temp_variable = { investment_weight_temp = random }
         multiply_temp_variable = { investment_weight_temp = 0.9 }
-        log = "Chosen Weight: [?investment_weight_temp] / [?investment_weight_total]"
+        # log = "Chosen Weight: [?investment_weight_temp] / [?investment_weight_total]"
 
         set_temp_variable = { chosen_state = 0 }
         set_temp_variable = { weight_temp = 0 }
@@ -8571,7 +8571,7 @@
                 }
             }
         }
-        log = "Chosen State: [?chosen_state.GetName]"
+        # log = "Chosen State: [?chosen_state.GetName]"
     }
     io_state_upgrade = {
         # Selects a semi-random state for upgrading an existing building
@@ -8783,6 +8783,10 @@
     market_update = { # The master market update script. Adds up all values from every state up to the market leader 
         # Scope: Market Leader
         # Make sure current scope is a market leader by doing check_variable = { market_leader = THIS }
+        
+        # The following two inputs allow market_update to run without running more strenuous operations. For performance
+        # ignore_state_market_temp - Does not recalc state markets if non-zero
+        # ignore_national_market_temp - Does not recalc state OR national markets if non-zero
 
         set_temp_variable = { market_leader_temp = THIS }
 
@@ -8800,7 +8804,22 @@
         for_each_scope_loop = { # Add up each country
             array = market_countries
 
-            national_market_update = yes
+            if = {
+                limit = {
+                    NOT = { check_variable = { ignore_national_market_temp = 0 } }
+                }
+                if = {
+                    limit = {
+                        NOT = { check_variable = { ignore_state_market_temp = 0 } }
+                    }
+                    every_controlled_state = {
+                        state_market_update = yes
+                    }
+                }
+
+                national_market_update = yes
+            }
+
             
             for_each_loop = {
                 array = global.resource_token_array
@@ -8811,6 +8830,9 @@
         }
 
         market_calculations = yes
+
+        set_temp_variable = { ignore_state_market_temp = 0 }
+        set_temp_variable = { ignore_national_market_temp = 0 }
     }
     market_calculations = { # Does supply/demand calculations for the market and adjusts prices. Included in market_update & trade_update_quantity. 
         # Scope: Market Leader
@@ -8904,9 +8926,7 @@
             set_variable = { local_production@var:r_type = 0 }
         }
 
-        every_controlled_state = { # Calculate & Add up each state
-            state_market_update = yes
-            
+        every_controlled_state = { # Calculate & Add up each state            
             for_each_loop = { # Add to national scope
                 array = global.resource_token_array
                 value = r_type
@@ -10820,7 +10840,7 @@
         # Output
         set_temp_variable = { actual_temp = sqrt_approx_temp }
         multiply_temp_variable = { actual_temp = actual_temp }
-        log = "Initial: [?sqrt_temp] | Approximation: [?sqrt_approx_temp] | Result: [?actual_temp]"
+        # log = "Initial: [?sqrt_temp] | Approximation: [?sqrt_approx_temp] | Result: [?actual_temp]"
         set_temp_variable = { sqrt_temp = sqrt_approx_temp }
     }
     trade_ai_determine_max_trade = {
@@ -10893,7 +10913,7 @@
             round_temp_variable = amount_temp
         }
 
-        log = "Result: [?amount_temp]"
+        # log = "Result: [?amount_temp]"
     }
     trade_ai_evaluate_route = {
         # Takes in a single route, given as resource_temp, and gives a direction that the trade ought to go in
@@ -10903,7 +10923,7 @@
         set_temp_variable = { productivity_upper_bound = workforce_earnings_avg } # If productivity is above this, increase trade
         multiply_temp_variable = { productivity_upper_bound = 1.5 }
         set_temp_variable = { productivity_lower_bound = workforce_earnings_avg } # If productivity is below this, decrease trade
-        log = "Resource: [?resource_temp.GetTokenLocalizedKey]: [?offers@var:resource_temp], [?trade_productivity@var:resource_temp]"
+        # log = "Resource: [?resource_temp.GetTokenLocalizedKey]: [?offers@var:resource_temp], [?trade_productivity@var:resource_temp]"
 
         if = {
             limit = { # Checks that stuff is valid
@@ -12184,11 +12204,11 @@
         set_temp_variable = { modifier_temp = modifier@administration_cost_per_c }
         multiply_temp_variable = { modifier_temp = pops }
         add_to_variable = { administration_spending = modifier_temp }
-        log = "Admin cost per c: [?modifier_temp]"
+        # log = "Admin cost per c: [?modifier_temp]"
         set_temp_variable = { modifier_temp = modifier@administration_cost_per_gdp }
         multiply_temp_variable = { modifier_temp = gdp_amount }
         add_to_variable = { administration_spending = modifier_temp }
-        log = "Admin cost per GDP: [?modifier_temp]"
+        # log = "Admin cost per GDP: [?modifier_temp]"
 
         set_temp_variable = { modifier_temp = modifier@administration_cost_factor }
         add_to_temp_variable = { modifier_temp = 1 }
@@ -14507,9 +14527,18 @@
 
             set_temp_variable = { gdp_temp = production@var:r_token }
             subtract_from_temp_variable = { gdp_temp = demand_input@var:r_token }
-            multiply_temp_variable = { gdp_temp = price@var:r_token }
+            multiply_temp_variable = { gdp_temp = controller:price@var:r_token }
             add_to_variable = { gdp_amount = gdp_temp }
         }
+        set_temp_variable = { ind_tmp = industrial_capacity }
+        subtract_from_temp_variable = { ind_tmp = industrial_capacity_use }
+        subtract_from_temp_variable = { ind_tmp = global.base_industrial_capacity }
+        multiply_temp_variable = { ind_tmp = price_industrial_capacity }
+        add_to_variable = { gdp_amount = ind_tmp }
+
+        set_temp_variable = { shp_tmp = shipping_capacity@port }
+        multiply_temp_variable = { shp_tmp = controller:price_shipping_capacity }
+        add_to_variable = { gdp_amount = shp_tmp }
 
         set_variable = { gdp_per_capita = gdp_amount }
         divide_variable = { gdp_per_capita = pops }
