@@ -6407,54 +6407,6 @@
             }
 		}
     }
-    refresh_construction_list = {
-        clear_array = construction_show
-
-        for_each_loop = {
-            array = global.building_token_array
-            value = building_token
-
-            if = {
-                limit = {
-                    NOT = { is_in_array = { buildings = building_token } }
-                }
-                if = {
-                    limit = {
-                        check_variable = { controller:latest_production_method@var:building_token  > -1 }
-                    }
-                    set_variable = { production_method@var:building_token = controller:latest_production_method@var:building_token  }
-                    if = {
-                        limit = {
-                            OR = {
-                                check_variable = { global.building_uses_deposits@var:building_token = 0 }
-                                AND = {
-                                    check_variable = { global.building_uses_deposits@var:building_token = 1 }
-                                    check_variable = { deposits@var:building_token > 0 }
-                                }
-                                has_global_flag = autobuild_flag
-                            }
-                            OR = {
-                                check_variable = { global.building_uses_arable_land@var:building_token = 0 }
-                                AND = {
-                                    check_variable = { global.building_uses_arable_land@var:building_token = 1 }
-                                    check_variable = { arable_land > arable_land_use }
-                                }
-                                has_global_flag = autobuild_flag
-                            }
-                            OR = {
-                                check_variable = { global.building_coastal@var:building_token = 0 }
-                                AND = {
-                                    check_variable = { global.building_coastal@var:building_token = 1 }
-                                    is_coastal = yes
-                                }
-                            }
-                        }
-                        add_to_array = { construction_show = building_token }
-                    }
-                }
-            }
-        }
-    }
 
     buildings_update_base_latest_vals = {
         # First Step: Figure out revenues & expenses -> productivity of each industry
@@ -9811,7 +9763,11 @@
         # no_update_temp
 
 		hidden_effect = {
-			if = { limit = { NOT = { is_in_array = { trade_routes = resource_temp } } } 
+			if = { 
+                limit = { 
+                    NOT = { is_in_array = { trade_routes = resource_temp } } 
+                    check_variable = { market_leader = THIS }
+                } 
 				add_to_array = { trade_routes = resource_temp }
                 if = {
                     limit = {
@@ -9825,7 +9781,11 @@
 	remove_trade = {
         # resource_temp - resource token
 		hidden_effect = {
-			if = { limit = { is_in_array = { trade_routes = resource_temp } }
+			if = {
+                limit = { 
+                    is_in_array = { trade_routes = resource_temp }
+                    check_variable = { market_leader = THIS }
+                }
 				remove_from_array = { trade_routes = resource_temp }
 				set_variable = { offers@var:resource_temp = 0 }
                 set_variable = { shipping_use@var:resource_temp = 0 }
@@ -9853,105 +9813,118 @@
         #                     AKA makes it so if you reduce exports by 200 when you're exporting 100, instead of it just being set to 0, it gets set to 100 immports
         # no_update_temp - Set to non-zero to not update trade
 
-        round_temp_variable = amount_temp
-
         if = {
             limit = {
-                NOT = { check_variable = { amount_temp = 0 } }
+                check_variable = { market_leader = THIS }
             }
-            if = { # IMPORTING
+
+            round_temp_variable = amount_temp
+
+            if = {
                 limit = {
-                    check_variable = { offers@var:resource_temp > 0 }
+                    NOT = { check_variable = { amount_temp = 0 } }
                 }
-                add_to_variable = { offers@var:resource_temp = amount_temp }
-                if = {
+                if = { # IMPORTING
                     limit = {
-                        check_variable = { stop_at_zero_temp = 0 }
-                        check_variable = { offers@var:resource_temp < 0 }
-                    }
-                    set_variable = { offers@var:resource_temp = 0 }
-                }
-            }
-            else_if = { # EXPORTING
-                limit = {
-                    check_variable = { offers@var:resource_temp < 0 }
-                }
-                add_to_variable = { offers@var:resource_temp = amount_temp }
-                if = {
-                    limit = {
-                        check_variable = { stop_at_zero_temp = 0 }
                         check_variable = { offers@var:resource_temp > 0 }
                     }
-                    set_variable = { offers@var:resource_temp = 0 }
+                    add_to_variable = { offers@var:resource_temp = amount_temp }
+                    if = {
+                        limit = {
+                            check_variable = { stop_at_zero_temp = 0 }
+                            check_variable = { offers@var:resource_temp < 0 }
+                        }
+                        set_variable = { offers@var:resource_temp = 0 }
+                    }
+                }
+                else_if = { # EXPORTING
+                    limit = {
+                        check_variable = { offers@var:resource_temp < 0 }
+                    }
+                    add_to_variable = { offers@var:resource_temp = amount_temp }
+                    if = {
+                        limit = {
+                            check_variable = { stop_at_zero_temp = 0 }
+                            check_variable = { offers@var:resource_temp > 0 }
+                        }
+                        set_variable = { offers@var:resource_temp = 0 }
+                    }
+                }
+                else = { # NEW TRADE
+                    add_to_variable = { offers@var:resource_temp = amount_temp }
                 }
             }
-            else = { # NEW TRADE
-                add_to_variable = { offers@var:resource_temp = amount_temp }
-            }
-        }
 
-        set_temp_variable = { amount_temp = offers@var:resource_temp }
-        set_trade = yes # for adding trade routes & trade update & making sure stuff is in boundaries
+            set_temp_variable = { amount_temp = offers@var:resource_temp }
+            set_trade = yes # for adding trade routes & trade update & making sure stuff is in boundaries
+        }
     }
     set_trade = { # Sets trade offers to given amount
         # resource_temp - resource token
         # amount_temp - Positive values for increasing imports/decreasing exports and Negative values for decreasing imports/increasing exports
         # no_update_temp - Set to non-zero to not update trade
         
-        round_temp_variable = amount_temp
-        
+
         if = {
             limit = {
-                NOT = { has_global_flag = debug_trade }
+                check_variable = { market_leader = THIS }
             }
-            # Max & Min Trade
-            set_temp_variable = { trade_max_temp = global_market_supply@var:resource_temp } # Imports - Max is from global supply
-            multiply_temp_variable = { trade_max_temp = 3 }
-            subtract_from_temp_variable = { trade_max_temp = trade_demand@var:resource_temp }
+
+            round_temp_variable = amount_temp
+            
             if = {
                 limit = {
-                    check_variable = { trade@var:resource_temp > 0 }
+                    NOT = { has_global_flag = debug_trade }
                 }
-                add_to_temp_variable = { trade_max_temp = trade@var:resource_temp }
-            }
-            clamp_temp_variable = { var = trade_max_temp min = 0 }
-
-            set_temp_variable = { trade_min_temp = supply@var:resource_temp } # Exports - Min is from local supply
-            multiply_temp_variable = { trade_min_temp = -3 }
-            add_to_temp_variable = { trade_min_temp = need@var:resource_temp }
-            clamp_temp_variable = { var = trade_min_temp max = 0 }
-
-            if = {
-                limit = {
-                    check_variable = { global_market_price_compared_to_base@var:resource_temp > -0.75 }
+                # Max & Min Trade
+                set_temp_variable = { trade_max_temp = global_market_supply@var:resource_temp } # Imports - Max is from global supply
+                multiply_temp_variable = { trade_max_temp = 3 }
+                subtract_from_temp_variable = { trade_max_temp = trade_demand@var:resource_temp }
+                if = {
+                    limit = {
+                        check_variable = { trade@var:resource_temp > 0 }
+                    }
+                    add_to_temp_variable = { trade_max_temp = trade@var:resource_temp }
                 }
-                clamp_temp_variable = { var = amount_temp max = trade_max_temp min = trade_min_temp }
-            }
-            else = {
-                set_temp_variable = { trade_max_temp = need@var:resource_temp }
-                multiply_temp_variable = { trade_max_temp = 2.5 }
-                subtract_from_temp_variable = { trade_max_temp = production@var:resource_temp }
                 clamp_temp_variable = { var = trade_max_temp min = 0 }
-                clamp_temp_variable = { var = amount_temp max = trade_max_temp min = trade_min_temp }
-            }
-        }
 
-        # Set Offers
-        set_variable = { offers@var:resource_temp = amount_temp }
-        #log = "Min: [?trade_min_temp], Max: [?trade_max_temp]"
+                set_temp_variable = { trade_min_temp = supply@var:resource_temp } # Exports - Min is from local supply
+                multiply_temp_variable = { trade_min_temp = -3 }
+                add_to_temp_variable = { trade_min_temp = need@var:resource_temp }
+                clamp_temp_variable = { var = trade_min_temp max = 0 }
 
-		if = {
-			limit = {
-				NOT = { check_variable = { offers@var:resource_temp = 0 } }
-				NOT = { is_in_array = { trade_routes = resource_temp } }
-			}
-			add_trade = yes
-		}
-        else_if = {
-            limit = {
-                check_variable = { no_update_temp = 0 }
+                if = {
+                    limit = {
+                        check_variable = { global_market_price_compared_to_base@var:resource_temp > -0.75 }
+                    }
+                    clamp_temp_variable = { var = amount_temp max = trade_max_temp min = trade_min_temp }
+                }
+                else = {
+                    set_temp_variable = { trade_max_temp = need@var:resource_temp }
+                    multiply_temp_variable = { trade_max_temp = 2.5 }
+                    subtract_from_temp_variable = { trade_max_temp = production@var:resource_temp }
+                    clamp_temp_variable = { var = trade_max_temp min = 0 }
+                    clamp_temp_variable = { var = amount_temp max = trade_max_temp min = trade_min_temp }
+                }
             }
-            trade_update = yes
+
+            # Set Offers
+            set_variable = { offers@var:resource_temp = amount_temp }
+            #log = "Min: [?trade_min_temp], Max: [?trade_max_temp]"
+
+            if = {
+                limit = {
+                    NOT = { check_variable = { offers@var:resource_temp = 0 } }
+                    NOT = { is_in_array = { trade_routes = resource_temp } }
+                }
+                add_trade = yes
+            }
+            else_if = {
+                limit = {
+                    check_variable = { no_update_temp = 0 }
+                }
+                trade_update = yes
+            }
         }
     }
     adjust_trade_step = { # Adjusts trade offers by given amount multiplied by trade step size
@@ -11770,6 +11743,8 @@
             round_variable = subsidies_spending_min
         #
 
+        set_variable = { construction_spending_percentage = 100 }
+
         # Clamping
             clamp_variable = { var = income_tax_upper_strata_percentage max = income_tax_upper_strata_max min = income_tax_upper_strata_min }
             clamp_variable = { var = income_tax_middle_strata_percentage max = income_tax_middle_strata_max min = income_tax_middle_strata_min }
@@ -12420,38 +12395,24 @@
 			add_to_variable = { PREV.administration_spending = admin_temp }
 
             for_each_loop = {
-                array = buildings
+                array = industries
                 index = sp_i
                 value = sp_token
-
-                #Industrial
 
                 #Construction
                 if = {
                     limit = {
-                        check_variable = { under_construction@var:sp_token > 0 }
-                        check_variable = { financer@var:sp_token = PREV }
+                        check_variable = { construction@var:sp_token > 0 }
+                        check_variable = { construction_financier@var:sp_token = PREV }
                     }
-                    add_to_variable = { PREV.construction_spending = construction_expenses@var:sp_token }
+                    add_to_variable = { PREV.construction_spending = construction_cost@var:sp_token }
                 }
-
-                #Infrastructure
-
-                #Public Enterprise & Military Production
                 if = {
                     limit = {
-                        OR = {
-                            check_variable = { sp_token = token:building_military_industry }
-                            check_variable = { sp_token = token:building_naval_industry }
-                        }
+                        NOT = { check_variable = { retooling_pm@var:sp_token = 0 } }
+                        check_variable = { retooling_financier@var:sp_token = PREV }
                     }
-                    add_to_variable = { PREV.military_production_payroll_spending = expenses@var:sp_token }
-                }
-                else_if = {
-                    limit = {
-                        check_variable = { global.building_government_control@var:sp_token = 1}
-                    }
-                    add_to_variable = { PREV.public_enterprise_payroll_spending = expenses@var:sp_token }
+                    add_to_variable = { PREV.construction_spending = retooling_cost@var:sp_token }
                 }
             }
 		}
