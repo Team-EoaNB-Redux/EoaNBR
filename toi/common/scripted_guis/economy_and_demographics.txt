@@ -388,6 +388,24 @@ scripted_gui = {
 
 			##
 
+			building_increase_size_button_click_enabled = {
+				set_temp_variable = { building_token = var:v }
+				can_build_building = yes
+
+				# Has enough starting capital
+					set_temp_variable = { pm_temp = controller:latest_production_method@var:v }
+					set_temp_variable = { am_temp = controller:latest_automation_method@var:v }
+					get_construction_cost = yes
+
+					multiply_temp_variable = { total_construction_cost_temp = global.start_construction_cost_multiplier }
+					divide_temp_variable = { total_construction_cost_temp = ROOT.modifier@government_investment_efficiency_factor }
+					NOT = { check_variable = { total_construction_cost_temp > ROOT.treasury } }
+				#
+			}
+			building_decrease_size_button_click_enabled = {
+				check_variable = { construction@var:v > 0  }
+			}
+
 			rgo_production_method_retooling_icon_visible = {
 				if = { limit = { NOT = { check_variable = { retooling_pm@var:v = 0 } } }
 					is_in_array = { global.building_production_methods@var:v = retooling_pm@var:v }
@@ -434,6 +452,23 @@ scripted_gui = {
 				}
 			}
 
+			railway_increase_size_button_click_enabled = {
+				set_temp_variable = { building_token = token:railway }
+				can_build_building = yes
+
+				# Has enough starting capital
+					set_temp_variable = { pm_temp = controller:latest_production_method@token:railway }
+					set_temp_variable = { am_temp = controller:latest_automation_method@token:railway }
+					get_construction_cost = yes
+
+					multiply_temp_variable = { total_construction_cost_temp = global.start_construction_cost_multiplier }
+					divide_temp_variable = { total_construction_cost_temp = ROOT.modifier@government_investment_efficiency_factor }
+					NOT = { check_variable = { total_construction_cost_temp > ROOT.treasury } }
+				#
+			}
+			railway_decrease_size_button_click_enabled = {
+				check_variable = { construction@token:railway > 0  }
+			}
 			railway_construction_icon_visible = {
 				NOT = { check_variable = { construction@token:railway = 0 } }
 			}
@@ -454,6 +489,24 @@ scripted_gui = {
 				}
 			}
 
+			port_increase_size_button_click_enabled = {
+				set_temp_variable = { building_token = token:port }
+				can_build_building = yes
+				is_coastal = yes
+
+				# Has enough starting capital
+					set_temp_variable = { pm_temp = controller:latest_production_method@token:port }
+					set_temp_variable = { am_temp = controller:latest_automation_method@token:port }
+					get_construction_cost = yes
+
+					multiply_temp_variable = { total_construction_cost_temp = global.start_construction_cost_multiplier }
+					divide_temp_variable = { total_construction_cost_temp = ROOT.modifier@government_investment_efficiency_factor }
+					NOT = { check_variable = { total_construction_cost_temp > ROOT.treasury } }
+				#
+			}
+			port_decrease_size_button_click_enabled = {
+				check_variable = { construction@token:port > 0  }
+			}
 			port_construction_icon_visible = {
 				NOT = { check_variable = { construction@token:port = 0 } }
 			}
@@ -657,6 +710,31 @@ scripted_gui = {
 				}
 			}
 
+			building_increase_size_button_click = {
+				set_temp_variable = { x_temp = 1 }
+				set_temp_variable = { financer_temp = ROOT }
+				set_temp_variable = { industry_token = v }
+				set_temp_variable = { production_method_temp = controller:latest_production_method@var:v }
+				set_temp_variable = { automation_method_temp = controller:latest_automation_method@var:v }
+				construct_x_industries = yes
+
+				ROOT = { budget_update = yes }
+			}
+			building_decrease_size_button_click = {
+				subtract_from_variable = { construction@var:v = 1 }
+				if = { 
+					limit = {
+						check_variable = { construction@var:v = 0 }
+						check_variable = { size@var:v = 0 }
+					}
+					remove_from_array = { industries = v }
+					remove_from_array = { buildings = v }
+				}
+
+				ROOT = { budget_update = yes }
+				refresh_construction_list = yes
+				add_to_variable = { update_state_econ_window = 1 }
+			}
 			rgo_production_method_button_click = {
 				set_temp_variable = { industry_token = v }
 				set_temp_variable = { am_select = 0 }
@@ -758,6 +836,31 @@ scripted_gui = {
 					}
 				}
 			}
+			railway_increase_size_button_click = {
+				set_temp_variable = { x_temp = 1 }
+				set_temp_variable = { financer_temp = ROOT }
+				set_temp_variable = { industry_token = token:railway }
+				set_temp_variable = { production_method_temp = controller:latest_production_method@token:railway }
+				set_temp_variable = { automation_method_temp = controller:latest_automation_method@token:railway }
+				construct_x_industries = yes
+
+				ROOT = { budget_update = yes }
+			}
+			railway_decrease_size_button_click = {
+				subtract_from_variable = { construction@token:railway = 1 }
+				if = { 
+					limit = {
+						check_variable = { construction@token:railway = 0 }
+						check_variable = { size@token:railway = 0 }
+					}
+					remove_from_array = { industries = v }
+					remove_from_array = { buildings = v }
+				}
+
+				ROOT = { budget_update = yes }
+				refresh_construction_list = yes
+				add_to_variable = { update_state_econ_window = 1 }
+			}
 			railway_production_method_button_click = {
 				set_temp_variable = { industry_token = token:railway }
 				set_temp_variable = { am_select = 0 }
@@ -797,6 +900,31 @@ scripted_gui = {
 						refresh_pm_list = yes
 					}
 				}
+			}
+			port_increase_size_button_click = {
+				set_temp_variable = { x_temp = 1 }
+				set_temp_variable = { financer_temp = ROOT }
+				set_temp_variable = { industry_token = token:port }
+				set_temp_variable = { production_method_temp = controller:latest_production_method@token:port }
+				set_temp_variable = { automation_method_temp = controller:latest_automation_method@token:port }
+				construct_x_industries = yes
+
+				ROOT = { budget_update = yes }
+			}
+			port_decrease_size_button_click = {
+				subtract_from_variable = { construction@token:port = 1 }
+				if = { 
+					limit = {
+						check_variable = { construction@token:port = 0 }
+						check_variable = { size@token:port = 0 }
+					}
+					remove_from_array = { industries = v }
+					remove_from_array = { buildings = v }
+				}
+
+				ROOT = { budget_update = yes }
+				refresh_construction_list = yes
+				add_to_variable = { update_state_econ_window = 1 }
 			}
 			port_production_method_button_click = {
 				set_temp_variable = { industry_token = token:port }
@@ -1083,120 +1211,20 @@ scripted_gui = {
 		triggers = {
 			construction_entry_background_click_enabled = {
 				set_temp_variable = { industry_token = construction_show^i }
-				if = {
-					limit = {
-						check_variable = { v = token:building_military_industry }
-					}
-					free_building_slots = {
-						building = arms_factory
-						size > 0
-						include_locked = no
-					}
-				}
-				else_if = {
-					limit = {
-						check_variable = { v = token:building_civilian_industry }
-					}
-					free_building_slots = {
-						building = industrial_complex
-						size > 0
-						include_locked = no
-					}
-				}
-				else_if = {
-					limit = {
-						check_variable = { v = token:building_naval_industry }
-					}
-					free_building_slots = {
-						building = dockyard
-						size > 0
-						include_locked = no
-					}
-				}
+
+				can_build_building = yes
 
 				# Has enough starting capital
 					set_temp_variable = { pm_temp = controller:latest_production_method@var:v }
-					if = {
-						limit = {
-							check_variable = { pm_temp = 0 }
-						}
-						set_temp_variable = { gcpa = global.building_basic_construction_amount@var:v }
-					}
-					else_if = {
-						limit = {
-							check_variable = { pm_temp = 1 }
-						}
-						set_temp_variable = { gcpa = global.building_advanced_construction_amount@var:v }
-					}
-					else_if = {
-						limit = {
-							check_variable = { pm_temp = 2 }
-						}
-						set_temp_variable = { gcpa = global.building_industrialized_construction_amount@var:v }
-					}
-					else_if = {
-						limit = {
-							check_variable = { pm_temp = 3 }
-						}
-						set_temp_variable = { gcpa = global.building_mechanized_construction_amount@var:v }
-					}
-					else_if = {
-						limit = {
-							check_variable = { pm_temp = 4 }
-						}
-						set_temp_variable = { gcpa = global.building_electrified_construction_amount@var:v }
-					}
-					else_if = {
-						limit = {
-							check_variable = { pm_temp = 5 }
-						}
-						set_temp_variable = { gcpa = global.building_motorized_construction_amount@var:v }
-					}
-					else_if = {
-						limit = {
-							check_variable = { pm_temp = 6 }
-						}
-						set_temp_variable = { gcpa = global.building_modernized_construction_amount@var:v }
-					}
-					else_if = {
-						limit = {
-							check_variable = { pm_temp = 7 }
-						}
-						set_temp_variable = { gcpa = global.building_roboticized_construction_amount@var:v }
-					}
-					else_if = {
-						limit = {
-							check_variable = { pm_temp = 8 }
-						}
-						set_temp_variable = { gcpa = global.building_computerized_construction_amount@var:v }
-					}
-					else_if = {
-						limit = {
-							check_variable = { pm_temp = 9 }
-						}
-						set_temp_variable = { gcpa = global.building_digitalized_construction_amount@var:v }
-					}
-					else_if = {
-						limit = {
-							check_variable = { pm_temp = 10 }
-						}
-						set_temp_variable = { gcpa = global.building_automatized_construction_amount@var:v }
-					}
-					else_if = {
-						limit = {
-							check_variable = { pm_temp = 11 }
-						}
-						set_temp_variable = { gcpa = global.building_futurized_construction_amount@var:v }
-					}
+					set_temp_variable = { am_temp = controller:latest_automation_method@var:v }
+					get_construction_cost = yes
 
-					multiply_temp_variable = { gcpa = price@token:resource_industrial_goods }
-					multiply_temp_variable = { gcpa = global.start_construction_cost_multiplier }
-					divide_temp_variable = { gdpa = ROOT.modifier@government_investment_efficiency_factor }
+					multiply_temp_variable = { total_construction_cost_temp = global.start_construction_cost_multiplier }
+					divide_temp_variable = { total_construction_cost_temp = ROOT.modifier@government_investment_efficiency_factor }
 					OR = {
-						NOT = { check_variable = { gcpa > ROOT.treasury } }
+						NOT = { check_variable = { total_construction_cost_temp > ROOT.treasury } }
 						has_global_flag = autobuild_flag
 					}
-
 				#
 			}
 			industry_construction_background_visible = {
@@ -1239,9 +1267,10 @@ scripted_gui = {
 				else = {
 					set_temp_variable = { x_temp = 1 }
 					set_temp_variable = { financer_temp = ROOT }
-					set_temp_variable = { building_token = v }
-					set_temp_variable = { production_method_temp = -1 }
-					construct_x_buildings = yes
+					set_temp_variable = { industry_token = v }
+					set_temp_variable = { production_method_temp = controller:latest_production_method@var:v }
+					set_temp_variable = { automation_method_temp = controller:latest_automation_method@var:v }
+					construct_x_industries = yes
 
 					ROOT = { budget_update = yes }
 				}
@@ -1335,6 +1364,7 @@ scripted_gui = {
 					limit = {
 						check_variable = { retooling_pm@var:industry_token = 0 }
 					}
+					set_variable = { retooling_financier@var:industry_token = ROOT }
 					set_variable = { retooling_pm@var:industry_token = v }
 					set_temp_variable = { retooling_time_temp = controller:pm_retooling_duration@var:v }
 
@@ -1349,14 +1379,17 @@ scripted_gui = {
 					ROOT = {
 						clr_country_flag = pm_view_open
 					}
+					ROOT = { budget_update = yes }
 				}
 				else = {
+					set_variable = { retooling_financier@var:industry_token = 0 }
 					set_variable = { retooling_pm@var:industry_token = 0 }
 					industries_update_construction_retooling = yes
 					add_to_variable = { update_state_econ_window = 1 }
 					ROOT = {
 						clr_country_flag = pm_view_open
 					}
+					ROOT = { budget_update = yes }
 				}
 			}
 			pm_cancel_retooling_click = {
@@ -1366,6 +1399,7 @@ scripted_gui = {
 				add_to_variable = { update_state_econ_window = 1 }
 				ROOT = {
 					clr_country_flag = pm_view_open
+					budget_update = yes
 				}
 			}
 		}

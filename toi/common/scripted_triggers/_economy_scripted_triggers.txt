@@ -9,6 +9,50 @@
 #	}
 #}
 
+#INDUSTRIES
+	can_build_building = {
+		# building_token
+		# size_temp - defaulted to 1
+		# State Scope
+
+		round_temp_variable = size_temp
+
+		if = {
+			limit = {
+				check_variable = { size_temp < 0 }
+			}
+			always = yes
+		}
+		else = {
+			if = { limit = { check_variable = { size_temp = 0 } } set_temp_variable = { size_temp = 1 } }
+			
+			is_valid_building = yes
+			if = {
+				limit = {
+					check_variable = { global.building_arable_land_use@var:building_token > 0 }
+				}
+				set_temp_variable = { arable_land_use_temp = global.building_arable_land_use@var:building_token }
+				multiply_temp_variable = { arable_land_use_temp = size_temp }
+				NOT = { check_variable = { arable_land_use_temp > arable_land_available } }
+			}
+		}
+	}
+	is_valid_building = {
+		# building_token
+		# State Scope
+		
+		OR = {
+			check_variable = { global.building_tech_unlock@var:building_token = 0 }
+			has_tech = global.building_tech_unlock@var:building_token
+		}
+	}
+	is_valid_pm = {
+		# pm_temp
+		# State Scope
+
+	}
+#
+
 return_earliest_production_method = {
 	# building_token
 	# State Scope

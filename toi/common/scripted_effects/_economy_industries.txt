@@ -112,6 +112,17 @@
             round_variable = size@var:bu_token
             add_to_variable = { size@var:bu_token = 1 }
         }
+
+        if = {
+            limit = {
+                check_variable = { global.building_arable_land_use@var:bu_token > 0 }
+            }
+            set_variable = { arable_land_use@var:bu_token = size@var:bu_token }
+            multiply_variable = { arable_land_use@var:bu_token = global.building_arable_land_use@var:bu_token }
+        }
+        else = {
+            clear_variable = arable_land_use@var:bu_token
+        }
         
         # Production & Automation Method Jobs
         set_temp_variable = { base_jobs_temp = global.building_base_employees@var:bu_token }
@@ -1214,6 +1225,7 @@
 
         set_variable = { arable_land_available = arable_land }
         subtract_from_variable = { arable_land_available = arable_land_use }
+        clamp_variable = { var = arable_land_available min = 0 max = arable_land }
 
         ## Subsistence Farming ##
 
@@ -1370,6 +1382,28 @@
             array = global.special_token_array
             value = building_token
             add_to_array = { industries = building_token }
+        }
+    }
+
+    refresh_construction_list = {
+        clear_array = construction_show
+
+        for_each_loop = {
+            array = global.building_token_array
+            value = building_token
+
+            if = {
+                limit = {
+                    NOT = { is_in_array = { buildings = building_token } }
+                }
+                if = {
+                    limit = {
+                        is_valid_building = yes
+                    }
+                    set_variable = { production_method@var:building_token = controller:latest_production_method@var:building_token  }
+                    add_to_array = { construction_show = building_token }
+                }
+            }
         }
     }
 #
@@ -1582,11 +1616,14 @@
             set_temp_variable = { iuc_industry = industry_token }
             industry_update_construction_retooling = yes
 
+            set_temp_variable = { pm_temp = production_method@var:industry_token }
+            set_temp_variable = { am_temp = automation_method@var:industry_token }
             if = {
                 limit = {
                     check_variable = { no_cost_temp = 0 }
+                    get_construction_cost = yes
                 }
-                set_temp_variable = { initial_cost_temp = construction_cost@var:industry_token }
+                set_temp_variable = { initial_cost_temp = total_construction_cost_temp }
                 multiply_temp_variable = { initial_cost_temp = global.start_construction_cost_multiplier }
                 if = {
                     limit = {
@@ -1599,6 +1636,9 @@
                     }
                     divide_temp_variable = { initial_cost_temp = financer_temp:modifier@government_investment_efficiency_factor }
                     subtract_from_variable = { financer_temp:treasury = initial_cost_temp }
+                    var:financer_temp = {
+                        spending_update = yes
+                    }
                 }
                 else = { #Local
                     subtract_from_variable = { controller:investment_fund = initial_cost_temp }
