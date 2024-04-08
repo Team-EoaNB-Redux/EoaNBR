@@ -13,12 +13,12 @@ defined_text = {
 			all_of = { array = test_array value = val add_to_temp_array = { param_array = val } }
       # Set options up for a comma-separated list of rounded integers
       set_temp_variable = { param_infix = token:array_infix_comma }
-      if = { 
-        limit = { check_variable = { param_array^num = 2 } } 
-        set_temp_variable = { param_last_infix = token:array_last_infix_and_no_oxford } 
+      if = {
+        limit = { check_variable = { param_array^num = 2 } }
+        set_temp_variable = { param_last_infix = token:array_last_infix_and_no_oxford }
       }
-      else = { 
-        set_temp_variable = { param_last_infix = token:array_last_infix_and_oxford } 
+      else = {
+        set_temp_variable = { param_last_infix = token:array_last_infix_and_oxford }
       }
       set_temp_variable = { param_renderer = token:array_element_renderer_int }
       # Cutoff at 4 for testing
@@ -46,7 +46,7 @@ defined_text = {
 			set_temp_variable = { last_index = param_array^num }
 			subtract_from_temp_variable = { last_index = 1 }
       # If we haven't got a valid param_cutoff, use a default value.
-      if = { 
+      if = {
         limit = { check_variable = { param_cutoff?0 < 1 } }
         set_temp_variable = { param_cutoff = 25 } # Set this to about 5 less than the value of `NGame.MAX_SCRIPTED_LOC_RECURSION`, for safety.
       }
@@ -57,7 +57,7 @@ defined_text = {
 	}
 }
 
-### The meat of the array-rendering system: the recursive "loop" over `param_array`. 
+### The meat of the array-rendering system: the recursive "loop" over `param_array`.
 # Increments i, checks its bounds, and retrieves the appropriate value from param_array to call the renderer locs, then calls itself recursively.
 # Funnily enough, this is actually tail-recursive (the last "function" it calls before returning is itself),
 # which would make it subject to tail-call optimization (compiling down to an efficient loop) in a proper functional language.
@@ -66,13 +66,13 @@ defined_text = {
   name = RenderArrayInner
 	text = { # Loop case: increment i, then if it is within the array bounds, render the element at i and then call RenderArrayInner to continue.
 		trigger = {
-			add_to_temp_variable = { i = 1 } 
-			AND = { 
+			add_to_temp_variable = { i = 1 }
+			AND = {
         check_variable = { i < param_array^num }
         check_variable = { i < param_cutoff }
       }
       set_temp_variable = { v = param_array^i }
-		} 
+		}
 		localization_key = "[RenderArrayInfix][RenderArrayElement][RenderArrayInner]" # Recurse!
 	}
   text = { # Cutoff case: when we have exceeded param_cutoff without reaching the end of the array, render the cutoff suffix and stop recursing.
@@ -111,7 +111,7 @@ defined_text = {
 
 ### Renders each element of the array, potentially with user-defined custom rendering behaviour.
 # These can't be defined using GetTokenLocalizedKey, because the pasted text does not get expanded.
-# You can define your own custom renderer behaviours at the bottom, 
+# You can define your own custom renderer behaviours at the bottom,
 # by adding cases checking for the relevant custom renderer ideas, defined in the appropriate part of `common/ideas/EU_array_renderer.txt`.
 defined_text = {
 	name = RenderArrayElement

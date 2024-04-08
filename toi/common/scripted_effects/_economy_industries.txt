@@ -1,8 +1,8 @@
 
 # Industry Update
-    industries_update = {
-        
-        special_buildings_update = yes
+	industries_update = {
+
+		special_buildings_update = yes
 
 		for_each_loop = {
 			array = buildings
@@ -12,7 +12,7 @@
 
 			industry_update = yes
 
-        }
+		}
 		for_each_loop = {
 			array = rgos
 			value = bu_token
@@ -20,9 +20,9 @@
 			break = ind_break
 
 			industry_update = yes
-        }
-    }
-    industries_update_finances = {
+		}
+	}
+	industries_update_finances = {
 		for_each_loop = {
 			array = buildings
 			value = bu_token
@@ -31,7 +31,7 @@
 
 			industry_update_finances = yes
 
-        }
+		}
 		for_each_loop = {
 			array = rgos
 			value = bu_token
@@ -39,1180 +39,1184 @@
 			break = ind_break
 
 			industry_update_finances = yes
-        }
-    }
-    industries_update_construction_retooling = {
+		}
+	}
+	industries_update_construction_retooling = {
 		clear_array = industries_construction_array
 		clear_array = industries_retooling_array
-        for_each_loop = {
-            array = industries
+		for_each_loop = {
+			array = industries
 			value = iuc_industry
-            industry_update_construction_retooling = yes
-            if = {
-                limit = {
-                    NOT = { check_variable = { retooling_pm@var:iuc_industry = 0 } }
-                }
-                add_to_array = { industries_retooling_array = iuc_industry }
-            }
-            if = {
-                limit = {
-                    NOT = { check_variable = { construction@var:iuc_industry = 0 } }
-                }
-                add_to_array = { industries_construction_array = iuc_industry }
-            }
-        }
-    }
+			industry_update_construction_retooling = yes
+			if = {
+				limit = {
+					NOT = { check_variable = { retooling_pm@var:iuc_industry = 0 } }
+				}
+				add_to_array = { industries_retooling_array = iuc_industry }
+			}
+			if = {
+				limit = {
+					NOT = { check_variable = { construction@var:iuc_industry = 0 } }
+				}
+				add_to_array = { industries_construction_array = iuc_industry }
+			}
+		}
+	}
 
-    industry_update = {
-        # Helper Temp Variables
-        set_temp_variable = { production_method_temp = production_method@var:bu_token }
-        set_temp_variable = { automation_method_temp = automation_method@var:bu_token }
+	industry_update = {
+		# Helper Temp Variables
+		set_temp_variable = { production_method_temp = production_method@var:bu_token }
+		set_temp_variable = { automation_method_temp = automation_method@var:bu_token }
 
-        set_temp_variable = { output_modifier_temp = building_output_factor@var:bu_token }
-        add_to_temp_variable = { output_modifier_temp = 1 }
+		set_temp_variable = { output_modifier_temp = building_output_factor@var:bu_token }
+		add_to_temp_variable = { output_modifier_temp = 1 }
 
-        set_temp_variable = { throughput_modifier_temp = building_throughput_factor@var:bu_token }
-        add_to_temp_variable = { throughput_modifier_temp = 1 }
+		set_temp_variable = { throughput_modifier_temp = building_throughput_factor@var:bu_token }
+		add_to_temp_variable = { throughput_modifier_temp = 1 }
 
-        set_temp_variable = { eco_of_scale_modifier_temp = size@var:bu_token }
-        subtract_from_temp_variable = { eco_of_scale_modifier_temp = 1 }
-        clamp_temp_variable = { var = eco_of_scale_modifier_temp min = 0 max = global.buildings_economy_of_scale_max }
-        multiply_temp_variable = { eco_of_scale_modifier_temp = global.buildings_economy_of_scale_factor }
-        add_to_temp_variable = { eco_of_scale_modifier_temp = 1 }
+		set_temp_variable = { eco_of_scale_modifier_temp = size@var:bu_token }
+		subtract_from_temp_variable = { eco_of_scale_modifier_temp = 1 }
+		clamp_temp_variable = { var = eco_of_scale_modifier_temp min = 0 max = global.buildings_economy_of_scale_max }
+		multiply_temp_variable = { eco_of_scale_modifier_temp = global.buildings_economy_of_scale_factor }
+		add_to_temp_variable = { eco_of_scale_modifier_temp = 1 }
 
-        set_temp_variable = { input_modifier_temp = building_input_factor@var:bu_token }
-        add_to_temp_variable = { input_modifier_temp = 1 }
-        
-        set_temp_variable = { cap_modifier_temp = building_industrial_capacity_use_factor@var:bu_token }
-        add_to_temp_variable = { cap_modifier_temp = 1 }
+		set_temp_variable = { input_modifier_temp = building_input_factor@var:bu_token }
+		add_to_temp_variable = { input_modifier_temp = 1 }
 
-        # Reset to 0
-        set_variable = { jobs@var:bu_token = 0 }
-        set_variable = { jobs_available@var:bu_token = 0 }
-        set_variable = { employed@var:bu_token = 0 }
+		set_temp_variable = { cap_modifier_temp = building_industrial_capacity_use_factor@var:bu_token }
+		add_to_temp_variable = { cap_modifier_temp = 1 }
 
-        set_variable = { money_limit@var:bu_token = 0 }
-        set_variable = { revenue_goods@var:bu_token = 0 }
-        set_variable = { expenses_input@var:bu_token = 0 }
-        
-        set_temp_variable = { revenue_temp = 0 }
-        set_temp_variable = { expenses_temp = 0 }
+		# Reset to 0
+		set_variable = { jobs@var:bu_token = 0 }
+		set_variable = { jobs_available@var:bu_token = 0 }
+		set_variable = { employed@var:bu_token = 0 }
 
-        # Update Industry Size
-        if = { # RGOs
-            limit = {
-                is_in_array = { global.rgo_token_array = bu_token }
-            }
-            set_variable = { size@var:bu_token = base_resource@var:bu_token }
-        }
-        else_if = {
-            limit ={ check_variable = { bu_token = token:infrastructure } }
-            set_variable = { size@var:bu_token = pops }
-            divide_variable = { size@var:bu_token = 100 }
-            round_variable = size@var:bu_token
-            add_to_variable = { size@var:bu_token = 1 }
-        }
+		set_variable = { money_limit@var:bu_token = 0 }
+		set_variable = { revenue_goods@var:bu_token = 0 }
+		set_variable = { expenses_input@var:bu_token = 0 }
 
-        if = {
-            limit = {
-                check_variable = { global.building_arable_land_use@var:bu_token > 0 }
-            }
-            set_variable = { arable_land_use@var:bu_token = size@var:bu_token }
-            multiply_variable = { arable_land_use@var:bu_token = global.building_arable_land_use@var:bu_token }
-        }
-        else = {
-            clear_variable = arable_land_use@var:bu_token
-        }
-        
-        # Production & Automation Method Jobs
-        set_temp_variable = { base_jobs_temp = global.building_base_employees@var:bu_token }
-        multiply_temp_variable = { base_jobs_temp = size@var:bu_token }
+		set_temp_variable = { revenue_temp = 0 }
+		set_temp_variable = { expenses_temp = 0 }
 
-        set_variable = { laborers_jobs@var:bu_token = controller:pm_workforce_laborers@var:production_method_temp }
-        add_to_variable = { laborers_jobs@var:bu_token = controller:pm_workforce_laborers@var:automation_method_temp }
-        clamp_variable = { var = laborers_jobs@var:bu_token min = 0 }
-        set_variable = { laborers_ratio@var:bu_token = laborers_jobs@var:bu_token }
+		# Update Industry Size
+		if = { # RGOs
+			limit = {
+				is_in_array = { global.rgo_token_array = bu_token }
+			}
+			set_variable = { size@var:bu_token = base_resource@var:bu_token }
+		}
+		else_if = {
+			limit ={ check_variable = { bu_token = token:infrastructure } }
+			set_variable = { size@var:bu_token = pops }
+			divide_variable = { size@var:bu_token = 100 }
+			round_variable = size@var:bu_token
+			add_to_variable = { size@var:bu_token = 1 }
+		}
 
-        set_variable = { workers_jobs@var:bu_token = controller:pm_workforce_workers@var:production_method_temp }
-        add_to_variable = { workers_jobs@var:bu_token = controller:pm_workforce_workers@var:automation_method_temp }
-        clamp_variable = { var = workers_jobs@var:bu_token min = 0 }
-        set_variable = { workers_ratio@var:bu_token = workers_jobs@var:bu_token }
+		if = {
+			limit = {
+				check_variable = { global.building_arable_land_use@var:bu_token > 0 }
+			}
+			set_variable = { arable_land_use@var:bu_token = size@var:bu_token }
+			multiply_variable = { arable_land_use@var:bu_token = global.building_arable_land_use@var:bu_token }
+		}
+		else = {
+			clear_variable = arable_land_use@var:bu_token
+		}
 
-        set_variable = { professionals_jobs@var:bu_token = controller:pm_workforce_professionals@var:production_method_temp }
-        add_to_variable = { professionals_jobs@var:bu_token = controller:pm_workforce_professionals@var:automation_method_temp }
-        clamp_variable = { var = professionals_jobs@var:bu_token min = 0 }
-        set_variable = { professionals_ratio@var:bu_token = professionals_jobs@var:bu_token }
+		# Production & Automation Method Jobs
+		set_temp_variable = { base_jobs_temp = global.building_base_employees@var:bu_token }
+		multiply_temp_variable = { base_jobs_temp = size@var:bu_token }
 
-        set_variable = { specialists_jobs@var:bu_token = controller:pm_workforce_specialists@var:production_method_temp }
-        add_to_variable = { specialists_jobs@var:bu_token = controller:pm_workforce_specialists@var:automation_method_temp }
-        clamp_variable = { var = specialists_jobs@var:bu_token min = 0 }
-        set_variable = { specialists_ratio@var:bu_token = specialists_jobs@var:bu_token }
-        
-        set_variable = { payroll_multiplier@var:bu_token = 0 }
-        set_temp_variable = { payroll_multiplier_temp = laborers_jobs@var:bu_token }
-        multiply_temp_variable = { payroll_multiplier_temp = 2 }
-        add_to_variable = { payroll_multiplier@var:bu_token = payroll_multiplier_temp }
-        set_temp_variable = { payroll_multiplier_temp = workers_jobs@var:bu_token }
-        multiply_temp_variable = { payroll_multiplier_temp = 5 }
-        add_to_variable = { payroll_multiplier@var:bu_token = payroll_multiplier_temp }
-        set_temp_variable = { payroll_multiplier_temp = professionals_jobs@var:bu_token }
-        multiply_temp_variable = { payroll_multiplier_temp = 10 }
-        add_to_variable = { payroll_multiplier@var:bu_token = payroll_multiplier_temp }
-        set_temp_variable = { payroll_multiplier_temp = specialists_jobs@var:bu_token }
-        multiply_temp_variable = { payroll_multiplier_temp = 20 }
-        add_to_variable = { payroll_multiplier@var:bu_token = payroll_multiplier_temp }
-        multiply_variable = { payroll_multiplier@var:bu_token = global.building_base_employees@var:bu_token }
+		set_variable = { laborers_jobs@var:bu_token = controller:pm_workforce_laborers@var:production_method_temp }
+		add_to_variable = { laborers_jobs@var:bu_token = controller:pm_workforce_laborers@var:automation_method_temp }
+		clamp_variable = { var = laborers_jobs@var:bu_token min = 0 }
+		set_variable = { laborers_ratio@var:bu_token = laborers_jobs@var:bu_token }
 
-        
-        multiply_variable = { laborers_jobs@var:bu_token = base_jobs_temp }
-        multiply_variable = { workers_jobs@var:bu_token = base_jobs_temp }
-        multiply_variable = { professionals_jobs@var:bu_token = base_jobs_temp }
-        multiply_variable = { specialists_jobs@var:bu_token = base_jobs_temp }
-        
-        set_variable = { owner_jobs@var:bu_token = 0.02 }
-        multiply_variable = { owner_jobs@var:bu_token = base_jobs_temp }
+		set_variable = { workers_jobs@var:bu_token = controller:pm_workforce_workers@var:production_method_temp }
+		add_to_variable = { workers_jobs@var:bu_token = controller:pm_workforce_workers@var:automation_method_temp }
+		clamp_variable = { var = workers_jobs@var:bu_token min = 0 }
+		set_variable = { workers_ratio@var:bu_token = workers_jobs@var:bu_token }
 
-        if = { # Laborers
-            limit = {
-                check_variable = { laborers_jobs@var:bu_token > 0 }
-            }
-            if = {
-                limit = {
-                    check_variable = { laborers_jobs@var:bu_token > 10000 }
-                }
-                set_variable = { laborers_employed@var:bu_token = laborers_jobs@var:bu_token }
-                divide_variable = { laborers_employed@var:bu_token = 100 }
-                multiply_variable = { laborers_employed@var:bu_token = employment_target@var:bu_token }
-                divide_variable = { laborers_employed@var:bu_token = 100 }
-                multiply_variable = { laborers_employed@var:bu_token = laborers_job_fulfillment }
-            }
-            else = {
-                set_variable = { laborers_employed@var:bu_token = laborers_jobs@var:bu_token }
-                multiply_variable = { laborers_employed@var:bu_token = employment_target@var:bu_token }
-                divide_variable = { laborers_employed@var:bu_token = 100 }
-                multiply_variable = { laborers_employed@var:bu_token = laborers_job_fulfillment }
-                divide_variable = { laborers_employed@var:bu_token = 100 }
-            }
+		set_variable = { professionals_jobs@var:bu_token = controller:pm_workforce_professionals@var:production_method_temp }
+		add_to_variable = { professionals_jobs@var:bu_token = controller:pm_workforce_professionals@var:automation_method_temp }
+		clamp_variable = { var = professionals_jobs@var:bu_token min = 0 }
+		set_variable = { professionals_ratio@var:bu_token = professionals_jobs@var:bu_token }
+
+		set_variable = { specialists_jobs@var:bu_token = controller:pm_workforce_specialists@var:production_method_temp }
+		add_to_variable = { specialists_jobs@var:bu_token = controller:pm_workforce_specialists@var:automation_method_temp }
+		clamp_variable = { var = specialists_jobs@var:bu_token min = 0 }
+		set_variable = { specialists_ratio@var:bu_token = specialists_jobs@var:bu_token }
+
+		set_variable = { payroll_multiplier@var:bu_token = 0 }
+		set_temp_variable = { payroll_multiplier_temp = laborers_jobs@var:bu_token }
+		multiply_temp_variable = { payroll_multiplier_temp = 2 }
+		add_to_variable = { payroll_multiplier@var:bu_token = payroll_multiplier_temp }
+		set_temp_variable = { payroll_multiplier_temp = workers_jobs@var:bu_token }
+		multiply_temp_variable = { payroll_multiplier_temp = 5 }
+		add_to_variable = { payroll_multiplier@var:bu_token = payroll_multiplier_temp }
+		set_temp_variable = { payroll_multiplier_temp = professionals_jobs@var:bu_token }
+		multiply_temp_variable = { payroll_multiplier_temp = 10 }
+		add_to_variable = { payroll_multiplier@var:bu_token = payroll_multiplier_temp }
+		set_temp_variable = { payroll_multiplier_temp = specialists_jobs@var:bu_token }
+		multiply_temp_variable = { payroll_multiplier_temp = 20 }
+		add_to_variable = { payroll_multiplier@var:bu_token = payroll_multiplier_temp }
+		multiply_variable = { payroll_multiplier@var:bu_token = global.building_base_employees@var:bu_token }
+
+
+		multiply_variable = { laborers_jobs@var:bu_token = base_jobs_temp }
+		multiply_variable = { workers_jobs@var:bu_token = base_jobs_temp }
+		multiply_variable = { professionals_jobs@var:bu_token = base_jobs_temp }
+		multiply_variable = { specialists_jobs@var:bu_token = base_jobs_temp }
+
+		set_variable = { owner_jobs@var:bu_token = 0.02 }
+		multiply_variable = { owner_jobs@var:bu_token = base_jobs_temp }
+
+		if = { # Laborers
+			limit = {
+				check_variable = { laborers_jobs@var:bu_token > 0 }
+			}
+			if = {
+				limit = {
+					check_variable = { laborers_jobs@var:bu_token > 10000 }
+				}
+				set_variable = { laborers_employed@var:bu_token = laborers_jobs@var:bu_token }
+				divide_variable = { laborers_employed@var:bu_token = 100 }
+				multiply_variable = { laborers_employed@var:bu_token = employment_target@var:bu_token }
+				divide_variable = { laborers_employed@var:bu_token = 100 }
+				multiply_variable = { laborers_employed@var:bu_token = laborers_job_fulfillment }
+			}
+			else = {
+				set_variable = { laborers_employed@var:bu_token = laborers_jobs@var:bu_token }
+				multiply_variable = { laborers_employed@var:bu_token = employment_target@var:bu_token }
+				divide_variable = { laborers_employed@var:bu_token = 100 }
+				multiply_variable = { laborers_employed@var:bu_token = laborers_job_fulfillment }
+				divide_variable = { laborers_employed@var:bu_token = 100 }
+			}
 
 			add_to_variable = { jobs@var:bu_token = laborers_jobs@var:bu_token }
 			add_to_variable = { employed@var:bu_token = laborers_employed@var:bu_token }
-        }
-        else = {
-            set_variable = { laborers_employed@var:bu_token = 0 }
-        }
+		}
+		else = {
+			set_variable = { laborers_employed@var:bu_token = 0 }
+		}
 
-        if = { # Workers
-            limit = {
-                check_variable = { workers_jobs@var:bu_token > 0 }
-            }
-            if = {
-                limit = {
-                    check_variable = { workers_jobs@var:bu_token > 10000 }
-                }
-                set_variable = { workers_employed@var:bu_token = workers_jobs@var:bu_token }
-                divide_variable = { workers_employed@var:bu_token = 100 }
-                multiply_variable = { workers_employed@var:bu_token = employment_target@var:bu_token }
-                divide_variable = { workers_employed@var:bu_token = 100 }
-                multiply_variable = { workers_employed@var:bu_token = workers_job_fulfillment }
-            }
-            else = {
-                set_variable = { workers_employed@var:bu_token = workers_jobs@var:bu_token }
-                multiply_variable = { workers_employed@var:bu_token = employment_target@var:bu_token }
-                divide_variable = { workers_employed@var:bu_token = 100 }
-                multiply_variable = { workers_employed@var:bu_token = workers_job_fulfillment }
-                divide_variable = { workers_employed@var:bu_token = 100 }
-            }
+		if = { # Workers
+			limit = {
+				check_variable = { workers_jobs@var:bu_token > 0 }
+			}
+			if = {
+				limit = {
+					check_variable = { workers_jobs@var:bu_token > 10000 }
+				}
+				set_variable = { workers_employed@var:bu_token = workers_jobs@var:bu_token }
+				divide_variable = { workers_employed@var:bu_token = 100 }
+				multiply_variable = { workers_employed@var:bu_token = employment_target@var:bu_token }
+				divide_variable = { workers_employed@var:bu_token = 100 }
+				multiply_variable = { workers_employed@var:bu_token = workers_job_fulfillment }
+			}
+			else = {
+				set_variable = { workers_employed@var:bu_token = workers_jobs@var:bu_token }
+				multiply_variable = { workers_employed@var:bu_token = employment_target@var:bu_token }
+				divide_variable = { workers_employed@var:bu_token = 100 }
+				multiply_variable = { workers_employed@var:bu_token = workers_job_fulfillment }
+				divide_variable = { workers_employed@var:bu_token = 100 }
+			}
 
 			add_to_variable = { jobs@var:bu_token = workers_jobs@var:bu_token }
 			add_to_variable = { employed@var:bu_token = workers_employed@var:bu_token }
-        }
-        else = {
-            set_variable = { workers_employed@var:bu_token = 0 }
-        }
+		}
+		else = {
+			set_variable = { workers_employed@var:bu_token = 0 }
+		}
 
-        if = { # Professionals
-            limit = {
-                check_variable = { professionals_jobs@var:bu_token > 0 }
-            }
-            if = {
-                limit = {
-                    check_variable = { professionals_jobs@var:bu_token > 10000 }
-                }
-                set_variable = { professionals_employed@var:bu_token = professionals_jobs@var:bu_token }
-                divide_variable = { professionals_employed@var:bu_token = 100 }
-                multiply_variable = { professionals_employed@var:bu_token = employment_target@var:bu_token }
-                divide_variable = { professionals_employed@var:bu_token = 100 }
-                multiply_variable = { professionals_employed@var:bu_token = professionals_job_fulfillment }
-            }
-            else = {
-                set_variable = { professionals_employed@var:bu_token = professionals_jobs@var:bu_token }
-                multiply_variable = { professionals_employed@var:bu_token = employment_target@var:bu_token }
-                divide_variable = { professionals_employed@var:bu_token = 100 }
-                multiply_variable = { professionals_employed@var:bu_token = professionals_job_fulfillment }
-                divide_variable = { professionals_employed@var:bu_token = 100 }
-            }
+		if = { # Professionals
+			limit = {
+				check_variable = { professionals_jobs@var:bu_token > 0 }
+			}
+			if = {
+				limit = {
+					check_variable = { professionals_jobs@var:bu_token > 10000 }
+				}
+				set_variable = { professionals_employed@var:bu_token = professionals_jobs@var:bu_token }
+				divide_variable = { professionals_employed@var:bu_token = 100 }
+				multiply_variable = { professionals_employed@var:bu_token = employment_target@var:bu_token }
+				divide_variable = { professionals_employed@var:bu_token = 100 }
+				multiply_variable = { professionals_employed@var:bu_token = professionals_job_fulfillment }
+			}
+			else = {
+				set_variable = { professionals_employed@var:bu_token = professionals_jobs@var:bu_token }
+				multiply_variable = { professionals_employed@var:bu_token = employment_target@var:bu_token }
+				divide_variable = { professionals_employed@var:bu_token = 100 }
+				multiply_variable = { professionals_employed@var:bu_token = professionals_job_fulfillment }
+				divide_variable = { professionals_employed@var:bu_token = 100 }
+			}
 
 			add_to_variable = { jobs@var:bu_token = professionals_jobs@var:bu_token }
 			add_to_variable = { employed@var:bu_token = professionals_employed@var:bu_token }
-        }
-        else = {
-            set_variable = { professionals_employed@var:bu_token = 0 }
-        }
+		}
+		else = {
+			set_variable = { professionals_employed@var:bu_token = 0 }
+		}
 
-        if = { # Specialists
-            limit = {
-                check_variable = { specialists_jobs@var:bu_token > 0 }
-            }
-            if = {
-                limit = {
-                    check_variable = { specialists_jobs@var:bu_token > 10000 }
-                }
-                set_variable = { specialists_employed@var:bu_token = specialists_jobs@var:bu_token }
-                divide_variable = { specialists_employed@var:bu_token = 100 }
-                multiply_variable = { specialists_employed@var:bu_token = employment_target@var:bu_token }
-                divide_variable = { specialists_employed@var:bu_token = 100 }
-                multiply_variable = { specialists_employed@var:bu_token = specialists_job_fulfillment }
-            }
-            else = {
-                set_variable = { specialists_employed@var:bu_token = specialists_jobs@var:bu_token }
-                multiply_variable = { specialists_employed@var:bu_token = employment_target@var:bu_token }
-                divide_variable = { specialists_employed@var:bu_token = 100 }
-                multiply_variable = { specialists_employed@var:bu_token = specialists_job_fulfillment }
-                divide_variable = { specialists_employed@var:bu_token = 100 }
-            }
+		if = { # Specialists
+			limit = {
+				check_variable = { specialists_jobs@var:bu_token > 0 }
+			}
+			if = {
+				limit = {
+					check_variable = { specialists_jobs@var:bu_token > 10000 }
+				}
+				set_variable = { specialists_employed@var:bu_token = specialists_jobs@var:bu_token }
+				divide_variable = { specialists_employed@var:bu_token = 100 }
+				multiply_variable = { specialists_employed@var:bu_token = employment_target@var:bu_token }
+				divide_variable = { specialists_employed@var:bu_token = 100 }
+				multiply_variable = { specialists_employed@var:bu_token = specialists_job_fulfillment }
+			}
+			else = {
+				set_variable = { specialists_employed@var:bu_token = specialists_jobs@var:bu_token }
+				multiply_variable = { specialists_employed@var:bu_token = employment_target@var:bu_token }
+				divide_variable = { specialists_employed@var:bu_token = 100 }
+				multiply_variable = { specialists_employed@var:bu_token = specialists_job_fulfillment }
+				divide_variable = { specialists_employed@var:bu_token = 100 }
+			}
 
 			add_to_variable = { jobs@var:bu_token = specialists_jobs@var:bu_token }
 			add_to_variable = { employed@var:bu_token = specialists_employed@var:bu_token }
-        }
-        else = {
-            set_variable = { specialists_employed@var:bu_token = 0 }
-        }
+		}
+		else = {
+			set_variable = { specialists_employed@var:bu_token = 0 }
+		}
 
 		#Employment/Production Percentage
 			set_variable = { employment_percentage@var:bu_token = employed@var:bu_token }
-            if = {
-                limit = {
-                    check_variable = { employment_percentage@var:bu_token < 1000 }
-                }
-                multiply_variable = { employment_percentage@var:bu_token = 100 }
-                divide_variable = { employment_percentage@var:bu_token = jobs@var:bu_token }
-            }
-            else = {
-                divide_variable = { employment_percentage@var:bu_token = jobs@var:bu_token }
-                multiply_variable = { employment_percentage@var:bu_token = 100 }
-            }
+			if = {
+				limit = {
+					check_variable = { employment_percentage@var:bu_token < 1000 }
+				}
+				multiply_variable = { employment_percentage@var:bu_token = 100 }
+				divide_variable = { employment_percentage@var:bu_token = jobs@var:bu_token }
+			}
+			else = {
+				divide_variable = { employment_percentage@var:bu_token = jobs@var:bu_token }
+				multiply_variable = { employment_percentage@var:bu_token = 100 }
+			}
 
-            set_temp_variable = { total_prod_temp = 0 }
-            set_temp_variable = { production_temp = laborers_employed@var:bu_token }
-            multiply_temp_variable = { production_temp = 2 }
-            add_to_temp_variable = { total_prod_temp = production_temp }
-            set_temp_variable = { production_temp = workers_employed@var:bu_token }
-            multiply_temp_variable = { production_temp = 5 }
-            add_to_temp_variable = { total_prod_temp = production_temp }
-            set_temp_variable = { production_temp = professionals_employed@var:bu_token }
-            multiply_temp_variable = { production_temp = 10 }
-            add_to_temp_variable = { total_prod_temp = production_temp }
-            set_temp_variable = { production_temp = specialists_employed@var:bu_token }
-            multiply_temp_variable = { production_temp = 20 }
-            add_to_temp_variable = { total_prod_temp = production_temp }
-            if = {
-                limit = {
-                    check_variable = { total_prod_temp > 10000 }
-                }
-                divide_temp_variable = { total_prod_temp = payroll_multiplier@var:bu_token }
-                divide_temp_variable = { total_prod_temp = size@var:bu_token }
-                multiply_temp_variable = { total_prod_temp = 100 }
-            }
-            else = {
-                multiply_temp_variable = { total_prod_temp = 100 }
-                divide_temp_variable = { total_prod_temp = payroll_multiplier@var:bu_token }
-                divide_temp_variable = { total_prod_temp = size@var:bu_token }
-            }
-            set_variable = { production_percentage@var:bu_token = total_prod_temp }
+			set_temp_variable = { total_prod_temp = 0 }
+			set_temp_variable = { production_temp = laborers_employed@var:bu_token }
+			multiply_temp_variable = { production_temp = 2 }
+			add_to_temp_variable = { total_prod_temp = production_temp }
+			set_temp_variable = { production_temp = workers_employed@var:bu_token }
+			multiply_temp_variable = { production_temp = 5 }
+			add_to_temp_variable = { total_prod_temp = production_temp }
+			set_temp_variable = { production_temp = professionals_employed@var:bu_token }
+			multiply_temp_variable = { production_temp = 10 }
+			add_to_temp_variable = { total_prod_temp = production_temp }
+			set_temp_variable = { production_temp = specialists_employed@var:bu_token }
+			multiply_temp_variable = { production_temp = 20 }
+			add_to_temp_variable = { total_prod_temp = production_temp }
+			if = {
+				limit = {
+					check_variable = { total_prod_temp > 10000 }
+				}
+				divide_temp_variable = { total_prod_temp = payroll_multiplier@var:bu_token }
+				divide_temp_variable = { total_prod_temp = size@var:bu_token }
+				multiply_temp_variable = { total_prod_temp = 100 }
+			}
+			else = {
+				multiply_temp_variable = { total_prod_temp = 100 }
+				divide_temp_variable = { total_prod_temp = payroll_multiplier@var:bu_token }
+				divide_temp_variable = { total_prod_temp = size@var:bu_token }
+			}
+			set_variable = { production_percentage@var:bu_token = total_prod_temp }
 		#
 
-        #Capacities
-            set_variable = { industrial_capacity_use@var:bu_token = controller:pm_industrial_capacity_use@var:production_method_temp }
-            add_to_variable = { industrial_capacity_use@var:bu_token = controller:pm_industrial_capacity_use@var:automation_method_temp }
-            multiply_variable = { industrial_capacity_use@var:bu_token = global.building_base_output_value@var:bu_token }
-            multiply_variable = { industrial_capacity_use@var:bu_token = cap_modifier_temp }
-            multiply_variable = { industrial_capacity_use@var:bu_token = input_modifier_temp }
-            multiply_variable = { industrial_capacity_use@var:bu_token = throughput_modifier_temp }
-            multiply_variable = { industrial_capacity_use@var:bu_token = eco_of_scale_modifier_temp }
-            divide_variable = { industrial_capacity_use@var:bu_token = global.base_price_industrial_capacity }
-            
-            set_variable = { industrial_capacity_use_max@var:bu_token = industrial_capacity_use@var:bu_token }
-
-            multiply_variable = { industrial_capacity_use@var:bu_token = size@var:bu_token }
-            multiply_variable = { industrial_capacity_use@var:bu_token = production_percentage@var:bu_token }
-            divide_variable = { industrial_capacity_use@var:bu_token = 100 }
-            
-            set_variable = { shipping_capacity@var:bu_token = controller:pm_shipping_capacity@var:production_method_temp }
-            add_to_variable = { shipping_capacity@var:bu_token = controller:pm_shipping_capacity@var:automation_method_temp }
-            multiply_variable = { shipping_capacity@var:bu_token = global.building_base_output_value@var:bu_token }
-            multiply_variable = { shipping_capacity@var:bu_token = output_modifier_temp }
-            multiply_variable = { shipping_capacity@var:bu_token = throughput_modifier_temp }
-            multiply_variable = { shipping_capacity@var:bu_token = eco_of_scale_modifier_temp }
-            divide_variable = { shipping_capacity@var:bu_token = global.base_price_shipping_capacity }
-
-            set_variable = { shipping_capacity_max@var:bu_token = shipping_capacity@var:bu_token }
-            
-            set_variable = { industrial_capacity@var:bu_token = controller:pm_industrial_capacity@var:production_method_temp }
-            add_to_variable = { industrial_capacity@var:bu_token = controller:pm_industrial_capacity@var:automation_method_temp }
-            multiply_variable = { industrial_capacity@var:bu_token = global.building_base_output_value@var:bu_token }
-            multiply_variable = { industrial_capacity@var:bu_token = output_modifier_temp }
-            multiply_variable = { industrial_capacity@var:bu_token = throughput_modifier_temp }
-            multiply_variable = { industrial_capacity@var:bu_token = eco_of_scale_modifier_temp }
-            divide_variable = { industrial_capacity@var:bu_token = global.base_price_industrial_capacity }
-
-            set_variable = { industrial_capacity_max@var:bu_token = industrial_capacity@var:bu_token }
-
-            multiply_variable = { shipping_capacity@var:bu_token = size@var:bu_token }
-            multiply_variable = { shipping_capacity@var:bu_token = production_percentage@var:bu_token }
-            divide_variable = { shipping_capacity@var:bu_token = 100 }
-            multiply_variable = { industrial_capacity@var:bu_token = size@var:bu_token }
-            multiply_variable = { industrial_capacity@var:bu_token = production_percentage@var:bu_token }
-            divide_variable = { industrial_capacity@var:bu_token = 100 }
-            
-            set_temp_variable = { exp_temp = industrial_capacity_use_max@var:bu_token }
-            multiply_temp_variable = { exp_temp = price_industrial_capacity }
-            add_to_temp_variable = { expenses_temp = exp_temp }
-            set_temp_variable = { rev_temp = industrial_capacity_max@var:bu_token }
-            multiply_temp_variable = { rev_temp = price_industrial_capacity }
-            add_to_temp_variable = { revenue_temp = rev_temp }
-            set_temp_variable = { rev_temp = shipping_capacity_max@var:bu_token }
-            multiply_temp_variable = { rev_temp = controller:price_shipping_capacity }
-            add_to_temp_variable = { revenue_temp = rev_temp }
-        #
-
-        # Output
-            clear_array = production@var:bu_token
-            clear_array = revenue_goods@var:bu_token
-            set_variable = { production_output_multiplier@var:bu_token = controller:pm_output_multiplier@var:production_method_temp }
-            for_each_loop = {
-                array = global.building_base_production@var:bu_token
-                value = br_token
-                index = ii
-
-                # Production
-                set_temp_variable = { prod_temp = global.building_base_production_amount@var:bu_token^ii }              # Base resource production per size
-                multiply_temp_variable = { prod_temp = production_output_multiplier@var:bu_token }                      # Multiply by PM Output Multiplier
-                multiply_temp_variable = { prod_temp = throughput_modifier_temp }                                       # Throughput modifier
-                multiply_temp_variable = { prod_temp = eco_of_scale_modifier_temp }
-                multiply_temp_variable = { prod_temp = output_modifier_temp }                                           # Output modifier
-                multiply_temp_variable = { prod_temp = production_percentage@var:bu_token }                             # Multiply by Production Percentage
-                divide_temp_variable = { prod_temp = 100 }
-                multiply_temp_variable = { prod_temp = size@var:bu_token }                                              # Multiply by size
-
-
-                # Goods Revenue
-                set_temp_variable = { money_temp = prod_temp }
-                multiply_temp_variable = { money_temp = controller:price@var:br_token }
-                
-                add_to_array = { production@var:bu_token = prod_temp }
-                add_to_array = { revenue_goods@var:bu_token = money_temp }
-                add_to_variable = { revenue_goods@var:bu_token = money_temp }
-
-                # For productivity
-                set_temp_variable = { productivity_temp = global.building_base_production_amount@var:bu_token^ii }
-                multiply_temp_variable = { productivity_temp = production_output_multiplier@var:bu_token }
-                multiply_temp_variable = { productivity_temp = throughput_modifier_temp }
-                multiply_temp_variable = { productivity_temp = eco_of_scale_modifier_temp }
-                multiply_temp_variable = { productivity_temp = output_modifier_temp }
-                set_temp_variable = { money_limit_temp = productivity_temp }
-
-                multiply_temp_variable = { productivity_temp = controller:price@var:br_token }
-                add_to_temp_variable = { revenue_temp = productivity_temp }
-                                
-                multiply_temp_variable = { money_limit_temp = size@var:bu_token }
-                multiply_temp_variable = { money_limit_temp = global.base_price@var:br_token }
-                add_to_variable = { money_limit@var:bu_token = money_limit_temp }
-            }
-        #
-        
-        # Input
-            # Compile Inputs from the PM and AM Together
-            clear_array = input@var:bu_token
-            clear_array = input_base_amount@var:bu_token
-            clear_array = input_amount@var:bu_token
-            clear_array = input_cost@var:bu_token
-            for_each_loop = {
-                array = controller:pm_input@var:production_method_temp
-                value = br_token
-                index = bu_i
-
-                add_to_array = { input@var:bu_token = br_token }
-                add_to_array = { input_base_amount@var:bu_token = controller:pm_input_amount@var:production_method_temp^bu_i }
-                add_to_array = { input_amount@var:bu_token = 0 }
-                add_to_array = { input_cost@var:bu_token = 0 }
-            }
-            for_each_loop = {
-                array = controller:pm_input@var:automation_method_temp
-                value = br_token
-                index = bu_i
-
-                if = {
-                    limit = { is_in_array = { input@var:bu_token = br_token } }
-
-                    for_each_loop = {
-                        array = input@var:bu_token
-                        value = br_token2
-                        index = bu_ii
-                        break = bu_brk
-
-                        if = {
-                            limit = { check_variable = { br_token2 = br_token } }
-                            add_to_variable = { input_base_amount@var:bu_token^bu_ii = controller:pm_input_amount@var:automation_method_temp^bu_i }
-                            clamp_variable = { var = input_base_amount@var:bu_token^bu_ii min = 0 }
-
-                            set_temp_variable = { bu_brk = 1 }
-                        }
-                    }
-                }
-                else = {
-                    add_to_array = { input@var:bu_token = br_token }
-                    add_to_array = { input_base_amount@var:bu_token = controller:pm_input_amount@var:automation_method_temp^bu_i }
-                    add_to_array = { input_amount@var:bu_token = 0 }
-                    add_to_array = { input_cost@var:bu_token = 0 }
-                }
-            }
-
-            # Calculate Input Reqs & Costs
-            for_each_loop = {
-                array = input@var:bu_token
-                value = br_token
-                index = ii
-
-                # Production
-                set_temp_variable = { prod_temp = input_base_amount@var:bu_token^ii }                                   # Base resource production % of base output value
-                multiply_temp_variable = { prod_temp = global.building_base_output_value@var:bu_token }                 # Base Output Value
-                multiply_temp_variable = { prod_temp = throughput_modifier_temp }                                       # Throughput modifier
-                multiply_temp_variable = { prod_temp = eco_of_scale_modifier_temp }
-                multiply_temp_variable = { prod_temp = input_modifier_temp }                                            # Input modifier
-                multiply_temp_variable = { prod_temp = production_percentage@var:bu_token }                             # Multiply by Production Percentage
-                divide_temp_variable = { prod_temp = 100 }
-                multiply_temp_variable = { prod_temp = size@var:bu_token }
-                divide_temp_variable = { prod_temp = global.base_price@var:br_token }
-
-                # Goods Revenue
-                set_temp_variable = { money_temp = prod_temp }
-                multiply_temp_variable = { money_temp = controller:price@var:br_token }
-                
-                set_variable = { input_amount@var:bu_token^ii = prod_temp }
-                set_variable = { input_cost@var:bu_token^ii = money_temp }
-                add_to_variable = { expenses_input@var:bu_token = money_temp }
-
-                # For productivity
-                set_temp_variable = { productivity_temp = input_base_amount@var:bu_token^ii }
-                multiply_temp_variable = { productivity_temp = global.building_base_output_value@var:bu_token }
-                multiply_temp_variable = { productivity_temp = throughput_modifier_temp }
-                multiply_temp_variable = { productivity_temp = eco_of_scale_modifier_temp }
-                multiply_temp_variable = { productivity_temp = input_modifier_temp }    
-                multiply_temp_variable = { productivity_temp = controller:price@var:br_token }
-                divide_temp_variable = { productivity_temp = global.base_price@var:br_token }
-                add_to_temp_variable = { expenses_temp = productivity_temp }
-                
-                divide_temp_variable = { productivity_temp = controller:price@var:br_token }
-                
-                multiply_temp_variable = { productivity_temp = size@var:bu_token }
-                multiply_temp_variable = { productivity_temp = global.base_price@var:br_token }
-                add_to_variable = { money_limit@var:bu_token = productivity_temp }
-            }
-        #
-        #Productivity
-            set_variable = { productivity@var:bu_token = revenue_temp }
-            subtract_from_variable = { productivity@var:bu_token = expenses_temp }
-            divide_variable = { productivity@var:bu_token = payroll_multiplier@var:bu_token }
-        #
-
-        if = { # Govt Controlled Industries
-            limit = {
-                check_variable = { global.building_government_control@var:bu_token = 1 }
-            }
-        }
-        else = { # Normal Finances
-            set_variable = { revenue_industrial_capacity@var:bu_token = industrial_capacity@var:bu_token }
-            multiply_variable = { revenue_industrial_capacity@var:bu_token = price_industrial_capacity }
-            
-            set_variable = { revenue_shipping_capacity@var:bu_token = shipping_capacity@var:bu_token }
-            multiply_variable = { revenue_shipping_capacity@var:bu_token = controller:price_shipping_capacity }
-
-            set_variable = { revenue@var:bu_token = revenue_goods@var:bu_token }
-            add_to_variable = { revenue@var:bu_token = revenue_industrial_capacity@var:bu_token }
-            add_to_variable = { revenue@var:bu_token = revenue_shipping_capacity@var:bu_token }
-
-            #Expenses
-            set_variable = { expenses_industrial_capacity@var:bu_token = industrial_capacity_use@var:bu_token }
-            multiply_variable = { expenses_industrial_capacity@var:bu_token = price_industrial_capacity }
-            
-            set_variable = { expenses_payroll@var:bu_token = size@var:bu_token }
-            multiply_variable = { expenses_payroll@var:bu_token = production_percentage@var:bu_token }
-            divide_variable = { expenses_payroll@var:bu_token = 100 }
-            multiply_variable = { expenses_payroll@var:bu_token = base_wage }
-            multiply_variable = { expenses_payroll@var:bu_token = payroll_multiplier@var:bu_token }
-
-            set_variable = { expenses@var:bu_token = expenses_payroll@var:bu_token }
-            add_to_variable = { expenses@var:bu_token = expenses_input@var:bu_token }
-            add_to_variable = { expenses@var:bu_token = expenses_industrial_capacity@var:bu_token }
-
-            #Profit
-            set_variable = { profit@var:bu_token = revenue@var:bu_token }
-            subtract_from_variable = { profit@var:bu_token = expenses@var:bu_token }
-
-            #Subsidies - TODO
-            set_variable = { revenue_subsidies@var:bu_token = 0 }
-
-            add_to_variable = { revenue@var:bu_token = revenue_subsidies@var:bu_token }
-            add_to_variable = { profit@var:bu_token = revenue_subsidies@var:bu_token }
-
-
-            #Money Accumulation
-            set_variable = { money_accumulation@var:bu_token = profit@var:bu_token }
-            divide_variable = { money_accumulation@var:bu_token = 2 }
-            set_variable = { dividends@var:bu_token = profit@var:bu_token }
-            divide_variable = { dividends@var:bu_token = 2 }
-
-            set_temp_variable = { money_temp = money@var:bu_token }
-            add_to_temp_variable = { money_temp = money_accumulation@var:bu_token }
-            if = {
-                limit = {
-                    check_variable = { money_temp > money_limit@var:bu_token }
-                }
-                subtract_from_temp_variable = { money_temp = money_limit@var:bu_token }
-                subtract_from_variable = { money_accumulation@var:bu_token = money_temp }
-                add_to_variable = { dividends@var:bu_token = money_temp }
-            }
-            if = {
-                limit = {
-                    check_variable = { money_temp < 0 }
-                }
-                subtract_from_variable = { money_accumulation@var:bu_token = money_temp }
-                add_to_variable = { dividends@var:bu_token = money_temp }
-            }
-
-            #Profitability
-            set_variable = { profitability@var:bu_token = profit@var:bu_token }
-            divide_variable = { profitability@var:bu_token = revenue@var:bu_token }
-        }
-    }
-    industry_update_finances = {
-        # Reset to 0
-        set_variable = { expenses_payroll@var:bu_token = 0 }
-        set_variable = { revenue_goods@var:bu_token = 0 }
-        set_variable = { expenses_input@var:bu_token = 0 }
-        
-        set_temp_variable = { revenue_temp = 0 }
-        set_temp_variable = { expenses_temp = 0 }
-
-        # Modifiers
-            set_temp_variable = { output_modifier_temp = building_output_factor@var:bu_token }
-            add_to_temp_variable = { output_modifier_temp = 1 }
-
-            set_temp_variable = { throughput_modifier_temp = building_throughput_factor@var:bu_token }
-            add_to_temp_variable = { throughput_modifier_temp = 1 }
-
-            set_temp_variable = { eco_of_scale_modifier_temp = size@var:bu_token }
-            subtract_from_temp_variable = { eco_of_scale_modifier_temp = 1 }
-            clamp_temp_variable = { var = eco_of_scale_modifier_temp min = 0 max = global.buildings_economy_of_scale_max }
-            multiply_temp_variable = { eco_of_scale_modifier_temp = global.buildings_economy_of_scale_factor }
-            add_to_temp_variable = { eco_of_scale_modifier_temp = 1 }
-
-            set_temp_variable = { input_modifier_temp = building_input_factor@var:bu_token }
-            add_to_temp_variable = { input_modifier_temp = 1 }
-            
-            set_temp_variable = { cap_modifier_temp = building_industrial_capacity_use_factor@var:bu_token }
-            add_to_temp_variable = { cap_modifier_temp = 1 }
-        #
-
-        # Capacities
-            set_temp_variable = { exp_temp = industrial_capacity_use_max@var:bu_token }
-            multiply_temp_variable = { exp_temp = price_industrial_capacity }
-            add_to_temp_variable = { expenses_temp = exp_temp }
-
-            set_temp_variable = { rev_temp = industrial_capacity_max@var:bu_token }
-            multiply_temp_variable = { rev_temp = price_industrial_capacity }
-            add_to_temp_variable = { revenue_temp = rev_temp }
-
-            set_temp_variable = { rev_temp = shipping_capacity_max@var:bu_token }
-            multiply_temp_variable = { rev_temp = controller:price_shipping_capacity }
-            add_to_temp_variable = { revenue_temp = rev_temp }
-        #
-
-        # Output
-            for_each_loop = {
-                array = global.building_base_production@var:bu_token
-                value = br_token
-                index = ii
-
-                # Goods Revenue
-                set_temp_variable = { money_temp = production@var:bu_token^ii }
-                multiply_temp_variable = { money_temp = controller:price@var:br_token }
-                set_variable = { revenue_goods@var:bu_token^ii = money_temp }
-                add_to_variable = { revenue_goods@var:bu_token = money_temp }
-
-                # For productivity
-                set_temp_variable = { productivity_temp = global.building_base_production_amount@var:bu_token^ii }
-                multiply_temp_variable = { productivity_temp = production_output_multiplier@var:bu_token }
-                multiply_temp_variable = { productivity_temp = throughput_modifier_temp }
-                multiply_temp_variable = { productivity_temp = eco_of_scale_modifier_temp }
-                multiply_temp_variable = { productivity_temp = output_modifier_temp }
-                multiply_temp_variable = { productivity_temp = controller:price@var:br_token }
-                add_to_temp_variable = { revenue_temp = productivity_temp }
-            }
-        #
-        
-        # Input
-            for_each_loop = {
-                array = input@var:bu_token
-                value = br_token
-                index = ii
-
-                # Goods Revenue
-                set_temp_variable = { money_temp = input_amount@var:bu_token^ii }
-                multiply_temp_variable = { money_temp = controller:price@var:br_token }
-                
-                set_variable = { input_cost@var:bu_token^ii = money_temp }
-                add_to_variable = { expenses_input@var:bu_token = money_temp }
-
-                # For productivity
-                set_temp_variable = { productivity_temp = input_base_amount@var:bu_token^ii }
-                multiply_temp_variable = { productivity_temp = global.building_base_output_value@var:bu_token }
-                multiply_temp_variable = { productivity_temp = throughput_modifier_temp }
-                multiply_temp_variable = { productivity_temp = eco_of_scale_modifier_temp }
-                multiply_temp_variable = { productivity_temp = input_modifier_temp }    
-                multiply_temp_variable = { productivity_temp = controller:price@var:br_token }
-                divide_temp_variable = { productivity_temp = global.base_price@var:br_token }
-                add_to_temp_variable = { expenses_temp = productivity_temp }
-            }
-        #
-
-        # Productivity
-            set_variable = { productivity@var:bu_token = revenue_temp }
-            subtract_from_variable = { productivity@var:bu_token = expenses_temp }
-            divide_variable = { productivity@var:bu_token = payroll_multiplier@var:bu_token }
-        #
-
-        if = { # Govt Controlled Industries
-            limit = {
-                check_variable = { global.building_government_control@var:bu_token = 1 }
-            }
-        }
-        else = { # Normal Finances
-            set_variable = { revenue_industrial_capacity@var:bu_token = industrial_capacity@var:bu_token }
-            multiply_variable = { revenue_industrial_capacity@var:bu_token = price_industrial_capacity }
-            
-            set_variable = { revenue_shipping_capacity@var:bu_token = shipping_capacity@var:bu_token }
-            multiply_variable = { revenue_shipping_capacity@var:bu_token = controller:price_shipping_capacity }
-
-            set_variable = { revenue@var:bu_token = revenue_goods@var:bu_token }
-            add_to_variable = { revenue@var:bu_token = revenue_industrial_capacity@var:bu_token }
-            add_to_variable = { revenue@var:bu_token = revenue_shipping_capacity@var:bu_token }
-
-            #Expenses
-            set_variable = { expenses_industrial_capacity@var:bu_token = industrial_capacity_use@var:bu_token }
-            multiply_variable = { expenses_industrial_capacity@var:bu_token = price_industrial_capacity }
-            
-            set_variable = { expenses_payroll@var:bu_token = size@var:bu_token }
-            multiply_variable = { expenses_payroll@var:bu_token = production_percentage@var:bu_token }
-            divide_variable = { expenses_payroll@var:bu_token = 100 }
-            multiply_variable = { expenses_payroll@var:bu_token = base_wage }
-            multiply_variable = { expenses_payroll@var:bu_token = payroll_multiplier@var:bu_token }
-
-            set_variable = { expenses@var:bu_token = expenses_payroll@var:bu_token }
-            add_to_variable = { expenses@var:bu_token = expenses_input@var:bu_token }
-            add_to_variable = { expenses@var:bu_token = expenses_industrial_capacity@var:bu_token }
-
-            #Profit
-            set_variable = { profit@var:bu_token = revenue@var:bu_token }
-            subtract_from_variable = { profit@var:bu_token = expenses@var:bu_token }
-
-            #Subsidies - TODO
-            set_variable = { revenue_subsidies@var:bu_token = 0 }
-
-            add_to_variable = { revenue@var:bu_token = revenue_subsidies@var:bu_token }
-            add_to_variable = { profit@var:bu_token = revenue_subsidies@var:bu_token }
-
-
-            #Money Accumulation
-            set_variable = { money_accumulation@var:bu_token = profit@var:bu_token }
-            divide_variable = { money_accumulation@var:bu_token = 2 }
-            set_variable = { dividends@var:bu_token = profit@var:bu_token }
-            divide_variable = { dividends@var:bu_token = 2 }
-
-            set_temp_variable = { money_temp = money@var:bu_token }
-            add_to_temp_variable = { money_temp = money_accumulation@var:bu_token }
-            if = {
-                limit = {
-                    check_variable = { money_temp > money_limit@var:bu_token }
-                }
-                subtract_from_temp_variable = { money_temp = money_limit@var:bu_token }
-                subtract_from_variable = { money_accumulation@var:bu_token = money_temp }
-                add_to_variable = { dividends@var:bu_token = money_temp }
-            }
-            if = {
-                limit = {
-                    check_variable = { money_temp < 0 }
-                }
-                subtract_from_variable = { money_accumulation@var:bu_token = money_temp }
-                add_to_variable = { dividends@var:bu_token = money_temp }
-            }
-
-            #Profitability
-            set_variable = { profitability@var:bu_token = profit@var:bu_token }
-            divide_variable = { profitability@var:bu_token = revenue@var:bu_token }
-        }
-    }
-    industry_update_construction_retooling = {
-        # iuc_industry
-        set_variable = { retooling_cost@var:iuc_industry = 0 }
-        clear_array = retooling_resources@var:iuc_industry
-        clear_array = retooling_amount@var:iuc_industry
-        clear_array = retooling_cost@var:iuc_industry
-        set_variable = { construction_cost@var:iuc_industry = 0 }
-        clear_array = construction_resources@var:iuc_industry
-        clear_array = construction_amount@var:iuc_industry
-        clear_array = construction_cost@var:iuc_industry
-        if = {
-            limit = {
-                NOT = { check_variable = { retooling_pm@var:iuc_industry = 0 } }
-            }
-            set_temp_variable = { pm_temp = retooling_pm@var:iuc_industry }
-
-            set_variable = { retooling_time_left@var:iuc_industry = controller:pm_retooling_duration@var:pm_temp }
-            subtract_from_variable = { retooling_time_left@var:iuc_industry = retooling_progress@var:iuc_industry }
-            clamp_variable = { var = retooling_time_left@var:iuc_industry min = 0 max = controller:pm_retooling_duration@var:pm_temp }
-
-            set_temp_variable = { retooling_multiplier = 1 }
-            if = { limit = { check_variable = { retooling_time_left@var:iuc_industry < 1 } } set_temp_variable = { retooling_multiplier = retooling_time_left@var:iuc_industry } }
-        
-            # Modifiers
-            set_temp_variable = { retooling_speed_temp = 1 }
-            add_to_temp_variable = { retooling_speed_temp = building_retooling_speed_factor }
-            divide_variable = { retooling_time_left@var:iuc_industry = retooling_speed_temp }
-            
-            set_temp_variable = { retooling_cost_temp = 1 }
-            add_to_temp_variable = { retooling_cost_temp = building_retooling_cost_factor }
-
-            # Input Costs
-            for_each_loop = {
-                array = controller:pm_input@var:pm_temp
-                value = iuc_resource
-                index = iuc_ii
-
-                set_temp_variable = { amount_temp = controller:pm_input_amount@var:pm_temp^iuc_ii }
-                multiply_temp_variable = { amount_temp = global.building_base_output_value@var:iuc_industry }
-                multiply_temp_variable = { amount_temp = retooling_speed_temp }
-                multiply_temp_variable = { amount_temp = retooling_cost_temp }
-                multiply_temp_variable = { amount_temp = retooling_multiplier }
-                multiply_temp_variable = { amount_temp = size@var:iuc_industry }
-                divide_temp_variable = { amount_temp = global.base_price@var:iuc_resource }
-                
-                set_temp_variable = { cost_temp = amount_temp }
-                multiply_temp_variable = { cost_temp = controller:price@var:iuc_resource }
-
-                add_to_array = { retooling_resources@var:iuc_industry = iuc_resource }
-                add_to_array = { retooling_amount@var:iuc_industry = amount_temp }
-                add_to_array = { retooling_cost@var:iuc_industry = cost_temp }
-                add_to_variable = { retooling_cost@var:iuc_industry = cost_temp }
-            }
-        }
-        else = {
-            set_variable = { retooling_time_left@var:iuc_industry = 0 }
-            set_variable = { retooling_progress@var:iuc_industry = 0 }
-            set_variable = { retooling_investment@var:iuc_industry = 0 }
-        }
-        if = {
-            limit = {
-                NOT = { check_variable = { construction@var:iuc_industry = 0 } }
-            }
-            set_temp_variable = { pm_temp = production_method@var:iuc_industry }
-            set_temp_variable = { am_temp = automation_method@var:iuc_industry }
-
-            set_variable = { construction_time_left@var:iuc_industry = controller:pm_construction_duration@var:pm_temp }
-            add_to_variable = { construction_time_left@var:iuc_industry = controller:pm_construction_duration@var:am_temp }
-            multiply_variable = { construction_time_left@var:iuc_industry = construction@var:iuc_industry }
-            subtract_from_variable = { construction_time_left@var:iuc_industry = construction_progress@var:iuc_industry }
-            if = { limit = { check_variable = { construction_time_left@var:iuc_industry < 0 } } set_variable = { construction_time_left@var:iuc_industry = 0 } }
-            divide_variable = { construction_time_left@var:iuc_industry = construction@var:iuc_industry }
-        
-            # Modifiers
-            set_temp_variable = { construction_speed_temp = 1 }
-            add_to_temp_variable = { construction_speed_temp = building_construction_speed_factor }
-            divide_variable = { construction_time_left@var:iuc_industry = construction_speed_temp }
-            
-            set_temp_variable = { construction_cost_temp = 1 }
-            add_to_temp_variable = { construction_cost_temp = building_construction_cost_factor }
-
-            set_temp_variable = { construction_multiplier = 1 }
-            if = { limit = { check_variable = { construction_time_left@var:iuc_industry < 1 } } 
-                set_temp_variable = { construction_multiplier = construction_time_left@var:iuc_industry }  
-            }
-
-            # Input Costs
-            for_each_loop = {
-                array = controller:pm_construction_input@var:pm_temp
-                value = iuc_resource
-                index = iuc_ii
-
-                set_temp_variable = { amount_temp = controller:pm_construction_input_amount@var:pm_temp^iuc_ii }
-                multiply_temp_variable = { amount_temp = global.building_base_output_value@var:iuc_industry }
-                multiply_temp_variable = { amount_temp = construction_speed_temp }
-                multiply_temp_variable = { amount_temp = construction_cost_temp }
-                multiply_temp_variable = { amount_temp = construction_multiplier }
-                multiply_temp_variable = { amount_temp = construction@var:iuc_industry }
-                divide_temp_variable = { amount_temp = global.base_price@var:iuc_resource }
-                
-                set_temp_variable = { cost_temp = amount_temp }
-                multiply_temp_variable = { cost_temp = controller:price@var:iuc_resource }
-
-                add_to_array = { construction_resources@var:iuc_industry = iuc_resource }
-                add_to_array = { construction_amount@var:iuc_industry = amount_temp }
-                add_to_array = { construction_cost@var:iuc_industry = cost_temp }
-                add_to_variable = { construction_cost@var:iuc_industry = cost_temp }
-            }
-        }
-        else = {
-            set_variable = { construction_time_left@var:iuc_industry = 0 }
-            set_variable = { construction_progress@var:iuc_industry = 0 }
-            set_variable = { construction_investment@var:iuc_industry = 0 }
-        }
-    }
+		#Capacities
+			set_variable = { industrial_capacity_use@var:bu_token = controller:pm_industrial_capacity_use@var:production_method_temp }
+			add_to_variable = { industrial_capacity_use@var:bu_token = controller:pm_industrial_capacity_use@var:automation_method_temp }
+			multiply_variable = { industrial_capacity_use@var:bu_token = global.building_base_output_value@var:bu_token }
+			multiply_variable = { industrial_capacity_use@var:bu_token = cap_modifier_temp }
+			multiply_variable = { industrial_capacity_use@var:bu_token = input_modifier_temp }
+			multiply_variable = { industrial_capacity_use@var:bu_token = throughput_modifier_temp }
+			multiply_variable = { industrial_capacity_use@var:bu_token = eco_of_scale_modifier_temp }
+			divide_variable = { industrial_capacity_use@var:bu_token = global.base_price_industrial_capacity }
+
+			set_variable = { industrial_capacity_use_max@var:bu_token = industrial_capacity_use@var:bu_token }
+
+			multiply_variable = { industrial_capacity_use@var:bu_token = size@var:bu_token }
+			multiply_variable = { industrial_capacity_use@var:bu_token = production_percentage@var:bu_token }
+			divide_variable = { industrial_capacity_use@var:bu_token = 100 }
+
+			set_variable = { shipping_capacity@var:bu_token = controller:pm_shipping_capacity@var:production_method_temp }
+			add_to_variable = { shipping_capacity@var:bu_token = controller:pm_shipping_capacity@var:automation_method_temp }
+			multiply_variable = { shipping_capacity@var:bu_token = global.building_base_output_value@var:bu_token }
+			multiply_variable = { shipping_capacity@var:bu_token = output_modifier_temp }
+			multiply_variable = { shipping_capacity@var:bu_token = throughput_modifier_temp }
+			multiply_variable = { shipping_capacity@var:bu_token = eco_of_scale_modifier_temp }
+			divide_variable = { shipping_capacity@var:bu_token = global.base_price_shipping_capacity }
+
+			set_variable = { shipping_capacity_max@var:bu_token = shipping_capacity@var:bu_token }
+
+			set_variable = { industrial_capacity@var:bu_token = controller:pm_industrial_capacity@var:production_method_temp }
+			add_to_variable = { industrial_capacity@var:bu_token = controller:pm_industrial_capacity@var:automation_method_temp }
+			multiply_variable = { industrial_capacity@var:bu_token = global.building_base_output_value@var:bu_token }
+			multiply_variable = { industrial_capacity@var:bu_token = output_modifier_temp }
+			multiply_variable = { industrial_capacity@var:bu_token = throughput_modifier_temp }
+			multiply_variable = { industrial_capacity@var:bu_token = eco_of_scale_modifier_temp }
+			divide_variable = { industrial_capacity@var:bu_token = global.base_price_industrial_capacity }
+
+			set_variable = { industrial_capacity_max@var:bu_token = industrial_capacity@var:bu_token }
+
+			multiply_variable = { shipping_capacity@var:bu_token = size@var:bu_token }
+			multiply_variable = { shipping_capacity@var:bu_token = production_percentage@var:bu_token }
+			divide_variable = { shipping_capacity@var:bu_token = 100 }
+			multiply_variable = { industrial_capacity@var:bu_token = size@var:bu_token }
+			multiply_variable = { industrial_capacity@var:bu_token = production_percentage@var:bu_token }
+			divide_variable = { industrial_capacity@var:bu_token = 100 }
+
+			set_temp_variable = { exp_temp = industrial_capacity_use_max@var:bu_token }
+			multiply_temp_variable = { exp_temp = price_industrial_capacity }
+			add_to_temp_variable = { expenses_temp = exp_temp }
+			set_temp_variable = { rev_temp = industrial_capacity_max@var:bu_token }
+			multiply_temp_variable = { rev_temp = price_industrial_capacity }
+			add_to_temp_variable = { revenue_temp = rev_temp }
+			set_temp_variable = { rev_temp = shipping_capacity_max@var:bu_token }
+			multiply_temp_variable = { rev_temp = controller:price_shipping_capacity }
+			add_to_temp_variable = { revenue_temp = rev_temp }
+		#
+
+		# Output
+			clear_array = production@var:bu_token
+			clear_array = revenue_goods@var:bu_token
+			set_variable = { production_output_multiplier@var:bu_token = controller:pm_output_multiplier@var:production_method_temp }
+			for_each_loop = {
+				array = global.building_base_production@var:bu_token
+				value = br_token
+				index = ii
+
+				# Production
+				set_temp_variable = { prod_temp = global.building_base_production_amount@var:bu_token^ii }			  # Base resource production per size
+				multiply_temp_variable = { prod_temp = production_output_multiplier@var:bu_token }					  # Multiply by PM Output Multiplier
+				multiply_temp_variable = { prod_temp = throughput_modifier_temp }									   # Throughput modifier
+				multiply_temp_variable = { prod_temp = eco_of_scale_modifier_temp }
+				multiply_temp_variable = { prod_temp = output_modifier_temp }										   # Output modifier
+				multiply_temp_variable = { prod_temp = production_percentage@var:bu_token }							 # Multiply by Production Percentage
+				divide_temp_variable = { prod_temp = 100 }
+				multiply_temp_variable = { prod_temp = size@var:bu_token }											  # Multiply by size
+
+
+				# Goods Revenue
+				set_temp_variable = { money_temp = prod_temp }
+				multiply_temp_variable = { money_temp = controller:price@var:br_token }
+
+				add_to_array = { production@var:bu_token = prod_temp }
+				add_to_array = { revenue_goods@var:bu_token = money_temp }
+				add_to_variable = { revenue_goods@var:bu_token = money_temp }
+
+				# For productivity
+				set_temp_variable = { productivity_temp = global.building_base_production_amount@var:bu_token^ii }
+				multiply_temp_variable = { productivity_temp = production_output_multiplier@var:bu_token }
+				multiply_temp_variable = { productivity_temp = throughput_modifier_temp }
+				multiply_temp_variable = { productivity_temp = eco_of_scale_modifier_temp }
+				multiply_temp_variable = { productivity_temp = output_modifier_temp }
+				set_temp_variable = { money_limit_temp = productivity_temp }
+
+				multiply_temp_variable = { productivity_temp = controller:price@var:br_token }
+				add_to_temp_variable = { revenue_temp = productivity_temp }
+
+				multiply_temp_variable = { money_limit_temp = size@var:bu_token }
+				multiply_temp_variable = { money_limit_temp = global.base_price@var:br_token }
+				add_to_variable = { money_limit@var:bu_token = money_limit_temp }
+			}
+		#
+
+		# Input
+			# Compile Inputs from the PM and AM Together
+			clear_array = input@var:bu_token
+			clear_array = input_base_amount@var:bu_token
+			clear_array = input_amount@var:bu_token
+			clear_array = input_cost@var:bu_token
+			for_each_loop = {
+				array = controller:pm_input@var:production_method_temp
+				value = br_token
+				index = bu_i
+
+				add_to_array = { input@var:bu_token = br_token }
+				add_to_array = { input_base_amount@var:bu_token = controller:pm_input_amount@var:production_method_temp^bu_i }
+				add_to_array = { input_amount@var:bu_token = 0 }
+				add_to_array = { input_cost@var:bu_token = 0 }
+			}
+			for_each_loop = {
+				array = controller:pm_input@var:automation_method_temp
+				value = br_token
+				index = bu_i
+
+				if = {
+					limit = { is_in_array = { input@var:bu_token = br_token } }
+
+					for_each_loop = {
+						array = input@var:bu_token
+						value = br_token2
+						index = bu_ii
+						break = bu_brk
+
+						if = {
+							limit = { check_variable = { br_token2 = br_token } }
+							add_to_variable = { input_base_amount@var:bu_token^bu_ii = controller:pm_input_amount@var:automation_method_temp^bu_i }
+							clamp_variable = { var = input_base_amount@var:bu_token^bu_ii min = 0 }
+
+							set_temp_variable = { bu_brk = 1 }
+						}
+					}
+				}
+				else = {
+					add_to_array = { input@var:bu_token = br_token }
+					add_to_array = { input_base_amount@var:bu_token = controller:pm_input_amount@var:automation_method_temp^bu_i }
+					add_to_array = { input_amount@var:bu_token = 0 }
+					add_to_array = { input_cost@var:bu_token = 0 }
+				}
+			}
+
+			# Calculate Input Reqs & Costs
+			for_each_loop = {
+				array = input@var:bu_token
+				value = br_token
+				index = ii
+
+				# Production
+				set_temp_variable = { prod_temp = input_base_amount@var:bu_token^ii }								   # Base resource production % of base output value
+				multiply_temp_variable = { prod_temp = global.building_base_output_value@var:bu_token }				 # Base Output Value
+				multiply_temp_variable = { prod_temp = throughput_modifier_temp }									   # Throughput modifier
+				multiply_temp_variable = { prod_temp = eco_of_scale_modifier_temp }
+				multiply_temp_variable = { prod_temp = input_modifier_temp }											# Input modifier
+				multiply_temp_variable = { prod_temp = production_percentage@var:bu_token }							 # Multiply by Production Percentage
+				divide_temp_variable = { prod_temp = 100 }
+				multiply_temp_variable = { prod_temp = size@var:bu_token }
+				divide_temp_variable = { prod_temp = global.base_price@var:br_token }
+
+				# Goods Revenue
+				set_temp_variable = { money_temp = prod_temp }
+				multiply_temp_variable = { money_temp = controller:price@var:br_token }
+
+				set_variable = { input_amount@var:bu_token^ii = prod_temp }
+				set_variable = { input_cost@var:bu_token^ii = money_temp }
+				add_to_variable = { expenses_input@var:bu_token = money_temp }
+
+				# For productivity
+				set_temp_variable = { productivity_temp = input_base_amount@var:bu_token^ii }
+				multiply_temp_variable = { productivity_temp = global.building_base_output_value@var:bu_token }
+				multiply_temp_variable = { productivity_temp = throughput_modifier_temp }
+				multiply_temp_variable = { productivity_temp = eco_of_scale_modifier_temp }
+				multiply_temp_variable = { productivity_temp = input_modifier_temp }
+				multiply_temp_variable = { productivity_temp = controller:price@var:br_token }
+				divide_temp_variable = { productivity_temp = global.base_price@var:br_token }
+				add_to_temp_variable = { expenses_temp = productivity_temp }
+
+				divide_temp_variable = { productivity_temp = controller:price@var:br_token }
+
+				multiply_temp_variable = { productivity_temp = size@var:bu_token }
+				multiply_temp_variable = { productivity_temp = global.base_price@var:br_token }
+				add_to_variable = { money_limit@var:bu_token = productivity_temp }
+			}
+		#
+		#Productivity
+			set_variable = { productivity@var:bu_token = revenue_temp }
+			subtract_from_variable = { productivity@var:bu_token = expenses_temp }
+			divide_variable = { productivity@var:bu_token = payroll_multiplier@var:bu_token }
+		#
+
+		if = { # Govt Controlled Industries
+			limit = {
+				check_variable = { global.building_government_control@var:bu_token = 1 }
+			}
+		}
+		else = { # Normal Finances
+			set_variable = { revenue_industrial_capacity@var:bu_token = industrial_capacity@var:bu_token }
+			multiply_variable = { revenue_industrial_capacity@var:bu_token = price_industrial_capacity }
+
+			set_variable = { revenue_shipping_capacity@var:bu_token = shipping_capacity@var:bu_token }
+			multiply_variable = { revenue_shipping_capacity@var:bu_token = controller:price_shipping_capacity }
+
+			set_variable = { revenue@var:bu_token = revenue_goods@var:bu_token }
+			add_to_variable = { revenue@var:bu_token = revenue_industrial_capacity@var:bu_token }
+			add_to_variable = { revenue@var:bu_token = revenue_shipping_capacity@var:bu_token }
+
+			#Expenses
+			set_variable = { expenses_industrial_capacity@var:bu_token = industrial_capacity_use@var:bu_token }
+			multiply_variable = { expenses_industrial_capacity@var:bu_token = price_industrial_capacity }
+
+			set_variable = { expenses_payroll@var:bu_token = size@var:bu_token }
+			multiply_variable = { expenses_payroll@var:bu_token = production_percentage@var:bu_token }
+			divide_variable = { expenses_payroll@var:bu_token = 100 }
+			multiply_variable = { expenses_payroll@var:bu_token = base_wage }
+			multiply_variable = { expenses_payroll@var:bu_token = payroll_multiplier@var:bu_token }
+
+			set_variable = { expenses@var:bu_token = expenses_payroll@var:bu_token }
+			add_to_variable = { expenses@var:bu_token = expenses_input@var:bu_token }
+			add_to_variable = { expenses@var:bu_token = expenses_industrial_capacity@var:bu_token }
+
+			#Profit
+			set_variable = { profit@var:bu_token = revenue@var:bu_token }
+			subtract_from_variable = { profit@var:bu_token = expenses@var:bu_token }
+
+			#Subsidies - TODO
+			set_variable = { revenue_subsidies@var:bu_token = 0 }
+
+			add_to_variable = { revenue@var:bu_token = revenue_subsidies@var:bu_token }
+			add_to_variable = { profit@var:bu_token = revenue_subsidies@var:bu_token }
+
+
+			#Money Accumulation
+			set_variable = { money_accumulation@var:bu_token = profit@var:bu_token }
+			divide_variable = { money_accumulation@var:bu_token = 2 }
+			set_variable = { dividends@var:bu_token = profit@var:bu_token }
+			divide_variable = { dividends@var:bu_token = 2 }
+
+			set_temp_variable = { money_temp = money@var:bu_token }
+			add_to_temp_variable = { money_temp = money_accumulation@var:bu_token }
+			if = {
+				limit = {
+					check_variable = { money_temp > money_limit@var:bu_token }
+				}
+				subtract_from_temp_variable = { money_temp = money_limit@var:bu_token }
+				subtract_from_variable = { money_accumulation@var:bu_token = money_temp }
+				add_to_variable = { dividends@var:bu_token = money_temp }
+			}
+			if = {
+				limit = {
+					check_variable = { money_temp < 0 }
+				}
+				subtract_from_variable = { money_accumulation@var:bu_token = money_temp }
+				add_to_variable = { dividends@var:bu_token = money_temp }
+			}
+
+			#Profitability
+			set_variable = { profitability@var:bu_token = profit@var:bu_token }
+			divide_variable = { profitability@var:bu_token = revenue@var:bu_token }
+		}
+	}
+	industry_update_finances = {
+		# Reset to 0
+		set_variable = { expenses_payroll@var:bu_token = 0 }
+		set_variable = { revenue_goods@var:bu_token = 0 }
+		set_variable = { expenses_input@var:bu_token = 0 }
+
+		set_temp_variable = { revenue_temp = 0 }
+		set_temp_variable = { expenses_temp = 0 }
+
+		# Modifiers
+			set_temp_variable = { output_modifier_temp = building_output_factor@var:bu_token }
+			add_to_temp_variable = { output_modifier_temp = 1 }
+
+			set_temp_variable = { throughput_modifier_temp = building_throughput_factor@var:bu_token }
+			add_to_temp_variable = { throughput_modifier_temp = 1 }
+
+			set_temp_variable = { eco_of_scale_modifier_temp = size@var:bu_token }
+			subtract_from_temp_variable = { eco_of_scale_modifier_temp = 1 }
+			clamp_temp_variable = { var = eco_of_scale_modifier_temp min = 0 max = global.buildings_economy_of_scale_max }
+			multiply_temp_variable = { eco_of_scale_modifier_temp = global.buildings_economy_of_scale_factor }
+			add_to_temp_variable = { eco_of_scale_modifier_temp = 1 }
+
+			set_temp_variable = { input_modifier_temp = building_input_factor@var:bu_token }
+			add_to_temp_variable = { input_modifier_temp = 1 }
+
+			set_temp_variable = { cap_modifier_temp = building_industrial_capacity_use_factor@var:bu_token }
+			add_to_temp_variable = { cap_modifier_temp = 1 }
+		#
+
+		# Capacities
+			set_temp_variable = { exp_temp = industrial_capacity_use_max@var:bu_token }
+			multiply_temp_variable = { exp_temp = price_industrial_capacity }
+			add_to_temp_variable = { expenses_temp = exp_temp }
+
+			set_temp_variable = { rev_temp = industrial_capacity_max@var:bu_token }
+			multiply_temp_variable = { rev_temp = price_industrial_capacity }
+			add_to_temp_variable = { revenue_temp = rev_temp }
+
+			set_temp_variable = { rev_temp = shipping_capacity_max@var:bu_token }
+			multiply_temp_variable = { rev_temp = controller:price_shipping_capacity }
+			add_to_temp_variable = { revenue_temp = rev_temp }
+		#
+
+		# Output
+			for_each_loop = {
+				array = global.building_base_production@var:bu_token
+				value = br_token
+				index = ii
+
+				# Goods Revenue
+				set_temp_variable = { money_temp = production@var:bu_token^ii }
+				multiply_temp_variable = { money_temp = controller:price@var:br_token }
+				set_variable = { revenue_goods@var:bu_token^ii = money_temp }
+				add_to_variable = { revenue_goods@var:bu_token = money_temp }
+
+				# For productivity
+				set_temp_variable = { productivity_temp = global.building_base_production_amount@var:bu_token^ii }
+				multiply_temp_variable = { productivity_temp = production_output_multiplier@var:bu_token }
+				multiply_temp_variable = { productivity_temp = throughput_modifier_temp }
+				multiply_temp_variable = { productivity_temp = eco_of_scale_modifier_temp }
+				multiply_temp_variable = { productivity_temp = output_modifier_temp }
+				multiply_temp_variable = { productivity_temp = controller:price@var:br_token }
+				add_to_temp_variable = { revenue_temp = productivity_temp }
+			}
+		#
+
+		# Input
+			for_each_loop = {
+				array = input@var:bu_token
+				value = br_token
+				index = ii
+
+				# Goods Revenue
+				set_temp_variable = { money_temp = input_amount@var:bu_token^ii }
+				multiply_temp_variable = { money_temp = controller:price@var:br_token }
+
+				set_variable = { input_cost@var:bu_token^ii = money_temp }
+				add_to_variable = { expenses_input@var:bu_token = money_temp }
+
+				# For productivity
+				set_temp_variable = { productivity_temp = input_base_amount@var:bu_token^ii }
+				multiply_temp_variable = { productivity_temp = global.building_base_output_value@var:bu_token }
+				multiply_temp_variable = { productivity_temp = throughput_modifier_temp }
+				multiply_temp_variable = { productivity_temp = eco_of_scale_modifier_temp }
+				multiply_temp_variable = { productivity_temp = input_modifier_temp }
+				multiply_temp_variable = { productivity_temp = controller:price@var:br_token }
+				divide_temp_variable = { productivity_temp = global.base_price@var:br_token }
+				add_to_temp_variable = { expenses_temp = productivity_temp }
+			}
+		#
+
+		# Productivity
+			set_variable = { productivity@var:bu_token = revenue_temp }
+			subtract_from_variable = { productivity@var:bu_token = expenses_temp }
+			divide_variable = { productivity@var:bu_token = payroll_multiplier@var:bu_token }
+		#
+
+		if = { # Govt Controlled Industries
+			limit = {
+				check_variable = { global.building_government_control@var:bu_token = 1 }
+			}
+		}
+		else = { # Normal Finances
+			set_variable = { revenue_industrial_capacity@var:bu_token = industrial_capacity@var:bu_token }
+			multiply_variable = { revenue_industrial_capacity@var:bu_token = price_industrial_capacity }
+
+			set_variable = { revenue_shipping_capacity@var:bu_token = shipping_capacity@var:bu_token }
+			multiply_variable = { revenue_shipping_capacity@var:bu_token = controller:price_shipping_capacity }
+
+			set_variable = { revenue@var:bu_token = revenue_goods@var:bu_token }
+			add_to_variable = { revenue@var:bu_token = revenue_industrial_capacity@var:bu_token }
+			add_to_variable = { revenue@var:bu_token = revenue_shipping_capacity@var:bu_token }
+
+			#Expenses
+			set_variable = { expenses_industrial_capacity@var:bu_token = industrial_capacity_use@var:bu_token }
+			multiply_variable = { expenses_industrial_capacity@var:bu_token = price_industrial_capacity }
+
+			set_variable = { expenses_payroll@var:bu_token = size@var:bu_token }
+			multiply_variable = { expenses_payroll@var:bu_token = production_percentage@var:bu_token }
+			divide_variable = { expenses_payroll@var:bu_token = 100 }
+			multiply_variable = { expenses_payroll@var:bu_token = base_wage }
+			multiply_variable = { expenses_payroll@var:bu_token = payroll_multiplier@var:bu_token }
+
+			set_variable = { expenses@var:bu_token = expenses_payroll@var:bu_token }
+			add_to_variable = { expenses@var:bu_token = expenses_input@var:bu_token }
+			add_to_variable = { expenses@var:bu_token = expenses_industrial_capacity@var:bu_token }
+
+			#Profit
+			set_variable = { profit@var:bu_token = revenue@var:bu_token }
+			subtract_from_variable = { profit@var:bu_token = expenses@var:bu_token }
+
+			#Subsidies - TODO
+			set_variable = { revenue_subsidies@var:bu_token = 0 }
+
+			add_to_variable = { revenue@var:bu_token = revenue_subsidies@var:bu_token }
+			add_to_variable = { profit@var:bu_token = revenue_subsidies@var:bu_token }
+
+
+			#Money Accumulation
+			set_variable = { money_accumulation@var:bu_token = profit@var:bu_token }
+			divide_variable = { money_accumulation@var:bu_token = 2 }
+			set_variable = { dividends@var:bu_token = profit@var:bu_token }
+			divide_variable = { dividends@var:bu_token = 2 }
+
+			set_temp_variable = { money_temp = money@var:bu_token }
+			add_to_temp_variable = { money_temp = money_accumulation@var:bu_token }
+			if = {
+				limit = {
+					check_variable = { money_temp > money_limit@var:bu_token }
+				}
+				subtract_from_temp_variable = { money_temp = money_limit@var:bu_token }
+				subtract_from_variable = { money_accumulation@var:bu_token = money_temp }
+				add_to_variable = { dividends@var:bu_token = money_temp }
+			}
+			if = {
+				limit = {
+					check_variable = { money_temp < 0 }
+				}
+				subtract_from_variable = { money_accumulation@var:bu_token = money_temp }
+				add_to_variable = { dividends@var:bu_token = money_temp }
+			}
+
+			#Profitability
+			set_variable = { profitability@var:bu_token = profit@var:bu_token }
+			divide_variable = { profitability@var:bu_token = revenue@var:bu_token }
+		}
+	}
+	industry_update_construction_retooling = {
+		# iuc_industry
+		set_variable = { retooling_cost@var:iuc_industry = 0 }
+		clear_array = retooling_resources@var:iuc_industry
+		clear_array = retooling_amount@var:iuc_industry
+		clear_array = retooling_cost@var:iuc_industry
+		set_variable = { construction_cost@var:iuc_industry = 0 }
+		clear_array = construction_resources@var:iuc_industry
+		clear_array = construction_amount@var:iuc_industry
+		clear_array = construction_cost@var:iuc_industry
+		if = {
+			limit = {
+				NOT = { check_variable = { retooling_pm@var:iuc_industry = 0 } }
+			}
+			set_temp_variable = { pm_temp = retooling_pm@var:iuc_industry }
+
+			set_variable = { retooling_time_left@var:iuc_industry = controller:pm_retooling_duration@var:pm_temp }
+			subtract_from_variable = { retooling_time_left@var:iuc_industry = retooling_progress@var:iuc_industry }
+			clamp_variable = { var = retooling_time_left@var:iuc_industry min = 0 max = controller:pm_retooling_duration@var:pm_temp }
+
+			set_temp_variable = { retooling_multiplier = 1 }
+			if = { limit = { check_variable = { retooling_time_left@var:iuc_industry < 1 } } set_temp_variable = { retooling_multiplier = retooling_time_left@var:iuc_industry } }
+
+			# Modifiers
+			set_temp_variable = { retooling_speed_temp = 1 }
+			add_to_temp_variable = { retooling_speed_temp = building_retooling_speed_factor }
+			divide_variable = { retooling_time_left@var:iuc_industry = retooling_speed_temp }
+
+			set_temp_variable = { retooling_cost_temp = 1 }
+			add_to_temp_variable = { retooling_cost_temp = building_retooling_cost_factor }
+
+			# Input Costs
+			for_each_loop = {
+				array = controller:pm_input@var:pm_temp
+				value = iuc_resource
+				index = iuc_ii
+
+				set_temp_variable = { amount_temp = controller:pm_input_amount@var:pm_temp^iuc_ii }
+				multiply_temp_variable = { amount_temp = global.building_base_output_value@var:iuc_industry }
+				multiply_temp_variable = { amount_temp = retooling_speed_temp }
+				multiply_temp_variable = { amount_temp = retooling_cost_temp }
+				multiply_temp_variable = { amount_temp = retooling_multiplier }
+				multiply_temp_variable = { amount_temp = size@var:iuc_industry }
+				divide_temp_variable = { amount_temp = global.base_price@var:iuc_resource }
+
+				set_temp_variable = { cost_temp = amount_temp }
+				multiply_temp_variable = { cost_temp = controller:price@var:iuc_resource }
+
+				add_to_array = { retooling_resources@var:iuc_industry = iuc_resource }
+				add_to_array = { retooling_amount@var:iuc_industry = amount_temp }
+				add_to_array = { retooling_cost@var:iuc_industry = cost_temp }
+				add_to_variable = { retooling_cost@var:iuc_industry = cost_temp }
+			}
+		}
+		else = {
+			set_variable = { retooling_time_left@var:iuc_industry = 0 }
+			set_variable = { retooling_progress@var:iuc_industry = 0 }
+			set_variable = { retooling_investment@var:iuc_industry = 0 }
+		}
+		if = {
+			limit = {
+				NOT = { check_variable = { construction@var:iuc_industry = 0 } }
+			}
+			set_temp_variable = { pm_temp = production_method@var:iuc_industry }
+			set_temp_variable = { am_temp = automation_method@var:iuc_industry }
+
+			set_variable = { construction_time_left@var:iuc_industry = controller:pm_construction_duration@var:pm_temp }
+			add_to_variable = { construction_time_left@var:iuc_industry = controller:pm_construction_duration@var:am_temp }
+			multiply_variable = { construction_time_left@var:iuc_industry = construction@var:iuc_industry }
+			subtract_from_variable = { construction_time_left@var:iuc_industry = construction_progress@var:iuc_industry }
+			if = { limit = { check_variable = { construction_time_left@var:iuc_industry < 0 } } set_variable = { construction_time_left@var:iuc_industry = 0 } }
+			divide_variable = { construction_time_left@var:iuc_industry = construction@var:iuc_industry }
+
+			# Modifiers
+			set_temp_variable = { construction_speed_temp = 1 }
+			add_to_temp_variable = { construction_speed_temp = building_construction_speed_factor }
+			divide_variable = { construction_time_left@var:iuc_industry = construction_speed_temp }
+
+			set_temp_variable = { construction_cost_temp = 1 }
+			add_to_temp_variable = { construction_cost_temp = building_construction_cost_factor }
+
+			set_temp_variable = { construction_multiplier = 1 }
+			if = { limit = { check_variable = { construction_time_left@var:iuc_industry < 1 } }
+				set_temp_variable = { construction_multiplier = construction_time_left@var:iuc_industry }
+			}
+
+			# Input Costs
+			for_each_loop = {
+				array = controller:pm_construction_input@var:pm_temp
+				value = iuc_resource
+				index = iuc_ii
+
+				set_temp_variable = { amount_temp = controller:pm_construction_input_amount@var:pm_temp^iuc_ii }
+				multiply_temp_variable = { amount_temp = global.building_base_output_value@var:iuc_industry }
+				multiply_temp_variable = { amount_temp = construction_speed_temp }
+				multiply_temp_variable = { amount_temp = construction_cost_temp }
+				multiply_temp_variable = { amount_temp = construction_multiplier }
+				multiply_temp_variable = { amount_temp = construction@var:iuc_industry }
+				divide_temp_variable = { amount_temp = global.base_price@var:iuc_resource }
+
+				set_temp_variable = { cost_temp = amount_temp }
+				multiply_temp_variable = { cost_temp = controller:price@var:iuc_resource }
+
+				add_to_array = { construction_resources@var:iuc_industry = iuc_resource }
+				add_to_array = { construction_amount@var:iuc_industry = amount_temp }
+				add_to_array = { construction_cost@var:iuc_industry = cost_temp }
+				add_to_variable = { construction_cost@var:iuc_industry = cost_temp }
+			}
+		}
+		else = {
+			set_variable = { construction_time_left@var:iuc_industry = 0 }
+			set_variable = { construction_progress@var:iuc_industry = 0 }
+			set_variable = { construction_investment@var:iuc_industry = 0 }
+		}
+	}
 #
 
 # Other Update
-    update_base_resource_count = {
-        for_each_loop = {
-            array = global.resource_token_array
-            value = r_token
+	update_base_resource_count = {
+		for_each_loop = {
+			array = global.resource_token_array
+			value = r_token
 
-            # Base = (resource@token + Resource Cost) / Infra - Additional Resources
-            set_variable = { base_resource@var:r_token = resource@var:r_token }
-            add_to_variable = { base_resource@var:r_token = resource_cost@var:r_token }
-            subtract_from_variable = { base_resource@var:r_token = resource_additional_production@var:r_token }
-            round_variable = base_resource@var:r_token
-        }
-    }
-    special_buildings_update = {
-        # Infrastructure, Railway, Port
-        calc_industrial_capacity = yes # nil secs
-        
-        set_temp_variable = { bu_token = token:infrastructure }
-        industry_update = yes
+			# Base = (resource@token + Resource Cost) / Infra - Additional Resources
+			set_variable = { base_resource@var:r_token = resource@var:r_token }
+			add_to_variable = { base_resource@var:r_token = resource_cost@var:r_token }
+			subtract_from_variable = { base_resource@var:r_token = resource_additional_production@var:r_token }
+			round_variable = base_resource@var:r_token
+		}
+	}
+	special_buildings_update = {
+		# Infrastructure, Railway, Port
+		calc_industrial_capacity = yes # nil secs
 
-        set_temp_variable = { bu_token = token:railway }
-        industry_update = yes
+		set_temp_variable = { bu_token = token:infrastructure }
+		industry_update = yes
 
-        set_temp_variable = { bu_token = token:port }
-        industry_update = yes
+		set_temp_variable = { bu_token = token:railway }
+		industry_update = yes
 
-        # Civilian/Military/Naval Industry
-        set_temp_variable = { bu_token = token:industrial_complex }
-        govt_building_update = yes
+		set_temp_variable = { bu_token = token:port }
+		industry_update = yes
 
-        set_temp_variable = { bu_token = token:arms_factory }
-        govt_building_update = yes
+		# Civilian/Military/Naval Industry
+		set_temp_variable = { bu_token = token:industrial_complex }
+		govt_building_update = yes
 
-        set_temp_variable = { bu_token = token:dockyard }
-        govt_building_update = yes
-    }
-    govt_building_update = {
-        # bu_token
-        # For updating Arms Factory/Industrial Complex/Dockyard
-        
-        # Helper Temp Variables
-        set_temp_variable = { production_method_temp = production_method@var:bu_token }
+		set_temp_variable = { bu_token = token:arms_factory }
+		govt_building_update = yes
 
-        set_temp_variable = { cap_modifier_temp = building_industrial_capacity_use_factor@var:bu_token }
-        add_to_temp_variable = { cap_modifier_temp = 1 }
+		set_temp_variable = { bu_token = token:dockyard }
+		govt_building_update = yes
+	}
+	govt_building_update = {
+		# bu_token
+		# For updating Arms Factory/Industrial Complex/Dockyard
 
-        # Reset to 0
-        set_variable = { jobs@var:bu_token = 0 }
-        set_variable = { jobs_available@var:bu_token = 0 }
-        set_variable = { employed@var:bu_token = 0 }
+		# Helper Temp Variables
+		set_temp_variable = { production_method_temp = production_method@var:bu_token }
 
-        set_variable = { money_limit@var:bu_token = 0 }
-        set_variable = { revenue_goods@var:bu_token = 0 }
-        set_variable = { expenses_input@var:bu_token = 0 }
+		set_temp_variable = { cap_modifier_temp = building_industrial_capacity_use_factor@var:bu_token }
+		add_to_temp_variable = { cap_modifier_temp = 1 }
 
-        # Update Industry Size
-        if = { # Civilian
-            limit = {
-                check_variable = { bu_token = token:industrial_complex }
-            }
-            set_variable = { size@var:bu_token = industrial_complex_level }
-        }
-        else_if = { # Military
-            limit = {
-                check_variable = { bu_token = token:arms_factory }
-            }
-            set_variable = { size@var:bu_token = arms_factory_level }
-        }
-        else_if = { # Naval
-            limit = {
-                check_variable = { bu_token = token:dockyard }
-            }
-            set_variable = { size@var:bu_token = building_level@dockyard }
-        }
-        
-        # Production & Automation Method Jobs
-        set_temp_variable = { base_jobs_temp = global.building_base_employees@var:bu_token }
-        multiply_temp_variable = { base_jobs_temp = size@var:bu_token }
+		# Reset to 0
+		set_variable = { jobs@var:bu_token = 0 }
+		set_variable = { jobs_available@var:bu_token = 0 }
+		set_variable = { employed@var:bu_token = 0 }
 
-        set_variable = { laborers_jobs@var:bu_token = controller:pm_workforce_laborers@var:production_method_temp }
-        clamp_variable = { var = laborers_jobs@var:bu_token min = 0 }
-        set_variable = { laborers_ratio@var:bu_token = laborers_jobs@var:bu_token }
+		set_variable = { money_limit@var:bu_token = 0 }
+		set_variable = { revenue_goods@var:bu_token = 0 }
+		set_variable = { expenses_input@var:bu_token = 0 }
 
-        set_variable = { workers_jobs@var:bu_token = controller:pm_workforce_workers@var:production_method_temp }
-        clamp_variable = { var = workers_jobs@var:bu_token min = 0 }
-        set_variable = { workers_ratio@var:bu_token = workers_jobs@var:bu_token }
+		# Update Industry Size
+		if = { # Civilian
+			limit = {
+				check_variable = { bu_token = token:industrial_complex }
+			}
+			set_variable = { size@var:bu_token = industrial_complex_level }
+		}
+		else_if = { # Military
+			limit = {
+				check_variable = { bu_token = token:arms_factory }
+			}
+			set_variable = { size@var:bu_token = arms_factory_level }
+		}
+		else_if = { # Naval
+			limit = {
+				check_variable = { bu_token = token:dockyard }
+			}
+			set_variable = { size@var:bu_token = building_level@dockyard }
+		}
 
-        set_variable = { professionals_jobs@var:bu_token = controller:pm_workforce_professionals@var:production_method_temp }
-        clamp_variable = { var = professionals_jobs@var:bu_token min = 0 }
-        set_variable = { professionals_ratio@var:bu_token = professionals_jobs@var:bu_token }
+		# Production & Automation Method Jobs
+		set_temp_variable = { base_jobs_temp = global.building_base_employees@var:bu_token }
+		multiply_temp_variable = { base_jobs_temp = size@var:bu_token }
 
-        set_variable = { specialists_jobs@var:bu_token = controller:pm_workforce_specialists@var:production_method_temp }
-        clamp_variable = { var = specialists_jobs@var:bu_token min = 0 }
-        set_variable = { specialists_ratio@var:bu_token = specialists_jobs@var:bu_token }
-        
-        set_variable = { payroll_multiplier@var:bu_token = 0 }
-        set_temp_variable = { payroll_multiplier_temp = laborers_jobs@var:bu_token }
-        multiply_temp_variable = { payroll_multiplier_temp = 2 }
-        add_to_variable = { payroll_multiplier@var:bu_token = payroll_multiplier_temp }
-        set_temp_variable = { payroll_multiplier_temp = workers_jobs@var:bu_token }
-        multiply_temp_variable = { payroll_multiplier_temp = 5 }
-        add_to_variable = { payroll_multiplier@var:bu_token = payroll_multiplier_temp }
-        set_temp_variable = { payroll_multiplier_temp = professionals_jobs@var:bu_token }
-        multiply_temp_variable = { payroll_multiplier_temp = 10 }
-        add_to_variable = { payroll_multiplier@var:bu_token = payroll_multiplier_temp }
-        set_temp_variable = { payroll_multiplier_temp = specialists_jobs@var:bu_token }
-        multiply_temp_variable = { payroll_multiplier_temp = 20 }
-        add_to_variable = { payroll_multiplier@var:bu_token = payroll_multiplier_temp }
-        multiply_variable = { payroll_multiplier@var:bu_token = global.building_base_employees@var:bu_token }
+		set_variable = { laborers_jobs@var:bu_token = controller:pm_workforce_laborers@var:production_method_temp }
+		clamp_variable = { var = laborers_jobs@var:bu_token min = 0 }
+		set_variable = { laborers_ratio@var:bu_token = laborers_jobs@var:bu_token }
 
-        multiply_variable = { laborers_jobs@var:bu_token = base_jobs_temp }
-        multiply_variable = { workers_jobs@var:bu_token = base_jobs_temp }
-        multiply_variable = { professionals_jobs@var:bu_token = base_jobs_temp }
-        multiply_variable = { specialists_jobs@var:bu_token = base_jobs_temp }
-        
-        set_variable = { owner_jobs@var:bu_token = 0.02 }
-        multiply_variable = { owner_jobs@var:bu_token = base_jobs_temp }
+		set_variable = { workers_jobs@var:bu_token = controller:pm_workforce_workers@var:production_method_temp }
+		clamp_variable = { var = workers_jobs@var:bu_token min = 0 }
+		set_variable = { workers_ratio@var:bu_token = workers_jobs@var:bu_token }
 
-        set_variable = { employment_target@var:bu_token = 100 }
+		set_variable = { professionals_jobs@var:bu_token = controller:pm_workforce_professionals@var:production_method_temp }
+		clamp_variable = { var = professionals_jobs@var:bu_token min = 0 }
+		set_variable = { professionals_ratio@var:bu_token = professionals_jobs@var:bu_token }
 
-        if = { # Laborers
-            limit = {
-                check_variable = { laborers_jobs@var:bu_token > 0 }
-            }
-            if = {
-                limit = {
-                    check_variable = { laborers_jobs@var:bu_token > 10000 }
-                }
-                set_variable = { laborers_employed@var:bu_token = laborers_jobs@var:bu_token }
-                divide_variable = { laborers_employed@var:bu_token = 100 }
-                multiply_variable = { laborers_employed@var:bu_token = laborers_job_fulfillment }
-            }
-            else = {
-                set_variable = { laborers_employed@var:bu_token = laborers_jobs@var:bu_token }
-                multiply_variable = { laborers_employed@var:bu_token = laborers_job_fulfillment }
-                divide_variable = { laborers_employed@var:bu_token = 100 }
-            }
+		set_variable = { specialists_jobs@var:bu_token = controller:pm_workforce_specialists@var:production_method_temp }
+		clamp_variable = { var = specialists_jobs@var:bu_token min = 0 }
+		set_variable = { specialists_ratio@var:bu_token = specialists_jobs@var:bu_token }
+
+		set_variable = { payroll_multiplier@var:bu_token = 0 }
+		set_temp_variable = { payroll_multiplier_temp = laborers_jobs@var:bu_token }
+		multiply_temp_variable = { payroll_multiplier_temp = 2 }
+		add_to_variable = { payroll_multiplier@var:bu_token = payroll_multiplier_temp }
+		set_temp_variable = { payroll_multiplier_temp = workers_jobs@var:bu_token }
+		multiply_temp_variable = { payroll_multiplier_temp = 5 }
+		add_to_variable = { payroll_multiplier@var:bu_token = payroll_multiplier_temp }
+		set_temp_variable = { payroll_multiplier_temp = professionals_jobs@var:bu_token }
+		multiply_temp_variable = { payroll_multiplier_temp = 10 }
+		add_to_variable = { payroll_multiplier@var:bu_token = payroll_multiplier_temp }
+		set_temp_variable = { payroll_multiplier_temp = specialists_jobs@var:bu_token }
+		multiply_temp_variable = { payroll_multiplier_temp = 20 }
+		add_to_variable = { payroll_multiplier@var:bu_token = payroll_multiplier_temp }
+		multiply_variable = { payroll_multiplier@var:bu_token = global.building_base_employees@var:bu_token }
+
+		multiply_variable = { laborers_jobs@var:bu_token = base_jobs_temp }
+		multiply_variable = { workers_jobs@var:bu_token = base_jobs_temp }
+		multiply_variable = { professionals_jobs@var:bu_token = base_jobs_temp }
+		multiply_variable = { specialists_jobs@var:bu_token = base_jobs_temp }
+
+		set_variable = { owner_jobs@var:bu_token = 0.02 }
+		multiply_variable = { owner_jobs@var:bu_token = base_jobs_temp }
+
+		set_variable = { employment_target@var:bu_token = 100 }
+
+		if = { # Laborers
+			limit = {
+				check_variable = { laborers_jobs@var:bu_token > 0 }
+			}
+			if = {
+				limit = {
+					check_variable = { laborers_jobs@var:bu_token > 10000 }
+				}
+				set_variable = { laborers_employed@var:bu_token = laborers_jobs@var:bu_token }
+				divide_variable = { laborers_employed@var:bu_token = 100 }
+				multiply_variable = { laborers_employed@var:bu_token = laborers_job_fulfillment }
+			}
+			else = {
+				set_variable = { laborers_employed@var:bu_token = laborers_jobs@var:bu_token }
+				multiply_variable = { laborers_employed@var:bu_token = laborers_job_fulfillment }
+				divide_variable = { laborers_employed@var:bu_token = 100 }
+			}
 
 			add_to_variable = { jobs@var:bu_token = laborers_jobs@var:bu_token }
 			add_to_variable = { employed@var:bu_token = laborers_employed@var:bu_token }
-        }
-        else = {
-            set_variable = { laborers_employed@var:bu_token = 0 }
-        }
+		}
+		else = {
+			set_variable = { laborers_employed@var:bu_token = 0 }
+		}
 
-        if = { # Workers
-            limit = {
-                check_variable = { workers_jobs@var:bu_token > 0 }
-            }
-            if = {
-                limit = {
-                    check_variable = { workers_jobs@var:bu_token > 10000 }
-                }
-                set_variable = { workers_employed@var:bu_token = workers_jobs@var:bu_token }
-                divide_variable = { workers_employed@var:bu_token = 100 }
-                multiply_variable = { workers_employed@var:bu_token = workers_job_fulfillment }
-            }
-            else = {
-                set_variable = { workers_employed@var:bu_token = workers_jobs@var:bu_token }
-                multiply_variable = { workers_employed@var:bu_token = workers_job_fulfillment }
-                divide_variable = { workers_employed@var:bu_token = 100 }
-            }
+		if = { # Workers
+			limit = {
+				check_variable = { workers_jobs@var:bu_token > 0 }
+			}
+			if = {
+				limit = {
+					check_variable = { workers_jobs@var:bu_token > 10000 }
+				}
+				set_variable = { workers_employed@var:bu_token = workers_jobs@var:bu_token }
+				divide_variable = { workers_employed@var:bu_token = 100 }
+				multiply_variable = { workers_employed@var:bu_token = workers_job_fulfillment }
+			}
+			else = {
+				set_variable = { workers_employed@var:bu_token = workers_jobs@var:bu_token }
+				multiply_variable = { workers_employed@var:bu_token = workers_job_fulfillment }
+				divide_variable = { workers_employed@var:bu_token = 100 }
+			}
 
 			add_to_variable = { jobs@var:bu_token = workers_jobs@var:bu_token }
 			add_to_variable = { employed@var:bu_token = workers_employed@var:bu_token }
-        }
-        else = {
-            set_variable = { workers_employed@var:bu_token = 0 }
-        }
+		}
+		else = {
+			set_variable = { workers_employed@var:bu_token = 0 }
+		}
 
-        if = { # Professionals
-            limit = {
-                check_variable = { professionals_jobs@var:bu_token > 0 }
-            }
-            if = {
-                limit = {
-                    check_variable = { professionals_jobs@var:bu_token > 10000 }
-                }
-                set_variable = { professionals_employed@var:bu_token = professionals_jobs@var:bu_token }
-                divide_variable = { professionals_employed@var:bu_token = 100 }
-                multiply_variable = { professionals_employed@var:bu_token = professionals_job_fulfillment }
-            }
-            else = {
-                set_variable = { professionals_employed@var:bu_token = professionals_jobs@var:bu_token }
-                multiply_variable = { professionals_employed@var:bu_token = professionals_job_fulfillment }
-                divide_variable = { professionals_employed@var:bu_token = 100 }
-            }
+		if = { # Professionals
+			limit = {
+				check_variable = { professionals_jobs@var:bu_token > 0 }
+			}
+			if = {
+				limit = {
+					check_variable = { professionals_jobs@var:bu_token > 10000 }
+				}
+				set_variable = { professionals_employed@var:bu_token = professionals_jobs@var:bu_token }
+				divide_variable = { professionals_employed@var:bu_token = 100 }
+				multiply_variable = { professionals_employed@var:bu_token = professionals_job_fulfillment }
+			}
+			else = {
+				set_variable = { professionals_employed@var:bu_token = professionals_jobs@var:bu_token }
+				multiply_variable = { professionals_employed@var:bu_token = professionals_job_fulfillment }
+				divide_variable = { professionals_employed@var:bu_token = 100 }
+			}
 
 			add_to_variable = { jobs@var:bu_token = professionals_jobs@var:bu_token }
 			add_to_variable = { employed@var:bu_token = professionals_employed@var:bu_token }
-        }
-        else = {
-            set_variable = { professionals_employed@var:bu_token = 0 }
-        }
+		}
+		else = {
+			set_variable = { professionals_employed@var:bu_token = 0 }
+		}
 
-        if = { # Specialists
-            limit = {
-                check_variable = { specialists_jobs@var:bu_token > 0 }
-            }
-            if = {
-                limit = {
-                    check_variable = { specialists_jobs@var:bu_token > 10000 }
-                }
-                set_variable = { specialists_employed@var:bu_token = specialists_jobs@var:bu_token }
-                divide_variable = { specialists_employed@var:bu_token = 100 }
-                multiply_variable = { specialists_employed@var:bu_token = specialists_job_fulfillment }
-            }
-            else = {
-                set_variable = { specialists_employed@var:bu_token = specialists_jobs@var:bu_token }
-                multiply_variable = { specialists_employed@var:bu_token = specialists_job_fulfillment }
-                divide_variable = { specialists_employed@var:bu_token = 100 }
-            }
+		if = { # Specialists
+			limit = {
+				check_variable = { specialists_jobs@var:bu_token > 0 }
+			}
+			if = {
+				limit = {
+					check_variable = { specialists_jobs@var:bu_token > 10000 }
+				}
+				set_variable = { specialists_employed@var:bu_token = specialists_jobs@var:bu_token }
+				divide_variable = { specialists_employed@var:bu_token = 100 }
+				multiply_variable = { specialists_employed@var:bu_token = specialists_job_fulfillment }
+			}
+			else = {
+				set_variable = { specialists_employed@var:bu_token = specialists_jobs@var:bu_token }
+				multiply_variable = { specialists_employed@var:bu_token = specialists_job_fulfillment }
+				divide_variable = { specialists_employed@var:bu_token = 100 }
+			}
 
 			add_to_variable = { jobs@var:bu_token = specialists_jobs@var:bu_token }
 			add_to_variable = { employed@var:bu_token = specialists_employed@var:bu_token }
-        }
-        else = {
-            set_variable = { specialists_employed@var:bu_token = 0 }
-        }
-        
+		}
+		else = {
+			set_variable = { specialists_employed@var:bu_token = 0 }
+		}
+
 		#Employment/Production Percentage
 			set_variable = { employment_percentage@var:bu_token = employed@var:bu_token }
-            if = {
-                limit = {
-                    check_variable = { employment_percentage@var:bu_token < 1000 }
-                }
-                multiply_variable = { employment_percentage@var:bu_token = 100 }
-                divide_variable = { employment_percentage@var:bu_token = jobs@var:bu_token }
-            }
-            else = {
-                divide_variable = { employment_percentage@var:bu_token = jobs@var:bu_token }
-                multiply_variable = { employment_percentage@var:bu_token = 100 }
-            }
+			if = {
+				limit = {
+					check_variable = { employment_percentage@var:bu_token < 1000 }
+				}
+				multiply_variable = { employment_percentage@var:bu_token = 100 }
+				divide_variable = { employment_percentage@var:bu_token = jobs@var:bu_token }
+			}
+			else = {
+				divide_variable = { employment_percentage@var:bu_token = jobs@var:bu_token }
+				multiply_variable = { employment_percentage@var:bu_token = 100 }
+			}
 
-            set_temp_variable = { total_prod_temp = 0 }
-            set_temp_variable = { production_temp = laborers_employed@var:bu_token }
-            multiply_temp_variable = { production_temp = 2 }
-            add_to_temp_variable = { total_prod_temp = production_temp }
-            set_temp_variable = { production_temp = workers_employed@var:bu_token }
-            multiply_temp_variable = { production_temp = 5 }
-            add_to_temp_variable = { total_prod_temp = production_temp }
-            set_temp_variable = { production_temp = professionals_employed@var:bu_token }
-            multiply_temp_variable = { production_temp = 10 }
-            add_to_temp_variable = { total_prod_temp = production_temp }
-            set_temp_variable = { production_temp = specialists_employed@var:bu_token }
-            multiply_temp_variable = { production_temp = 20 }
-            add_to_temp_variable = { total_prod_temp = production_temp }
-            if = {
-                limit = {
-                    check_variable = { total_prod_temp > 10000 }
-                }
-                divide_temp_variable = { total_prod_temp = payroll_multiplier@var:bu_token }
-                divide_temp_variable = { total_prod_temp = size@var:bu_token }
-                multiply_temp_variable = { total_prod_temp = 100 }
-            }
-            else = {
-                multiply_temp_variable = { total_prod_temp = 100 }
-                divide_temp_variable = { total_prod_temp = payroll_multiplier@var:bu_token }
-                divide_temp_variable = { total_prod_temp = size@var:bu_token }
-            }
-            set_variable = { production_percentage@var:bu_token = total_prod_temp }
+			set_temp_variable = { total_prod_temp = 0 }
+			set_temp_variable = { production_temp = laborers_employed@var:bu_token }
+			multiply_temp_variable = { production_temp = 2 }
+			add_to_temp_variable = { total_prod_temp = production_temp }
+			set_temp_variable = { production_temp = workers_employed@var:bu_token }
+			multiply_temp_variable = { production_temp = 5 }
+			add_to_temp_variable = { total_prod_temp = production_temp }
+			set_temp_variable = { production_temp = professionals_employed@var:bu_token }
+			multiply_temp_variable = { production_temp = 10 }
+			add_to_temp_variable = { total_prod_temp = production_temp }
+			set_temp_variable = { production_temp = specialists_employed@var:bu_token }
+			multiply_temp_variable = { production_temp = 20 }
+			add_to_temp_variable = { total_prod_temp = production_temp }
+			if = {
+				limit = {
+					check_variable = { total_prod_temp > 10000 }
+				}
+				divide_temp_variable = { total_prod_temp = payroll_multiplier@var:bu_token }
+				divide_temp_variable = { total_prod_temp = size@var:bu_token }
+				multiply_temp_variable = { total_prod_temp = 100 }
+			}
+			else = {
+				multiply_temp_variable = { total_prod_temp = 100 }
+				divide_temp_variable = { total_prod_temp = payroll_multiplier@var:bu_token }
+				divide_temp_variable = { total_prod_temp = size@var:bu_token }
+			}
+			set_variable = { production_percentage@var:bu_token = total_prod_temp }
 		#
-        
-        #Capacities
-            set_variable = { industrial_capacity_use@var:bu_token = controller:pm_industrial_capacity_use@var:production_method_temp }
-            multiply_variable = { industrial_capacity_use@var:bu_token = cap_modifier_temp }
-            
-            set_variable = { industrial_capacity_use_max@var:bu_token = industrial_capacity_use@var:bu_token }
 
-            multiply_variable = { industrial_capacity_use@var:bu_token = size@var:bu_token }
-            multiply_variable = { industrial_capacity_use@var:bu_token = production_percentage@var:bu_token }
-            divide_variable = { industrial_capacity_use@var:bu_token = 100 }
-        #
+		#Capacities
+			set_variable = { industrial_capacity_use@var:bu_token = controller:pm_industrial_capacity_use@var:production_method_temp }
+			multiply_variable = { industrial_capacity_use@var:bu_token = cap_modifier_temp }
 
-        # Productivity
-            set_variable = { productivity@var:bu_token = global.base_govt_building_productivity }
-            if = { # Civilian
-                limit = {
-                    check_variable = { bu_token = token:industrial_complex }
-                }
-                add_to_variable = { productivity@var:bu_token = global.additional_base_industrial_complex_building_productivity }
-                add_to_variable = { productivity@var:bu_token = controller:modifier@industrial_complex_productivity_modifier }
-            }
-            else_if = { # Military
-                limit = {
-                    check_variable = { bu_token = token:arms_factory }
-                }
-                add_to_variable = { productivity@var:bu_token = controller:modifier@arms_factory_productivity_modifier }
-            }
-            else_if = { # Naval
-                limit = {
-                    check_variable = { bu_token = token:dockyard }
-                }
-                add_to_variable = { productivity@var:bu_token = controller:modifier@dockyard_productivity_modifier }
-            }
-        #
+			set_variable = { industrial_capacity_use_max@var:bu_token = industrial_capacity_use@var:bu_token }
 
-        # Finances
-            set_variable = { revenue@var:bu_token = productivity@var:bu_token }
-            multiply_variable = { revenue@var:bu_token = production_percentage@var:bu_token }
-            divide_variable = { revenue@var:bu_token = 100 }
-            multiply_variable = { revenue@var:bu_token = payroll_multiplier@var:bu_token }
-            multiply_variable = { revenue@var:bu_token = size@var:bu_token }
+			multiply_variable = { industrial_capacity_use@var:bu_token = size@var:bu_token }
+			multiply_variable = { industrial_capacity_use@var:bu_token = production_percentage@var:bu_token }
+			divide_variable = { industrial_capacity_use@var:bu_token = 100 }
+		#
 
-            #Expenses
-            set_variable = { expenses_industrial_capacity@var:bu_token = industrial_capacity_use@var:bu_token }
-            multiply_variable = { expenses_industrial_capacity@var:bu_token = price_industrial_capacity }
-            
-            set_variable = { expenses_payroll@var:bu_token = size@var:bu_token }
-            multiply_variable = { expenses_payroll@var:bu_token = production_percentage@var:bu_token }
-            divide_variable = { expenses_payroll@var:bu_token = 100 }
-            multiply_variable = { expenses_payroll@var:bu_token = base_wage }
-            multiply_variable = { expenses_payroll@var:bu_token = payroll_multiplier@var:bu_token }
+		# Productivity
+			set_variable = { productivity@var:bu_token = global.base_govt_building_productivity }
+			if = { # Civilian
+				limit = {
+					check_variable = { bu_token = token:industrial_complex }
+				}
+				add_to_variable = { productivity@var:bu_token = global.additional_base_industrial_complex_building_productivity }
+				add_to_variable = { productivity@var:bu_token = controller:modifier@industrial_complex_productivity_modifier }
+			}
+			else_if = { # Military
+				limit = {
+					check_variable = { bu_token = token:arms_factory }
+				}
+				add_to_variable = { productivity@var:bu_token = controller:modifier@arms_factory_productivity_modifier }
+			}
+			else_if = { # Naval
+				limit = {
+					check_variable = { bu_token = token:dockyard }
+				}
+				add_to_variable = { productivity@var:bu_token = controller:modifier@dockyard_productivity_modifier }
+			}
+		#
 
-            set_variable = { expenses@var:bu_token = expenses_payroll@var:bu_token }
-            add_to_variable = { expenses@var:bu_token = expenses_industrial_capacity@var:bu_token }
+		# Finances
+			set_variable = { revenue@var:bu_token = productivity@var:bu_token }
+			multiply_variable = { revenue@var:bu_token = production_percentage@var:bu_token }
+			divide_variable = { revenue@var:bu_token = 100 }
+			multiply_variable = { revenue@var:bu_token = payroll_multiplier@var:bu_token }
+			multiply_variable = { revenue@var:bu_token = size@var:bu_token }
 
-            #Profit
-            set_variable = { profit@var:bu_token = revenue@var:bu_token }
-            subtract_from_variable = { profit@var:bu_token = expenses@var:bu_token }
+			#Expenses
+			set_variable = { expenses_industrial_capacity@var:bu_token = industrial_capacity_use@var:bu_token }
+			multiply_variable = { expenses_industrial_capacity@var:bu_token = price_industrial_capacity }
 
-            set_variable = { money_accumulation@var:bu_token = 0 }
-            set_variable = { dividends@var:bu_token = profit@var:bu_token }
+			set_variable = { expenses_payroll@var:bu_token = size@var:bu_token }
+			multiply_variable = { expenses_payroll@var:bu_token = production_percentage@var:bu_token }
+			divide_variable = { expenses_payroll@var:bu_token = 100 }
+			multiply_variable = { expenses_payroll@var:bu_token = base_wage }
+			multiply_variable = { expenses_payroll@var:bu_token = payroll_multiplier@var:bu_token }
 
-            #Profitability
-            set_variable = { profitability@var:bu_token = profit@var:bu_token }
-            divide_variable = { profitability@var:bu_token = revenue@var:bu_token }
-        #
-    }
-    subsist_and_arable_update = {
-        # State Scope
-        # Updates arable land use & subsistence farms
-        
-        set_variable = { arable_land_use = 0 }
+			set_variable = { expenses@var:bu_token = expenses_payroll@var:bu_token }
+			add_to_variable = { expenses@var:bu_token = expenses_industrial_capacity@var:bu_token }
+
+			#Profit
+			set_variable = { profit@var:bu_token = revenue@var:bu_token }
+			subtract_from_variable = { profit@var:bu_token = expenses@var:bu_token }
+
+			set_variable = { money_accumulation@var:bu_token = 0 }
+			set_variable = { dividends@var:bu_token = profit@var:bu_token }
+
+			#Profitability
+			set_variable = { profitability@var:bu_token = profit@var:bu_token }
+			divide_variable = { profitability@var:bu_token = revenue@var:bu_token }
+		#
+	}
+	subsist_and_arable_update = {
+		# State Scope
+		# Updates arable land use & subsistence farms
+
+		set_variable = { arable_land_use = 0 }
+		if = {
+			limit = { NOT = { has_variable = peasants_workforce } }
+			set_variable = { peasants_workforce = 0 }
+		}
 		for_each_loop = {
 			array = industries
 			value = bu_token
@@ -1220,531 +1224,531 @@
 			break = ind_break
 
 			# Add up arable land use
-            add_to_variable = { arable_land_use = arable_land_use@var:bu_token }
-        }
+			add_to_variable = { arable_land_use = arable_land_use@var:bu_token }
+		}
 
-        set_variable = { arable_land_available = arable_land }
-        subtract_from_variable = { arable_land_available = arable_land_use }
-        clamp_variable = { var = arable_land_available min = 0 max = arable_land }
+		set_variable = { arable_land_available = arable_land }
+		subtract_from_variable = { arable_land_available = arable_land_use }
+		clamp_variable = { var = arable_land_available min = 0 max = arable_land }
 
-        ## Subsistence Farming ##
+		## Subsistence Farming ##
 
-        # Productive Capacity
-        set_variable = { size@token:subsistence_farm = arable_land_available }
-        set_variable = { peasants_jobs@token:subsistence_farm = arable_land_available }
-        multiply_variable = { peasants_jobs@token:subsistence_farm = global.building_base_employees@token:subsistence_farm }
-        multiply_variable = { peasants_jobs@token:subsistence_farm = controller:pm_workforce_peasants@token:pm_subsistence_farming }
-        
-        set_variable = { jobs@token:subsistence_farm = peasants_jobs@token:subsistence_farm }
-        
-        set_variable = { owner_jobs@token:subsistence_farm = 0.02 }
-        multiply_variable = { owner_jobs@token:subsistence_farm = arable_land_available }
-        multiply_variable = { owner_jobs@token:subsistence_farm = global.building_base_employees@token:subsistence_farm }
+		# Productive Capacity
+		set_variable = { size@token:subsistence_farm = arable_land_available }
+		set_variable = { peasants_jobs@token:subsistence_farm = arable_land_available }
+		multiply_variable = { peasants_jobs@token:subsistence_farm = global.building_base_employees@token:subsistence_farm }
+		multiply_variable = { peasants_jobs@token:subsistence_farm = controller:pm_workforce_peasants@token:pm_subsistence_farming }
 
-        # Peasant Workforce
-        set_variable = { peasants_employed@token:subsistence_farm = peasants_workforce }
-        clamp_variable = { var = peasants_employed@token:subsistence_farm min = 0 max = peasants_jobs@token:subsistence_farm }
-        set_variable = { employed@token:subsistence_farm = peasants_employed@token:subsistence_farm }
-        
-        set_temp_variable = { jobs_temp = jobs@token:subsistence_farm }
-        divide_temp_variable = { jobs_temp = 100 }
-        set_variable = { employment_percentage@token:subsistence_farm = employed@token:subsistence_farm }
-        divide_variable = { employment_percentage@token:subsistence_farm = jobs_temp }
-        set_variable = { employment_target@token:subsistence_farm = employment_percentage@token:subsistence_farm }
+		set_variable = { jobs@token:subsistence_farm = peasants_jobs@token:subsistence_farm }
 
-        # Marginal Land Usage
-        set_variable = { peasants_marginal_land = peasants_workforce }
-        subtract_from_variable = { peasants_marginal_land = peasants_employed@token:subsistence_farm }
-        clamp_variable = { var = peasants_marginal_land min = 0 max = peasants_workforce }
+		set_variable = { owner_jobs@token:subsistence_farm = 0.02 }
+		multiply_variable = { owner_jobs@token:subsistence_farm = arable_land_available }
+		multiply_variable = { owner_jobs@token:subsistence_farm = global.building_base_employees@token:subsistence_farm }
 
-        # Subsistence Farm Production & Income
-        set_temp_variable = { revenue_temp = 0 }
-        set_variable = { revenue_goods@token:subsistence_farm = 0 }
-        clear_array = production@token:subsistence_farm
-        for_each_loop = {
-            array = global.building_base_production@token:subsistence_farm
-            value = r_token
-            index = ii
+		# Peasant Workforce
+		set_variable = { peasants_employed@token:subsistence_farm = peasants_workforce }
+		clamp_variable = { var = peasants_employed@token:subsistence_farm min = 0 max = peasants_jobs@token:subsistence_farm }
+		set_variable = { employed@token:subsistence_farm = peasants_employed@token:subsistence_farm }
 
-            # Production
-            set_temp_variable = { prod_temp = global.building_base_production_amount@token:subsistence_farm^ii }    # Base resource production per base employee count
-            multiply_temp_variable = { prod_temp = controller:pm_output_multiplier@token:pm_subsistence_farming }   # Multiply by PM Output Multiplier
-            multiply_temp_variable = { prod_temp = peasants_employed@token:subsistence_farm }                       # Multiply by Employee count
-            
-            #   Peasants excess of productive capacity are 70% as productive
-            set_temp_variable = { marginal_temp = peasants_marginal_land }
-            multiply_temp_variable = { marginal_temp = 0.7 }
-            add_to_temp_variable = { prod_temp = marginal_temp }
+		set_temp_variable = { jobs_temp = jobs@token:subsistence_farm }
+		divide_temp_variable = { jobs_temp = 100 }
+		set_variable = { employment_percentage@token:subsistence_farm = employed@token:subsistence_farm }
+		divide_variable = { employment_percentage@token:subsistence_farm = jobs_temp }
+		set_variable = { employment_target@token:subsistence_farm = employment_percentage@token:subsistence_farm }
 
-            divide_temp_variable = { prod_temp = global.building_base_employees@token:subsistence_farm }            # Divide by Base Employee Count (to get per K)
-            divide_temp_variable = { prod_temp = controller:pm_workforce_peasants@token:pm_subsistence_farming }    # Divide by PM Workforce Multiplier
+		# Marginal Land Usage
+		set_variable = { peasants_marginal_land = peasants_workforce }
+		subtract_from_variable = { peasants_marginal_land = peasants_employed@token:subsistence_farm }
+		clamp_variable = { var = peasants_marginal_land min = 0 max = peasants_workforce }
 
-            # Goods Revenue
-            set_temp_variable = { money_temp = prod_temp }
-            multiply_temp_variable = { money_temp = controller:price@var:r_token }
-            
-            add_to_array = { production@token:subsistence_farm = prod_temp }
-            add_to_array = { revenue_goods@token:subsistence_farm = money_temp }
-            add_to_variable = { revenue_goods@token:subsistence_farm = money_temp }
+		# Subsistence Farm Production & Income
+		set_temp_variable = { revenue_temp = 0 }
+		set_variable = { revenue_goods@token:subsistence_farm = 0 }
+		clear_array = production@token:subsistence_farm
+		for_each_loop = {
+			array = global.building_base_production@token:subsistence_farm
+			value = r_token
+			index = ii
 
-            # For productivity
-            set_temp_variable = { productivity_temp = global.building_base_production_amount@token:subsistence_farm^ii }
-            multiply_temp_variable = { productivity_temp = controller:pm_output_multiplier@token:pm_subsistence_farming }
-            divide_temp_variable = { productivity_temp = global.building_base_employees@token:subsistence_farm }
-            divide_temp_variable = { productivity_temp = controller:pm_workforce_peasants@token:pm_subsistence_farming }
-            multiply_temp_variable = { productivity_temp = controller:price@var:r_token }
-            add_to_temp_variable = { revenue_temp = productivity_temp }
-        }
+			# Production
+			set_temp_variable = { prod_temp = global.building_base_production_amount@token:subsistence_farm^ii }	# Base resource production per base employee count
+			multiply_temp_variable = { prod_temp = controller:pm_output_multiplier@token:pm_subsistence_farming }   # Multiply by PM Output Multiplier
+			multiply_temp_variable = { prod_temp = peasants_employed@token:subsistence_farm }					   # Multiply by Employee count
 
-        # Revenue
-        set_variable = { revenue@token:subsistence_farm = revenue_goods@token:subsistence_farm }
-        if = { limit = { check_variable = { revenue_goods@token:subsistence_farm > 0 } } set_temp_variable = { revenue_temp = revenue_goods@token:subsistence_farm } }
+			#   Peasants excess of productive capacity are 70% as productive
+			set_temp_variable = { marginal_temp = peasants_marginal_land }
+			multiply_temp_variable = { marginal_temp = 0.7 }
+			add_to_temp_variable = { prod_temp = marginal_temp }
 
-        # Expenses
-        set_variable = { expenses_payroll@token:subsistence_farm = revenue@token:subsistence_farm }
-        multiply_variable = { expenses_payroll@token:subsistence_farm = 0.8 }                 # Aristocrats take 20%
-        set_variable = { expenses@token:subsistence_farm = expenses_payroll@token:subsistence_farm }
-        
-        set_variable = { average_wage@token:subsistence_farm = expenses_payroll@token:subsistence_farm }
-        if = { limit = { check_variable = { peasants_workforce > 0 } } divide_variable = { average_wage@token:subsistence_farm = peasants_workforce } }
+			divide_temp_variable = { prod_temp = global.building_base_employees@token:subsistence_farm }			# Divide by Base Employee Count (to get per K)
+			divide_temp_variable = { prod_temp = controller:pm_workforce_peasants@token:pm_subsistence_farming }	# Divide by PM Workforce Multiplier
 
-        # Dividends
-        set_variable = { dividends@token:subsistence_farm = revenue@token:subsistence_farm }
-        subtract_from_variable = { dividends@token:subsistence_farm = expenses@token:subsistence_farm }
+			# Goods Revenue
+			set_temp_variable = { money_temp = prod_temp }
+			multiply_temp_variable = { money_temp = controller:price@var:r_token }
 
-        # Productivity
-        set_variable = { productivity@token:subsistence_farm = revenue_temp }
-        if = { limit = { check_variable = { peasants_workforce > 0 } } divide_variable = { productivity@token:subsistence_farm = peasants_workforce } }
-        
-        
-        set_variable = { profit@token:subsistence_farm = 0 }
-    }
+			add_to_array = { production@token:subsistence_farm = prod_temp }
+			add_to_array = { revenue_goods@token:subsistence_farm = money_temp }
+			add_to_variable = { revenue_goods@token:subsistence_farm = money_temp }
 
-    refresh_pm_list = {
-        # industry_token, am_select
-        clear_array = pm_show
+			# For productivity
+			set_temp_variable = { productivity_temp = global.building_base_production_amount@token:subsistence_farm^ii }
+			multiply_temp_variable = { productivity_temp = controller:pm_output_multiplier@token:pm_subsistence_farming }
+			divide_temp_variable = { productivity_temp = global.building_base_employees@token:subsistence_farm }
+			divide_temp_variable = { productivity_temp = controller:pm_workforce_peasants@token:pm_subsistence_farming }
+			multiply_temp_variable = { productivity_temp = controller:price@var:r_token }
+			add_to_temp_variable = { revenue_temp = productivity_temp }
+		}
 
-        if = { # Production Methods
-            limit = { check_variable = { am_select = 0 } }
-            for_each_loop = {
-                array = global.building_production_methods@var:industry_token
-                value = pm_temp
+		# Revenue
+		set_variable = { revenue@token:subsistence_farm = revenue_goods@token:subsistence_farm }
+		if = { limit = { check_variable = { revenue_goods@token:subsistence_farm > 0 } } set_temp_variable = { revenue_temp = revenue_goods@token:subsistence_farm } }
 
-                add_to_array = { pm_show = pm_temp }
-            }
-        }
-        else_if = { # Automation Methods
-            limit = { check_variable = { am_select = 1 } }
-            for_each_loop = {
-                array = global.building_automation_methods@var:industry_token
-                value = pm_temp
+		# Expenses
+		set_variable = { expenses_payroll@token:subsistence_farm = revenue@token:subsistence_farm }
+		multiply_variable = { expenses_payroll@token:subsistence_farm = 0.8 }				 # Aristocrats take 20%
+		set_variable = { expenses@token:subsistence_farm = expenses_payroll@token:subsistence_farm }
 
-                add_to_array = { pm_show = pm_temp }
-            }
-        }
-    }
-    reload_industries_array = {
-        clear_array = buildings
-        clear_array = industries
-        clear_array = rgos
+		set_variable = { average_wage@token:subsistence_farm = expenses_payroll@token:subsistence_farm }
+		if = { limit = { check_variable = { peasants_workforce > 0 } } divide_variable = { average_wage@token:subsistence_farm = peasants_workforce } }
 
-        # RGOs
-        for_each_loop = {
-            array = global.rgo_token_array
-            value = rgo_token
-            if = {
-                limit = {
-                    check_variable = { base_resource@var:rgo_token > 0 }
-                }
-                add_to_array = { industries = rgo_token }
-                add_to_array = { rgos = rgo_token }
-            }
-        }
+		# Dividends
+		set_variable = { dividends@token:subsistence_farm = revenue@token:subsistence_farm }
+		subtract_from_variable = { dividends@token:subsistence_farm = expenses@token:subsistence_farm }
 
-        # Buildings
-        for_each_loop = {
-            array = global.building_token_array
-            value = building_token
-            if = {
-                limit = {
-                    OR = {
-                        check_variable = { size@var:building_token > 0 }
-                        check_variable = { construction@var:building_token > 0 }
-                    }
-                }
-                add_to_array = { industries = building_token }
-                add_to_array = { buildings = building_token }
-            }
-        }
+		# Productivity
+		set_variable = { productivity@token:subsistence_farm = revenue_temp }
+		if = { limit = { check_variable = { peasants_workforce > 0 } } divide_variable = { productivity@token:subsistence_farm = peasants_workforce } }
 
-        # Special Buildings
-        for_each_loop = {
-            array = global.special_token_array
-            value = building_token
-            add_to_array = { industries = building_token }
-        }
-    }
 
-    refresh_construction_list = {
-        clear_array = construction_show
+		set_variable = { profit@token:subsistence_farm = 0 }
+	}
 
-        for_each_loop = {
-            array = global.building_token_array
-            value = building_token
+	refresh_pm_list = {
+		# industry_token, am_select
+		clear_array = pm_show
 
-            if = {
-                limit = {
-                    NOT = { is_in_array = { buildings = building_token } }
-                }
-                if = {
-                    limit = {
-                        is_valid_building = yes
-                    }
-                    set_variable = { production_method@var:building_token = controller:latest_production_method@var:building_token  }
-                    add_to_array = { construction_show = building_token }
-                }
-            }
-        }
-    }
+		if = { # Production Methods
+			limit = { check_variable = { am_select = 0 } }
+			for_each_loop = {
+				array = global.building_production_methods@var:industry_token
+				value = pm_temp
+
+				add_to_array = { pm_show = pm_temp }
+			}
+		}
+		else_if = { # Automation Methods
+			limit = { check_variable = { am_select = 1 } }
+			for_each_loop = {
+				array = global.building_automation_methods@var:industry_token
+				value = pm_temp
+
+				add_to_array = { pm_show = pm_temp }
+			}
+		}
+	}
+	reload_industries_array = {
+		clear_array = buildings
+		clear_array = industries
+		clear_array = rgos
+
+		# RGOs
+		for_each_loop = {
+			array = global.rgo_token_array
+			value = rgo_token
+			if = {
+				limit = {
+					check_variable = { base_resource@var:rgo_token > 0 }
+				}
+				add_to_array = { industries = rgo_token }
+				add_to_array = { rgos = rgo_token }
+			}
+		}
+
+		# Buildings
+		for_each_loop = {
+			array = global.building_token_array
+			value = building_token
+			if = {
+				limit = {
+					OR = {
+						check_variable = { size@var:building_token > 0 }
+						check_variable = { construction@var:building_token > 0 }
+					}
+				}
+				add_to_array = { industries = building_token }
+				add_to_array = { buildings = building_token }
+			}
+		}
+
+		# Special Buildings
+		for_each_loop = {
+			array = global.special_token_array
+			value = building_token
+			add_to_array = { industries = building_token }
+		}
+	}
+
+	refresh_construction_list = {
+		clear_array = construction_show
+
+		for_each_loop = {
+			array = global.building_token_array
+			value = building_token
+
+			if = {
+				limit = {
+					NOT = { is_in_array = { buildings = building_token } }
+				}
+				if = {
+					limit = {
+						is_valid_building = yes
+					}
+					set_variable = { production_method@var:building_token = controller:latest_production_method@var:building_token  }
+					add_to_array = { construction_show = building_token }
+				}
+			}
+		}
+	}
 #
 
 # Industry Scripts
-    industry_productivity_sort = {
-        # Puts industries into an array sorted by the base productivity
+	industry_productivity_sort = {
+		# Puts industries into an array sorted by the base productivity
 
-        clear_array = industries_productivity_sort
-        for_each_loop = {
-            array = industries
-            value = om_building
-            
-            set_temp_variable = { effective_wage_om = productivity@var:om_building }
+		clear_array = industries_productivity_sort
+		for_each_loop = {
+			array = industries
+			value = om_building
 
-            for_each_loop = {
-                array = industries_productivity_sort
-                index = ii
-                value = vv
-                break = bb
+			set_temp_variable = { effective_wage_om = productivity@var:om_building }
 
-                set_temp_variable = { effective_wage_vv = productivity@var:vv }
+			for_each_loop = {
+				array = industries_productivity_sort
+				index = ii
+				value = vv
+				break = bb
 
-                if = {
-                    limit = {
-                        check_variable = { effective_wage_vv < effective_wage_om }
-                    }
-                    add_to_array = { 
-                        array = industries_productivity_sort 
-                        value = om_building
-                        index = ii
-                    }
-                    set_temp_variable = { bb = 1 }
-                }
-            }
-            if = {
-                limit = {
-                    check_variable = { bb = 0 }
-                }
-                add_to_array = { industries_productivity_sort = om_building }
-            }
-        }
-    }
-    base_wage_calculation = {
-        set_temp_variable = { subs_farm_productivity = 1 }
-        if = {
-            limit = {
-                check_variable = { productivity@token:subsistence_farm > subs_farm_productivity }
-            }
-            set_temp_variable = { subs_farm_productivity = productivity@token:subsistence_farm }
-        }
+				set_temp_variable = { effective_wage_vv = productivity@var:vv }
 
-        # Is the sum of payroll_multiplier * size * productivity across every industry.
-        set_temp_variable = { base_wage_counting = 0 }
+				if = {
+					limit = {
+						check_variable = { effective_wage_vv < effective_wage_om }
+					}
+					add_to_array = {
+						array = industries_productivity_sort
+						value = om_building
+						index = ii
+					}
+					set_temp_variable = { bb = 1 }
+				}
+			}
+			if = {
+				limit = {
+					check_variable = { bb = 0 }
+				}
+				add_to_array = { industries_productivity_sort = om_building }
+			}
+		}
+	}
+	base_wage_calculation = {
+		set_temp_variable = { subs_farm_productivity = 1 }
+		if = {
+			limit = {
+				check_variable = { productivity@token:subsistence_farm > subs_farm_productivity }
+			}
+			set_temp_variable = { subs_farm_productivity = productivity@token:subsistence_farm }
+		}
 
-        # Sourcing all job types
-        set_temp_variable = { total_jobs_weight = 0.1 }
-        add_to_temp_variable = { total_jobs_weight = slaves_workforce }
-        add_to_temp_variable = { total_jobs_weight = peasants_workforce }
-        set_temp_variable = { weight_temp = laborers_workforce }
-        multiply_temp_variable = { weight_temp = 2 }
-        add_to_temp_variable = { total_jobs_weight = weight_temp }
-        set_temp_variable = { weight_temp = workers_workforce }
-        multiply_temp_variable = { weight_temp = 5 }
-        add_to_temp_variable = { total_jobs_weight = weight_temp }
-        set_temp_variable = { weight_temp = professionals_workforce }
-        multiply_temp_variable = { weight_temp = 10 }
-        add_to_temp_variable = { total_jobs_weight = weight_temp }
-        set_temp_variable = { weight_temp = specialists_workforce }
-        multiply_temp_variable = { weight_temp = 20 }
-        add_to_temp_variable = { total_jobs_weight = weight_temp }
-        #log = "Jobs Weight: [?total_jobs_weight]"
+		# Is the sum of payroll_multiplier * size * productivity across every industry.
+		set_temp_variable = { base_wage_counting = 0 }
 
-        set_temp_variable = { remaining_jobs = total_jobs_weight }
+		# Sourcing all job types
+		set_temp_variable = { total_jobs_weight = 0.1 }
+		add_to_temp_variable = { total_jobs_weight = slaves_workforce }
+		add_to_temp_variable = { total_jobs_weight = peasants_workforce }
+		set_temp_variable = { weight_temp = laborers_workforce }
+		multiply_temp_variable = { weight_temp = 2 }
+		add_to_temp_variable = { total_jobs_weight = weight_temp }
+		set_temp_variable = { weight_temp = workers_workforce }
+		multiply_temp_variable = { weight_temp = 5 }
+		add_to_temp_variable = { total_jobs_weight = weight_temp }
+		set_temp_variable = { weight_temp = professionals_workforce }
+		multiply_temp_variable = { weight_temp = 10 }
+		add_to_temp_variable = { total_jobs_weight = weight_temp }
+		set_temp_variable = { weight_temp = specialists_workforce }
+		multiply_temp_variable = { weight_temp = 20 }
+		add_to_temp_variable = { total_jobs_weight = weight_temp }
+		#log = "Jobs Weight: [?total_jobs_weight]"
 
-        for_each_loop = {
-            array = industries_productivity_sort
-            value = b_temp
-            
-            # Base Wage Addition
-            if = {
-                limit = {
-                    check_variable = { remaining_jobs > 0 }
-                }
-                # If there are still jobs to account for, then weight the jobs from this industry and add them up
-                set_temp_variable = { jobs_wage_to_count = payroll_multiplier@var:b_temp }
-                multiply_temp_variable = { jobs_wage_to_count = size@var:b_temp }
+		set_temp_variable = { remaining_jobs = total_jobs_weight }
 
-                if = { limit = { check_variable = { jobs_wage_to_count > remaining_jobs } } set_temp_variable = { jobs_wage_to_count = remaining_jobs } }
-                subtract_from_temp_variable = { remaining_jobs = jobs_wage_to_count }
-                #set_temp_variable = { jobs_counted = jobs_wage_to_count }
+		for_each_loop = {
+			array = industries_productivity_sort
+			value = b_temp
 
-                # Add to base_wage_counting for calculating the base wage using the productivity of the most productive industries
-                if = {
-                    limit = {
-                        check_variable = { productivity@var:b_temp > subs_farm_productivity }
-                    }
-                    multiply_temp_variable = { jobs_wage_to_count = productivity@var:b_temp }
-                }
-                else = {
-                    multiply_temp_variable = { jobs_wage_to_count = subs_farm_productivity }
-                }
-                add_to_temp_variable = { base_wage_counting = jobs_wage_to_count }
-                #log = "[?b_temp.GetTokenLocalizedKey]: [?jobs_counted] | [?jobs_wage_to_count]"
-            }
-        }
+			# Base Wage Addition
+			if = {
+				limit = {
+					check_variable = { remaining_jobs > 0 }
+				}
+				# If there are still jobs to account for, then weight the jobs from this industry and add them up
+				set_temp_variable = { jobs_wage_to_count = payroll_multiplier@var:b_temp }
+				multiply_temp_variable = { jobs_wage_to_count = size@var:b_temp }
 
-        #log = "Remaining Jobs: [?remaining_jobs]"
-        # These remaining jobs get assigned the productivity of subsistence farms 
-        if = {
-            limit = {
-                check_variable = { remaining_jobs > 0 }
-            }
-            # Multiply by subs farm prod and add to base wage counting
-            multiply_temp_variable = { remaining_jobs = subs_farm_productivity } # Productivity of 1 or more
-            add_to_temp_variable = { base_wage_counting = remaining_jobs }
-        }
+				if = { limit = { check_variable = { jobs_wage_to_count > remaining_jobs } } set_temp_variable = { jobs_wage_to_count = remaining_jobs } }
+				subtract_from_temp_variable = { remaining_jobs = jobs_wage_to_count }
+				#set_temp_variable = { jobs_counted = jobs_wage_to_count }
 
-        set_variable = { base_wage = base_wage_counting } # payroll_multiplier * size * productivity
-        divide_variable = { base_wage = total_jobs_weight } # payroll_multiplier * size
-        if = {
-            limit = {
-                check_variable = { base_wage < subs_farm_productivity }
-            }
-            set_variable = { base_wage = subs_farm_productivity }
-        }
+				# Add to base_wage_counting for calculating the base wage using the productivity of the most productive industries
+				if = {
+					limit = {
+						check_variable = { productivity@var:b_temp > subs_farm_productivity }
+					}
+					multiply_temp_variable = { jobs_wage_to_count = productivity@var:b_temp }
+				}
+				else = {
+					multiply_temp_variable = { jobs_wage_to_count = subs_farm_productivity }
+				}
+				add_to_temp_variable = { base_wage_counting = jobs_wage_to_count }
+				#log = "[?b_temp.GetTokenLocalizedKey]: [?jobs_counted] | [?jobs_wage_to_count]"
+			}
+		}
 
-        multiply_variable = { base_wage = wage_factor }
+		#log = "Remaining Jobs: [?remaining_jobs]"
+		# These remaining jobs get assigned the productivity of subsistence farms
+		if = {
+			limit = {
+				check_variable = { remaining_jobs > 0 }
+			}
+			# Multiply by subs farm prod and add to base wage counting
+			multiply_temp_variable = { remaining_jobs = subs_farm_productivity } # Productivity of 1 or more
+			add_to_temp_variable = { base_wage_counting = remaining_jobs }
+		}
 
-        set_variable = { laborers_wage = base_wage }
-        multiply_variable = { laborers_wage = 2 }
-        
-        set_variable = { workers_wage = base_wage }
-        multiply_variable = { workers_wage = 5 }
-        
-        set_variable = { professionals_wage = base_wage }
-        multiply_variable = { professionals_wage = 10 }
-        
-        set_variable = { specialists_wage = base_wage }
-        multiply_variable = { specialists_wage = 20 }
-    }
+		set_variable = { base_wage = base_wage_counting } # payroll_multiplier * size * productivity
+		divide_variable = { base_wage = total_jobs_weight } # payroll_multiplier * size
+		if = {
+			limit = {
+				check_variable = { base_wage < subs_farm_productivity }
+			}
+			set_variable = { base_wage = subs_farm_productivity }
+		}
+
+		multiply_variable = { base_wage = wage_factor }
+
+		set_variable = { laborers_wage = base_wage }
+		multiply_variable = { laborers_wage = 2 }
+
+		set_variable = { workers_wage = base_wage }
+		multiply_variable = { workers_wage = 5 }
+
+		set_variable = { professionals_wage = base_wage }
+		multiply_variable = { professionals_wage = 10 }
+
+		set_variable = { specialists_wage = base_wage }
+		multiply_variable = { specialists_wage = 20 }
+	}
 #
 
 # Industry Functions
-    construct_x_industries_no_update = {
-		# x_temp 
+	construct_x_industries_no_update = {
+		# x_temp
 		# financer_temp
-        # industry_token
-        # production_method_temp
-        # automation_method_temp
-        # no_cost_temp
+		# industry_token
+		# production_method_temp
+		# automation_method_temp
+		# no_cost_temp
 
-        # State
+		# State
 
-        if = {
-            limit = {
-                check_variable = { x_temp > 0 }
-                is_in_array = { global.industry_token_array = industry_token }
-                if = {
-                    limit = {
-                        is_in_array = { global.building_token_array = industry_token }
-                        NOT = { is_in_array = { buildings = industry_token } }
-                    }
-                    check_variable = { buildings^num < 8 }
-                    check_variable = { buildings^num < modifier@local_industry_slots }
-                    is_in_array = { controller:building_unlocked_pms@var:industry_token = production_method_temp }
-                    is_in_array = { controller:building_unlocked_ams@var:industry_token = automation_method_temp }
-                }
-                if = {
-                    limit = {
-                        check_variable = { financer_temp < 0 } #Corporation
-                    }
-                }
-                else_if = {
-                    limit = {
-                        check_variable = { financer_temp > 0 } #Government
-                    }
-                    country_exists = var:financer_temp
+		if = {
+			limit = {
+				check_variable = { x_temp > 0 }
+				is_in_array = { global.industry_token_array = industry_token }
+				if = {
+					limit = {
+						is_in_array = { global.building_token_array = industry_token }
+						NOT = { is_in_array = { buildings = industry_token } }
+					}
+					check_variable = { buildings^num < 8 }
+					check_variable = { buildings^num < modifier@local_industry_slots }
+					is_in_array = { controller:building_unlocked_pms@var:industry_token = production_method_temp }
+					is_in_array = { controller:building_unlocked_ams@var:industry_token = automation_method_temp }
+				}
+				if = {
+					limit = {
+						check_variable = { financer_temp < 0 } #Corporation
+					}
+				}
+				else_if = {
+					limit = {
+						check_variable = { financer_temp > 0 } #Government
+					}
+					country_exists = var:financer_temp
 
-                }
-                else = { #Local
+				}
+				else = { #Local
 
-                }
-            }
+				}
+			}
 
-            #Financer
-            if = {
-                limit = {
-                    check_variable = { construction@var:industry_token = 0 }
-                }
-                set_variable = { construction_financier@var:industry_token = financer_temp }
-            }
-            else = {
-                set_temp_variable = { financer_temp = construction_financier@var:industry_token }
-            }
+			#Financer
+			if = {
+				limit = {
+					check_variable = { construction@var:industry_token = 0 }
+				}
+				set_variable = { construction_financier@var:industry_token = financer_temp }
+			}
+			else = {
+				set_temp_variable = { financer_temp = construction_financier@var:industry_token }
+			}
 
-            add_to_variable = { construction@var:industry_token = x_temp }
+			add_to_variable = { construction@var:industry_token = x_temp }
 
-            #Add building to array if it doesn't exist yet
-            if = {
-                limit = {
-                    NOT = { is_in_array = { industries = industry_token } }
-                }
-                add_to_array = { industries = industry_token }
-                set_variable = { production_method@var:industry_token = production_method_temp }
-                set_variable = { automation_method@var:industry_token = automation_method_temp }
-            }
+			#Add building to array if it doesn't exist yet
+			if = {
+				limit = {
+					NOT = { is_in_array = { industries = industry_token } }
+				}
+				add_to_array = { industries = industry_token }
+				set_variable = { production_method@var:industry_token = production_method_temp }
+				set_variable = { automation_method@var:industry_token = automation_method_temp }
+			}
 
-            # Cost
-            set_temp_variable = { iuc_industry = industry_token }
-            industry_update_construction_retooling = yes
+			# Cost
+			set_temp_variable = { iuc_industry = industry_token }
+			industry_update_construction_retooling = yes
 
-            set_temp_variable = { pm_temp = production_method@var:industry_token }
-            set_temp_variable = { am_temp = automation_method@var:industry_token }
-            if = {
-                limit = {
-                    check_variable = { no_cost_temp = 0 }
-                    get_construction_cost = yes
-                }
-                set_temp_variable = { initial_cost_temp = total_construction_cost_temp }
-                multiply_temp_variable = { initial_cost_temp = global.start_construction_cost_multiplier }
-                if = {
-                    limit = {
-                        check_variable = { financer_temp < 0 } #Corporation
-                    }
-                }
-                else_if = {
-                    limit = {
-                        check_variable = { financer_temp > 0 } #Government
-                    }
-                    divide_temp_variable = { initial_cost_temp = financer_temp:modifier@government_investment_efficiency_factor }
-                    subtract_from_variable = { financer_temp:treasury = initial_cost_temp }
-                    var:financer_temp = {
-                        spending_update = yes
-                    }
-                }
-                else = { #Local
-                    subtract_from_variable = { controller:investment_fund = initial_cost_temp }
-                }
-                add_to_variable = { construction_investment@var:industry_token = initial_cost_temp }
-            }
-            add_to_variable = { update_state_econ_window = 1 }
-        }
-    }
-    retool_industry_no_update = {
+			set_temp_variable = { pm_temp = production_method@var:industry_token }
+			set_temp_variable = { am_temp = automation_method@var:industry_token }
+			if = {
+				limit = {
+					check_variable = { no_cost_temp = 0 }
+					get_construction_cost = yes
+				}
+				set_temp_variable = { initial_cost_temp = total_construction_cost_temp }
+				multiply_temp_variable = { initial_cost_temp = global.start_construction_cost_multiplier }
+				if = {
+					limit = {
+						check_variable = { financer_temp < 0 } #Corporation
+					}
+				}
+				else_if = {
+					limit = {
+						check_variable = { financer_temp > 0 } #Government
+					}
+					divide_temp_variable = { initial_cost_temp = financer_temp:modifier@government_investment_efficiency_factor }
+					subtract_from_variable = { financer_temp:treasury = initial_cost_temp }
+					var:financer_temp = {
+						spending_update = yes
+					}
+				}
+				else = { #Local
+					subtract_from_variable = { controller:investment_fund = initial_cost_temp }
+				}
+				add_to_variable = { construction_investment@var:industry_token = initial_cost_temp }
+			}
+			add_to_variable = { update_state_econ_window = 1 }
+		}
+	}
+	retool_industry_no_update = {
 		# financer_temp
-        # industry_token
-        # production_method_temp - only one of these two
-        # automation_method_temp - only one of these two
-        # no_cost_temp
+		# industry_token
+		# production_method_temp - only one of these two
+		# automation_method_temp - only one of these two
+		# no_cost_temp
 
-        # State
+		# State
 
-        if = {
-            limit = {
-                is_in_array = { global.industry_token_array = industry_token }
-                is_in_array = { industries = industry_token }
-                OR = {
-                    NOT = { check_variable = { production_method_temp = 0 } }
-                    NOT = { check_variable = { automation_method_temp = 0 } }
-                }
-                if = {
-                    limit = {
-                        NOT = { check_variable = { production_method_temp = 0 } }
-                    }
-                    is_in_array = { controller:building_unlocked_pms@var:industry_token = production_method_temp }
-                    check_variable = { automation_method_temp = 0 }
-                }
-                if = {
-                    limit = {
-                        NOT = { check_variable = { automation_method_temp = 0 } }
-                    }
-                    is_in_array = { controller:building_unlocked_ams@var:industry_token = automation_method_temp }
-                    check_variable = { production_method_temp = 0 }
-                }
-                if = {
-                    limit = {
-                        check_variable = { financer_temp < 0 } #Corporation
-                    }
-                }
-                else_if = {
-                    limit = {
-                        check_variable = { financer_temp > 0 } #Government
-                    }
-                    country_exists = var:financer_temp
+		if = {
+			limit = {
+				is_in_array = { global.industry_token_array = industry_token }
+				is_in_array = { industries = industry_token }
+				OR = {
+					NOT = { check_variable = { production_method_temp = 0 } }
+					NOT = { check_variable = { automation_method_temp = 0 } }
+				}
+				if = {
+					limit = {
+						NOT = { check_variable = { production_method_temp = 0 } }
+					}
+					is_in_array = { controller:building_unlocked_pms@var:industry_token = production_method_temp }
+					check_variable = { automation_method_temp = 0 }
+				}
+				if = {
+					limit = {
+						NOT = { check_variable = { automation_method_temp = 0 } }
+					}
+					is_in_array = { controller:building_unlocked_ams@var:industry_token = automation_method_temp }
+					check_variable = { production_method_temp = 0 }
+				}
+				if = {
+					limit = {
+						check_variable = { financer_temp < 0 } #Corporation
+					}
+				}
+				else_if = {
+					limit = {
+						check_variable = { financer_temp > 0 } #Government
+					}
+					country_exists = var:financer_temp
 
-                }
-                else = { #Local
+				}
+				else = { #Local
 
-                }
-            }
+				}
+			}
 
-            #Financer
-            if = {
-                limit = {
-                    NOT = { check_variable = { retooling_pm@var:industry_token = 0 } }
-                }
-                set_variable = { retooling_financier@var:industry_token = financer_temp }
-            }
-            else = {
-                set_temp_variable = { financer_temp = retooling_financier@var:industry_token }
-            }
-        
-            if = {
-                limit = {
-                    NOT = { check_variable = { production_method_temp = 0 } }
-                }
-                set_temp_variable = { retooling_pm@var:industry_token = production_method_temp }
-            }
-            else = {
-                set_temp_variable = { retooling_pm@var:industry_token = automation_method_temp }
-            }
+			#Financer
+			if = {
+				limit = {
+					NOT = { check_variable = { retooling_pm@var:industry_token = 0 } }
+				}
+				set_variable = { retooling_financier@var:industry_token = financer_temp }
+			}
+			else = {
+				set_temp_variable = { financer_temp = retooling_financier@var:industry_token }
+			}
 
-            # Cost
-            set_temp_variable = { iuc_industry = industry_token }
-            industry_update_construction_retooling = yes
+			if = {
+				limit = {
+					NOT = { check_variable = { production_method_temp = 0 } }
+				}
+				set_temp_variable = { retooling_pm@var:industry_token = production_method_temp }
+			}
+			else = {
+				set_temp_variable = { retooling_pm@var:industry_token = automation_method_temp }
+			}
 
-            if = {
-                limit = {
-                    check_variable = { no_cost_temp = 0 }
-                }
-                set_temp_variable = { initial_cost_temp = retooling_cost@var:industry_token }
-                multiply_temp_variable = { initial_cost_temp = global.start_construction_cost_multiplier }
-                if = {
-                    limit = {
-                        check_variable = { financer_temp < 0 } #Corporation
-                    }
-                }
-                else_if = {
-                    limit = {
-                        check_variable = { financer_temp > 0 } #Government
-                    }
-                    divide_temp_variable = { initial_cost_temp = financer_temp:modifier@government_investment_efficiency_factor }
-                    subtract_from_variable = { financer_temp:treasury = initial_cost_temp }
-                }
-                else = { #Local
-                    subtract_from_variable = { controller:investment_fund = initial_cost_temp }
-                }
-                add_to_variable = { retooling_investment@var:industry_token = initial_cost_temp }
-            }
-            add_to_variable = { update_state_econ_window = 1 }
-        }
-    }
+			# Cost
+			set_temp_variable = { iuc_industry = industry_token }
+			industry_update_construction_retooling = yes
+
+			if = {
+				limit = {
+					check_variable = { no_cost_temp = 0 }
+				}
+				set_temp_variable = { initial_cost_temp = retooling_cost@var:industry_token }
+				multiply_temp_variable = { initial_cost_temp = global.start_construction_cost_multiplier }
+				if = {
+					limit = {
+						check_variable = { financer_temp < 0 } #Corporation
+					}
+				}
+				else_if = {
+					limit = {
+						check_variable = { financer_temp > 0 } #Government
+					}
+					divide_temp_variable = { initial_cost_temp = financer_temp:modifier@government_investment_efficiency_factor }
+					subtract_from_variable = { financer_temp:treasury = initial_cost_temp }
+				}
+				else = { #Local
+					subtract_from_variable = { controller:investment_fund = initial_cost_temp }
+				}
+				add_to_variable = { retooling_investment@var:industry_token = initial_cost_temp }
+			}
+			add_to_variable = { update_state_econ_window = 1 }
+		}
+	}
 #
