@@ -1682,7 +1682,31 @@
 
 		for_each_scope_loop = {
 			array = global.econ_order_array
-			if = {
+            if = {
+                limit = {
+                    OR = {
+                        has_idea = export_focus
+                        has_idea = free_trade
+                    }
+                }
+                for_each_loop = {
+                    array = global.resource_token_array
+                    value = resource_token
+                    
+                    clear_variable = trade_ai@var:resource_token
+                }
+            }
+
+            if = {
+                limit = {
+                    OR = {
+                        has_idea = closed_economy
+                        NOT = { check_variable = { market_leader = THIS } }
+                    }
+                }
+                clear_trade = yes
+            }
+			else_if = {
 				limit = {
 					check_variable = { market_leader = THIS }
 				}
@@ -4372,149 +4396,6 @@
 #
 
 #Buildings
-	construct_x_industries_no_update = {
-		# x_temp, financer_temp, building_token, production_method_temp
-		# State
-
-		round_temp_variable = x_temp #Look, people may do dumb shit and put a float in this thing.
-		round_temp_variable = production_method_temp
-
-		set_temp_variable = { pm_temp = production_method_temp }
-		if = {
-			limit = {
-				check_variable = { x_temp > 0 }
-				check_variable = { under_construction@var:building_token = 0 }
-				is_in_array = { global.building_token_array = building_token }
-				has_valid_production_method = yes
-				if = {
-					limit = {
-						check_variable = { financer_temp < 0 } #Corporation
-					}
-				}
-				else_if = {
-					limit = {
-						check_variable = { financer_temp > 0 } #Government
-					}
-					country_exists = var:financer_temp
-
-				}
-				else = { #Local
-
-				}
-			}
-
-			set_variable = { under_construction@var:building_token = x_temp }
-
-			#Add building to array if it doesn't exist yet
-			if = {
-				limit = {
-					NOT = { is_in_array = { buildings = building_token } }
-				}
-				add_to_array = { buildings = building_token }
-				set_variable = { production_method@var:building_token = production_method_temp }
-			}
-
-			#Financer
-			set_variable = { financer@var:building_token = financer_temp }
-
-			#Amount
-			if = {
-				limit = {
-					check_variable = { production_method@var:building_token = 0 }
-				}
-				set_variable = { construction_amount@var:building_token = global.building_basic_construction_amount@var:building_token }
-			}
-			else_if = {
-				limit = {
-					check_variable = { production_method@var:building_token = 1 }
-				}
-				set_variable = { construction_amount@var:building_token = global.building_advanced_construction_amount@var:building_token }
-			}
-			else_if = {
-				limit = {
-					check_variable = { production_method@var:building_token = 2 }
-				}
-				set_variable = { construction_amount@var:building_token = global.building_industrialized_construction_amount@var:building_token }
-			}
-			else_if = {
-				limit = {
-					check_variable = { production_method@var:building_token = 3 }
-				}
-				set_variable = { construction_amount@var:building_token = global.building_mechanized_construction_amount@var:building_token }
-			}
-			else_if = {
-				limit = {
-					check_variable = { production_method@var:building_token = 4 }
-				}
-				set_variable = { construction_amount@var:building_token = global.building_electrified_construction_amount@var:building_token }
-			}
-			else_if = {
-				limit = {
-					check_variable = { production_method@var:building_token = 5 }
-				}
-				set_variable = { construction_amount@var:building_token = global.building_motorized_construction_amount@var:building_token }
-			}
-			else_if = {
-				limit = {
-					check_variable = { production_method@var:building_token = 6 }
-				}
-				set_variable = { construction_amount@var:building_token = global.building_modernized_construction_amount@var:building_token }
-			}
-			else_if = {
-				limit = {
-					check_variable = { production_method@var:building_token = 7 }
-				}
-				set_variable = { construction_amount@var:building_token = global.building_roboticized_construction_amount@var:building_token }
-			}
-			else_if = {
-				limit = {
-					check_variable = { production_method@var:building_token = 8 }
-				}
-				set_variable = { construction_amount@var:building_token = global.building_computerized_construction_amount@var:building_token }
-			}
-			else_if = {
-				limit = {
-					check_variable = { production_method@var:building_token = 9 }
-				}
-				set_variable = { construction_amount@var:building_token = global.building_digitalized_construction_amount@var:building_token }
-			}
-			else_if = {
-				limit = {
-					check_variable = { production_method@var:building_token = 10 }
-				}
-				set_variable = { construction_amount@var:building_token = global.building_automatized_construction_amount@var:building_token }
-			}
-			else_if = {
-				limit = {
-					check_variable = { production_method@var:building_token = 11 }
-				}
-				set_variable = { construction_amount@var:building_token = global.building_futurized_construction_amount@var:building_token }
-			}
-			multiply_variable = { construction_amount@var:building_token = under_construction@var:building_token }
-
-			set_temp_variable = { initial_cost_temp = construction_amount@var:building_token }
-			multiply_temp_variable = { initial_cost_temp = price@token:resource_industrial_goods }
-			multiply_temp_variable = { initial_cost_temp = global.start_construction_cost_multiplier }
-			if = {
-				limit = {
-					check_variable = { financer_temp < 0 } #Corporation
-				}
-			}
-			else_if = {
-				limit = {
-					check_variable = { financer_temp > 0 } #Government
-				}
-				divide_temp_variable = { initial_cost_temp = financer_temp:modifier@government_investment_efficiency_factor }
-				subtract_from_variable = { financer_temp:treasury = initial_cost_temp }
-			}
-			else = { #Local
-				subtract_from_variable = { controller:investment_fund = initial_cost_temp }
-			}
-
-			buildings_update_construction = yes
-		}
-	}
-
 	change_building_avg_wage = {
 		#wage_change_temp, building_token
 
@@ -9191,15 +9072,23 @@
 			}
 		}
 
+        for_each_scope_loop = { # Each country gets their production
+			array = market_countries
+			set_variable = { resource_cost@var:r_type = local_production@var:r_type }
+			multiply_variable = { resource_cost@var:r_type = -1 }
+			round_variable = resource_cost@var:r_type
+        }
 		for_each_loop = { # Market leader gets a duplicate of all resources in the market
 			array = global.resource_token_array
 			value = r_type
 			# Trade
-			set_variable = { resource_cost@var:r_type = production@var:r_type }
+			set_variable = { resource_cost@var:r_type = local_production@var:r_type }
+			add_to_variable = { resource_cost@var:r_type = production@var:r_type }
 			add_to_variable = { resource_cost@var:r_type = trade@var:r_type }
 			multiply_variable = { resource_cost@var:r_type = -1 }
 			round_variable = resource_cost@var:r_type
 		}
+		
 	}
 	national_market_update = {
 		
@@ -9851,6 +9740,7 @@
 				limit = { 
 					NOT = { is_in_array = { trade_routes = resource_temp } } 
 					check_variable = { market_leader = THIS }
+                    NOT = { has_idea = closed_economy }
 				} 
 				add_to_array = { trade_routes = resource_temp }
 				if = {
@@ -9889,6 +9779,30 @@
 			}
 		}
 	}
+    clear_trade = {
+        for_each_loop = {
+            array = trade_routes
+            value = resource_temp
+
+            set_variable = { offers@var:resource_temp = 0 }
+            set_variable = { shipping_use@var:resource_temp = 0 }
+            set_variable = { trade@var:resource_temp = 0 }
+            set_variable = { trade_productivity@var:resource_temp = 0 }
+            set_variable = { trade_value@var:resource_temp = 0 }
+            set_variable = { trade_tariffs@var:resource_temp = 0 }
+            set_variable = { trade_profit@var:resource_temp = 0 }
+            set_variable = { trade_jobs@var:resource_temp = 0 }
+        }
+        clear_array = trade_routes
+
+        if = {
+            limit = {
+                check_variable = { no_update_temp = 0 }
+			    check_variable = { market_leader = THIS }
+            }
+            trade_update = yes
+        }
+    }
 
 	adjust_trade = { # Adjusts trade offers by given amount
 		# resource_temp - resource token
@@ -9900,6 +9814,7 @@
 		if = {
 			limit = {
 				check_variable = { market_leader = THIS }
+                NOT = { has_idea = closed_economy }
 			}
 
 			round_temp_variable = amount_temp
@@ -9952,6 +9867,7 @@
 		if = {
 			limit = {
 				check_variable = { market_leader = THIS }
+                NOT = { has_idea = closed_economy }
 			}
 
 			round_temp_variable = amount_temp
@@ -15036,7 +14952,7 @@
 		# run after gdp_update
 		set_temp_variable = { gdp_amount_temp = gdp_amount }
 		divide_temp_variable = { gdp_amount_temp = 1000 }
-		multiply_temp_variable = { gdp_amount_temp = 12 }
+		multiply_temp_variable = { gdp_amount_temp = 3 }
 		clear_array = gdp_amount_quarterly
 		add_to_array = { gdp_amount_quarterly = gdp_amount_temp }
 		for_loop_effect = {
