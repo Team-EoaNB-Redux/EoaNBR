@@ -93,9 +93,9 @@ add_namespace = mexico_civil_war
 		desc= mexico_politics.5.d
 		picture = GFX_report_event_ignacio_comonfort
 
-	immediate = {
-		# log = "[THIS.GetTag]: firing  = mexico_politics.5"
-	}
+		immediate = {
+			# log = "[THIS.GetTag]: firing  = mexico_politics.5"
+		}
 
 		fire_only_once = yes
 
@@ -103,7 +103,7 @@ add_namespace = mexico_civil_war
 
 		option = {
 			name = mexico_politics.5.a
-		# log = "option:			name = mexico_politics.5.a"
+			# log = "option:			name = mexico_politics.5.a"
 			add_stability = 0.05
 			add_war_support = 0.12
 			hidden_effect = { MEC = { country_event = { id = mexico_politics.6 days = 3 } } }
@@ -116,9 +116,9 @@ add_namespace = mexico_civil_war
 		desc= mexico_politics.6.d
 		picture = GFX_report_event_felix_maria_zuloaga
 
-	immediate = {
-		# log = "[THIS.GetTag]: firing  = mexico_politics.6"
-	}
+		immediate = {
+			# log = "[THIS.GetTag]: firing  = mexico_politics.6"
+		}
 
 		fire_only_once = yes
 
@@ -126,7 +126,7 @@ add_namespace = mexico_civil_war
 
 		option = {
 			name = mexico_politics.6.a
-		# log = "option:			name = mexico_politics.6.a"
+			# log = "option:			name = mexico_politics.6.a"
 			add_stability = 0.05
 			add_war_support = 0.12
 			create_country_leader = {
@@ -152,9 +152,9 @@ add_namespace = mexico_civil_war
 		desc= mexico_politics.7.d
 		picture = GFX_report_event_felix_maria_zuloaga
 
-	immediate = {
-		# log = "[THIS.GetTag]: firing  = mexico_politics.7"
-	}
+		immediate = {
+			# log = "[THIS.GetTag]: firing  = mexico_politics.7"
+		}
 
 		fire_only_once = yes
 
@@ -162,7 +162,7 @@ add_namespace = mexico_civil_war
 
 		option = {
 			name = mexico_politics.7.a
-		# log = "option:			name = mexico_politics.7.a"
+			# log = "option:			name = mexico_politics.7.a"
 			create_country_leader = {
 				name = "Benito Juárez"
 				desc = "POLITICS_TEMP_DESC"
@@ -351,10 +351,6 @@ country_event = { #Debt system initial announcement
 		name = mexico_debt.2.a
 		# log = "option:		name = mexico_debt.2.a"
 		ai_chance = { base = 100 }
-		if = {
-			limit = { NOT = { has_country_flag = paying_debt } }
-			activate_decision = eoanb_decision_debt_repayments
-		}
 	}
 
 	option = {
@@ -375,9 +371,9 @@ country_event = { #Debt system initial announcement
 		desc = mexico_civil_war.1.d
 		picture = GFX_report_event_plan_tacubaya
 
-	immediate = {
-		# log = "[THIS.GetTag]: firing  = mexico_civil_war.1"
-	}
+		immediate = {
+			# log = "[THIS.GetTag]: firing  = mexico_civil_war.1"
+		}
 		fire_only_once = yes
 
 		is_triggered_only = yes
@@ -386,13 +382,13 @@ country_event = { #Debt system initial announcement
 			MEX = { exists = yes }
 		}
 		immediate={
-		# log = "[THIS.GetTag]: firing  = mexico_civil_war.1"
+			# log = "[THIS.GetTag]: firing  = mexico_civil_war.1"
 			set_global_flag = MEX_MEC_CIVIL_WAR
 		}
 
 		option = {
 			name = mexico_civil_war.1.a
-		# log = "option:			name = mexico_civil_war.1.a"
+			# log = "option:			name = mexico_civil_war.1.a"
 			custom_effect_tooltip = MEX_1857_Civilwar
 			hidden_effect = {
 				set_global_flag = MEX_MEC_CIVIL_WAR_side_chosen
@@ -406,11 +402,27 @@ country_event = { #Debt system initial announcement
 				MEC = { transfer_state = 1113 }
 				1113 = { add_core_of = MEC }
 				MEC = { inherit_technology = MEX }
-				set_variable = { var = MEC.SPR_debt_repayments_level value = MEX.SPR_debt_repayments_level }
-				if = {
-					limit = { check_variable = { var = MEC.SPR_debt_repayments_level value = 0 compare = greater_than } }
-					MEC = { set_country_flag = SPR_paying_debt_interest_flag }
+
+				MEC = {
+					set_variable = { global.mex_civil_war_debt@ENG = MEX.debt_to_bank_k@ENG }
+					set_variable = { global.mex_civil_war_debt@FRA = MEX.debt_to_bank_k@FRA }
+					set_variable = { global.mex_civil_war_debt@SPR = MEX.debt_to_bank_k@SPR }
+					set_variable = { global.mex_civil_war_debt@USA = MEX.debt_to_bank_k@USA }
+					set_temp_variable = { x_temp = MEX.debt_to_bank_k@ENG }
+					set_temp_variable = { country_temp = ENG }
+					add_debt = yes
+					set_temp_variable = { x_temp = MEX.debt_to_bank_k@FRA }
+					set_temp_variable = { country_temp = FRA }
+					add_debt = yes
+					set_temp_variable = { x_temp = MEX.debt_to_bank_k@SPR }
+					set_temp_variable = { country_temp = SPR }
+					add_debt = yes
+					set_temp_variable = { x_temp = MEX.debt_to_bank_k@USA }
+					set_temp_variable = { country_temp = USA }
+					add_debt = yes
+					set_country_flag = SPR_paying_debt_interest_flag
 				}
+
 				MEX = {
 					every_owned_state = {
 						limit = { is_core_of = MEX }
@@ -451,12 +463,6 @@ country_event = { #Debt system initial announcement
 						MEC = { change_tag_from = ROOT }
 					}
 					set_war_support = 0.6
-				}
-				set_variable = { MEC.debt_level = MEX.debt_level }
-				set_variable = { MEC.SPR_debt_repayments_level = MEX.SPR_debt_repayments_level }
-				if = {
-					limit = { MEC = { NOT = { has_idea = egy_vic_debt } } }
-					MEC = { add_ideas = egy_vic_debt }
 				}
 				MEX = { complete_national_focus = MEX_defend_the_constitution }
 				#Southern States
@@ -516,7 +522,7 @@ country_event = { #Debt system initial announcement
 		}
 		option = {
 			name = mexico_civil_war.1.b
-		# log = "option:			name = mexico_civil_war.1.b"
+			# log = "option:			name = mexico_civil_war.1.b"
 			custom_effect_tooltip = MEX_1857_Civilwar
 			MEX = { complete_national_focus = MEX_defend_the_constitution }
 			hidden_effect = {
@@ -566,11 +572,24 @@ country_event = { #Debt system initial announcement
 					country_event = { id = mexico.14 days = 2 }
 					news_event = news.4
 				}
-				set_variable = { MEC.debt_level = MEX.debt_level }
-				set_variable = { MEC.SPR_debt_repayments_level = MEX.SPR_debt_repayments_level }
-				if = {
-					limit = { MEC = { NOT = { has_idea = egy_vic_debt } } }
-					MEC = { add_ideas = egy_vic_debt }
+				MEC = {
+					set_variable = { global.mex_civil_war_debt@ENG = MEX.debt_to_bank_k@ENG }
+					set_variable = { global.mex_civil_war_debt@FRA = MEX.debt_to_bank_k@FRA }
+					set_variable = { global.mex_civil_war_debt@SPR = MEX.debt_to_bank_k@SPR }
+					set_variable = { global.mex_civil_war_debt@USA = MEX.debt_to_bank_k@USA }
+					set_temp_variable = { x_temp = MEX.debt_to_bank_k@ENG }
+					set_temp_variable = { country_temp = ENG }
+					add_debt = yes
+					set_temp_variable = { x_temp = MEX.debt_to_bank_k@FRA }
+					set_temp_variable = { country_temp = FRA }
+					add_debt = yes
+					set_temp_variable = { x_temp = MEX.debt_to_bank_k@SPR }
+					set_temp_variable = { country_temp = SPR }
+					add_debt = yes
+					set_temp_variable = { x_temp = MEX.debt_to_bank_k@USA }
+					set_temp_variable = { country_temp = USA }
+					add_debt = yes
+					set_country_flag = SPR_paying_debt_interest_flag
 				}
 				MEC = { complete_national_focus = MEX_support_tacubaya_plan }
 				#Southern States
@@ -680,9 +699,9 @@ country_event = { #Debt system initial announcement
 		}
 		picture = GFX_report_event_treaty_of_coche
 
-	immediate = {
-		# log = "[THIS.GetTag]: firing  = mexico_civil_war.4"
-	}
+		immediate = {
+			# log = "[THIS.GetTag]: firing  = mexico_civil_war.4"
+		}
 		is_triggered_only = yes
 
 		option = {
@@ -716,9 +735,9 @@ country_event = { #Debt system initial announcement
 		desc= mexico_civil_war.5.d
 		picture = GFX_report_event_mex_civil_war
 
-	immediate = {
-		# log = "[THIS.GetTag]: firing  = mexico_civil_war.5"
-	}
+		immediate = {
+			# log = "[THIS.GetTag]: firing  = mexico_civil_war.5"
+		}
 
 		fire_only_once = yes
 		is_triggered_only = yes
@@ -756,16 +775,16 @@ country_event = { #Debt system initial announcement
 		desc= mexico_civil_war.6.d
 		picture = GFX_report_event_mex_civil_war
 
-	immediate = {
-		# log = "[THIS.GetTag]: firing  = mexico_civil_war.6"
-	}
+		immediate = {
+			# log = "[THIS.GetTag]: firing  = mexico_civil_war.6"
+		}
 
 		fire_only_once = yes
 		is_triggered_only = yes
 
 		option = {
 			name = mexico_civil_war.6.a
-		# log = "option:			name = mexico_civil_war.6.a"
+			# log = "option:			name = mexico_civil_war.6.a"
 
 		}
 	}
@@ -777,16 +796,16 @@ country_event = { #Debt system initial announcement
 		desc= mexico_civil_war.7.d
 		picture = GFX_report_event_mex_civil_war
 
-	immediate = {
-		# log = "[THIS.GetTag]: firing  = mexico_civil_war.7"
-	}
+		immediate = {
+			# log = "[THIS.GetTag]: firing  = mexico_civil_war.7"
+		}
 
 		fire_only_once = yes
 		is_triggered_only = yes
 
 		option = {
 			name = mexico_civil_war.7.a
-		# log = "option:			name = mexico_civil_war.7.a"
+			# log = "option:			name = mexico_civil_war.7.a"
 
 		}
 	}
@@ -798,9 +817,9 @@ country_event = { #Debt system initial announcement
 		desc= mexico_civil_war.8.d
 		picture = GFX_report_event_mex_civil_war
 
-	immediate = {
-		# log = "[THIS.GetTag]: firing  = mexico_civil_war.8"
-	}
+		immediate = {
+			# log = "[THIS.GetTag]: firing  = mexico_civil_war.8"
+		}
 
 		fire_only_once = yes
 
@@ -808,7 +827,7 @@ country_event = { #Debt system initial announcement
 
 		option = {
 			name = mexico_civil_war.8.a
-		# log = "option:			name = mexico_civil_war.8.a"
+			# log = "option:			name = mexico_civil_war.8.a"
 			hidden_effect = {
 				MEX = { country_event = { id = mexico_civil_war.9 days = 3 } }
 			}
@@ -825,7 +844,7 @@ country_event = { #Debt system initial announcement
 
 		option = { #Accept Loans
 			name = mexico_civil_war.9.a
-		# log = "option:			name = mexico_civil_war.9.a"
+			# log = "option:			name = mexico_civil_war.9.a"
 			ai_chance = { base = 100 }
 			hidden_effect = {
 				USA = { set_country_flag = USA_mexican_reform_war_loans_flag }
@@ -833,13 +852,13 @@ country_event = { #Debt system initial announcement
 		}
 		option = { #Decline Loans
 			name = mexico_civil_war.9.b
-		# log = "option:			name = mexico_civil_war.9.b"
+			# log = "option:			name = mexico_civil_war.9.b"
 			ai_chance = {
 				base = 0
-				modifier = {
-					factor = 0
-					is_historical_focus_on = yes
-				}
+				# modifier = {
+				# 	factor = 0
+				# 	is_historical_focus_on = yes
+				# }
 			}
 		}
 	}
@@ -861,7 +880,7 @@ country_event = { #Debt system initial announcement
 
 		option = { #Money and Volunteers
 			name = mexico_civil_war.10.a
-		# log = "option:			name = mexico_civil_war.10.a"
+			# log = "option:			name = mexico_civil_war.10.a"
 			ai_chance = {
 				base = 90
 			}
@@ -871,7 +890,7 @@ country_event = { #Debt system initial announcement
 		}
 		option = { #Just Money
 			name = mexico_civil_war.10.b
-		# log = "option:			name = mexico_civil_war.10.b"
+			# log = "option:			name = mexico_civil_war.10.b"
 			ai_chance = {
 				base = 10
 				modifier = {
@@ -2703,9 +2722,9 @@ country_event = {
 		desc= mexico.12.d
 		picture = GFX_report_event_reform_war_end
 
-	immediate = {
-		# log = "[THIS.GetTag]: firing  = mexico.12"
-	}
+		immediate = {
+			# log = "[THIS.GetTag]: firing  = mexico.12"
+		}
 
 		fire_only_once = yes
 		is_triggered_only = yes
@@ -2713,13 +2732,49 @@ country_event = {
 		immediate = {
 		# log = "[THIS.GetTag]: firing  = mexico.12"
 			hidden_effect = {
+				set_temp_variable = { x_temp = MEC.debt_to_bank_k@ENG }
+				subtract_from_temp_variable = { x_temp = global.mex_civil_war_debt@ENG }
 				if = {
-					limit = { MEC = { check_variable = { var = SPR_debt_repayments_level value = 0 compare = greater_than } } }
-					MEX = { set_variable = { var = MEX.SPR_debt_repayments_level_from_war_temp value = MEC.SPR_debt_repayments_level } }
-					MEX = { subtract_from_variable = { var = MEX.SPR_debt_repayments_level_from_war_temp value = MEX.SPR_debt_repayments_level } }
-					MEX = { set_variable = { var = MEX.SPR_debt_repayments_level value = MEX.SPR_debt_repayments_level_from_war_temp } }
-					MEX = { add_to_variable = { var = MEX.debt_level value = MEX.SPR_debt_repayments_level_from_war_temp } }
+					limit = {
+						check_variable = { x_temp > 0 }
+					}
+					set_temp_variable = { country_temp = ENG }
+					MEX = { add_debt = yes }
 				}
+				clear_variable = global.mex_civil_war_debt@ENG
+				
+				set_temp_variable = { x_temp = MEC.debt_to_bank_k@FRA }
+				subtract_from_temp_variable = { x_temp = global.mex_civil_war_debt@FRA }
+				if = {
+					limit = {
+						check_variable = { x_temp > 0 }
+					}
+					set_temp_variable = { country_temp = FRA }
+					MEX = { add_debt = yes }
+				}
+				clear_variable = global.mex_civil_war_debt@FRA
+				
+				set_temp_variable = { x_temp = MEC.debt_to_bank_k@SPR }
+				subtract_from_temp_variable = { x_temp = global.mex_civil_war_debt@SPR }
+				if = {
+					limit = {
+						check_variable = { x_temp > 0 }
+					}
+					set_temp_variable = { country_temp = SPR }
+					MEX = { add_debt = yes }
+				}
+				clear_variable = global.mex_civil_war_debt@SPR
+				
+				set_temp_variable = { x_temp = MEC.debt_to_bank_k@USA }
+				subtract_from_temp_variable = { x_temp = global.mex_civil_war_debt@USA }
+				if = {
+					limit = {
+						check_variable = { x_temp > 0 }
+					}
+					set_temp_variable = { country_temp = USA }
+					MEX = { add_debt = yes }
+				}
+				clear_variable = global.mex_civil_war_debt@USA
 			}
 			hidden_effect = {
 				USA = { clr_country_flag = USA_mexican_reform_war_loans_flag }
@@ -2762,7 +2817,7 @@ country_event = {
 
 		option = {
 			name = mexico.12.a
-		# log = "option:			name = mexico.12.a"
+			# log = "option:			name = mexico.12.a"
 			add_stability = 0.1
 			add_ideas = MEX_idea_scars_of_the_civil_war
 			hidden_effect = {
@@ -2780,9 +2835,9 @@ country_event = {
 		desc= mexico.13.d
 		picture = GFX_report_event_mexican_recruitment_1857
 
-	immediate = {
-		# log = "[THIS.GetTag]: firing  = mexico.13"
-	}
+		immediate = {
+			# log = "[THIS.GetTag]: firing  = mexico.13"
+		}
 
 		fire_only_once = yes
 		is_triggered_only = yes
@@ -2821,9 +2876,9 @@ country_event = {
 		desc= mexico.14.d
 		picture = GFX_report_event_mexican_recruitment_1857
 
-	immediate = {
-		# log = "[THIS.GetTag]: firing  = mexico.14"
-	}
+		immediate = {
+			# log = "[THIS.GetTag]: firing  = mexico.14"
+		}
 
 		fire_only_once = yes
 
@@ -3036,13 +3091,49 @@ country_event = {
 		immediate = {
 		# log = "[THIS.GetTag]: firing  = mexico.20"
 			hidden_effect = {
+				set_temp_variable = { x_temp = MEX.debt_to_bank_k@ENG }
+				subtract_from_temp_variable = { x_temp = global.mex_civil_war_debt@ENG }
 				if = {
-					limit = { MEX = { check_variable = { var = USA_debt_repayments_level value = 0 compare = greater_than } } }
-					MEC = { set_variable = { var = MEC.USA_debt_repayments_level_from_war_temp value = MEX.USA_debt_repayments_level } }
-					MEC = { subtract_from_variable = { var = MEC.USA_debt_repayments_level_from_war_temp value = MEC.USA_debt_repayments_level } }
-					MEC = { set_variable = { var = MEC.USA_debt_repayments_level value = MEC.USA_debt_repayments_level_from_war_temp } }
-					MEC = { add_to_variable = { var = MEC.debt_level value = MEC.USA_debt_repayments_level_from_war_temp } }
+					limit = {
+						check_variable = { x_temp > 0 }
+					}
+					set_temp_variable = { country_temp = ENG }
+					MEC = { add_debt = yes }
 				}
+				clear_variable = global.mex_civil_war_debt@ENG
+				
+				set_temp_variable = { x_temp = MEX.debt_to_bank_k@FRA }
+				subtract_from_temp_variable = { x_temp = global.mex_civil_war_debt@FRA }
+				if = {
+					limit = {
+						check_variable = { x_temp > 0 }
+					}
+					set_temp_variable = { country_temp = FRA }
+					MEC = { add_debt = yes }
+				}
+				clear_variable = global.mex_civil_war_debt@FRA
+				
+				set_temp_variable = { x_temp = MEX.debt_to_bank_k@SPR }
+				subtract_from_temp_variable = { x_temp = global.mex_civil_war_debt@SPR }
+				if = {
+					limit = {
+						check_variable = { x_temp > 0 }
+					}
+					set_temp_variable = { country_temp = SPR }
+					MEC = { add_debt = yes }
+				}
+				clear_variable = global.mex_civil_war_debt@SPR
+				
+				set_temp_variable = { x_temp = MEX.debt_to_bank_k@USA }
+				subtract_from_temp_variable = { x_temp = global.mex_civil_war_debt@USA }
+				if = {
+					limit = {
+						check_variable = { x_temp > 0 }
+					}
+					set_temp_variable = { country_temp = USA }
+					MEC = { add_debt = yes }
+				}
+				clear_variable = global.mex_civil_war_debt@USA
 			}
 			hidden_effect = {
 				USA = { clr_country_flag = USA_mexican_reform_war_loans_flag }

@@ -1100,39 +1100,6 @@ country_event = { #Militia system
 	}
 } 
 
-country_event = { #Debt system initial announcement
-	id = spain.8
-	title = spain.8.t
-	desc = spain.8.d
-	
-	is_triggered_only = yes
-
-	option = {
-		name = spain.8.a
-		# log = "option:		name = spain.8.a"
-		ai_chance = { factor = 100 }
-		if = {
-			limit = { NOT = { has_country_flag = paying_debt } }
-			activate_decision = eoanb_decision_debt_repayments 
-		}
-	}
-}
-
-country_event = { #Debt system
-	id = calc_spain_debt.1
-	hidden = yes
-	is_triggered_only = yes
-
-	immediate = {
-		# log = "[THIS.GetTag]: firing = calc_spain_debt.1"
-		hidden_effect = {
-			ROOT = {
-				SPR_calculate_debt_time = yes
-			}
-		}
-	}
-}
-
 country_event = { #Debt system bankrupcy avoiding
 	id = SPR_bankruptcy_events.1
 	title = SPR_bankruptcy_events.1.t
@@ -1146,6 +1113,20 @@ country_event = { #Debt system bankrupcy avoiding
 		ai_chance = { 
 			base = 100 
 		}
+
+		# TODO
+		# Give UK ownership of Valuables, Iron, Copper, Chemicals RGOs in Andalusia
+		# This would give UK profits of those RGOs in exchange for money
+		set_temp_variable = { x_temp = -3000 }
+		add_treasury = yes
+
+		SPR = {
+			set_temp_variable = { x_temp = 3000 }
+			add_treasury = yes
+		}
+
+		custom_effect_tooltip = SPR_sell_andalusia_mining_rights_tt
+		
 		if = {
 			limit = { has_dlc = "Man the Guns" }
 			SPR = { give_resource_rights = { receiver = ENG state = 169 } }
@@ -1154,7 +1135,12 @@ country_event = { #Debt system bankrupcy avoiding
 			add_political_power = 200
 		}
 		hidden_effect = { 
-			169 = { set_state_flag = SPR_sold_andalusia_mining_rights_flag } 
+			169 = { 
+				set_state_flag = SPR_sold_andalusia_mining_rights_flag
+				has_dynamic_modifier = {
+					modifier = SPR_sold_andalusia_resource_rights
+				}
+			} 
 			SPR = { country_event = { id = SPR_bankruptcy_events.2 days = 3 } }
 		}
 	}

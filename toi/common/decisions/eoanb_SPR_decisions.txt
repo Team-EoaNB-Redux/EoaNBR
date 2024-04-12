@@ -1,15 +1,55 @@
 eoanb_category_economic = {
+	SPR_sell_mining_rights_decision = {
+		icon = steel
+		available = { 
+			debt_not_bankrupt_trigger = yes
+			custom_trigger_tooltip = {
+				tooltip = SPR_sell_andalusia_mining_rights_trigger_tt
+				check_variable = { debt_level > 35 }
+			}
+		}
+		visible = {
+			check_variable = { debt_level > 30 }
+			NOT = { 169 = { has_state_flag = SPR_sold_andalusia_mining_rights_flag } }
+			NOT = { has_global_flag =  }
+			owns_state = 169
+		}
+		allowed = { TAG = SPR }
+		cost = 50
+		fire_only_once = yes
+		complete_effect = {
+			custom_effect_tooltip = SPR_sell_andalusia_mining_rights_tooltip
+			ENG = { country_event = { id = SPR_bankruptcy_events.1 days = 15 } }
+		}
+		ai_will_do = {
+			base = 50
+			modifier = {
+				factor = 0
+				check_variable = {ROOT.debt_level < 40}
+			}
+		}
+	}
 
 	SPR_buy_back_mining_rights_decision = {
 		icon = steel
-		available = { debt_not_bankrupt_trigger = yes }
+		available = { 
+			debt_not_bankrupt_trigger = yes
+			check_variable = { treasury > 5000 }
+		}
 		visible = {
 			169 = { has_state_flag = SPR_sold_andalusia_mining_rights_flag }
 			owns_state = 169
 		}
 		allowed = { TAG = SPR }
-		custom_cost_trigger = { check_variable = { debt_level < 50 } }
-		custom_cost_text = eoanb_decision_cost_10_debt_loc
+		custom_cost_trigger = { check_variable = { treasury > 5000 } }
+		custom_cost_text = eoanb_decision_cost_5000
+		set_temp_variable = { x_temp = -5000 }
+		add_treasury = yes
+
+		ENG = {
+			set_temp_variable = { x_temp = 5000 }
+			add_treasury = yes
+		}
 		fire_only_once = no
 		complete_effect = {
 			if = {
@@ -19,7 +59,12 @@ eoanb_category_economic = {
 			hidden_effect = {
 				ENG = { country_event = { id = SPR_bankruptcy_events.4 } }
 				debt_level_increase_by_10 = yes
-				169 = { clr_state_flag = SPR_sold_andalusia_mining_rights_flag }
+				169 = { 
+					clr_state_flag = SPR_sold_andalusia_mining_rights_flag
+					remove_dynamic_modifier = {
+						modifier = SPR_sold_andalusia_resource_rights
+					}
+				}
 			}
 		}
 		ai_will_do = {
@@ -615,6 +660,23 @@ SPR_debt_management_category = {
 			custom_effect_tooltip = MEX_cease_foreign_debt_repayments_decision_tooltip
 			hidden_effect = {
 				set_country_flag = MEX_cease_foreign_debt_repayments_decision_flag
+
+				set_variable = { global.eng_mexico_debt = debt_to_bank_k@ENG }
+				set_variable = { global.fra_mexico_debt = debt_to_bank_k@FRA }
+				set_variable = { global.spr_mexico_debt = debt_to_bank_k@SPR }
+
+				set_temp_variable = { x_temp = 999999 }
+				set_temp_variable = { country_temp = ENG }
+				remove_debt = yes
+				
+				set_temp_variable = { x_temp = 999999 }
+				set_temp_variable = { country_temp = FRA }
+				remove_debt = yes
+				
+				set_temp_variable = { x_temp = 999999 }
+				set_temp_variable = { country_temp = SPR }
+				remove_debt = yes
+
 				country_event = { id = SPR_mexican_expedition.4 }
 			}
 		}
@@ -682,7 +744,11 @@ SPR_debt_management_category = {
 		}
 
 		activation = {
-			check_variable = {ROOT.SPR_debt_repayments_level > 0}
+			OR = {
+				check_variable = { debt_to_bank_k@SPR > 0 }
+				check_variable = { debt_to_bank_k@FRA > 0 }
+				check_variable = { debt_to_bank_k@ENG > 0 }
+			}
 			hidden_trigger = {
 				if = {
 					limit = { OR = { TAG = MEX TAG = MEC TAG = MXE } }
@@ -698,8 +764,7 @@ SPR_debt_management_category = {
 
 		timeout_effect = {
 			hidden_effect = { activate_mission = SPR_foreign_debt_repayments_mission }
-			debt_level_increase_by_1 = yes
-			SPR_foreign_debt_repayments_decrease_by_1 = yes
+			# SPR_foreign_debt_repayments_decrease_by_1 = yes
 			custom_effect_tooltip = MEX_foreign_debt_repayments_mission_complete_effect
 		}
 		complete_effect = {
@@ -751,8 +816,8 @@ SPR_debt_management_category = {
 
 		timeout_effect = {
 			hidden_effect = { activate_mission = DOM_declare_bankruptcy_mission }
-			debt_level_increase_by_1 = yes
-			SPR_foreign_debt_repayments_decrease_by_1 = yes
+			# debt_level_increase_by_1 = yes
+			# SPR_foreign_debt_repayments_decrease_by_1 = yes
 			custom_effect_tooltip = DOM_declare_bankruptcy_mission_complete_effect
 		}
 		complete_effect = {
@@ -768,97 +833,6 @@ SPR_debt_management_category = {
 		}
 	}
 
-
-	eoanb_decision_debt_repayments = {
-		icon = money
-		available = {
-			has_idea = egy_vic_debt
-		}
-
-		visible = {
-			# has_idea = egy_vic_debt
-			check_variable = {ROOT.debt_level > 0}
-			NOT = { has_country_flag = paying_debt }
-			NOT = { has_country_flag = debt_declared_bankruptcy_flag }
-		}
-
-		fire_only_once = no
-
-		#cost = 25
-		complete_effect = {
-			custom_effect_tooltip = EGY_afr_decrease_debt_1
-			if = {
-				limit = { check_variable = { var = USA_debt_repayments_level value = 0 compare = greater_than } }
-				USA_foreign_debt_repayments_decrease_by_1 = yes
-			}
-			hidden_effect = {
-				if = {
-					limit = { NOT = { has_country_flag = paying_debt } }
-					set_country_flag = paying_debt
-					activate_mission = SPR_paying_debt_decision
-					country_event = { id = calc_spain_debt.1 days = 1 }
-					add_ideas = egy_vic_debt_payments
-				}
-				if = {
-					limit = { tag = GRE }
-					if = {
-						limit = {
-							has_active_mission = GRE_looming_debt
-						}
-						remove_mission = GRE_looming_debt
-						set_country_flag = {
-							flag = GRE_yearly_debt_repayment
-							days = 1095
-							value = 1
-						}
-					}
-					else = {
-						set_country_flag = {
-							flag = GRE_yearly_debt_repayment
-							days = 1095
-							value = 1
-						}
-					}
-					
-				}
-			}
-		}
-
-		ai_will_do = {
-			base = 1
-			#modifier = {
-			#	factor = 0
-			#	NOT = { check_variable = {ROOT.debt_level > 8} }
-			#	num_of_civilian_factories < 2
-			#}
-		}
-	}
-
-	eoanb_decision_debt_repayments_done = {
-		icon = money
-		visible = { always = no }
-		fire_only_once = no
-		complete_effect = {
-			hidden_effect = {
-				if = {
-					limit = { has_country_flag = paying_debt }
-					clr_country_flag = paying_debt
-				}
-				if = {
-					limit = { has_idea = egy_vic_debt_payments }
-					remove_ideas = egy_vic_debt_payments
-				}
-			}
-			if = {
-				limit = { check_variable = { debt_level < 1 } }
-				if = {
-					limit = { has_idea = egy_vic_debt }
-					remove_ideas = egy_vic_debt
-				}
-			}
-			country_event = { id = egy_debt_system.11 }
-		}
-	}
 
 	LIB_US_invests_to_pay_debt_decision = {
 		icon = money
@@ -901,48 +875,17 @@ SPR_debt_management_category = {
 				limit = { has_country_flag = USA_assist_lib_debt }
 				#custom_effect_tooltip = EGY_afr_decrease_debt_3
 				hidden_effect = {
-					subtract_from_variable = {var = debt_level value = 3}
+					debt_level_decrease_by_3 = yes
 				}
 			}
 			else = {
 				#custom_effect_tooltip = EGY_afr_decrease_debt_2
 				hidden_effect = {
-					subtract_from_variable = {var = debt_level value = 2}
+					debt_level_decrease_by_2 = yes
 				}
 			}
 		}
 
-		ai_will_do = {
-			base = 0
-		}
-	}
-
-	SPR_paying_debt_decision = {
-		icon = money
-		allowed = { always = no }
-		available = {
-			hidden_trigger = { always = no }
-		}
-		days_mission_timeout = 360
-		activation = {
-			has_country_flag = paying_debt
-			NOT = { has_country_flag = debt_declared_bankruptcy_flag }
-		}
-		cancel_trigger = {
-			hidden_trigger = { has_country_flag = debt_declared_bankruptcy_flag }
-		}
-		#cancel_if_not_visible = yes
-		selectable_mission = yes
-		custom_cost_trigger = { always = yes }
-		custom_cost_text = SPR_paying_debt_decision_custom_cost
-		is_good = yes
-		timeout_effect = {
-			#custom_effect_tooltip = EGY_afr_decrease_debt_1
-			hidden_effect = {
-				add_to_variable = {var = debt_level value = -1}
-				activate_decision = eoanb_decision_debt_repayments_done
-			}
-		}
 		ai_will_do = {
 			base = 0
 		}
@@ -960,8 +903,6 @@ SPR_debt_management_category = {
 		}
 		cancel_trigger = {
 			hidden_trigger = { NOT = { has_variable = total_colonial_profits } }
-			hidden_trigger = { NOT = { has_variable = debt_level } }
-			hidden_trigger = { has_country_flag = debt_declared_bankruptcy_flag }
 		}
 		selectable_mission = yes
 		custom_cost_trigger = { always = yes }
@@ -969,48 +910,11 @@ SPR_debt_management_category = {
 		is_good = yes
 		timeout_effect = {
 			hidden_effect = {
-				subtract_from_variable = {var = debt_level value = total_colonial_profits }
+				set_temp_variable = { amount_temp = total_colonial_profits }
+				multiply_temp_variable = { amount_temp = 0.12 }
+				multiply_temp_variable = { amount_temp = gdp_amount }
+				add_to_variable = {var = treasury value = amount_temp }
 				activate_decision = debt_colonial_profits_decision
-				clamp_variable = {
-					var = debt_level
-					min = 0
-					max = 100
-				}
-			}
-		}
-		ai_will_do = {
-			base = 0
-		}
-	}
-
-	SPR_debt_repayment_profits_decision = {
-		icon = money
-		allowed = { TAG = SPR }
-		available = {
-			hidden_trigger = { always = no }
-		}
-		days_mission_timeout = 360
-		activation = {
-			has_variable = SPR_debt_repayment_profits
-		}
-		cancel_trigger = {
-			hidden_trigger = { NOT = { has_variable = SPR_debt_repayment_profits } }
-			hidden_trigger = { NOT = { has_variable = debt_level } }
-			hidden_trigger = { has_country_flag = debt_declared_bankruptcy_flag }
-		}
-		selectable_mission = yes
-		custom_cost_trigger = { always = yes }
-		custom_cost_text = SPR_debt_repayment_profits_decision_custom_cost
-		is_good = yes
-		timeout_effect = {
-			hidden_effect = {
-				subtract_from_variable = {var = debt_level value = SPR_debt_repayment_profits }
-				activate_decision = SPR_debt_repayment_profits_decision
-				clamp_variable = {
-					var = debt_level
-					min = 0
-					max = 100
-				}
 			}
 		}
 		ai_will_do = {
