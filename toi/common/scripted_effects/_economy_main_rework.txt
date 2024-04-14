@@ -5300,49 +5300,52 @@
 
 		set_temp_variable = { market_leader_temp = THIS }
 
-		# Runs the market_setup command again to ensure that all countries are in your market that SHOULD be
-		market_setup = yes
+        hidden_effect = {
 
-		for_each_loop = { # Reset to 0
-			array = global.resource_token_array
-			value = r_type
-			
-			set_variable = { need@var:r_type = 0 }
-			set_variable = { production@var:r_type = 0 }
-		}
+            # Runs the market_setup command again to ensure that all countries are in your market that SHOULD be
+            market_setup = yes
 
-		for_each_scope_loop = { # Add up each country
-			array = market_countries
+            for_each_loop = { # Reset to 0
+                array = global.resource_token_array
+                value = r_type
+                
+                set_variable = { need@var:r_type = 0 }
+                set_variable = { production@var:r_type = 0 }
+            }
 
-			if = {
-				limit = {
-					check_variable = { ignore_national_market_temp = 0 }
-				}
-				if = {
-					limit = {
-						check_variable = { ignore_state_market_temp = 0 }
-					}
-					every_controlled_state = {
-						state_market_update = yes
-					}
-				}
+            for_each_scope_loop = { # Add up each country
+                array = market_countries
 
-				national_market_update = yes
-			}
+                if = {
+                    limit = {
+                        check_variable = { ignore_national_market_temp = 0 }
+                    }
+                    if = {
+                        limit = {
+                            check_variable = { ignore_state_market_temp = 0 }
+                        }
+                        every_controlled_state = {
+                            state_market_update = yes
+                        }
+                    }
 
-			
-			for_each_loop = {
-				array = global.resource_token_array
-				value = r_type
-				add_to_variable = { market_leader_temp:need@var:r_type = local_need@var:r_type }
-				add_to_variable = { market_leader_temp:production@var:r_type = local_production@var:r_type }
-			}
-		}
+                    national_market_update = yes
+                }
 
-		market_calculations = yes
+                
+                for_each_loop = {
+                    array = global.resource_token_array
+                    value = r_type
+                    add_to_variable = { market_leader_temp:need@var:r_type = local_need@var:r_type }
+                    add_to_variable = { market_leader_temp:production@var:r_type = local_production@var:r_type }
+                }
+            }
 
-		set_temp_variable = { ignore_state_market_temp = 0 }
-		set_temp_variable = { ignore_national_market_temp = 0 }
+            market_calculations = yes
+
+            set_temp_variable = { ignore_state_market_temp = 0 }
+            set_temp_variable = { ignore_national_market_temp = 0 }
+        }
 	}
 	market_calculations = { # Does supply/demand calculations for the market and adjusts prices. Included in market_update & trade_update_quantity. 
 		# Scope: Market Leader
@@ -8650,6 +8653,116 @@
 		proj_update = yes
 
 		# Spending Effects
+            # TAXATION
+            set_variable = { tax_political_power_gain_factor = 0 }
+            set_variable = { tax_stability_factor_factor = 0 }
+            set_variable = { tax_war_support_factor_factor = 0 }
+            set_variable = { tax_investment_confidence_modifier_factor = 0 }
+
+            # Pol Power
+			set_temp_variable = { factor_temp = income_tax_upper_strata_percentage }
+			divide_temp_variable = { factor_temp = 100 }
+            multiply_temp_variable = { factor_temp = -0.1 }
+            add_to_variable = { tax_political_power_gain_factor = factor_temp }
+
+			set_temp_variable = { factor_temp = income_tax_middle_strata_percentage }
+			divide_temp_variable = { factor_temp = 100 }
+            multiply_temp_variable = { factor_temp = -0.05 }
+            add_to_variable = { tax_political_power_gain_factor = factor_temp }
+
+			set_temp_variable = { factor_temp = income_tax_lower_strata_percentage }
+			divide_temp_variable = { factor_temp = 100 }
+            multiply_temp_variable = { factor_temp = -0.05 }
+            add_to_variable = { tax_political_power_gain_factor = factor_temp }
+
+			set_temp_variable = { factor_temp = sales_tax_percentage }
+			divide_temp_variable = { factor_temp = 100 }
+            multiply_temp_variable = { factor_temp = -0.2 }
+            add_to_variable = { tax_political_power_gain_factor = factor_temp }
+
+			set_temp_variable = { factor_temp = corporate_tax_percentage }
+			divide_temp_variable = { factor_temp = 100 }
+            multiply_temp_variable = { factor_temp = -0.1 }
+            add_to_variable = { tax_political_power_gain_factor = factor_temp }
+
+            # Stab
+			set_temp_variable = { factor_temp = income_tax_upper_strata_percentage }
+			divide_temp_variable = { factor_temp = 100 }
+            multiply_temp_variable = { factor_temp = -0.02 }
+            add_to_variable = { tax_stability_factor_factor = factor_temp }
+
+			set_temp_variable = { factor_temp = income_tax_middle_strata_percentage }
+			divide_temp_variable = { factor_temp = 100 }
+            multiply_temp_variable = { factor_temp = -0.04 }
+            add_to_variable = { tax_stability_factor_factor = factor_temp }
+
+			set_temp_variable = { factor_temp = income_tax_lower_strata_percentage }
+			divide_temp_variable = { factor_temp = 100 }
+            multiply_temp_variable = { factor_temp = -0.07 }
+            add_to_variable = { tax_stability_factor_factor = factor_temp }
+
+			set_temp_variable = { factor_temp = sales_tax_percentage }
+			divide_temp_variable = { factor_temp = 100 }
+            multiply_temp_variable = { factor_temp = -0.1 }
+            add_to_variable = { tax_stability_factor_factor = factor_temp }
+
+			set_temp_variable = { factor_temp = corporate_tax_percentage }
+			divide_temp_variable = { factor_temp = 100 }
+            multiply_temp_variable = { factor_temp = -0.02 }
+            add_to_variable = { tax_stability_factor_factor = factor_temp }
+
+            # War Sup
+			set_temp_variable = { factor_temp = income_tax_upper_strata_percentage }
+			divide_temp_variable = { factor_temp = 100 }
+            multiply_temp_variable = { factor_temp = -0.05 }
+            add_to_variable = { tax_war_support_factor_factor = factor_temp }
+
+			set_temp_variable = { factor_temp = income_tax_middle_strata_percentage }
+			divide_temp_variable = { factor_temp = 100 }
+            multiply_temp_variable = { factor_temp = -0.07 }
+            add_to_variable = { tax_war_support_factor_factor = factor_temp }
+
+			set_temp_variable = { factor_temp = income_tax_lower_strata_percentage }
+			divide_temp_variable = { factor_temp = 100 }
+            multiply_temp_variable = { factor_temp = -0.08 }
+            add_to_variable = { tax_war_support_factor_factor = factor_temp }
+
+			set_temp_variable = { factor_temp = sales_tax_percentage }
+			divide_temp_variable = { factor_temp = 100 }
+            multiply_temp_variable = { factor_temp = -0.15 }
+            add_to_variable = { tax_war_support_factor_factor = factor_temp }
+
+			set_temp_variable = { factor_temp = corporate_tax_percentage }
+			divide_temp_variable = { factor_temp = 100 }
+            multiply_temp_variable = { factor_temp = -0.05 }
+            add_to_variable = { tax_war_support_factor_factor = factor_temp }
+
+            # Invest Conf
+			set_temp_variable = { factor_temp = income_tax_upper_strata_percentage }
+			divide_temp_variable = { factor_temp = 100 }
+            multiply_temp_variable = { factor_temp = -5.0 }
+            add_to_variable = { tax_investment_confidence_modifier_factor = factor_temp }
+
+			set_temp_variable = { factor_temp = income_tax_middle_strata_percentage }
+			divide_temp_variable = { factor_temp = 100 }
+            multiply_temp_variable = { factor_temp = -3.0 }
+            add_to_variable = { tax_investment_confidence_modifier_factor = factor_temp }
+
+			set_temp_variable = { factor_temp = income_tax_lower_strata_percentage }
+			divide_temp_variable = { factor_temp = 100 }
+            multiply_temp_variable = { factor_temp = -2.0 }
+            add_to_variable = { tax_investment_confidence_modifier_factor = factor_temp }
+
+			set_temp_variable = { factor_temp = sales_tax_percentage }
+			divide_temp_variable = { factor_temp = 100 }
+            multiply_temp_variable = { factor_temp = -5.0 }
+            add_to_variable = { tax_investment_confidence_modifier_factor = factor_temp }
+
+			set_temp_variable = { factor_temp = corporate_tax_percentage }
+			divide_temp_variable = { factor_temp = 100 }
+            multiply_temp_variable = { factor_temp = -10.0 }
+            add_to_variable = { tax_investment_confidence_modifier_factor = factor_temp }
+
 			# MILITARY
 			set_temp_variable = { factor_temp = 100 }
 			subtract_from_temp_variable = { factor_temp = military_spending_percentage }
@@ -9046,6 +9159,13 @@
 		# Only in the on-monthly code
 		# Applies changes to discretionary spending modifiers
 
+        # Income Taxes
+        set_variable = { tax_political_power_gain_actual = tax_political_power_gain_factor }
+        set_variable = { tax_stability_factor_actual = tax_stability_factor_factor }
+        set_variable = { tax_war_support_factor_actual = tax_war_support_factor_factor }
+        set_variable = { tax_investment_confidence_modifier_actual = tax_investment_confidence_modifier_factor }
+
+        # Military Spending
 		set_variable = { military_spending_supply_consumption_factor_actual = military_spending_supply_consumption_factor }
 		set_variable = { military_spending_naval_coordination_actual = military_spending_naval_coordination }
 		set_variable = { military_spending_training_time_army_factor_actual = military_spending_training_time_army_factor }
@@ -9058,121 +9178,123 @@
 		set_variable = { military_spending_naval_morale_factor_actual = military_spending_naval_morale_factor }
 		set_variable = { military_spending_max_command_power_mult_actual = military_spending_max_command_power_mult }
 
-		set_variable = { research_spending_research_speed_factor_actual = research_spending_research_speed_factor }
+        # Research Spending
+            set_variable = { research_spending_research_speed_factor_actual = research_spending_research_speed_factor }
 
-		remove_ideas = {
-			research_subsidies_0
-			research_subsidies_1
-			research_subsidies_2
-			research_subsidies_3
-			research_subsidies_4
-			research_subsidies_5
-			research_subsidies_6
-			research_subsidies_7
-			research_subsidies_8
-			research_subsidies_9
-			research_subsidies_10
-			research_subsidies_11
-			research_subsidies_12
-			research_subsidies_13
-			research_subsidies_14
-			research_subsidies_15
-			research_subsidies_16
-			research_subsidies_17
-			research_subsidies_18
-			research_subsidies_19
-			research_subsidies_20
-			research_subsidies_21
-			research_subsidies_22
-			research_subsidies_23
-			research_subsidies_24
-			research_subsidies_25
-			research_subsidies_26
-			research_subsidies_27
-			research_subsidies_28
-			research_subsidies_29
-			research_subsidies_30
-			research_subsidies_31
-			research_subsidies_32
-			research_subsidies_33
-			research_subsidies_34
-			research_subsidies_35
-			research_subsidies_36
-			research_subsidies_37
-			research_subsidies_38
-			research_subsidies_39
-			research_subsidies_40
-			research_subsidies_41
-			research_subsidies_42
-			research_subsidies_43
-			research_subsidies_44
-			research_subsidies_45
-			research_subsidies_46
-			research_subsidies_47
-			research_subsidies_48
-			research_subsidies_49
-			research_subsidies_50
-			research_subsidies_51
-			research_subsidies_52
-			research_subsidies_53
-			research_subsidies_54
-			research_subsidies_55
-			research_subsidies_56
-			research_subsidies_57
-			research_subsidies_58
-			research_subsidies_59
-			research_subsidies_60
-			research_subsidies_61
-			research_subsidies_62
-			research_subsidies_63
-			research_subsidies_64
-			research_subsidies_65
-			research_subsidies_66
-			research_subsidies_67
-			research_subsidies_68
-			research_subsidies_69
-			research_subsidies_70
-			research_subsidies_71
-			research_subsidies_72
-			research_subsidies_73
-			research_subsidies_74
-			research_subsidies_75
-			research_subsidies_76
-			research_subsidies_77
-			research_subsidies_78
-			research_subsidies_79
-			research_subsidies_80
-			research_subsidies_81
-			research_subsidies_82
-			research_subsidies_83
-			research_subsidies_84
-			research_subsidies_85
-			research_subsidies_86
-			research_subsidies_87
-			research_subsidies_88
-			research_subsidies_89
-			research_subsidies_90
-			research_subsidies_91
-			research_subsidies_92
-			research_subsidies_93
-			research_subsidies_94
-			research_subsidies_95
-			research_subsidies_96
-			research_subsidies_97
-			research_subsidies_98
-			research_subsidies_99
-		}
-		if = {
-			limit = {
-				check_variable = { research_spending_percentage < 100 }
-			}
-			meta_effect = {
-				text = {
-					add_ideas = research_subsidies_[NUM_LEVEL]
-				}
-				NUM_LEVEL = "[?research_spending_percentage|0]"
-			}
-		}
+            remove_ideas = {
+                research_subsidies_0
+                research_subsidies_1
+                research_subsidies_2
+                research_subsidies_3
+                research_subsidies_4
+                research_subsidies_5
+                research_subsidies_6
+                research_subsidies_7
+                research_subsidies_8
+                research_subsidies_9
+                research_subsidies_10
+                research_subsidies_11
+                research_subsidies_12
+                research_subsidies_13
+                research_subsidies_14
+                research_subsidies_15
+                research_subsidies_16
+                research_subsidies_17
+                research_subsidies_18
+                research_subsidies_19
+                research_subsidies_20
+                research_subsidies_21
+                research_subsidies_22
+                research_subsidies_23
+                research_subsidies_24
+                research_subsidies_25
+                research_subsidies_26
+                research_subsidies_27
+                research_subsidies_28
+                research_subsidies_29
+                research_subsidies_30
+                research_subsidies_31
+                research_subsidies_32
+                research_subsidies_33
+                research_subsidies_34
+                research_subsidies_35
+                research_subsidies_36
+                research_subsidies_37
+                research_subsidies_38
+                research_subsidies_39
+                research_subsidies_40
+                research_subsidies_41
+                research_subsidies_42
+                research_subsidies_43
+                research_subsidies_44
+                research_subsidies_45
+                research_subsidies_46
+                research_subsidies_47
+                research_subsidies_48
+                research_subsidies_49
+                research_subsidies_50
+                research_subsidies_51
+                research_subsidies_52
+                research_subsidies_53
+                research_subsidies_54
+                research_subsidies_55
+                research_subsidies_56
+                research_subsidies_57
+                research_subsidies_58
+                research_subsidies_59
+                research_subsidies_60
+                research_subsidies_61
+                research_subsidies_62
+                research_subsidies_63
+                research_subsidies_64
+                research_subsidies_65
+                research_subsidies_66
+                research_subsidies_67
+                research_subsidies_68
+                research_subsidies_69
+                research_subsidies_70
+                research_subsidies_71
+                research_subsidies_72
+                research_subsidies_73
+                research_subsidies_74
+                research_subsidies_75
+                research_subsidies_76
+                research_subsidies_77
+                research_subsidies_78
+                research_subsidies_79
+                research_subsidies_80
+                research_subsidies_81
+                research_subsidies_82
+                research_subsidies_83
+                research_subsidies_84
+                research_subsidies_85
+                research_subsidies_86
+                research_subsidies_87
+                research_subsidies_88
+                research_subsidies_89
+                research_subsidies_90
+                research_subsidies_91
+                research_subsidies_92
+                research_subsidies_93
+                research_subsidies_94
+                research_subsidies_95
+                research_subsidies_96
+                research_subsidies_97
+                research_subsidies_98
+                research_subsidies_99
+            }
+            if = {
+                limit = {
+                    check_variable = { research_spending_percentage < 100 }
+                }
+                meta_effect = {
+                    text = {
+                        add_ideas = research_subsidies_[NUM_LEVEL]
+                    }
+                    NUM_LEVEL = "[?research_spending_percentage|0]"
+                }
+            }
+        #
 	}
 
 	change_upper_strata_income_tax = {
@@ -9336,6 +9458,7 @@
 			}
 			market_update = yes
 		}
+		budget_update = yes
 	}
 	change_intelligence_spending = {
 		#Scope: Country
