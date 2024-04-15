@@ -5434,6 +5434,104 @@
 			round_variable = resource_cost@var:r_type
 		}
 		
+		
+		for_each_loop = { # Market Statistics
+			array = global.resource_token_array
+			value = r_type
+
+			clear_array = market_production_countries@var:r_type
+			clear_array = market_consumption_countries@var:r_type
+
+			# Only includes top 5 states
+			clear_array = market_production_states@var:r_type
+			clear_array = market_consumption_states@var:r_type
+			
+			for_each_scope_loop = {
+				array = market_countries
+				
+				# Add production from this country to market production countries array, sorted
+				for_each_loop = {
+					array = market_leader_temp:market_production_countries@var:r_type
+					index = ii value = vv break = bb
+
+					if = { limit = { check_variable = { vv:local_production@var:r_type < local_production@var:r_type } }
+						add_to_array = { array = market_leader_temp:market_production_countries@var:r_type value = THIS index = ii }
+						set_temp_variable = { bb = 1 }
+					}
+				}
+				if = { limit = { check_variable = { bb = 0 } } add_to_array = { market_leader_temp:market_production_countries@var:r_type = THIS } }
+				
+				# Add consumption from this country to market consumption countries array, sorted
+				for_each_loop = {
+					array = market_leader_temp:market_consumption_countries@var:r_type
+					index = ii value = vv break = bb
+
+					if = { limit = { check_variable = { vv:local_need@var:r_type < local_need@var:r_type } }
+						add_to_array = { array = market_leader_temp:market_consumption_countries@var:r_type value = THIS index = ii }
+						set_temp_variable = { bb = 1 }
+					}
+				}
+				if = { limit = { check_variable = { bb = 0 } } add_to_array = { market_leader_temp:market_consumption_countries@var:r_type = THIS } }
+
+				# Check the top 5 producing states of each country. Put them in a list.
+				set_temp_variable = { highest_state_temp = production_states@var:r_type^0 }
+				if = { limit = { check_variable = { highest_state_temp:production@var:r_type > market_leader_temp:market_production_states@var:r_type^4 } }
+					for_loop_effect = {
+						end = 5 value = ii break = bbb
+						set_temp_variable = { market_state_temp = production_states@var:r_type^ii }
+
+						if = { limit = { check_variable = { ii < production_states@var:r_type^num } }
+							for_each_loop = {
+								array = market_leader_temp:market_production_states@var:r_type
+								index = ii value = vv break = bb
+
+								if = { limit = { check_variable = { vv:production@var:r_type < market_state_temp:production@var:r_type } }
+									add_to_array = { array = market_leader_temp:market_production_states@var:r_type value = THIS index = ii }
+									set_temp_variable = { bb = 1 }
+								}
+							}
+							if = { limit = { check_variable = { bb = 0 } } add_to_array = { market_leader_temp:market_production_states@var:r_type = THIS } }
+							
+							if = { limit = { check_variable = { market_leader_temp:market_production_states@var:r_type^num > 5 } } 
+								remove_from_array = { array = market_leader_temp:market_production_states@var:r_type index = 5 } 
+							}
+						}
+						else = {
+							set_temp_variable = { bbb = 1 }
+						}
+					}
+				}
+				
+				# Check the top 5 consuming states of each country. Put them in a list.
+				set_temp_variable = { highest_state_temp = consumption_states@var:r_type^0 }
+				if = { limit = { check_variable = { highest_state_temp:consumption@var:r_type > market_leader_temp:market_consumption_states@var:r_type^4 } }
+					for_loop_effect = {
+						end = 5 value = ii break = bbb
+						set_temp_variable = { market_state_temp = consumption_states@var:r_type^ii }
+
+						if = { limit = { check_variable = { ii < consumption_states@var:r_type^num } }
+							for_each_loop = {
+								array = market_leader_temp:market_consumption_states@var:r_type
+								index = ii value = vv break = bb
+
+								if = { limit = { check_variable = { vv:demand@var:r_type < market_state_temp:demand@var:r_type } }
+									add_to_array = { array = market_leader_temp:market_consumption_states@var:r_type value = THIS index = ii }
+									set_temp_variable = { bb = 1 }
+								}
+							}
+							if = { limit = { check_variable = { bb = 0 } } add_to_array = { market_leader_temp:market_consumption_states@var:r_type = THIS } }
+							
+							if = { limit = { check_variable = { market_leader_temp:market_consumption_states@var:r_type^num > 5 } } 
+								remove_from_array = { array = market_leader_temp:market_consumption_states@var:r_type index = 5 } 
+							}
+						}
+						else = {
+							set_temp_variable = { bbb = 1 }
+						}
+					}
+				}
+			}
+		}
 	}
 	national_market_update = {
 		
@@ -5463,6 +5561,34 @@
 
 			add_to_variable = { local_need@var:r_type = resource_consumed@var:r_type }
 			#set_variable = { balance@var:r_type = resource@var:r_type }
+		}
+		
+		clear_array = production_states@var:r_type
+		clear_array = consumption_states@var:r_type
+		every_controlled_state = {
+			# Add production from this state to production states array, sorted
+			for_each_loop = {
+				array = PREV.production_states@var:r_type
+				index = ii value = vv break = bb
+
+				if = { limit = { check_variable = { vv < local_production@var:r_type } }
+					add_to_array = { array = PREV.production_states@var:r_type value = THIS index = ii }
+					set_temp_variable = { bb = 1 }
+				}
+			}
+			if = { limit = { check_variable = { bb = 0 } } add_to_array = { PREV.production_states@var:r_type = THIS } }
+			
+			# Add consumption from this state to consumption states array, sorted
+			for_each_loop = {
+				array = PREV.consumption_states@var:r_type
+				index = ii value = vv break = bb
+
+				if = { limit = { check_variable = { vv < demand@var:r_type } }
+					add_to_array = { array = PREV.consumption_states@var:r_type value = THIS index = ii }
+					set_temp_variable = { bb = 1 }
+				}
+			}
+			if = { limit = { check_variable = { bb = 0 } } add_to_array = { PREV.consumption_states@var:r_type = THIS } }
 		}
 	}
 	state_market_update = {
