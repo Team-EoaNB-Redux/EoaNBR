@@ -5679,6 +5679,30 @@
 	}
 
 	market_leader_check = {
+		if = { # Country has changed market
+			limit = {
+				NOT = { is_in_array = { market_leader:market_countries = THIS } }
+			}
+			every_country = { # If market_leader has changed, remove from that list
+				limit = {
+					is_in_array = { market_countries = THIS }
+					check_variable = { PREV.market_leader = THIS }
+				}
+				remove_from_array = { market_countries = PREV }
+				set_temp_variable = { market_leader_check_temp = 1 }
+			}
+				
+			if = { # If market_leader changed to a country that exists, add this to that country
+				limit = {
+					country_exists = var:market_leader
+					check_variable = { market_leader:market_leader = market_leader }
+				}
+				set_variable = { market_capital = market_leader:market_capital }
+				add_to_array = { market_leader:market_countries = THIS }
+			}
+		}
+
+
 		if = {
 			limit = {
 				OR = {
