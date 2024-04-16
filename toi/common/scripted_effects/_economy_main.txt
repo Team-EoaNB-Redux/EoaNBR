@@ -327,6 +327,67 @@ create_econ_order_array = {
     }
 }
 
+# 3.4 secs
+r_weekly_trade = {
+    # Effect that runs weekly 
+    random_country = {
+        create_econ_order_array = yes
+    }
+
+    for_each_scope_loop = {
+        array = global.econ_order_array
+        if = {
+            limit = {
+                check_variable = { market_leader = THIS }
+            }
+            market_update = yes
+        }
+    }
+
+    for_each_scope_loop = {
+        array = global.econ_order_array
+        if = {
+            limit = {
+                OR = {
+                    has_idea = export_focus
+                    has_idea = free_trade
+                }
+            }
+            for_each_loop = {
+                array = global.resource_token_array
+                value = resource_token
+                
+                clear_variable = trade_ai@var:resource_token
+            }
+        }
+
+        if = {
+            limit = {
+                OR = {
+                    has_idea = closed_economy
+                    NOT = { check_variable = { market_leader = THIS } }
+                }
+            }
+            clear_trade = yes
+        }
+        else_if = {
+            limit = {
+                check_variable = { market_leader = THIS }
+            }
+            trade_ai_calculation = yes
+        }
+    }
+    
+    for_each_scope_loop = {
+        array = global.econ_order_array
+        if = {
+            limit = {
+                check_variable = { market_leader = THIS }
+            }
+            trade_update = yes
+        }
+    }
+}
 
 
 on_monthly_industries = {

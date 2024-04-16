@@ -1,0 +1,2733 @@
+
+#Market Updates
+	market_update = { # The master market update script. Adds up all values from every state up to the market leader 
+		# Scope: Market Leader
+		# Make sure current scope is a market leader by doing check_variable = { market_leader = THIS }
+		
+		# The following two inputs allow market_update to run without running more strenuous operations. For performance
+		# ignore_state_market_temp - Does not recalc state markets if non-zero
+		# ignore_national_market_temp - Does not recalc state OR national markets if non-zero
+
+		set_temp_variable = { market_leader_temp = THIS }
+
+        hidden_effect = {
+
+            # Runs the market_setup command again to ensure that all countries are in your market that SHOULD be
+            market_setup = yes
+
+            for_each_loop = { # Reset to 0
+                array = global.resource_token_array
+                value = r_type
+                
+                set_variable = { need@var:r_type = 0 }
+                set_variable = { production@var:r_type = 0 }
+            }
+
+            for_each_scope_loop = { # Add up each country
+                array = market_countries
+
+                if = {
+                    limit = {
+                        check_variable = { ignore_national_market_temp = 0 }
+                    }
+                    if = {
+                        limit = {
+                            check_variable = { ignore_state_market_temp = 0 }
+                        }
+                        every_controlled_state = {
+                            state_market_update = yes
+                        }
+                    }
+
+                    national_market_update = yes
+                }
+
+                
+                for_each_loop = {
+                    array = global.resource_token_array
+                    value = r_type
+                    add_to_variable = { market_leader_temp:need@var:r_type = local_need@var:r_type }
+                    add_to_variable = { market_leader_temp:production@var:r_type = local_production@var:r_type }
+                }
+            }
+
+            market_calculations = yes
+
+            set_temp_variable = { ignore_state_market_temp = 0 }
+            set_temp_variable = { ignore_national_market_temp = 0 }
+        }
+	}
+	market_calculations = { # Does supply/demand calculations for the market and adjusts prices. Included in market_update & trade_update_quantity. 
+		# Scope: Market Leader
+		# Does all the market calculations after having gotten all the stuff from states. Mostly for trade
+
+		set_temp_variable = { market_leader_temp = THIS }
+
+		for_each_loop = { # Market Calculations
+			array = global.resource_token_array
+			value = r_type
+			
+			set_variable = { supply@var:r_type = production@var:r_type }
+			set_variable = { demand@var:r_type = need@var:r_type }
+
+			if = { # Adding positive Trade to supply
+				limit = {
+					check_variable = { trade@var:r_type > 0 }
+				}
+				add_to_variable = { supply@var:r_type = trade@var:r_type }
+			}
+			if = { # Adding negative Trade to demand
+				limit = {
+					check_variable = { trade@var:r_type < 0 }
+				}
+				subtract_from_variable = { demand@var:r_type = trade@var:r_type }
+			}
+
+			# if = { limit = { check_variable = { r_type = token:wood } } add_to_variable = { supply@token:wood = 3000 } }
+			# if = { limit = { check_variable = { r_type = token:fiber } } add_to_variable = { supply@token:fiber = 400 } }
+			# if = { limit = { check_variable = { r_type = token:luxuries } } add_to_variable = { supply@token:luxuries = 600 } }
+			# if = { limit = { check_variable = { r_type = token:textiles } } add_to_variable = { demand@token:textiles = 1200 } }
+			# if = { limit = { check_variable = { r_type = token:consumer_goods } } add_to_variable = { demand@token:consumer_goods = 600 } }
+			# if = { limit = { check_variable = { r_type = token:machinery } } add_to_variable = { demand@token:machinery = 100 } }
+			# if = { limit = { check_variable = { r_type = token:steel } } add_to_variable = { demand@token:steel = 300 } }
+			# if = { limit = { check_variable = { r_type = token:iron } } add_to_variable = { demand@token:iron = 500 } }
+			# if = { limit = { check_variable = { r_type = token:coal } } add_to_variable = { demand@token:coal = 500 } }
+			# if = { limit = { check_variable = { r_type = token:machinery } } add_to_variable = { demand@token:machinery = 100 } }
+
+			# National Balance
+			set_variable = { balance@var:r_type = supply@var:r_type }
+			subtract_from_variable = { balance@var:r_type = demand@var:r_type }
+
+			# Prices
+			set_temp_variable = { s_temp = supply@var:r_type }
+			set_temp_variable = { d_temp = demand@var:r_type }
+			get_price = yes
+			set_variable = { price@var:r_type = p_return_temp }
+			
+			set_variable = { price_compared_to_base@var:r_type = price@var:r_type }
+			divide_variable = { price_compared_to_base@var:r_type = global.base_price@var:r_type }
+			subtract_from_variable = { price_compared_to_base@var:r_type = 1 }
+		}
+		
+		for_each_scope_loop = { # Apply to each country
+			array = market_countries
+
+			for_each_loop = {
+				array = global.resource_token_array
+				value = r_type
+				set_variable = { supply@var:r_type = market_leader_temp:supply@var:r_type }
+				set_variable = { demand@var:r_type = market_leader_temp:demand@var:r_type }
+				set_variable = { balance@var:r_type = market_leader_temp:balance@var:r_type }
+				set_variable = { price@var:r_type = market_leader_temp:price@var:r_type }
+				set_variable = { price_compared_to_base@var:r_type = market_leader_temp:price_compared_to_base@var:r_type }
+				every_controlled_state = {
+					set_variable = { price@var:r_type = PREV.price@var:r_type }
+					set_variable = { price_compared_to_base@var:r_type = PREV.price_compared_to_base@var:r_type }
+				}
+			}
+		}
+
+        for_each_scope_loop = { # Each country gets their production
+			array = market_countries
+			set_variable = { resource_cost@var:r_type = local_production@var:r_type }
+			multiply_variable = { resource_cost@var:r_type = -1 }
+			round_variable = resource_cost@var:r_type
+        }
+		for_each_loop = { # Market leader gets a duplicate of all resources in the market
+			array = global.resource_token_array
+			value = r_type
+			# Trade
+			set_variable = { resource_cost@var:r_type = local_production@var:r_type }
+			add_to_variable = { resource_cost@var:r_type = production@var:r_type }
+			add_to_variable = { resource_cost@var:r_type = trade@var:r_type }
+			multiply_variable = { resource_cost@var:r_type = -1 }
+			round_variable = resource_cost@var:r_type
+		}
+		
+		
+		for_each_loop = { # Market Statistics
+			array = global.resource_token_array
+			value = r_type
+
+			clear_array = market_production_countries@var:r_type
+			clear_array = market_consumption_countries@var:r_type
+
+			# Only includes top 5 states
+			clear_array = market_production_states@var:r_type
+			clear_array = market_consumption_states@var:r_type
+			
+			for_each_scope_loop = {
+				array = market_countries
+				
+				# Add production from this country to market production countries array, sorted
+				for_each_loop = {
+					array = market_leader_temp:market_production_countries@var:r_type
+					index = ii value = vv break = bb
+
+					if = { limit = { check_variable = { vv:local_production@var:r_type < local_production@var:r_type } }
+						add_to_array = { array = market_leader_temp:market_production_countries@var:r_type value = THIS index = ii }
+						set_temp_variable = { bb = 1 }
+					}
+				}
+				if = { limit = { check_variable = { bb = 0 } } add_to_array = { market_leader_temp:market_production_countries@var:r_type = THIS } }
+				
+				# Add consumption from this country to market consumption countries array, sorted
+				for_each_loop = {
+					array = market_leader_temp:market_consumption_countries@var:r_type
+					index = ii value = vv break = bb
+
+					if = { limit = { check_variable = { vv:local_need@var:r_type < local_need@var:r_type } }
+						add_to_array = { array = market_leader_temp:market_consumption_countries@var:r_type value = THIS index = ii }
+						set_temp_variable = { bb = 1 }
+					}
+				}
+				if = { limit = { check_variable = { bb = 0 } } add_to_array = { market_leader_temp:market_consumption_countries@var:r_type = THIS } }
+
+				# Check the top 5 producing states of each country. Put them in a list.
+				set_temp_variable = { highest_state_temp = production_states@var:r_type^0 }
+				if = { limit = { check_variable = { highest_state_temp:production@var:r_type > market_leader_temp:market_production_states@var:r_type^4 } }
+					for_loop_effect = {
+						end = 5 value = ii break = bbb
+						set_temp_variable = { market_state_temp = production_states@var:r_type^ii }
+
+						if = { limit = { check_variable = { ii < production_states@var:r_type^num } }
+							for_each_loop = {
+								array = market_leader_temp:market_production_states@var:r_type
+								index = ii value = vv break = bb
+
+								if = { limit = { check_variable = { vv:production@var:r_type < market_state_temp:production@var:r_type } }
+									add_to_array = { array = market_leader_temp:market_production_states@var:r_type value = THIS index = ii }
+									set_temp_variable = { bb = 1 }
+								}
+							}
+							if = { limit = { check_variable = { bb = 0 } } add_to_array = { market_leader_temp:market_production_states@var:r_type = THIS } }
+							
+							if = { limit = { check_variable = { market_leader_temp:market_production_states@var:r_type^num > 5 } } 
+								remove_from_array = { array = market_leader_temp:market_production_states@var:r_type index = 5 } 
+							}
+						}
+						else = {
+							set_temp_variable = { bbb = 1 }
+						}
+					}
+				}
+				
+				# Check the top 5 consuming states of each country. Put them in a list.
+				set_temp_variable = { highest_state_temp = consumption_states@var:r_type^0 }
+				if = { limit = { check_variable = { highest_state_temp:consumption@var:r_type > market_leader_temp:market_consumption_states@var:r_type^4 } }
+					for_loop_effect = {
+						end = 5 value = ii break = bbb
+						set_temp_variable = { market_state_temp = consumption_states@var:r_type^ii }
+
+						if = { limit = { check_variable = { ii < consumption_states@var:r_type^num } }
+							for_each_loop = {
+								array = market_leader_temp:market_consumption_states@var:r_type
+								index = ii value = vv break = bb
+
+								if = { limit = { check_variable = { vv:demand@var:r_type < market_state_temp:demand@var:r_type } }
+									add_to_array = { array = market_leader_temp:market_consumption_states@var:r_type value = THIS index = ii }
+									set_temp_variable = { bb = 1 }
+								}
+							}
+							if = { limit = { check_variable = { bb = 0 } } add_to_array = { market_leader_temp:market_consumption_states@var:r_type = THIS } }
+							
+							if = { limit = { check_variable = { market_leader_temp:market_consumption_states@var:r_type^num > 5 } } 
+								remove_from_array = { array = market_leader_temp:market_consumption_states@var:r_type index = 5 } 
+							}
+						}
+						else = {
+							set_temp_variable = { bbb = 1 }
+						}
+					}
+				}
+			}
+		}
+	}
+	national_market_update = {
+		
+		calculate_military_demand = yes
+
+		for_each_loop = { # Reset to 0
+			array = global.resource_token_array
+			value = r_type
+			
+			set_variable = { local_need@var:r_type = military_demand@var:r_type }
+			set_variable = { local_production@var:r_type = 0 }
+		}
+
+		every_controlled_state = { # Calculate & Add up each state			
+			for_each_loop = { # Add to national scope
+				array = global.resource_token_array
+				value = r_type
+
+				add_to_variable = { PREV.local_need@var:r_type = demand@var:r_type }
+				add_to_variable = { PREV.local_production@var:r_type = production@var:r_type }
+			}
+		}
+		
+		for_each_loop = { # Military Resources
+			array = global.resource_token_array
+			value = r_type
+
+			add_to_variable = { local_need@var:r_type = resource_consumed@var:r_type }
+			#set_variable = { balance@var:r_type = resource@var:r_type }
+		}
+		
+		clear_array = production_states@var:r_type
+		clear_array = consumption_states@var:r_type
+		every_controlled_state = {
+			# Add production from this state to production states array, sorted
+			for_each_loop = {
+				array = PREV.production_states@var:r_type
+				index = ii value = vv break = bb
+
+				if = { limit = { check_variable = { vv < local_production@var:r_type } }
+					add_to_array = { array = PREV.production_states@var:r_type value = THIS index = ii }
+					set_temp_variable = { bb = 1 }
+				}
+			}
+			if = { limit = { check_variable = { bb = 0 } } add_to_array = { PREV.production_states@var:r_type = THIS } }
+			
+			# Add consumption from this state to consumption states array, sorted
+			for_each_loop = {
+				array = PREV.consumption_states@var:r_type
+				index = ii value = vv break = bb
+
+				if = { limit = { check_variable = { vv < demand@var:r_type } }
+					add_to_array = { array = PREV.consumption_states@var:r_type value = THIS index = ii }
+					set_temp_variable = { bb = 1 }
+				}
+			}
+			if = { limit = { check_variable = { bb = 0 } } add_to_array = { PREV.consumption_states@var:r_type = THIS } }
+		}
+	}
+	state_market_update = {
+
+		for_each_loop = { # Resets values to 0
+			array = global.resource_token_array
+			value = r_type
+			set_variable = { supply@var:r_type = 0 }
+			set_variable = { production@var:r_type = 0 }
+
+			set_variable = { demand@var:r_type = 0 }
+			add_to_variable = { demand@var:r_type = pops_need@var:r_type }
+			set_variable = { demand_input@var:r_type = 0 }
+		}
+
+		for_each_loop = { # Industries - Adding production to supply & inputs to demand
+			array = industries
+			value = b_type
+
+			for_each_loop = { # Output
+				array = global.building_base_production@var:b_type
+				value = br_token
+				index = ii
+
+				add_to_variable = { production@var:br_token = production@var:b_type^ii }
+			}
+			for_each_loop = { # Input
+				array = input@var:b_type
+				value = br_token
+				index = ii
+
+				add_to_variable = { demand_input@var:br_token = input_amount@var:b_type^ii }
+			}
+			if = { # Retooling
+				limit = { NOT = { check_variable = { retooling_pm@var:b_type = 0 } } }
+				for_each_loop = {
+					array = retooling_resources@var:b_type
+					value = br_token
+					index = ii
+
+					add_to_variable = { demand@var:br_token = retooling_amount@var:b_type^ii }
+				}
+			}
+			if = { # Construction
+				limit = { NOT = { check_variable = { construction@var:b_type = 0 } } }
+				for_each_loop = {
+					array = construction_resources@var:b_type
+					value = br_token
+					index = ii
+
+					add_to_variable = { demand@var:br_token = construction_amount@var:b_type^ii }
+				}
+			}
+		}
+
+		# Special Buildings
+			# for_each_loop = { # Subsistence Farms
+			#	 array = global.building_base_production@token:subsistence_farm
+			#	 value = br_token
+			#	 index = ii
+
+			#	 add_to_variable = { production@var:br_token = production@token:subsistence_farm^ii }
+			# }
+		#
+		
+		set_temp_variable = { local_resources_temp = modifier@local_resources }
+		add_to_temp_variable = { local_resources_temp = 1 }
+
+		# for_each_loop = { # Mil Resources
+		#	 array = global.resource_token_array
+		#	 value = r_type
+
+		#	 set_temp_variable = { resource_temp = resource@var:r_type }
+		#	 multiply_temp_variable = { resource_temp = local_resources_temp }
+		#	 subtract_from_temp_variable = { resource_temp = 0.499 }
+		#	 round_temp_variable = resource_temp
+		#	 add_to_variable = { production@var:r_type = resource_temp }
+		# }
+		
+		for_each_loop = { # Adds values together
+			array = global.resource_token_array
+			value = r_type
+			add_to_variable = { demand@var:r_type = demand_input@var:r_type }
+
+			set_variable = { balance@var:r_type = supply@var:r_type }
+			subtract_from_variable = { balance@var:r_type = demand@var:r_type }
+		}
+	}
+
+	market_leader_check = {
+		if = { # Country has changed market
+			limit = {
+				NOT = { is_in_array = { market_leader:market_countries = THIS } }
+			}
+			every_country = { # If market_leader has changed, remove from that list
+				limit = {
+					is_in_array = { market_countries = THIS }
+					check_variable = { PREV.market_leader = THIS }
+				}
+				remove_from_array = { market_countries = PREV }
+				set_temp_variable = { market_leader_check_temp = 1 }
+			}
+				
+			if = { # If market_leader changed to a country that exists, add this to that country
+				limit = {
+					country_exists = var:market_leader
+					check_variable = { market_leader:market_leader = market_leader }
+				}
+				set_variable = { market_capital = market_leader:market_capital }
+				add_to_array = { market_leader:market_countries = THIS }
+			}
+		}
+
+
+		if = {
+			limit = {
+				OR = {
+					NOT = { has_variable = market_leader }
+					NOT = { country_exists = var:market_leader }
+					var:market_leader = {
+						NOT = { check_variable = { market_leader = THIS } }
+					}
+				}
+			}
+			set_variable = { market_leader = THIS }
+			set_variable = { market_capital = THIS.capital }
+			clear_array = market_countries
+			add_to_array = { market_countries = THIS }
+		}
+	}
+
+	global_economy_update = { # Updates the list of market leaders & other global variables
+		# Global Scope
+
+		set_variable = { global.gdp = 0 }
+		clear_array = global.markets
+		every_country = {
+			limit = {
+				check_variable = { market_leader = THIS }
+				NOT = { has_variable = has_afr_empire_mechanic_system }
+			}
+			set_temp_variable = { gdp_temp = gdp }
+			divide_temp_variable = { gdp_temp = 1000 }
+			add_to_variable = { global.gdp = gdp_temp }
+
+			for_each_loop = {
+				array = global.markets
+				index = ii
+				value = vv
+				break = bb
+
+				if = {
+					limit = {
+						check_variable = { vv:market_gdp < market_gdp }
+					}
+					add_to_array = { 
+						array = global.markets 
+						value = THIS
+						index = ii
+					}
+					set_temp_variable = { bb = 1 }
+				}
+			}
+			if = {
+				limit = {
+					check_variable = { bb = 0 }
+				}
+				add_to_array = { global.markets = THIS }
+			}
+		}
+	}
+#
+
+# Market Helper Functions
+	get_price = {
+		#Given the resource & supply/demand, returns price
+		#Input: r_type (Resource Token), s_temp (supply), d_temp (demand)
+		#Return: p_return_temp
+		#Any Scope
+
+		set_temp_variable = { p_return_temp = global.base_price@var:r_type }
+		if = {
+			limit = {
+				NOT = { check_variable = { r_type = token:valuables } }
+				is_in_array = { global.resource_token_array = r_type }
+				#NOT = { check_variable = { r_type = token:resource_finance } }
+			}
+			if = {
+				limit = {
+					check_variable = { s_temp > d_temp }
+				}
+				if = {
+					limit = {
+						check_variable = { d_temp > 0.0 }
+					}
+					set_temp_variable = { grp_sd = s_temp }
+					divide_temp_variable = { grp_sd = d_temp }
+
+					set_temp_variable = { grp_multiplier = 3 }
+					subtract_from_temp_variable = { grp_multiplier = grp_sd }
+					divide_temp_variable = { grp_multiplier = 2 }
+
+					if = {
+						limit = {
+							check_variable = { grp_multiplier < 0.25 }
+						}
+						set_temp_variable = { grp_multiplier = 0.25 }
+					}
+				}
+				else = {
+					set_temp_variable = { grp_multiplier = 0.25 }
+				}
+
+				multiply_temp_variable = { p_return_temp = grp_multiplier } #P = B * ((3 - S/D) / 2)
+			}
+			else_if = {
+				limit = {
+					check_variable = { s_temp < d_temp }
+				}
+				if = {
+					limit = {
+						check_variable = { s_temp > 0.0 }
+					}
+					set_temp_variable = { grp_multiplier = d_temp }
+					divide_temp_variable = { grp_multiplier = s_temp }
+					add_to_temp_variable = { grp_multiplier = 1 }
+					divide_temp_variable = { grp_multiplier = 2 }
+
+					if = {
+						limit = {
+							check_variable = { grp_multiplier > 2.0 }
+						}
+						set_temp_variable = { grp_multiplier = 2.0 }
+					}
+				}
+				else = {
+					set_temp_variable = { grp_multiplier = 2.0 }
+				}
+
+				multiply_temp_variable = { p_return_temp = grp_multiplier } #P = B * ( (D/S + 1) / 2)
+			}
+		}
+		else_if = {
+			limit = {
+				check_variable = { r_type = token:valuables }
+			}
+			multiply_temp_variable = { p_return_temp = 2 }
+		}
+	}
+
+	calc_industrial_capacity = {
+		set_variable = { industrial_capacity = global.base_industrial_capacity }
+		set_variable = { industrial_capacity_use = 0 }
+
+		add_to_variable = { industrial_capacity = modifier@local_industrial_capacity_modifier }
+		#add_to_variable = { industrial_capacity = controller:modifier@industrial_capacity_modifier }
+		add_to_variable = { industrial_capacity_use = modifier@local_industrial_capacity_use_modifier }
+		#add_to_variable = { industrial_capacity_use = controller:modifier@industrial_capacity_use_modifier }
+
+		for_each_loop = {
+			array = industries
+			value = b_type
+
+			add_to_variable = { industrial_capacity_use = industrial_capacity_use@var:b_type }
+			add_to_variable = { industrial_capacity = industrial_capacity@var:b_type }
+		}
+
+
+		set_variable = { price_industrial_capacity = global.base_price_industrial_capacity }
+		if = {
+			limit = {
+				check_variable = { industrial_capacity_use > industrial_capacity }
+			}
+			set_variable = { industrial_capacity_service = industrial_capacity }
+			divide_variable = { industrial_capacity_service = industrial_capacity_use }
+			# multiply_variable = { industrial_capacity_service = industrial_capacity }
+			# divide_variable = { industrial_capacity_service = industrial_capacity_use }
+		}
+		else = {
+			set_variable = { industrial_capacity_service = 1 }
+		}
+
+		set_temp_variable = { industrial_capacity_use_temp = industrial_capacity_use }
+		multiply_temp_variable = { industrial_capacity_use_temp = 1.25 }
+		if = {
+			limit = {
+				check_variable = { industrial_capacity_use > industrial_capacity }
+			}
+			if = {
+				limit = {
+					check_variable = { industrial_capacity > 0.0 }
+				}
+				set_temp_variable = { grp_multiplier = industrial_capacity_use_temp }
+				divide_temp_variable = { grp_multiplier = industrial_capacity }
+				add_to_temp_variable = { grp_multiplier = 1 }
+				divide_temp_variable = { grp_multiplier = 2 }
+
+				if = {
+					limit = {
+						check_variable = { grp_multiplier > 2.0 }
+					}
+					set_temp_variable = { grp_multiplier = 2.0 }
+				}
+			}
+			else = {
+				set_temp_variable = { grp_multiplier = 2.0 }
+			}
+
+			multiply_variable = { price_industrial_capacity = grp_multiplier }
+		}
+		else = {
+			if = {
+				limit = {
+					check_variable = { industrial_capacity_use_temp > 0.0 }
+				}
+				set_temp_variable = { grp_sd = industrial_capacity }
+				divide_temp_variable = { grp_sd = industrial_capacity_use_temp }
+
+				set_temp_variable = { grp_multiplier = 3 }
+				subtract_from_temp_variable = { grp_multiplier = grp_sd }
+				divide_temp_variable = { grp_multiplier = 2 }
+
+				if = {
+					limit = {
+						check_variable = { grp_multiplier < 0.25 }
+					}
+					set_temp_variable = { grp_multiplier = 0.25 }
+				}
+			}
+			else = {
+				set_temp_variable = { grp_multiplier = 0.25 }
+			}
+
+			multiply_variable = { price_industrial_capacity = grp_multiplier } #P = B * ((3 - S/D) / 2)
+		}
+	}
+	calc_shipping_capacity = {
+		set_variable = { price_shipping_capacity = 1 }
+
+		set_variable = { shipping_capacity_convoys = shipping_convoys }
+		multiply_variable = { shipping_capacity_convoys = global.shipping_capacity_per_convoy }
+
+		set_variable = { shipping_capacity = 100 }
+		add_to_variable = { shipping_capacity = shipping_capacity_convoys }
+		every_controlled_state = {
+			add_to_variable = { PREV.shipping_capacity = shipping_capacity@port }
+		}
+	}
+
+	calculate_military_demand = {
+		battalion_count_update = yes
+
+		set_temp_variable = { equipment_cost_factor_temp = modifier@military_equipment_cost_factor }
+		add_to_temp_variable = { equipment_cost_factor_temp = 1 }
+		set_temp_variable = { naval_equipment_cost_factor_temp = modifier@military_equipment_cost_factor }
+		add_to_temp_variable = { naval_equipment_cost_factor_temp = modifier@naval_equipment_cost_factor }
+		add_to_temp_variable = { naval_equipment_cost_factor_temp = 1 }
+
+		#Needs
+			#Reset
+				set_variable = { military_need@token:resource_food = 0 } #Food
+				set_variable = { military_need@token:resource_consumer_goods = 0 } #Basic Supplies
+				set_variable = { military_need@token:resource_luxury_goods = 0 } #Officer stuff
+				set_variable = { military_need@token:resource_industrial_goods = 0 } #Machinery, Heavy Gun Parts, Building Materials, etc.
+			#
+
+			#Army Needs
+				#Infantry
+				set_temp_variable = { need_temp = global.infantry_need@token:resource_food }
+				multiply_temp_variable = { need_temp = infantry_battalions_weighted }
+				add_to_variable = { military_need@token:resource_food = need_temp }
+
+				set_temp_variable = { need_temp = global.infantry_need@token:resource_consumer_goods }
+				multiply_temp_variable = { need_temp = infantry_battalions_weighted }
+				add_to_variable = { military_need@token:resource_consumer_goods = need_temp }
+
+				set_temp_variable = { need_temp = global.infantry_need@token:resource_luxury_goods }
+				multiply_temp_variable = { need_temp = infantry_battalions_weighted }
+				add_to_variable = { military_need@token:resource_luxury_goods = need_temp }
+
+				set_temp_variable = { need_temp = global.infantry_need@token:resource_industrial_goods }
+				multiply_temp_variable = { need_temp = infantry_battalions_weighted }
+				add_to_variable = { military_need@token:resource_industrial_goods = need_temp }
+
+				#Militia
+				set_temp_variable = { need_temp = global.militia_need@token:resource_food }
+				multiply_temp_variable = { need_temp = militia_battalions_weighted }
+				add_to_variable = { military_need@token:resource_food = need_temp }
+
+				set_temp_variable = { need_temp = global.militia_need@token:resource_consumer_goods }
+				multiply_temp_variable = { need_temp = militia_battalions_weighted }
+				add_to_variable = { military_need@token:resource_consumer_goods = need_temp }
+
+				set_temp_variable = { need_temp = global.militia_need@token:resource_luxury_goods }
+				multiply_temp_variable = { need_temp = militia_battalions_weighted }
+				add_to_variable = { military_need@token:resource_luxury_goods = need_temp }
+
+				set_temp_variable = { need_temp = global.militia_need@token:resource_industrial_goods }
+				multiply_temp_variable = { need_temp = militia_battalions_weighted }
+				add_to_variable = { military_need@token:resource_industrial_goods = need_temp }
+
+				#Artillery
+				set_temp_variable = { need_temp = global.artillery_need@token:resource_food }
+				multiply_temp_variable = { need_temp = artillery_battalions_weighted }
+				add_to_variable = { military_need@token:resource_food = need_temp }
+
+				set_temp_variable = { need_temp = global.artillery_need@token:resource_consumer_goods }
+				multiply_temp_variable = { need_temp = artillery_battalions_weighted }
+				add_to_variable = { military_need@token:resource_consumer_goods = need_temp }
+
+				set_temp_variable = { need_temp = global.artillery_need@token:resource_luxury_goods }
+				multiply_temp_variable = { need_temp = artillery_battalions_weighted }
+				add_to_variable = { military_need@token:resource_luxury_goods = need_temp }
+
+				set_temp_variable = { need_temp = global.artillery_need@token:resource_industrial_goods }
+				multiply_temp_variable = { need_temp = artillery_battalions_weighted }
+				add_to_variable = { military_need@token:resource_industrial_goods = need_temp }
+
+				#Cavalry
+				set_temp_variable = { need_temp = global.cavalry_need@token:resource_food }
+				multiply_temp_variable = { need_temp = cavalry_battalions_weighted }
+				add_to_variable = { military_need@token:resource_food = need_temp }
+
+				set_temp_variable = { need_temp = global.cavalry_need@token:resource_consumer_goods }
+				multiply_temp_variable = { need_temp = cavalry_battalions_weighted }
+				add_to_variable = { military_need@token:resource_consumer_goods = need_temp }
+
+				set_temp_variable = { need_temp = global.cavalry_need@token:resource_luxury_goods }
+				multiply_temp_variable = { need_temp = cavalry_battalions_weighted }
+				add_to_variable = { military_need@token:resource_luxury_goods = need_temp }
+
+				set_temp_variable = { need_temp = global.cavalry_need@token:resource_industrial_goods }
+				multiply_temp_variable = { need_temp = cavalry_battalions_weighted }
+				add_to_variable = { military_need@token:resource_industrial_goods = need_temp }
+
+				#Mobile
+				set_temp_variable = { need_temp = global.mobile_need@token:resource_food }
+				multiply_temp_variable = { need_temp = mobile_battalions_weighted }
+				add_to_variable = { military_need@token:resource_food = need_temp }
+
+				set_temp_variable = { need_temp = global.mobile_need@token:resource_consumer_goods }
+				multiply_temp_variable = { need_temp = mobile_battalions_weighted }
+				add_to_variable = { military_need@token:resource_consumer_goods = need_temp }
+
+				set_temp_variable = { need_temp = global.mobile_need@token:resource_luxury_goods }
+				multiply_temp_variable = { need_temp = mobile_battalions_weighted }
+				add_to_variable = { military_need@token:resource_luxury_goods = need_temp }
+
+				set_temp_variable = { need_temp = global.mobile_need@token:resource_industrial_goods }
+				multiply_temp_variable = { need_temp = mobile_battalions_weighted }
+				add_to_variable = { military_need@token:resource_industrial_goods = need_temp }
+
+				#Armor
+				set_temp_variable = { need_temp = global.armor_need@token:resource_food }
+				multiply_temp_variable = { need_temp = armor_battalions_weighted }
+				add_to_variable = { military_need@token:resource_food = need_temp }
+
+				set_temp_variable = { need_temp = global.armor_need@token:resource_consumer_goods }
+				multiply_temp_variable = { need_temp = armor_battalions_weighted }
+				add_to_variable = { military_need@token:resource_consumer_goods = need_temp }
+
+				set_temp_variable = { need_temp = global.armor_need@token:resource_luxury_goods }
+				multiply_temp_variable = { need_temp = armor_battalions_weighted }
+				add_to_variable = { military_need@token:resource_luxury_goods = need_temp }
+
+				set_temp_variable = { need_temp = global.armor_need@token:resource_industrial_goods }
+				multiply_temp_variable = { need_temp = armor_battalions_weighted }
+				add_to_variable = { military_need@token:resource_industrial_goods = need_temp }
+
+				#Robotic
+				set_temp_variable = { need_temp = global.robotic_need@token:resource_food }
+				multiply_temp_variable = { need_temp = robotic_battalions_weighted }
+				add_to_variable = { military_need@token:resource_food = need_temp }
+
+				set_temp_variable = { need_temp = global.robotic_need@token:resource_consumer_goods }
+				multiply_temp_variable = { need_temp = robotic_battalions_weighted }
+				add_to_variable = { military_need@token:resource_consumer_goods = need_temp }
+
+				set_temp_variable = { need_temp = global.robotic_need@token:resource_luxury_goods }
+				multiply_temp_variable = { need_temp = robotic_battalions_weighted }
+				add_to_variable = { military_need@token:resource_luxury_goods = need_temp }
+
+				set_temp_variable = { need_temp = global.robotic_need@token:resource_industrial_goods }
+				multiply_temp_variable = { need_temp = robotic_battalions_weighted }
+				add_to_variable = { military_need@token:resource_industrial_goods = need_temp }
+
+				#Support
+				set_temp_variable = { need_temp = global.support_need@token:resource_food }
+				multiply_temp_variable = { need_temp = support_battalions_weighted }
+				add_to_variable = { military_need@token:resource_food = need_temp }
+
+				set_temp_variable = { need_temp = global.support_need@token:resource_consumer_goods }
+				multiply_temp_variable = { need_temp = support_battalions_weighted }
+				add_to_variable = { military_need@token:resource_consumer_goods = need_temp }
+
+				set_temp_variable = { need_temp = global.support_need@token:resource_luxury_goods }
+				multiply_temp_variable = { need_temp = support_battalions_weighted }
+				add_to_variable = { military_need@token:resource_luxury_goods = need_temp }
+
+				set_temp_variable = { need_temp = global.support_need@token:resource_industrial_goods }
+				multiply_temp_variable = { need_temp = support_battalions_weighted }
+				add_to_variable = { military_need@token:resource_industrial_goods = need_temp }
+
+				#Total
+				multiply_variable = { military_need@token:resource_food = naval_equipment_cost_factor_temp }
+				multiply_variable = { military_need@token:resource_consumer_goods = naval_equipment_cost_factor_temp }
+				multiply_variable = { military_need@token:resource_luxury_goods = naval_equipment_cost_factor_temp }
+				multiply_variable = { military_need@token:resource_industrial_goods = naval_equipment_cost_factor_temp }
+
+				set_variable = { military_army_need@token:resource_food = military_need@token:resource_food }
+				set_variable = { military_army_need@token:resource_consumer_goods = military_need@token:resource_consumer_goods }
+				set_variable = { military_army_need@token:resource_luxury_goods = military_need@token:resource_luxury_goods }
+				set_variable = { military_army_need@token:resource_industrial_goods = military_need@token:resource_industrial_goods }
+			#
+
+			#Navy Needs
+				set_variable = { military_navy_need@token:resource_food = 0 }
+				set_variable = { military_navy_need@token:resource_consumer_goods = 0 }
+				set_variable = { military_navy_need@token:resource_luxury_goods = 0 }
+				set_variable = { military_navy_need@token:resource_industrial_goods = 0 }
+
+				#Screen
+				set_temp_variable = { need_temp = global.screen_need@token:resource_food }
+				multiply_temp_variable = { need_temp = screen_ships_weighted }
+				add_to_variable = { military_navy_need@token:resource_food = need_temp }
+
+				set_temp_variable = { need_temp = global.screen_need@token:resource_consumer_goods }
+				multiply_temp_variable = { need_temp = screen_ships_weighted }
+				add_to_variable = { military_navy_need@token:resource_consumer_goods = need_temp }
+
+				set_temp_variable = { need_temp = global.screen_need@token:resource_luxury_goods }
+				multiply_temp_variable = { need_temp = screen_ships_weighted }
+				add_to_variable = { military_navy_need@token:resource_luxury_goods = need_temp }
+
+				set_temp_variable = { need_temp = global.screen_need@token:resource_industrial_goods }
+				multiply_temp_variable = { need_temp = screen_ships_weighted }
+				add_to_variable = { military_navy_need@token:resource_industrial_goods = need_temp }
+
+				#Capital
+				set_temp_variable = { need_temp = global.capital_need@token:resource_food }
+				multiply_temp_variable = { need_temp = capital_ships_weighted }
+				add_to_variable = { military_navy_need@token:resource_food = need_temp }
+
+				set_temp_variable = { need_temp = global.capital_need@token:resource_consumer_goods }
+				multiply_temp_variable = { need_temp = capital_ships_weighted }
+				add_to_variable = { military_navy_need@token:resource_consumer_goods = need_temp }
+
+				set_temp_variable = { need_temp = global.capital_need@token:resource_luxury_goods }
+				multiply_temp_variable = { need_temp = capital_ships_weighted }
+				add_to_variable = { military_navy_need@token:resource_luxury_goods = need_temp }
+
+				set_temp_variable = { need_temp = global.capital_need@token:resource_industrial_goods }
+				multiply_temp_variable = { need_temp = capital_ships_weighted }
+				add_to_variable = { military_navy_need@token:resource_industrial_goods = need_temp }
+
+				#Submarine
+				set_temp_variable = { need_temp = global.submarine_need@token:resource_food }
+				multiply_temp_variable = { need_temp = submarine_ships_weighted }
+				add_to_variable = { military_navy_need@token:resource_food = need_temp }
+
+				set_temp_variable = { need_temp = global.submarine_need@token:resource_consumer_goods }
+				multiply_temp_variable = { need_temp = submarine_ships_weighted }
+				add_to_variable = { military_navy_need@token:resource_consumer_goods = need_temp }
+
+				set_temp_variable = { need_temp = global.submarine_need@token:resource_luxury_goods }
+				multiply_temp_variable = { need_temp = submarine_ships_weighted }
+				add_to_variable = { military_navy_need@token:resource_luxury_goods = need_temp }
+
+				set_temp_variable = { need_temp = global.submarine_need@token:resource_industrial_goods }
+				multiply_temp_variable = { need_temp = submarine_ships_weighted }
+				add_to_variable = { military_navy_need@token:resource_industrial_goods = need_temp }
+
+				#Total
+				multiply_variable = { military_navy_need@token:resource_food = equipment_cost_factor_temp }
+				multiply_variable = { military_navy_need@token:resource_consumer_goods = equipment_cost_factor_temp }
+				multiply_variable = { military_navy_need@token:resource_luxury_goods = equipment_cost_factor_temp }
+				multiply_variable = { military_navy_need@token:resource_industrial_goods = equipment_cost_factor_temp }
+
+				add_to_variable = { military_need@token:resource_food = military_navy_need@token:resource_food }
+				add_to_variable = { military_need@token:resource_consumer_goods = military_navy_need@token:resource_consumer_goods }
+				add_to_variable = { military_need@token:resource_luxury_goods = military_navy_need@token:resource_luxury_goods }
+				add_to_variable = { military_need@token:resource_industrial_goods = military_navy_need@token:resource_industrial_goods }
+			#
+
+			#Airforce Needs
+				set_variable = { military_airforce_need@token:resource_food = num_deployed_planes }
+				multiply_variable = { military_airforce_need@token:resource_food = global.deployed_planes_need@token:resource_food }
+
+				set_variable = { military_airforce_need@token:resource_consumer_goods = num_deployed_planes }
+				multiply_variable = { military_airforce_need@token:resource_consumer_goods = global.deployed_planes_need@token:resource_consumer_goods }
+
+				set_variable = { military_airforce_need@token:resource_luxury_goods = num_deployed_planes }
+				multiply_variable = { military_airforce_need@token:resource_luxury_goods = global.deployed_planes_need@token:resource_luxury_goods } #so much steak
+
+				set_variable = { military_airforce_need@token:resource_industrial_goods = num_deployed_planes }
+				multiply_variable = { military_airforce_need@token:resource_industrial_goods = global.deployed_planes_need@token:resource_industrial_goods }
+				
+				multiply_variable = { military_airforce_need@token:resource_food = equipment_cost_factor_temp }
+				multiply_variable = { military_airforce_need@token:resource_consumer_goods = equipment_cost_factor_temp }
+				multiply_variable = { military_airforce_need@token:resource_luxury_goods = equipment_cost_factor_temp }
+				multiply_variable = { military_airforce_need@token:resource_industrial_goods = equipment_cost_factor_temp }
+
+				add_to_variable = { military_need@token:resource_food = military_airforce_need@token:resource_food }
+				add_to_variable = { military_need@token:resource_consumer_goods = military_airforce_need@token:resource_consumer_goods }
+				add_to_variable = { military_need@token:resource_luxury_goods = military_airforce_need@token:resource_luxury_goods }
+				add_to_variable = { military_need@token:resource_industrial_goods = military_airforce_need@token:resource_industrial_goods }
+			#
+		#
+		#Demand
+			#Army
+			set_variable = { military_army_demand@token:resource_food = military_army_need@token:resource_food }
+			multiply_variable = { military_army_demand@token:resource_food = military_spending_percentage }
+			divide_variable = { military_army_demand@token:resource_food = 100 }
+
+			set_variable = { military_army_demand@token:resource_consumer_goods = military_army_need@token:resource_consumer_goods }
+			multiply_variable = { military_army_demand@token:resource_consumer_goods = military_spending_percentage }
+			divide_variable = { military_army_demand@token:resource_consumer_goods = 100 }
+
+			set_variable = { military_army_demand@token:resource_luxury_goods = military_army_need@token:resource_luxury_goods }
+			multiply_variable = { military_army_demand@token:resource_luxury_goods = military_spending_percentage }
+			divide_variable = { military_army_demand@token:resource_luxury_goods = 100 }
+
+			set_variable = { military_army_demand@token:resource_industrial_goods = military_army_need@token:resource_industrial_goods }
+			multiply_variable = { military_army_demand@token:resource_industrial_goods = military_spending_percentage }
+			divide_variable = { military_army_demand@token:resource_industrial_goods = 100 }
+
+			#Navy
+			set_variable = { military_navy_demand@token:resource_food = military_navy_need@token:resource_food }
+			multiply_variable = { military_navy_demand@token:resource_food = military_spending_percentage }
+			divide_variable = { military_navy_demand@token:resource_food = 100 }
+
+			set_variable = { military_navy_demand@token:resource_consumer_goods = military_navy_need@token:resource_consumer_goods }
+			multiply_variable = { military_navy_demand@token:resource_consumer_goods = military_spending_percentage }
+			divide_variable = { military_navy_demand@token:resource_consumer_goods = 100 }
+
+			set_variable = { military_navy_demand@token:resource_luxury_goods = military_navy_need@token:resource_luxury_goods }
+			multiply_variable = { military_navy_demand@token:resource_luxury_goods = military_spending_percentage }
+			divide_variable = { military_navy_demand@token:resource_luxury_goods = 100 }
+
+			set_variable = { military_navy_demand@token:resource_industrial_goods = military_navy_need@token:resource_industrial_goods }
+			multiply_variable = { military_navy_demand@token:resource_industrial_goods = military_spending_percentage }
+			divide_variable = { military_navy_demand@token:resource_industrial_goods = 100 }
+
+			#Airforce
+			set_variable = { military_airforce_demand@token:resource_food = military_airforce_need@token:resource_food }
+			multiply_variable = { military_airforce_demand@token:resource_food = military_spending_percentage }
+			divide_variable = { military_airforce_demand@token:resource_food = 100 }
+
+			set_variable = { military_airforce_demand@token:resource_consumer_goods = military_airforce_need@token:resource_consumer_goods }
+			multiply_variable = { military_airforce_demand@token:resource_consumer_goods = military_spending_percentage }
+			divide_variable = { military_airforce_demand@token:resource_consumer_goods = 100 }
+
+			set_variable = { military_airforce_demand@token:resource_luxury_goods = military_airforce_need@token:resource_luxury_goods }
+			multiply_variable = { military_airforce_demand@token:resource_luxury_goods = military_spending_percentage }
+			divide_variable = { military_airforce_demand@token:resource_luxury_goods = 100 }
+
+			set_variable = { military_airforce_demand@token:resource_industrial_goods = military_airforce_need@token:resource_industrial_goods }
+			multiply_variable = { military_airforce_demand@token:resource_industrial_goods = military_spending_percentage }
+			divide_variable = { military_airforce_demand@token:resource_industrial_goods = 100 }
+
+			#Total
+			set_variable = { military_demand@token:resource_food = military_need@token:resource_food }
+			multiply_variable = { military_demand@token:resource_food = military_spending_percentage }
+			divide_variable = { military_demand@token:resource_food = 100 }
+
+			set_variable = { military_demand@token:resource_consumer_goods = military_need@token:resource_consumer_goods }
+			multiply_variable = { military_demand@token:resource_consumer_goods = military_spending_percentage }
+			divide_variable = { military_demand@token:resource_consumer_goods = 100 }
+
+			set_variable = { military_demand@token:resource_luxury_goods = military_need@token:resource_luxury_goods }
+			multiply_variable = { military_demand@token:resource_luxury_goods = military_spending_percentage }
+			divide_variable = { military_demand@token:resource_luxury_goods = 100 }
+
+			set_variable = { military_demand@token:resource_industrial_goods = military_need@token:resource_industrial_goods }
+			multiply_variable = { military_demand@token:resource_industrial_goods = military_spending_percentage }
+			divide_variable = { military_demand@token:resource_industrial_goods = 100 }
+		#
+	}
+#
+
+# Trade
+	add_trade = {
+		# resource_temp
+		# amount_temp
+		# no_update_temp
+
+		hidden_effect = {
+			if = { 
+				limit = { 
+					NOT = { is_in_array = { trade_routes = resource_temp } } 
+					check_variable = { market_leader = THIS }
+                    NOT = { has_idea = closed_economy }
+				} 
+				add_to_array = { trade_routes = resource_temp }
+				if = {
+					limit = {
+						check_variable = { no_update_temp = 0 }
+					}
+					trade_update = yes
+				}
+			}
+		}
+	}
+	remove_trade = {
+		# resource_temp - resource token
+		hidden_effect = {
+			if = {
+				limit = { 
+					is_in_array = { trade_routes = resource_temp }
+					check_variable = { market_leader = THIS }
+				}
+				remove_from_array = { trade_routes = resource_temp }
+				set_variable = { offers@var:resource_temp = 0 }
+				set_variable = { shipping_use@var:resource_temp = 0 }
+				set_variable = { trade@var:resource_temp = 0 }
+				set_variable = { trade_productivity@var:resource_temp = 0 }
+				set_variable = { trade_value@var:resource_temp = 0 }
+				set_variable = { trade_tariffs@var:resource_temp = 0 }
+				set_variable = { trade_profit@var:resource_temp = 0 }
+				set_variable = { trade_jobs@var:resource_temp = 0 }
+
+				if = {
+					limit = {
+						check_variable = { no_update_temp = 0 }
+					}
+					trade_update = yes
+				}
+			}
+		}
+	}
+    clear_trade = {
+        for_each_loop = {
+            array = trade_routes
+            value = resource_temp
+
+            set_variable = { offers@var:resource_temp = 0 }
+            set_variable = { shipping_use@var:resource_temp = 0 }
+            set_variable = { trade@var:resource_temp = 0 }
+            set_variable = { trade_productivity@var:resource_temp = 0 }
+            set_variable = { trade_value@var:resource_temp = 0 }
+            set_variable = { trade_tariffs@var:resource_temp = 0 }
+            set_variable = { trade_profit@var:resource_temp = 0 }
+            set_variable = { trade_jobs@var:resource_temp = 0 }
+        }
+        clear_array = trade_routes
+
+        if = {
+            limit = {
+                check_variable = { no_update_temp = 0 }
+			    check_variable = { market_leader = THIS }
+            }
+            trade_update = yes
+        }
+    }
+
+	adjust_trade = { # Adjusts trade offers by given amount
+		# resource_temp - resource token
+		# amount_temp - Positive values for increasing imports/decreasing exports and Negative values for decreasing imports/increasing exports
+		# stop_at_zero_temp - Set to non-zero value to allow reductions in exports/imports to go past 0 and flip to become imports/exports respectively.
+		#					 AKA makes it so if you reduce exports by 200 when you're exporting 100, instead of it just being set to 0, it gets set to 100 immports
+		# no_update_temp - Set to non-zero to not update trade
+
+		if = {
+			limit = {
+				check_variable = { market_leader = THIS }
+                NOT = { has_idea = closed_economy }
+			}
+
+			round_temp_variable = amount_temp
+
+			if = {
+				limit = {
+					NOT = { check_variable = { amount_temp = 0 } }
+				}
+				if = { # IMPORTING
+					limit = {
+						check_variable = { offers@var:resource_temp > 0 }
+					}
+					add_to_variable = { offers@var:resource_temp = amount_temp }
+					if = {
+						limit = {
+							check_variable = { stop_at_zero_temp = 0 }
+							check_variable = { offers@var:resource_temp < 0 }
+						}
+						set_variable = { offers@var:resource_temp = 0 }
+					}
+				}
+				else_if = { # EXPORTING
+					limit = {
+						check_variable = { offers@var:resource_temp < 0 }
+					}
+					add_to_variable = { offers@var:resource_temp = amount_temp }
+					if = {
+						limit = {
+							check_variable = { stop_at_zero_temp = 0 }
+							check_variable = { offers@var:resource_temp > 0 }
+						}
+						set_variable = { offers@var:resource_temp = 0 }
+					}
+				}
+				else = { # NEW TRADE
+					add_to_variable = { offers@var:resource_temp = amount_temp }
+				}
+			}
+
+			set_temp_variable = { amount_temp = offers@var:resource_temp }
+			set_trade = yes # for adding trade routes & trade update & making sure stuff is in boundaries
+		}
+	}
+	set_trade = { # Sets trade offers to given amount
+		# resource_temp - resource token
+		# amount_temp - Positive values for increasing imports/decreasing exports and Negative values for decreasing imports/increasing exports
+		# no_update_temp - Set to non-zero to not update trade
+		
+
+		if = {
+			limit = {
+				check_variable = { market_leader = THIS }
+                NOT = { has_idea = closed_economy }
+			}
+
+			round_temp_variable = amount_temp
+			
+			if = {
+				limit = {
+					NOT = { has_global_flag = debug_trade }
+				}
+				# Max & Min Trade
+				set_temp_variable = { trade_max_temp = global_market_supply@var:resource_temp } # Imports - Max is from global supply
+				multiply_temp_variable = { trade_max_temp = 3 }
+				subtract_from_temp_variable = { trade_max_temp = trade_demand@var:resource_temp }
+				if = {
+					limit = {
+						check_variable = { trade@var:resource_temp > 0 }
+					}
+					add_to_temp_variable = { trade_max_temp = trade@var:resource_temp }
+				}
+				clamp_temp_variable = { var = trade_max_temp min = 0 }
+
+				set_temp_variable = { trade_min_temp = supply@var:resource_temp } # Exports - Min is from local supply
+				multiply_temp_variable = { trade_min_temp = -3 }
+				add_to_temp_variable = { trade_min_temp = need@var:resource_temp }
+				clamp_temp_variable = { var = trade_min_temp max = 0 }
+
+				if = {
+					limit = {
+						check_variable = { global_market_price_compared_to_base@var:resource_temp > -0.75 }
+					}
+					clamp_temp_variable = { var = amount_temp max = trade_max_temp min = trade_min_temp }
+				}
+				else = {
+					set_temp_variable = { trade_max_temp = need@var:resource_temp }
+					multiply_temp_variable = { trade_max_temp = 2.5 }
+					subtract_from_temp_variable = { trade_max_temp = production@var:resource_temp }
+					clamp_temp_variable = { var = trade_max_temp min = 0 }
+					clamp_temp_variable = { var = amount_temp max = trade_max_temp min = trade_min_temp }
+				}
+			}
+
+			# Set Offers
+			set_variable = { offers@var:resource_temp = amount_temp }
+			#log = "Min: [?trade_min_temp], Max: [?trade_max_temp]"
+
+			if = {
+				limit = {
+					NOT = { check_variable = { offers@var:resource_temp = 0 } }
+					NOT = { is_in_array = { trade_routes = resource_temp } }
+				}
+				add_trade = yes
+			}
+			else_if = {
+				limit = {
+					check_variable = { no_update_temp = 0 }
+				}
+				trade_update = yes
+			}
+		}
+	}
+	adjust_trade_step = { # Adjusts trade offers by given amount multiplied by trade step size
+		# resource_temp - resource token
+		# steps_temp - Amount of steps to add/remove.
+		# no_update_temp - Set to non-zero to not update trade
+
+		set_temp_variable = { amount_temp = trade_step_size@var:resource_temp }
+		round_temp_variable = steps_temp
+		multiply_temp_variable = { amount_temp = steps_temp }
+
+		adjust_trade = yes
+	}
+	set_trade_step ={ # Sets trade offers to given amount multiplied by trade step size
+		# resource_temp - resource token
+		# steps_temp - Amount of steps to set to
+		# stop_at_zero_temp - Set to non-zero value to allow reductions in exports/imports to go past 0 and flip to become imports/exports respectively.
+		#					 AKA makes it so if you reduce exports by 200 when you're exporting 100, instead of it just being set to 0, it gets set to 100 immports
+		# no_update_temp - Set to non-zero to not update trade
+
+		set_temp_variable = { amount_temp = trade_step_size@var:resource_temp }
+		round_temp_variable = steps_temp
+		multiply_temp_variable = { amount_temp = steps_temp }
+
+		set_trade = yes
+	}
+
+	trade_update = {
+		# Normal Trade Update Script
+
+		for_each_loop = {
+			array = global.resource_token_array
+			value = r_type
+
+			set_variable = { shipping_use@var:r_type = 0 }
+			set_variable = { trade@var:r_type = 0 }
+			set_variable = { trade_productivity@var:r_type = 0 }
+			set_variable = { trade_value@var:r_type = 0 }
+			set_variable = { trade_tariffs@var:r_type = 0 }
+			set_variable = { trade_profit@var:r_type = 0 }
+			set_variable = { trade_jobs@var:r_type = 0 }
+		}
+
+		calc_shipping_capacity_use = yes # Would normally be executed on every country before the next two
+
+		global_market_update = yes
+		trade_update_quantity = yes
+		trade_update_value = yes
+		global_market_calculations = yes
+		trade_step_calc = yes
+
+		if = {
+			limit = {
+				is_ai = no
+			}
+			country_update_trade_display = yes
+		}
+	}
+	calc_shipping_capacity_use = {
+		# Only updates shipping capacity usage
+
+		set_variable = { shipping_capacity_use = 0 }
+		# Shipping Capacity
+			for_each_loop = {
+				array = trade_routes
+				value = r_type
+
+				set_variable = { shipping_use@var:r_type = offers@var:r_type }
+				if = {
+					limit = {
+						check_variable = { shipping_use@var:r_type < 0 }
+					}
+					multiply_variable = { shipping_use@var:r_type = -1 }
+				}
+				multiply_variable = { shipping_use@var:r_type = global.shipping_cost@var:r_type }
+				set_temp_variable = { modifier_temp = modifier@shipping_cost_modifier }
+				add_to_temp_variable = { modifier_temp = 1 }
+				multiply_variable = { shipping_use@var:r_type = modifier_temp }
+
+				add_to_variable = { shipping_capacity_use = shipping_use@var:r_type }
+			}
+
+			#Shipping Efficiency
+			if = {
+				limit = {
+					check_variable = { shipping_capacity_use > shipping_capacity }
+					NOT = { has_global_flag = debug_trade }
+				}
+				set_variable = { shipping_efficiency = shipping_capacity }
+				divide_variable = { shipping_efficiency = shipping_capacity_use }
+			}
+			else = {
+				set_variable = { shipping_efficiency = 1 }
+			}
+			
+			if = {
+				limit = {
+					check_variable = { shipping_capacity = 0 }
+				}
+				set_variable = { shipping_usage = 1 }
+			}
+			else = {
+				set_variable = { shipping_usage = shipping_capacity_use }
+				divide_variable = { shipping_usage = shipping_capacity }
+			}
+		#
+	}
+	trade_update_quantity = {
+		# Only updates trade routes & supply/demand/prices.
+
+		for_each_loop = {  # Actual Trade
+			array = trade_routes
+			value = r_type
+
+			set_variable = { trade@var:r_type = offers@var:r_type }
+
+			if = {
+				limit = {
+					check_variable = { offers@var:r_type > 0 } # Importing
+					check_variable = { trade_supply@var:r_type < trade_demand@var:r_type } # Not enough countries to buy from
+				}
+				set_temp_variable = { trade_portion_temp = trade_supply@var:r_type }
+				multiply_temp_variable = { trade_portion_temp = 3 }
+				divide_temp_variable = { trade_portion_temp = trade_demand@var:r_type }
+				if = {
+					limit = {
+						OR  ={
+							check_variable = { trade_portion_temp > 1 }
+							has_global_flag = debug_trade
+						}
+					}
+					set_temp_variable = { trade_portion_temp = 1 }
+				}
+				multiply_variable = { trade@var:r_type = trade_portion_temp }
+			}
+			else_if = {
+				limit = {
+					check_variable = { offers@var:r_type < 0 } # Exporting
+					check_variable = { trade_demand@var:r_type < trade_supply@var:r_type } # Not enough countries to sell to
+				}
+				set_temp_variable = { trade_portion_temp = trade_demand@var:r_type }
+				multiply_temp_variable = { trade_portion_temp = 2.5 }
+				divide_temp_variable = { trade_portion_temp = trade_supply@var:r_type }
+				if = {
+					limit = {
+						OR  ={
+							check_variable = { trade_portion_temp > 1 }
+							has_global_flag = debug_trade
+						}
+					}
+					set_temp_variable = { trade_portion_temp = 1 }
+				}
+				multiply_variable = { trade@var:r_type = trade_portion_temp }
+			}
+
+			multiply_variable = { trade@var:r_type = shipping_efficiency }
+		}
+
+		market_leader_check = yes
+		if = {
+			limit = {
+				check_variable = { market_leader = THIS }
+			}
+			market_calculations = yes
+		}
+	}
+	trade_update_value = {
+		set_variable = { trade_productivity = 0 } # Average trade productivity
+		set_variable = { trade_jobs = 0 } # Total trade jobs
+		set_variable = { trade_value = 0 } # Total trade value
+		set_variable = { trade_profit = 0 } # Total trade profit
+
+		# Trade Value & Tariffs
+		for_each_loop = {
+			array = global.resource_token_array
+			value = r_type
+
+			if = { # Normal Trade
+				limit = {
+					NOT = { check_variable = { offers@var:r_type = 0 } }
+				}
+				set_temp_variable = { trade_temp = trade@var:r_type }
+			}
+			else_if = { # Importing with 1.1k employees
+				limit = {
+					check_variable = { global_market_price@var:r_type < price@var:r_type }
+				}
+				set_temp_variable = { trade_temp = global.shipping_amount@var:r_type }
+			}
+			else = { # Exporting with 1.1k employees
+				set_temp_variable = { trade_temp = global.shipping_amount@var:r_type }
+				multiply_temp_variable = { trade_temp = -1 }
+			}
+
+
+			if = { #Import
+				limit = {
+					check_variable = { trade_temp > 0 }
+				}
+				# Value
+				set_variable = { trade_value@var:r_type = trade_temp }
+				multiply_variable = { trade_value@var:r_type = price@var:r_type }
+
+				set_temp_variable = { temp_value = trade_temp }
+				multiply_temp_variable = { temp_value = global_market_price@var:r_type }
+
+				# Tariffs
+				set_variable = { trade_tariffs@var:r_type = import_tariff_percentage_actual }
+				divide_variable = { trade_tariffs@var:r_type = 100 }
+				multiply_variable = { trade_tariffs@var:r_type = trade_value@var:r_type }
+
+				# Adding temp value
+				subtract_from_variable = { trade_value@var:r_type = temp_value }
+
+				# Profit
+				set_variable = { trade_profit@var:r_type = trade_value@var:r_type }
+				subtract_from_variable = { trade_profit@var:r_type = trade_tariffs@var:r_type }
+			}
+			else_if = { #Export
+				limit = {
+					check_variable = { trade_temp < 0 }
+				}
+				# Value
+				set_variable = { trade_value@var:r_type = trade_temp }
+				multiply_variable = { trade_value@var:r_type = global_market_price@var:r_type }
+				multiply_variable = { trade_value@var:r_type = -1 }
+
+				set_temp_variable = { temp_value = trade_temp }
+				multiply_temp_variable = { temp_value = price@var:r_type }
+
+				# Tariffs
+				set_variable = { trade_tariffs@var:r_type = export_tariff_percentage_actual }
+				divide_variable = { trade_tariffs@var:r_type = -100 }
+				multiply_variable = { trade_tariffs@var:r_type = trade_value@var:r_type }
+				
+				# Adding temp value
+				add_to_variable = { trade_value@var:r_type = temp_value }
+
+				# Profit
+				set_variable = { trade_profit@var:r_type = trade_value@var:r_type }
+				add_to_variable = { trade_profit@var:r_type = trade_tariffs@var:r_type }
+			}
+			else = {
+				set_variable = { trade_value@var:r_type = 0 }
+				set_variable = { trade_tariffs@var:r_type = 0 }
+				set_variable = { trade_profit@var:r_type = 0 }
+			}
+
+			if = { # If offers are set to 0, then act as though you have 1.1k employees, and reset all the variables above
+				limit = {
+					check_variable = { offers@var:r_type = 0 }
+				}
+				set_variable = { trade_productivity@var:r_type = trade_profit@var:r_type }
+				divide_variable = { trade_productivity@var:r_type = 1.01 }
+				
+				set_variable = { trade_value@var:r_type = 0 }
+				set_variable = { trade_tariffs@var:r_type = 0 }
+				set_variable = { trade_profit@var:r_type = 0 }
+				set_variable = { trade_jobs@var:r_type = 0 }
+			}
+			else = { # Otherwise, set employee count & productivity
+				set_variable = { trade_jobs@var:r_type = offers@var:r_type }
+				divide_variable = { trade_jobs@var:r_type = global.shipping_amount@var:r_type }
+				if = {
+					limit = {
+						check_variable = { trade_jobs@var:r_type < 0 }
+					}
+					multiply_variable = { trade_jobs@var:r_type = -1 }
+				}
+				add_to_variable = { trade_jobs@var:r_type = 0.01 }
+
+				set_variable = { trade_productivity@var:r_type = trade_profit@var:r_type }
+				divide_variable = { trade_productivity@var:r_type = trade_jobs@var:r_type }
+
+				add_to_variable = { trade_jobs = trade_jobs@var:r_type }
+				add_to_variable = { trade_value = trade_value@var:r_type }
+				add_to_variable = { trade_profit = trade_profit@var:r_type }
+			}
+		}
+		set_variable = { trade_productivity = trade_profit }
+		if = {
+			limit = {
+				check_variable = { trade_jobs > 0 }
+			}
+			divide_variable = { trade_productivity = trade_jobs }
+		}
+	}
+	global_market_update = { # Updates global market-related variables for a country
+		# Country Scope
+		for_each_loop = {
+			array = global.resource_token_array
+			value = r_type
+			set_variable = { global_market_supply@var:r_type = 0 }
+			set_variable = { global_market_demand@var:r_type = 0 }
+			set_variable = { trade_supply@var:r_type = 0 }
+			set_variable = { trade_demand@var:r_type = 0 }
+
+			set_temp_variable = { offers_temp = offers@var:r_type }
+			multiply_temp_variable = { offers_temp = shipping_efficiency }
+
+			add_to_variable = { global_market_supply@var:r_type = production@var:r_type }
+			add_to_variable = { global_market_demand@var:r_type = need@var:r_type }
+			if = { # This country is importing
+				limit = {
+					check_variable = { offers@var:r_type > 0 }
+				}
+				add_to_variable = { trade_demand@var:r_type = offers_temp }
+			}
+			else = { # This country is exporting
+				subtract_from_variable = { trade_supply@var:r_type = offers_temp }
+			}
+		}
+
+		set_temp_variable = { country_temp = THIS }
+		for_each_scope_loop = {
+			array = global.markets
+			if = {
+				limit = {
+					can_trade_with = yes
+				}
+				for_each_loop = {
+					array = global.resource_token_array
+					value = r_type
+					set_temp_variable = { offers_temp = offers@var:r_type }
+					multiply_temp_variable = { offers_temp = shipping_efficiency }
+
+					add_to_variable = { PREV.global_market_supply@var:r_type = production@var:r_type }
+					add_to_variable = { PREV.global_market_demand@var:r_type = need@var:r_type }
+					if = { # This country is importing
+						limit = {
+							check_variable = { offers@var:r_type > 0 }
+						}
+						add_to_variable = { PREV.trade_demand@var:r_type = offers_temp }
+					}
+					else = { # This country is exporting
+						subtract_from_variable = { PREV.trade_supply@var:r_type = offers_temp }
+					}
+				}
+			}
+		}
+
+		global_market_calculations = yes
+	}
+	global_market_calculations = {
+		for_each_loop = {
+			array = global.resource_token_array
+			value = r_type
+			set_variable = { global_market_balance@var:r_type = global_market_supply@var:r_type }
+			subtract_from_variable = { global_market_balance@var:r_type = global_market_demand@var:r_type }
+
+			set_temp_variable = { s_temp = global_market_supply@var:r_type }
+			set_temp_variable = { d_temp = global_market_demand@var:r_type }
+			get_price = yes
+			set_variable = { global_market_price@var:r_type = p_return_temp }
+			
+			set_variable = { global_market_price_compared_to_base@var:r_type = global_market_price@var:r_type }
+			divide_variable = { global_market_price_compared_to_base@var:r_type = global.base_price@var:r_type }
+			subtract_from_variable = { global_market_price_compared_to_base@var:r_type = 1 }
+			
+			set_variable = { global_market_price_difference@var:r_type = price@var:r_type }
+			subtract_from_variable = { global_market_price_difference@var:r_type = global_market_price@var:r_type }
+			divide_variable = { global_market_price_difference@var:r_type = price@var:r_type }
+		}
+	}
+	trade_step_calc = {
+		for_each_loop = {
+			array = global.resource_token_array
+			value = r_type
+
+			# Gets the trade step size for this product
+			set_temp_variable = { trade_step_temp = global.shipping_amount@var:r_type }
+			divide_temp_variable = { trade_step_temp = 50 }
+			round_temp_variable = trade_step_temp
+			clamp_temp_variable = { var = trade_step_temp min = 1 }
+
+			# Min amount to adjust, get smallest amount of market demand/supply, global demand/supply
+			set_temp_variable = { min_adjust_amount = supply@var:r_type }
+			if = { limit = { check_variable = { min_adjust_amount > demand@var:r_type } } set_temp_variable = { min_adjust_amount = demand@var:r_type } }
+			if = { limit = { check_variable = { min_adjust_amount > trade_supply@var:r_type } } set_temp_variable = { min_adjust_amount = trade_supply@var:r_type } }
+			if = { limit = { check_variable = { min_adjust_amount > trade_demand@var:r_type } } set_temp_variable = { min_adjust_amount = trade_demand@var:r_type } }
+
+			multiply_temp_variable = { min_adjust_amount = 0.005 } # 0.5% of that amount
+
+			set_temp_variable = { amount_temp = min_adjust_amount }
+			divide_temp_variable = { amount_temp = trade_step_temp }
+			round_temp_variable = amount_temp
+			clamp_temp_variable = { var = amount_temp min = 1 }
+			multiply_temp_variable = { amount_temp = trade_step_temp }
+
+			set_variable = { trade_step_size@var:r_type = amount_temp }
+		}
+	}
+
+	country_update_trade_display = {
+		#Trade Routes
+		clear_array = show_trade_routes
+		
+		for_each_loop = {
+			array = trade_routes
+			index = tr_i
+			value = tr_token
+			break = tr_b
+
+			for_each_loop = {
+				array = show_trade_routes
+				index = ii
+				value = vv
+				break = bb
+
+				if = {
+					limit = {
+						check_variable = { vv > tr_token }
+					}
+					add_to_array = { 
+						array = show_trade_routes 
+						value = tr_token
+						index = ii
+					}
+					set_temp_variable = { bb = 1 }
+				}
+			}
+			if = {
+				limit = {
+					check_variable = { bb = 0 }
+				}
+				add_to_array = { show_trade_routes = tr_token }
+			}
+		}
+
+		#Balance Array
+		clear_array = high_balance_array
+		clear_array = high_balance_amount_array
+		clear_array = high_balance_price_array
+		clear_array = low_balance_array
+		clear_array = low_balance_amount_array
+		clear_array = low_balance_price_array
+
+		for_each_loop = {
+			array = global.resource_token_array
+			index = tr_i
+			value = tr_token
+			break = tr_b
+
+			if = {
+				limit = {
+					NOT = { 
+						check_variable = { supply@var:tr_token = 0 } 
+						check_variable = { demand@var:tr_token = 0 } 
+					}
+				}
+				set_temp_variable = { net_amount_temp = supply@var:tr_token }
+				subtract_from_temp_variable = { net_amount_temp = demand@var:tr_token }
+				
+				for_each_loop = {
+					array = high_balance_amount_array
+					index = ii
+					value = vv
+					break = bb
+
+					if = {
+						limit = {
+							check_variable = { net_amount_temp > vv }
+						}
+						add_to_array = { 
+							array = high_balance_array 
+							value = tr_token
+							index = ii
+						}
+						add_to_array = { 
+							array = high_balance_amount_array 
+							value = net_amount_temp
+							index = ii
+						}
+						set_temp_variable = { bb = 1 }
+					}
+				}
+				if = {
+					limit = {
+						check_variable = { bb = 0 }
+					}
+					add_to_array = { high_balance_array = tr_token }
+					add_to_array = { high_balance_amount_array = net_amount_temp }
+				}
+				add_to_array = { high_balance_price_array = 0 }
+			}
+
+		}
+
+		for_loop_effect = {
+			start = 0
+			end = high_balance_array^num
+			value = vv
+			break = bb
+
+			set_temp_variable = { ii = high_balance_array^num }
+			subtract_from_temp_variable = { ii = vv }
+			subtract_from_temp_variable = { ii = 1 }
+
+			add_to_array = { 
+				array = low_balance_array 
+				value = high_balance_array^ii
+			}
+			add_to_array = { 
+				array = low_balance_amount_array 
+				value = high_balance_amount_array^ii
+			}
+			add_to_array = { low_balance_price_array = 0 }
+		}
+
+
+		for_each_loop = {
+			array = high_balance_array
+			value = tr_token
+			index = tr_i
+
+			set_variable = { high_balance_price_array^tr_i = price@var:tr_token }
+			divide_variable = { high_balance_price_array^tr_i = global.base_price@var:tr_token }
+			subtract_from_variable = { high_balance_price_array^tr_i = 1 }
+		}
+		for_each_loop = {
+			array = low_balance_array
+			value = tr_token
+			index = tr_i
+
+			set_variable = { low_balance_price_array^tr_i = price@var:tr_token }
+			divide_variable = { low_balance_price_array^tr_i = global.base_price@var:tr_token }
+			subtract_from_variable = { low_balance_price_array^tr_i = 1 }
+		}
+
+		#Resource List
+		clear_array = resource_list_token_array
+		clear_array = resource_list_left_price_bar_array
+		clear_array = resource_list_right_price_bar_array
+		clear_array = resource_list_left_balance_bar_array
+		clear_array = resource_list_right_balance_bar_array
+
+		set_temp_variable = { highest_balance_token = 0 }
+		set_temp_variable = { highest_balance_temp = 0 }
+		set_temp_variable = { lowest_balance_token = 0 }
+		set_temp_variable = { lowest_balance_temp = 0 }
+
+		#Default sorted by price (%), can also be sorted by balance, supply, demand
+		# resource_list_natural_resources_filter
+		# resource_list_produced_resources_filter
+		# resource_list_service_resources_filter
+		# resource_list_military_resources_filter
+		# resource_list_invert_sort
+		# resource_list_balance_sort
+		# resource_list_supply_sort
+		# resource_list_demand_sort
+		# resource_list_resource_sort
+		for_each_loop = {
+			array = global.resource_token_array
+			index = tr_i
+			value = tr_token
+			break = tr_b
+			
+			# GLOBAL MARKET
+			if = {
+				limit = {
+					check_variable = { selected_market = 0 }
+				}
+				if = {
+					limit = {
+						OR = {
+							check_variable = { global_market_supply@var:tr_token > 0 }
+							check_variable = { global_market_demand@var:tr_token > 0 }
+						}
+						OR = {
+							AND = {
+								NOT = { has_country_flag = resource_list_natural_resources_filter }
+								NOT = { has_country_flag = resource_list_produced_resources_filter }
+								NOT = { has_country_flag = resource_list_service_resources_filter }
+								NOT = { has_country_flag = resource_list_military_resources_filter }
+							}
+							AND = {
+								has_country_flag = resource_list_natural_resources_filter
+								is_in_array = { global.natural_resources_array = tr_token }
+							}
+							AND = {
+								has_country_flag = resource_list_produced_resources_filter
+								is_in_array = { global.produced_resources_array = tr_token }
+							}
+							AND = {
+								has_country_flag = resource_list_service_resources_filter
+								is_in_array = { global.service_resources_array = tr_token }
+							}
+							AND = {
+								has_country_flag = resource_list_military_resources_filter
+								is_in_array = { global.military_resources_array = tr_token }
+							}
+						}
+					}
+					if = {
+						limit = {
+							check_variable = { global_market_balance@var:tr_token > highest_balance_temp }
+						}
+						set_temp_variable = { highest_balance_token = tr_token }
+						set_temp_variable = { highest_balance_temp = global_market_balance@var:tr_token }
+					}
+					if = {
+						limit = {
+							check_variable = { global_market_balance@var:tr_token < lowest_balance_temp }
+						}
+						set_temp_variable = { lowest_balance_token = tr_token }
+						set_temp_variable = { lowest_balance_temp = global_market_balance@var:tr_token }
+					}
+
+					if = {
+						limit = {
+							has_country_flag = resource_list_balance_sort
+						}
+						set_temp_variable = { new_element_value = global_market_balance@var:tr_token }
+					}
+					else_if = {
+						limit = {
+							has_country_flag = resource_list_supply_sort
+						}
+						set_temp_variable = { new_element_value = global_market_supply@var:tr_token }
+					}
+					else_if = {
+						limit = {
+							has_country_flag = resource_list_demand_sort
+						}
+						set_temp_variable = { new_element_value = global_market_demand@var:tr_token }
+					}
+					else_if = {
+						limit = {
+							has_country_flag = resource_list_resource_sort
+						}
+						set_temp_variable = { new_element_value = global.resources_token_value@var:tr_token }
+					}
+					else = { #Price sort
+						set_temp_variable = { new_element_value = global_market_price_compared_to_base@var:tr_token }
+					}
+					
+					for_each_loop = {
+						array = resource_list_token_array
+						index = ii
+						value = vv
+						break = bb
+
+						if = {
+							limit = {
+								has_country_flag = resource_list_balance_sort
+							}
+							set_temp_variable = { current_element_value = global_market_balance@var:vv }
+						}
+						else_if = {
+							limit = {
+								has_country_flag = resource_list_supply_sort
+							}
+							set_temp_variable = { current_element_value = global_market_supply@var:vv }
+						}
+						else_if = {
+							limit = {
+								has_country_flag = resource_list_demand_sort
+							}
+							set_temp_variable = { current_element_value = global_market_demand@var:vv }
+						}
+						else_if = {
+							limit = {
+								has_country_flag = resource_list_resource_sort
+							}
+							set_temp_variable = { current_element_value = global.resources_token_value@var:vv }
+						}
+						else = { #Price sort
+							set_temp_variable = { current_element_value = global_market_price_compared_to_base@var:vv }
+						}
+
+						if = {
+							limit = {
+								OR = {
+									AND = {
+										has_country_flag = resource_list_invert_sort
+										check_variable = { new_element_value < current_element_value }
+									}
+									AND = {
+										NOT = { has_country_flag = resource_list_invert_sort }
+										check_variable = { new_element_value > current_element_value }
+									}
+								}
+							}
+							add_to_array = { 
+								array = resource_list_token_array 
+								value = tr_token
+								index = ii
+							}
+							set_temp_variable = { bb = 1 }
+						}
+					}
+					if = {
+						limit = {
+							check_variable = { bb = 0 }
+						}
+						add_to_array = { resource_list_token_array = tr_token }
+					}
+				}
+			}
+			# NATIONAL MARKET
+			else_if = {
+				limit = {
+					OR = {
+						check_variable = { selected_market:supply@var:tr_token > 0 }
+						check_variable = { selected_market:demand@var:tr_token > 0 }
+						OR = {
+							NOT = { check_variable = { resource@var:tr_token = 0 } }
+							check_variable = { resource_produced@var:tr_token > 0 }
+							check_variable = { resource_consumed@var:tr_token > 0 }
+						}
+					}
+					OR = {
+						AND = {
+							NOT = { has_country_flag = resource_list_natural_resources_filter }
+							NOT = { has_country_flag = resource_list_produced_resources_filter }
+							NOT = { has_country_flag = resource_list_service_resources_filter }
+							NOT = { has_country_flag = resource_list_military_resources_filter }
+						}
+						AND = {
+							has_country_flag = resource_list_natural_resources_filter
+							is_in_array = { global.natural_resources_array = tr_token }
+						}
+						AND = {
+							has_country_flag = resource_list_produced_resources_filter
+							is_in_array = { global.produced_resources_array = tr_token }
+						}
+						AND = {
+							has_country_flag = resource_list_service_resources_filter
+							is_in_array = { global.service_resources_array = tr_token }
+						}
+						AND = {
+							has_country_flag = resource_list_military_resources_filter
+							is_in_array = { global.military_resources_array = tr_token }
+						}
+					}
+				}
+				if = {
+					limit = {
+						check_variable = { selected_market:balance@var:tr_token > highest_balance_temp }
+					}
+					set_temp_variable = { highest_balance_token = tr_token }
+					set_temp_variable = { highest_balance_temp = selected_market:balance@var:tr_token }
+				}
+				if = {
+					limit = {
+						check_variable = { selected_market:balance@var:tr_token < lowest_balance_temp }
+					}
+					set_temp_variable = { lowest_balance_token = tr_token }
+					set_temp_variable = { lowest_balance_temp = selected_market:balance@var:tr_token }
+				}
+
+				if = {
+					limit = {
+						has_country_flag = resource_list_balance_sort
+					}
+					set_temp_variable = { new_element_value = selected_market:balance@var:tr_token }
+				}
+				else_if = {
+					limit = {
+						has_country_flag = resource_list_supply_sort
+					}
+					set_temp_variable = { new_element_value = selected_market:supply@var:tr_token }
+				}
+				else_if = {
+					limit = {
+						has_country_flag = resource_list_demand_sort
+					}
+					set_temp_variable = { new_element_value = selected_market:demand@var:tr_token }
+				}
+				else_if = {
+					limit = {
+						has_country_flag = resource_list_resource_sort
+					}
+					set_temp_variable = { new_element_value = global.resources_token_value@var:tr_token }
+				}
+				else = { #Price sort
+					set_temp_variable = { new_element_value = selected_market:price_compared_to_base@var:tr_token }
+				}
+				
+				for_each_loop = {
+					array = resource_list_token_array
+					index = ii
+					value = vv
+					break = bb
+
+					if = {
+						limit = {
+							has_country_flag = resource_list_balance_sort
+						}
+						set_temp_variable = { current_element_value = selected_market:balance@var:vv }
+					}
+					else_if = {
+						limit = {
+							has_country_flag = resource_list_supply_sort
+						}
+						set_temp_variable = { current_element_value = selected_market:supply@var:vv }
+					}
+					else_if = {
+						limit = {
+							has_country_flag = resource_list_demand_sort
+						}
+						set_temp_variable = { current_element_value = selected_market:demand@var:vv }
+					}
+					else_if = {
+						limit = {
+							has_country_flag = resource_list_resource_sort
+						}
+						set_temp_variable = { current_element_value = global.resources_token_value@var:vv }
+					}
+					else = { #Price sort
+						set_temp_variable = { current_element_value = selected_market:price_compared_to_base@var:vv }
+					}
+
+					if = {
+						limit = {
+							OR = {
+								AND = {
+									has_country_flag = resource_list_invert_sort
+									check_variable = { new_element_value < current_element_value }
+								}
+								AND = {
+									NOT = { has_country_flag = resource_list_invert_sort }
+									check_variable = { new_element_value > current_element_value }
+								}
+							}
+						}
+						add_to_array = { 
+							array = resource_list_token_array 
+							value = tr_token
+							index = ii
+						}
+						set_temp_variable = { bb = 1 }
+					}
+				}
+				if = {
+					limit = {
+						check_variable = { bb = 0 }
+					}
+					add_to_array = { resource_list_token_array = tr_token }
+				}
+			}
+
+		}
+
+		if = { # GLOBAL MARKET
+			limit = {
+				check_variable = { selected_market = 0 }
+			}
+			for_each_loop = {
+				array = resource_list_token_array
+				index = ii
+				value = vv
+				break = bb
+
+				if = {
+					limit = {
+						check_variable = { global_market_price_compared_to_base@var:vv > 0 }
+					}
+					set_temp_variable = { right_bar_temp = global_market_price_compared_to_base@var:vv }
+					multiply_temp_variable = { right_bar_temp = 100 }
+					divide_temp_variable = { right_bar_temp = 1 }
+					
+					set_temp_variable = { left_bar_temp = 100 }
+				}
+				else = {
+					set_temp_variable = { right_bar_temp = global_market_price_compared_to_base@var:vv }
+					multiply_temp_variable = { right_bar_temp = -100 }
+					divide_temp_variable = { right_bar_temp = 0.75 }
+					
+					set_temp_variable = { left_bar_temp = 100 }
+					subtract_from_temp_variable = { left_bar_temp = right_bar_temp }
+					set_temp_variable = { right_bar_temp = 0 }
+				}
+
+				add_to_array = { resource_list_left_price_bar_array = left_bar_temp }
+				add_to_array = { resource_list_right_price_bar_array = right_bar_temp }
+				
+				if = {
+					limit = {
+						check_variable = { global_market_balance@var:vv > 0 }
+					}
+					set_temp_variable = { right_bar_temp = global_market_balance@var:vv }
+					divide_temp_variable = { right_bar_temp = highest_balance_temp }
+					multiply_temp_variable = { right_bar_temp = 100 }
+					divide_temp_variable = { right_bar_temp = 1 }
+					
+					set_temp_variable = { left_bar_temp = 100 }
+				}
+				else = {
+					set_temp_variable = { right_bar_temp = global_market_balance@var:vv }
+					divide_temp_variable = { right_bar_temp = lowest_balance_temp }
+					multiply_temp_variable = { right_bar_temp = 100 }
+					divide_temp_variable = { right_bar_temp = 1 }
+					
+					set_temp_variable = { left_bar_temp = 100 }
+					subtract_from_temp_variable = { left_bar_temp = right_bar_temp }
+					set_temp_variable = { right_bar_temp = 0 }
+				}
+
+				add_to_array = { resource_list_left_balance_bar_array = left_bar_temp }
+				add_to_array = { resource_list_right_balance_bar_array = right_bar_temp }
+			}
+		}
+		else = { # NATIONAL MARKET
+			for_each_loop = {
+				array = resource_list_token_array
+				index = ii
+				value = vv
+				break = bb
+
+				if = {
+					limit = {
+						check_variable = { selected_market:price_compared_to_base@var:vv > 0 }
+					}
+					set_temp_variable = { right_bar_temp = selected_market:price_compared_to_base@var:vv }
+					multiply_temp_variable = { right_bar_temp = 100 }
+					divide_temp_variable = { right_bar_temp = 1 }
+					
+					set_temp_variable = { left_bar_temp = 100 }
+				}
+				else = {
+					set_temp_variable = { right_bar_temp = selected_market:price_compared_to_base@var:vv }
+					multiply_temp_variable = { right_bar_temp = -100 }
+					divide_temp_variable = { right_bar_temp = 0.75 }
+					
+					set_temp_variable = { left_bar_temp = 100 }
+					subtract_from_temp_variable = { left_bar_temp = right_bar_temp }
+					set_temp_variable = { right_bar_temp = 0 }
+				}
+
+				add_to_array = { resource_list_left_price_bar_array = left_bar_temp }
+				add_to_array = { resource_list_right_price_bar_array = right_bar_temp }
+				
+				if = {
+					limit = {
+						check_variable = { selected_market:balance@var:vv > 0 }
+					}
+					set_temp_variable = { right_bar_temp = selected_market:balance@var:vv }
+					divide_temp_variable = { right_bar_temp = highest_balance_temp }
+					multiply_temp_variable = { right_bar_temp = 100 }
+					divide_temp_variable = { right_bar_temp = 1 }
+					
+					set_temp_variable = { left_bar_temp = 100 }
+				}
+				else = {
+					set_temp_variable = { right_bar_temp = selected_market:balance@var:vv }
+					divide_temp_variable = { right_bar_temp = lowest_balance_temp }
+					multiply_temp_variable = { right_bar_temp = 100 }
+					divide_temp_variable = { right_bar_temp = 1 }
+					
+					set_temp_variable = { left_bar_temp = 100 }
+					subtract_from_temp_variable = { left_bar_temp = right_bar_temp }
+					set_temp_variable = { right_bar_temp = 0 }
+				}
+
+				add_to_array = { resource_list_left_balance_bar_array = left_bar_temp }
+				add_to_array = { resource_list_right_balance_bar_array = right_bar_temp }
+			}
+		}
+
+		# Visible Markets
+		# market_list_can_trade_filter
+		# market_list_allied_filter
+		# market_list_enemy_filter
+		clear_array = market_list
+		for_each_loop = {
+			array = global.markets
+			value = country_temp
+
+			if = {
+				limit = {
+					OR = {
+						NOT = { has_country_flag = market_list_can_trade_filter }
+						can_trade_with = yes
+					}
+					OR = {
+						NOT = { has_country_flag = market_list_allied_filter }
+						is_in_faction_with = var:country_temp
+						tag = var:country_temp
+					}
+					OR = {
+						NOT = { has_country_flag = market_list_enemy_filter }
+						has_war_with = var:country_temp
+					}
+				}
+				add_to_array = { market_list = country_temp }
+			}
+		}
+	}
+#
+
+# Trade AI
+	approximate_square_root = {
+		# Given sqrt_temp, approximates the square root of the value using Heron's method. Outputs using the same variable
+
+		# Sets initial estimate
+		set_temp_variable = { sqrt_approx_temp = 1 }
+		set_temp_variable = { sqrt_check = sqrt_temp }
+		if = {
+			limit = {
+				NOT = { check_variable = { sqrt_check < 1000000 } }
+			}
+			set_temp_variable = { sqrt_approx_temp = 1000 }
+			divide_temp_variable = { sqrt_check = 1000000 }
+		}
+		else_if = {
+			limit = {
+				NOT = { check_variable = { sqrt_check < 10000 } }
+			}
+			set_temp_variable = { sqrt_approx_temp = 100 }
+			divide_temp_variable = { sqrt_check = 10000 }
+		}
+		else_if = {
+			limit = {
+				NOT = { check_variable = { sqrt_check < 100 } }
+			}
+			set_temp_variable = { sqrt_approx_temp = 10 }
+			divide_temp_variable = { sqrt_check = 100 }
+		}
+		
+		if = {
+			limit = {
+				check_variable = { sqrt_check < 25 }
+			}
+			if = {
+				limit = {
+					check_variable = { sqrt_check < 2 }
+				}
+				multiply_temp_variable = { sqrt_approx_temp = 1 }
+			}
+			else_if = {
+				limit = {
+					check_variable = { sqrt_check < 4 }
+				}
+				multiply_temp_variable = { sqrt_approx_temp = 1.414 }
+			}
+			else_if = {
+				limit = {
+					check_variable = { sqrt_check < 9 }
+				}
+				multiply_temp_variable = { sqrt_approx_temp = 2 }
+			}
+			else_if = {
+				limit = {
+					check_variable = { sqrt_check < 16 }
+				}
+				multiply_temp_variable = { sqrt_approx_temp = 3 }
+			}
+			else = {
+				multiply_temp_variable = { sqrt_approx_temp = 4 }
+			}
+		}
+		else = {
+			if = {
+				limit = {
+					check_variable = { sqrt_check < 36 }
+				}
+				multiply_temp_variable = { sqrt_approx_temp = 5 }
+			}
+			else_if = {
+				limit = {
+					check_variable = { sqrt_check < 49 }
+				}
+				multiply_temp_variable = { sqrt_approx_temp = 6 }
+			}
+			else_if = {
+				limit = {
+					check_variable = { sqrt_check < 64 }
+				}
+				multiply_temp_variable = { sqrt_approx_temp = 7 }
+			}
+			else_if = {
+				limit = {
+					check_variable = { sqrt_check < 81 }
+				}
+				multiply_temp_variable = { sqrt_approx_temp = 8 }
+			}
+			else = {
+				multiply_temp_variable = { sqrt_approx_temp = 9 }
+			}
+		}
+
+		# Algorithm - x1 = 1/2 (x0 + S/x0)
+		
+		set_temp_variable = { sqrt_next_temp = sqrt_temp }
+		divide_temp_variable = { sqrt_next_temp = sqrt_approx_temp }
+		add_to_temp_variable = { sqrt_next_temp = sqrt_approx_temp }
+		divide_temp_variable = { sqrt_next_temp = 2 }
+		set_temp_variable = { sqrt_approx_temp = sqrt_next_temp }
+		
+		set_temp_variable = { sqrt_next_temp = sqrt_temp }
+		divide_temp_variable = { sqrt_next_temp = sqrt_approx_temp }
+		add_to_temp_variable = { sqrt_next_temp = sqrt_approx_temp }
+		divide_temp_variable = { sqrt_next_temp = 2 }
+		set_temp_variable = { sqrt_approx_temp = sqrt_next_temp }
+		
+		set_temp_variable = { sqrt_next_temp = sqrt_temp }
+		divide_temp_variable = { sqrt_next_temp = sqrt_approx_temp }
+		add_to_temp_variable = { sqrt_next_temp = sqrt_approx_temp }
+		divide_temp_variable = { sqrt_next_temp = 2 }
+		set_temp_variable = { sqrt_approx_temp = sqrt_next_temp }
+
+		# Output
+		set_temp_variable = { actual_temp = sqrt_approx_temp }
+		multiply_temp_variable = { actual_temp = actual_temp }
+		# log = "Initial: [?sqrt_temp] | Approximation: [?sqrt_approx_temp] | Result: [?actual_temp]"
+		set_temp_variable = { sqrt_temp = sqrt_approx_temp }
+	}
+	trade_ai_determine_max_trade = {
+		# Takes in a single route, given as resource_temp, and gives the max trade of that route as amount_temp
+		
+		# D = Demand, S = Supply, Sg = Global Supply, Dg = Global Demand, T = Trade
+		# Exporting: T = (S*Dg / Sg) - D
+		# Importing: T = (D*Sg / Dg) - S
+
+		# Check if this is/will be an export route by checking if offers is negative, if so multiply direction_temp by -1
+		# This will mean productive export routes will export more and unproductive ones will export less
+		# If zero offers, checks if price is less than global price
+		if = {
+			limit = {
+				if = {
+					limit = {
+						check_variable = { offers@var:resource_temp = 0 }
+					}
+					check_variable = { price@var:resource_temp < global_market_price@var:resource_temp }
+				}
+				else = {
+					check_variable = { offers@var:resource_temp < 0 }
+				}
+			}
+			# EXPORTING
+			# T = (S*Dg / Sg) - D
+			set_temp_variable = { d_t = need@var:resource_temp }
+			set_temp_variable = { s_t = production@var:resource_temp }
+
+			set_temp_variable = { sg_t = global_market_supply@var:resource_temp }
+			set_temp_variable = { dg_t = global_market_demand@var:resource_temp }
+
+			# Dividing by 100 so it doesn't overflow when multiplying
+			divide_temp_variable = { d_t = 100 }
+			divide_temp_variable = { s_t = 100 }
+			divide_temp_variable = { sg_t = 100 }
+			divide_temp_variable = { dg_t = 100 }
+
+			# Calculation
+			set_temp_variable = { amount_temp = s_t }
+			multiply_temp_variable = { amount_temp = dg_t }
+			divide_temp_variable = { amount_temp = sg_t }
+			subtract_from_temp_variable = { amount_temp = d_t }
+			multiply_temp_variable = { amount_temp = 100 }
+			round_temp_variable = amount_temp
+			multiply_temp_variable = { amount_temp = -1 }
+		}
+		else = {
+			# IMPORTING
+			# T = (D*Sg / Dg) - S
+			
+			set_temp_variable = { d_t = need@var:resource_temp }
+			set_temp_variable = { s_t = production@var:resource_temp }
+
+			set_temp_variable = { sg_t = global_market_supply@var:resource_temp }
+			set_temp_variable = { dg_t = global_market_demand@var:resource_temp }
+
+			# Dividing by 100 so it doesn't overflow when multiplying
+			divide_temp_variable = { d_t = 100 }
+			divide_temp_variable = { s_t = 100 }
+			divide_temp_variable = { sg_t = 100 }
+			divide_temp_variable = { dg_t = 100 }
+
+			# Calculation
+			set_temp_variable = { amount_temp = d_t }
+			multiply_temp_variable = { amount_temp = sg_t }
+			divide_temp_variable = { amount_temp = dg_t }
+			subtract_from_temp_variable = { amount_temp = s_t }
+			multiply_temp_variable = { amount_temp = 100 }
+			round_temp_variable = amount_temp
+		}
+
+		# log = "Result: [?amount_temp]"
+	}
+	trade_ai_evaluate_route = {
+		# Takes in a single route, given as resource_temp, and gives a direction that the trade ought to go in
+		# Creates direction_temp. >0 signals to increase trade. <0 Signals to decrease. 0 signals to not change.
+		# Adjusts trade amount via steps WITHOUT trade_update
+
+		set_temp_variable = { productivity_upper_bound = workforce_earnings_avg } # If productivity is above this, increase trade
+		multiply_temp_variable = { productivity_upper_bound = 1.5 }
+		set_temp_variable = { productivity_lower_bound = workforce_earnings_avg } # If productivity is below this, decrease trade
+		# log = "Resource: [?resource_temp.GetTokenLocalizedKey]: [?offers@var:resource_temp], [?trade_productivity@var:resource_temp]"
+
+		if = {
+			limit = { # Checks that stuff is valid
+				check_variable = { trade_ai@var:resource_temp = 0 }
+				is_in_array = { global.resource_token_array = resource_temp }
+				NOT = { is_in_array = { global.non_tradeable_resources = resource_temp } }
+
+				check_variable = { shipping_usage < 1 }
+			}
+
+			set_temp_variable = { direction_temp = 0 } # Direction of new trade. >0 is to import more, <0 is to export more
+
+			if = { # Set direction_temp to 1 signaling to increase trade
+				limit = {
+					check_variable = { trade_productivity@var:resource_temp > productivity_upper_bound }
+				}
+				set_temp_variable = { direction_temp = 1 }
+			}
+			else_if = { # Set direction_temp to -1 signaling to decrease trade
+				limit = {
+					check_variable = { trade_productivity@var:resource_temp < productivity_lower_bound }
+				}
+				set_temp_variable = { direction_temp = -1 }
+			}
+
+			if = {
+				limit = {
+					NOT = { check_variable = { direction_temp = 0 } }
+				}
+				
+				multiply_temp_variable = { productivity_upper_bound = 2 }
+				if = { # Setting trade if productivity is too high - Disabled for the moment
+					limit = {
+						always = no
+						#check_variable = { trade_productivity@var:resource_temp > productivity_upper_bound }
+					}
+					trade_ai_determine_max_trade = yes
+					multiply_temp_variable = { amount_temp = 0.95 }
+					set_temp_variable = { no_update_temp = 1 }
+					set_trade = yes
+				}
+				else = { # Adjust trade by a small amount
+					# Check if this is/will be an export route by checking if offers is negative, if so multiply direction_temp by -1
+					# This will mean productive export routes will export more and unproductive ones will export less
+					# If zero offers, checks if price is less than global price
+					if = {
+						limit = {
+							if = {
+								limit = {
+									check_variable = { offers@var:resource_temp = 0 }
+								}
+								check_variable = { price@var:resource_temp < global_market_price@var:resource_temp }
+							}
+							else = {
+								check_variable = { offers@var:resource_temp < 0 }
+							}
+						}
+						multiply_temp_variable = { direction_temp = -1 }
+					}
+
+					# Checks if importing/exporting this is even a good idea at all
+					if = {
+						limit = {
+							NOT = { check_variable = { global_market_price@var:resource_temp = price@var:resource_temp } }
+						}
+						# Adjust trade
+						set_temp_variable = { steps_temp = direction_temp }
+						set_temp_variable = { no_update_temp = 1 }
+						adjust_trade_step = yes
+					}
+
+				}
+				
+				# Update Shipping Use of the route
+				subtract_from_variable = { shipping_use = shipping_use@var:resource_temp }
+				set_variable = { shipping_use@var:resource_temp = offers@var:resource_temp }
+				if = {
+					limit = {
+						check_variable = { shipping_use@var:resource_temp < 0 }
+					}
+					multiply_variable = { shipping_use@var:resource_temp = -1 }
+				}
+				multiply_variable = { shipping_use@var:resource_temp = global.shipping_cost@var:resource_temp }
+				set_temp_variable = { modifier_temp = modifier@shipping_cost_modifier }
+				add_to_temp_variable = { modifier_temp = 1 }
+				multiply_variable = { shipping_use@var:resource_temp = modifier_temp }
+				add_to_variable = { shipping_use = shipping_use@var:resource_temp }
+
+				#Shipping Efficiency
+				if = {
+					limit = {
+						check_variable = { shipping_capacity_use > shipping_capacity }
+					}
+					set_variable = { shipping_efficiency = shipping_capacity }
+					divide_variable = { shipping_efficiency = shipping_capacity_use }
+				}
+				else = {
+					set_variable = { shipping_efficiency = 1 }
+				}
+				
+				if = {
+					limit = {
+						check_variable = { shipping_capacity = 0 }
+					}
+					set_variable = { shipping_usage = 1 }
+				}
+				else = {
+					set_variable = { shipping_usage = shipping_capacity_use }
+					divide_variable = { shipping_usage = shipping_capacity }
+				}
+			}
+		}
+	}
+	trade_ai_remove_unproductive_route = {
+		# Takes in a single route, given as resource_temp, and reduces it if the route is unproductive
+		# Adjusts trade amount via steps WITHOUT trade_update
+
+		set_temp_variable = { productivity_lower_bound = workforce_earnings_avg } # If productivity is below this, decrease trade
+		
+		if = {
+			limit = { # Checks that stuff is valid
+				check_variable = { trade_ai@var:resource_temp = 0 }
+				is_in_array = { global.resource_token_array = resource_temp }
+				NOT = { is_in_array = { global.non_tradeable_resources = resource_temp } }
+				
+				check_variable = { trade_productivity@var:resource_temp < productivity_lower_bound } # Route is unprofitable!
+				NOT = { check_variable = { offers@var:resource_temp = 0 } } # There is actual trade here
+			}
+
+			# Check if this is/will be an export route by checking if offers is negative, if so set steps_temp to 1
+			# Otherwise, set it to -1. This will unproductive ones will export/import less
+			if = {
+				limit = {
+					check_variable = { offers@var:resource_temp < 0 }
+				}
+				set_temp_variable = { steps_temp = 1 } # Setting to +1 to decrease trade on an export route - since offers is negative
+			}
+			else = {
+				set_temp_variable = { steps_temp = -1 } # Setting to -1 to decrease trade on an import route - since offers is positive
+			}
+
+			divide_temp_variable = { productivity_lower_bound = 2 }
+			if = {
+				limit = {
+					check_variable = { trade_productivity@var:resource_temp < productivity_lower_bound } # Route is very unprofitable!
+				}
+				multiply_temp_variable = { steps_temp = 2 }
+
+				divide_temp_variable = { productivity_lower_bound = 2 }
+				if = {
+					limit = {
+						check_variable = { trade_productivity@var:resource_temp < productivity_lower_bound } # Route is very unprofitable!
+					}
+					multiply_temp_variable = { steps_temp = 2 }
+				}
+			}
+			if = {
+				limit = {
+					check_variable = { trade_productivity@var:resource_temp < 0 } # Route is unproductive!
+				}
+				multiply_temp_variable = { steps_temp = 3 }
+			}
+
+			if = {
+				limit = {
+					check_variable = { trade_productivity@var:resource_temp = 0 }
+					check_variable = { price@var:resource_temp = global_market_price@var:resource_temp }
+					OR = {
+						check_variable = { global_market_price_compared_to_base@var:resource_temp = -0.75 }
+						check_variable = { global_market_price_compared_to_base@var:resource_temp = 1 }
+					}
+				}
+				multiply_temp_variable = { steps_temp = 20 }
+			}
+
+			# Adjust trade
+			set_temp_variable = { no_update_temp = 1 }
+			adjust_trade_step = yes
+
+			# Shipping Use of the route
+			subtract_from_variable = { shipping_use = shipping_use@var:resource_temp }
+			set_variable = { shipping_use@var:resource_temp = offers@var:resource_temp }
+			if = {
+				limit = {
+					check_variable = { shipping_use@var:resource_temp < 0 }
+				}
+				multiply_variable = { shipping_use@var:resource_temp = -1 }
+			}
+			multiply_variable = { shipping_use@var:resource_temp = global.shipping_cost@var:resource_temp }
+			set_temp_variable = { modifier_temp = modifier@shipping_cost_modifier }
+			add_to_temp_variable = { modifier_temp = 1 }
+			multiply_variable = { shipping_use@var:resource_temp = modifier_temp }
+			add_to_variable = { shipping_use = shipping_use@var:resource_temp }
+
+			#Shipping Efficiency
+			if = {
+				limit = {
+					check_variable = { shipping_capacity_use > shipping_capacity }
+				}
+				set_variable = { shipping_efficiency = shipping_capacity }
+				divide_variable = { shipping_efficiency = shipping_capacity_use }
+			}
+			else = {
+				set_variable = { shipping_efficiency = 1 }
+			}
+			
+			if = {
+				limit = {
+					check_variable = { shipping_capacity = 0 }
+				}
+				set_variable = { shipping_usage = 1 }
+			}
+			else = {
+				set_variable = { shipping_usage = shipping_capacity_use }
+				divide_variable = { shipping_usage = shipping_capacity }
+			}
+		}
+	}
+	trade_ai_optimize_route = {
+		# Takes in a single route, given as resource_temp, and reduces it if the route is less profitable than the average
+		# Adjusts trade amount via steps WITHOUT trade_update
+   
+		if = {
+			limit = { # Checks that stuff is valid
+				check_variable = { trade_ai@var:resource_temp = 0 }
+				is_in_array = { global.resource_token_array = resource_temp }
+				NOT = { is_in_array = { global.non_tradeable_resources = resource_temp } }
+				
+				OR = { 
+					check_variable = { trade_productivity@var:resource_temp < trade_productivity } # Trade productivity < average
+					NOT = { check_variable = { trade_productivity@var:resource_temp > 0 } } # Route is unprofitable!
+				}
+				NOT = { check_variable = { offers@var:resource_temp = 0 } } # There is actual trade here
+			}
+
+			# Check if this is/will be an export route by checking if offers is negative, if so set steps_temp to 1
+			# Otherwise, set it to -1. This will unproductive ones will export/import less
+			if = {
+				limit = {
+					check_variable = { offers@var:resource_temp < 0 }
+				}
+				set_temp_variable = { steps_temp = 1 } # Setting to +1 to decrease trade on an export route - since offers is negative
+			}
+			else = {
+				set_temp_variable = { steps_temp = -1 } # Setting to -1 to decrease trade on an import route - since offers is positive
+			}
+
+			# Adjust trade
+			set_temp_variable = { no_update_temp = 1 }
+			adjust_trade_step = yes
+
+			# Shipping Use of the route
+			subtract_from_variable = { shipping_use = shipping_use@var:resource_temp }
+			set_variable = { shipping_use@var:resource_temp = offers@var:resource_temp }
+			if = {
+				limit = {
+					check_variable = { shipping_use@var:resource_temp < 0 }
+				}
+				multiply_variable = { shipping_use@var:resource_temp = -1 }
+			}
+			multiply_variable = { shipping_use@var:resource_temp = global.shipping_cost@var:resource_temp }
+			set_temp_variable = { modifier_temp = modifier@shipping_cost_modifier }
+			add_to_temp_variable = { modifier_temp = 1 }
+			multiply_variable = { shipping_use@var:resource_temp = modifier_temp }
+			add_to_variable = { shipping_use = shipping_use@var:resource_temp }
+
+			#Shipping Efficiency
+			if = {
+				limit = {
+					check_variable = { shipping_capacity_use > shipping_capacity }
+				}
+				set_variable = { shipping_efficiency = shipping_capacity }
+				divide_variable = { shipping_efficiency = shipping_capacity_use }
+			}
+			else = {
+				set_variable = { shipping_efficiency = 1 }
+			}
+			
+			if = {
+				limit = {
+					check_variable = { shipping_capacity = 0 }
+				}
+				set_variable = { shipping_usage = 1 }
+			}
+			else = {
+				set_variable = { shipping_usage = shipping_capacity_use }
+				divide_variable = { shipping_usage = shipping_capacity }
+			}
+		}
+	}
+	trade_ai_calculation = {
+		for_each_loop = { # Add Routes
+			array = global.resource_token_array
+			value = resource_temp
+			set_temp_variable = { productivity_upper_bound = workforce_earnings_avg } # If productivity is above this, increase trade
+			multiply_temp_variable = { productivity_upper_bound = 2 }
+			if = {
+				limit = {
+					check_variable = { trade_ai@var:resource_temp = 0 }
+					NOT = { is_in_array = { global.non_tradeable_resources = resource_temp } }
+
+					check_variable = { offers@var:resource_temp = 0 }
+					NOT = { is_in_array = { trade_routes = resource_temp } }
+					check_variable = { trade_productivity@var:resource_temp > productivity_upper_bound }
+
+					OR = {
+						check_variable = { supply@var:resource_temp > 0 }
+						check_variable = { demand@var:resource_temp > 0 }
+					}
+				}
+
+				set_temp_variable = { no_update_temp = 1 }
+				add_trade = yes
+			}
+		}
+
+		for_each_loop = { # Optimize & Evaluate Routes
+			array = trade_routes
+			value = resource_temp
+
+			if = {
+				limit = {
+					check_variable = { trade_ai@var:resource_temp = 0 }
+					NOT = { is_in_array = { global.non_tradeable_resources = resource_temp } }
+				}
+
+				if = {
+					limit = {
+						check_variable = { shipping_usage > 1 }
+					}
+					trade_ai_optimize_route = yes
+				}
+				else = {
+					set_temp_variable = { optimization_break = 1 }
+				}
+			}
+
+			if = {
+				limit = {
+					check_variable = { trade_ai@var:resource_temp = 0 }
+					NOT = { is_in_array = { global.non_tradeable_resources = resource_temp } }
+				}
+
+				trade_ai_evaluate_route = yes
+			}
+		}
+		
+		for_each_loop = { # Remove Routes
+			array = trade_routes
+			value = resource_temp
+			
+			if = {
+				limit = {
+					check_variable = { trade_ai@var:resource_temp = 0 }
+				}
+				trade_ai_remove_unproductive_route = yes
+				if = {
+					limit = {
+						check_variable = { offers@var:resource_temp = 0 }
+					}
+					set_temp_variable = { no_update_temp = 1 }
+					remove_trade = yes
+				}
+			}
+		}
+	}
+#
