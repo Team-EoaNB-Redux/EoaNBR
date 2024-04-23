@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html
+    <body>
+        <h1>Production Method Creator</h1>
+        <p>This program of sorts allows for you to create production methods rather easily</p>
+        <p>How you do that is that you supply the parameters wanted below then click "Compute" which will generate the HOI4 script text for you at the bottom of the page. In addition to generating that text, it will also generate some stats for you so to help guide you on how potentially "balanced" this is. You can also click "Clear" to reset everything if wanted.</p>
+        <p>Token_Name must be filled out. Output, Ind Cap, Ship Cap, Constr Time, Retooling Time, Ind Cap Usage, Laborer/Workers/Profess/Special Req, and resource input fields must all be EITHER numbers or blank.</p>
+        <br>
+        <h3>Production Method</h3>
+        <button onclick="download();">Download</button>
+        <br>
+        <br>
+        *Token_Name: <input id="pm_name" oninput="compute()">
+        Tech Unlock: <input id="tech_unlock" oninput="compute()">
+        <br>
+        Output: <input id="output" oninput="compute()">
+        Ind Cap: <input id="indcap" oninput="compute()">
+        Ship Cap: <input id="shipcap" oninput="compute()"> <br>
+        <br>
+        Constr Time: <input id="consttime" oninput="compute()"> 
+        Constr Reqs: <button onclick="addConstElement();">Add Constr Input</button> <ol id="constlist"> </ol>
+        Retooling Time: <input id="retooltime" oninput="compute()">
+        <br>
+        <br>
+        Ind Cap Usage: <input id="indcapusage" oninput="compute()">
+        Inputs: <button onclick="addelement();">Add Input</button> <ol id="thelist"> </ol>
+        Laborer Req: <input id="laborers" oninput="compute()">
+        Workers Req: <input id="workers" oninput="compute()"> <br>
+        Profess Req: <input id="professionals" oninput="compute()">
+        Special Req: <input id="specialists" oninput="compute()"> <br>
+        <br>
+        <h4>Result</h3>
+        <code id="constr">Construction: </code> <br>
+        <code id="input">Input: </code> <br>
+        <code id="profit">Profit: </code> <br>
+        <code id="workforce">Workforce: </code> <br>
+        <code id="laborer wages">Laborer Wages: </code> <br>
+        <code id="productivity">Productivity: </code> <br>
+        <code id="percentprofit">Percent Profit/Input: </code> <br>
+        <br>
+        <br>
+        <code id="result">Note: Tabbing is broken on here. It is correct in the downloaded file.</code>
+    </body>
+
+    <script>
+        class Input{
+            constructor(type){
+                this.type = type;
+                this.amount = 0;
+            }
+        }
+
+        const resources = [ "food", "luxuries", "wood", "fiber", "iron", "coal", "copper", "valuables", "oil", "rubber", "aluminum", "chromium", "tungsten", "titanium", "silicates", "rare_earths", "steel", "tools", "machinery", "chemicals", "plastics", "composites", "electronics", "batteries", "consumer_goods", "textiles", "vehicles", "appliances", "computers", "electricity", "services", "entertainment"];
+        var resource_dropdown_list = "";
+        for(let r in resources){
+            resource_dropdown_list += "<option value=\"" + resources[r] + "\">" + r + ": " + resources[r] + "</option>";
+        }
+
+        function getHTMLElement(num){
+            return "<li class=\"list-item\"> <select name=\"Resource\" class=\"list-resource\" onchange=\"saveHTMLList(); compute()\">" + resource_dropdown_list + ": <input class=\"list-input\" oninput=\"saveHTMLList(); compute()\"> <button onclick=\"removeElement(" + num + ");\">Remove</button></li>";
+        }
+        function getConstrHTMLElement(num){
+            return "<li class=\"const-item\"> <select name=\"Resource\" class=\"const-resource\" onchange=\"saveConstHTMLList(); compute()\">" + resource_dropdown_list + ": <input class=\"const-input\" oninput=\"saveConstHTMLList(); compute()\"> <button onclick=\"removeConstElement(" + num + ");\">Remove</button></li>";
+        }
+
+        var inputList = new Array();
+        var constList = new Array();
+        
+        function addelement() {
+            inputList.push(new Input(resources[0]));
+
+            saveHTMLList();
+            updateHTMLList();
+        }
+        function removeElement(location) {
+            saveHTMLList();
+
+            inputList.splice(location, 1);
+
+            updateHTMLList();
+        }
+        
+        function addConstElement() {
+            constList.push(new Input(resources[0]));
+
+            saveConstHTMLList();
+            updateConstHTMLList();
+        }
+        function removeConstElement(location) {
+            saveConstHTMLList();
+
+            constList.splice(location, 1);
+
+            updateConstHTMLList();
+        }
+
+        function saveHTMLList() {
+            const listResources = document.getElementsByClassName('list-resource');
+            const listInput = document.getElementsByClassName('list-input');
+            for(let i = 0; i < listResources.length; i++){
+                if(listResources[i].value == "") continue;
+
+                inputList[i].type = listResources[i].value;
+                inputList[i].amount = listInput[i].value;
+            }
+            
+        }
+        function updateHTMLList() {
+            const completelist = document.getElementById("thelist");
+            completelist.innerHTML = "";
+            for(let i = 0; i < inputList.length; i++){
+                completelist.innerHTML += getHTMLElement(i);
+            }
+
+            const listResources = document.getElementsByClassName('list-resource');
+            const listInput = document.getElementsByClassName('list-input');
+            for(let i = 0; i < listResources.length; i++){
+                listResources[i].value = inputList[i].type
+                listInput[i].value = inputList[i].amount
+            }
+
+            compute();
+        }
+
+        function saveConstHTMLList() {
+            const listResources = document.getElementsByClassName('const-resource');
+            const listInput = document.getElementsByClassName('const-input');
+            for(let i = 0; i < listResources.length; i++){
+                if(listResources[i].value == "") continue;
+
+                constList[i].type = listResources[i].value;
+                constList[i].amount = Number(listInput[i].value);
+                console.log(listResources[i].value + " " + listInput[i].value)
+            }
+            
+        }
+        function updateConstHTMLList() {
+            const completelist = document.getElementById("constlist");
+            completelist.innerHTML = "";
+            for(let i = 0; i < constList.length; i++){
+                completelist.innerHTML += getConstrHTMLElement(i);
+            }
+            
+
+            const listResources = document.getElementsByClassName('const-resource');
+            const listInput = document.getElementsByClassName('const-input');
+            for(let i = 0; i < listResources.length; i++){
+                listResources[i].value = constList[i].type
+                listInput[i].value = constList[i].amount
+            }
+
+            compute();
+        }
+
+        function compute() {
+            const list = document.getElementsByClassName('list-input');
+            const constr = document.getElementsByClassName('const-input');
+            let constTotal = 0
+            let inputTotal = 0
+            let outputTotal = 0
+            let workforceTotal = 0
+            let laborerWages = 0
+
+            for(let i = 0; i < constr.length; i++){
+                if(isNaN(constr[i].value)) continue;
+                constTotal += Number(constr[i].value);
+            }
+
+            for(let i = 0; i < list.length; i++){
+                if(isNaN(list[i].value)) continue;
+                inputTotal += Number(list[i].value);
+            }
+
+            outputTotal = Number(document.getElementById("output").value)
+            outputTotal += Number(document.getElementById("shipcap").value)
+            outputTotal += Number(document.getElementById("indcap").value)
+            
+            workforceTotal += Number(document.getElementById("laborers").value)
+            workforceTotal += Number(document.getElementById("workers").value)
+            workforceTotal += Number(document.getElementById("professionals").value)
+            workforceTotal += Number(document.getElementById("specialists").value)
+            
+            laborerWages += Number(document.getElementById("laborers").value)
+            laborerWages += Number(document.getElementById("workers").value) * 2.5
+            laborerWages += Number(document.getElementById("professionals").value) * 5
+            laborerWages += Number(document.getElementById("specialists").value) * 10
+            
+            let profit = outputTotal - inputTotal - Number(document.getElementById("indcapusage").value)
+            let productivity = profit / laborerWages
+            let percentProfit = profit / outputTotal
+            let percentInput = (inputTotal + Number(document.getElementById("indcapusage").value)) / outputTotal
+
+            document.getElementById('constr').innerHTML = "Construction: " + constTotal + " (" + (constTotal * Number(document.getElementById("consttime").value)) + ") | " + (constTotal * Number(document.getElementById("consttime").value) / outputTotal).toPrecision(3);
+            document.getElementById('input').innerHTML = "Input: " + (inputTotal + Number(document.getElementById("indcapusage").value)) + " (" + (inputTotal * Number(document.getElementById("retooltime").value)) + ")";
+            document.getElementById('profit').innerHTML = "Profit: " + profit;
+            document.getElementById('workforce').innerHTML = "Workforce: " + workforceTotal;
+            document.getElementById('laborer wages').innerHTML = "Laborer Wages: " + laborerWages;
+            document.getElementById('productivity').innerHTML = "Productivity: " + productivity.toPrecision(3);
+            document.getElementById('percentprofit').innerHTML = "Percent Profit/Input: " + percentProfit.toPrecision(3) + "/" + percentInput.toPrecision(3);
+
+            const resultNode = document.getElementById("result");
+            resultNode.innerHTML = "Note: Tabbing is broken on here. It is correct in the downloaded file. <br><br>" + createCode().replace(/\r?\n/g, "<br />");
+        }
+
+        function createCode(){
+            let code = "";
+            
+            const list = document.getElementsByClassName('list-input');
+            const constr = document.getElementsByClassName('const-input');
+            let name = document.getElementById("pm_name").value
+            let constTotal = 0
+            let inputTotal = 0
+            let outputTotal = 0
+            let workforceTotal = 0
+            let laborerWages = 0
+
+            let indcapuse = Number(document.getElementById("indcapusage").value)
+            inputTotal += indcapuse;
+
+            for(let i = 0; i < constr.length; i++){
+                if(isNaN(constr[i].value)) continue;
+                constTotal += Number(constr[i].value);
+            }
+
+            for(let i = 0; i < list.length; i++){
+                if(isNaN(list[i].value)) continue;
+                inputTotal += Number(list[i].value);
+            }
+
+            outputTotal = Number(document.getElementById("output").value)
+            outputTotal += Number(document.getElementById("shipcap").value)
+            outputTotal += Number(document.getElementById("indcap").value)
+
+            let laborers = Number(document.getElementById("laborers").value)
+            let workers = Number(document.getElementById("workers").value)
+            let professionals = Number(document.getElementById("professionals").value)
+            let specialists = Number(document.getElementById("specialists").value)
+            
+            workforceTotal += laborers
+            workforceTotal += workers
+            workforceTotal += professionals
+            workforceTotal += specialists
+            
+            laborerWages += laborers
+            laborerWages += workers * 2.5
+            laborerWages += professionals * 5
+            laborerWages += specialists * 10
+            
+            let profit = outputTotal - inputTotal
+            let productivity = profit / laborerWages
+            
+            let tech = document.getElementById("tech_unlock").value
+            let output = Number(document.getElementById("output").value)
+            let shipCap = Number(document.getElementById("shipcap").value)
+            let indCap = Number(document.getElementById("indcap").value)
+            
+            let constrTime = Number(document.getElementById("consttime").value)
+            let retooling = Number(document.getElementById("retooltime").value)
+
+            code += "define_" + name + " = {\n";
+            if(tech != "") code += "\tset_variable = { global.pm_tech_unlock@token:" + name + " = token:" + tech + " } \n";
+            if(!isNaN(output) && output != 0) code += "\tset_variable = { global.pm_output_multiplier@token:" + name + " = " + output + " } \n";
+            if(!isNaN(indCap) && indCap != 0) code += "\tset_variable = { global.pm_industrial_capacity@token:" + name + " = " + indCap + " } \n";
+            if(!isNaN(shipCap) && shipCap != 0) code += "\tset_variable = { global.pm_shipping_capacity@token:" + name + " = " + shipCap + " } \n";
+            code += "\n";
+            if(!isNaN(constrTime) && constrTime != 0) code += "\tset_variable = { global.pm_construction_duration@token:" + name + " = " + constrTime + " } \n";
+            if(constList.length > 0){
+                code += "\tclear_array = global.pm_construction_input@token:" + name + "\n";
+                code += "\tclear_array = global.pm_construction_input_amount@token:" + name + "\n";
+                for(let i = 0; i < constList.length; i++){
+                    code += "\tadd_to_array = { global.pm_construction_input@token:" + name + " = token:" + constList[i].type + " } \n";
+                    code += "\tadd_to_array = { global.pm_construction_input_amount@token:" + name + " = " + constList[i].amount + " } \n";
+                }
+                code += "\n";
+            }
+            if(!isNaN(retooling) && retooling != 0) code += "\tset_variable = { global.pm_retooling_duration@token:" + name + " = " + retooling + " } \n\n";
+            if(inputList.length > 0){
+                code += "\tclear_array = global.pm_input@token:" + name + "\n";
+                code += "\tclear_array = global.pm_input_amount@token:" + name + "\n";
+                for(let i = 0; i < inputList.length; i++){
+                    code += "\tadd_to_array = { global.pm_input@token:" + name + " = token:" + inputList[i].type + " } \n";
+                    code += "\tadd_to_array = { global.pm_input_amount@token:" + name + " = " + inputList[i].amount + " } \n";
+                }
+            }
+            if(!isNaN(indcapuse) && indcapuse != 0) code += "\tset_variable = { global.pm_industrial_capacity_use@token:" + name + " = " + indcapuse + " } \n";
+            code += "\n";
+            code += "\t# per resource / base price\n";
+            if(!isNaN(laborers) && laborers != 0) code += "\tset_variable = { global.pm_workforce_laborers@token:" + name + " = " + laborers + " } # x1.0 = " + laborers + " wages\n";
+            if(!isNaN(workers) && workers != 0) code += "\tset_variable = { global.pm_workforce_workers@token:" + name + " = " + workers + " } # x2.5 = " + (workers * 2.5) + " wages\n";
+            if(!isNaN(professionals) && professionals != 0) code += "\tset_variable = { global.pm_workforce_professionals@token:" + name + " = " + professionals + " } # x5.0 = " + (professionals * 5) + " wages\n";
+            if(!isNaN(specialists) && specialists != 0) code += "\tset_variable = { global.pm_workforce_specialists@token:" + name + " = " + specialists + " } # x10.0 = " + (specialists * 10) + " wages\n";
+            code += "\n";
+            code += "\t# Profit: " + profit.toPrecision(3) + " (" + productivity.toPrecision(3) + ")\n";
+            code += "}\n";
+
+            return code;
+        }
+
+        function download(){
+            const link = document.createElement("a");
+            const content = createCode();
+            const file = new Blob([content], { type: 'text/plain' });
+            link.href = URL.createObjectURL(file);
+            link.download = "sample.txt";
+            link.click();
+            URL.revokeObjectURL(link.href);
+        }
+
+    </script>
+        
+    
+</html>

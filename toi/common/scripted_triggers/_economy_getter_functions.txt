@@ -1,0 +1,514 @@
+
+# A list of "getter" functions that serves to make getting values easier
+# Intakes a list of temp variables and spits out one or more temp variables (will be listed)
+
+
+# INDUSTRIES
+    get_pm_values = {
+        # Returns a list of values of a PM
+        # State or Country scope
+        # Input: pm_temp, industry_token
+        # Outputs:
+        #   productivity_temp
+        #   revenue_temp
+        #   expenses_temp
+        #   core_revenue_temp
+        #   core_expenses_temp
+        #   payroll_multiplier_temp
+
+        # Helper Temp Variables
+        set_temp_variable = { output_modifier_temp = industry_output_factor@var:industry_token }
+        add_to_temp_variable = { output_modifier_temp = 1 }
+
+        set_temp_variable = { throughput_modifier_temp = industry_throughput_factor@var:industry_token }
+        add_to_temp_variable = { throughput_modifier_temp = 1 }
+
+        set_temp_variable = { input_modifier_temp = industry_input_factor@var:industry_token }
+        add_to_temp_variable = { input_modifier_temp = 1 }
+
+        if = {
+            limit = {
+                check_variable = { eco_of_scale_modifier_temp < 1 }
+            }
+            set_temp_variable = { eco_of_scale_modifier_temp = 1 }
+        }
+        else_if = {
+            limit = {
+                check_variable = { eco_of_scale_modifier_temp = 1 }
+            }
+            set_temp_variable = { eco_of_scale_modifier_temp = size@var:industry_token }
+            subtract_from_temp_variable = { eco_of_scale_modifier_temp = 1 }
+            clamp_temp_variable = { var = eco_of_scale_modifier_temp min = 0 max = global.buildings_economy_of_scale_max }
+            multiply_temp_variable = { eco_of_scale_modifier_temp = global.buildings_economy_of_scale_factor }
+            add_to_temp_variable = { eco_of_scale_modifier_temp = 1 }
+        }
+
+        # Output
+            set_temp_variable = { revenue_temp = 0 }
+
+            # Output 0
+            set_temp_variable = { br_token = global.building_base_production@var:industry_token^0 }
+            set_temp_variable = { productivity_temp = global.building_base_production_amount@var:industry_token^0 }
+            multiply_temp_variable = { productivity_temp = controller:pm_output_multiplier@var:pm_temp }
+            multiply_temp_variable = { productivity_temp = throughput_modifier_temp }
+            multiply_temp_variable = { productivity_temp = output_modifier_temp }
+            multiply_temp_variable = { productivity_temp = eco_of_scale_modifier_temp }
+
+            multiply_temp_variable = { productivity_temp = controller:price@var:br_token }
+            add_to_temp_variable = { revenue_temp = productivity_temp }
+
+            if = { # Output 1-4
+                limit = {
+                    check_variable = { global.building_base_production_amount@var:industry_token^1 > 0 }
+                }
+                set_temp_variable = { br_token = global.building_base_production@var:industry_token^1 }
+                set_temp_variable = { productivity_temp = global.building_base_production_amount@var:industry_token^1 }
+                multiply_temp_variable = { productivity_temp = controller:pm_output_multiplier@var:pm_temp }
+                multiply_temp_variable = { productivity_temp = throughput_modifier_temp }
+                multiply_temp_variable = { productivity_temp = output_modifier_temp }
+                multiply_temp_variable = { productivity_temp = eco_of_scale_modifier_temp }
+                multiply_temp_variable = { productivity_temp = controller:price@var:br_token }
+                add_to_temp_variable = { revenue_temp = productivity_temp }
+                if = { # Output 2
+                    limit = {
+                        check_variable = { global.building_base_production_amount@var:industry_token^2 > 0 }
+                    }
+                    set_temp_variable = { br_token = global.building_base_production@var:industry_token^2 }
+                    set_temp_variable = { productivity_temp = global.building_base_production_amount@var:industry_token^2 }
+                    multiply_temp_variable = { productivity_temp = controller:pm_output_multiplier@var:pm_temp }
+                    multiply_temp_variable = { productivity_temp = throughput_modifier_temp }
+                    multiply_temp_variable = { productivity_temp = output_modifier_temp }
+                    multiply_temp_variable = { productivity_temp = eco_of_scale_modifier_temp }
+                    multiply_temp_variable = { productivity_temp = controller:price@var:br_token }
+                    add_to_temp_variable = { revenue_temp = productivity_temp }
+                    if = { # Output 3
+                        limit = {
+                            check_variable = { global.building_base_production_amount@var:industry_token^3 > 0 }
+                        }
+                        set_temp_variable = { br_token = global.building_base_production@var:industry_token^3 }
+                        set_temp_variable = { productivity_temp = global.building_base_production_amount@var:industry_token^3 }
+                        multiply_temp_variable = { productivity_temp = controller:pm_output_multiplier@var:pm_temp }
+                        multiply_temp_variable = { productivity_temp = throughput_modifier_temp }
+                        multiply_temp_variable = { productivity_temp = output_modifier_temp }
+                        multiply_temp_variable = { productivity_temp = eco_of_scale_modifier_temp }
+                        multiply_temp_variable = { productivity_temp = controller:price@var:br_token }
+                        add_to_temp_variable = { revenue_temp = productivity_temp }
+                        if = { # Output 4
+                            limit = {
+                                check_variable = { global.building_base_production_amount@var:industry_token^4 > 0 }
+                            }
+                            set_temp_variable = { br_token = global.building_base_production@var:industry_token^4 }
+                            set_temp_variable = { productivity_temp = global.building_base_production_amount@var:industry_token^4 }
+                            multiply_temp_variable = { productivity_temp = controller:pm_output_multiplier@var:pm_temp }
+                            multiply_temp_variable = { productivity_temp = throughput_modifier_temp }
+                            multiply_temp_variable = { productivity_temp = output_modifier_temp }
+                            multiply_temp_variable = { productivity_temp = eco_of_scale_modifier_temp }
+                            multiply_temp_variable = { productivity_temp = controller:price@var:br_token }
+                            add_to_temp_variable = { revenue_temp = productivity_temp }
+                        }
+                    }
+                }
+            }
+        #
+
+        # Input
+        set_temp_variable = { expenses_temp = 0 }
+
+        if = { # Input 0
+            limit = {
+                check_variable = { controller:pm_input_amount@var:pm_temp^num > 0 }
+            }
+
+            set_temp_variable = { br_token = controller:pm_input@var:pm_temp^0 }
+            set_temp_variable = { productivity_temp = controller:pm_input_amount@var:pm_temp^0 }
+            multiply_temp_variable = { productivity_temp = global.building_base_output_value@var:industry_token }
+            multiply_temp_variable = { productivity_temp = throughput_modifier_temp }
+            multiply_temp_variable = { productivity_temp = input_modifier_temp }
+            multiply_temp_variable = { productivity_temp = eco_of_scale_modifier_temp }
+            multiply_temp_variable = { productivity_temp = controller:price@var:br_token }
+            divide_temp_variable = { productivity_temp = global.base_price@var:br_token }
+            add_to_temp_variable = { expenses_temp = productivity_temp }
+            if = { # Input 1
+                limit = {
+                    check_variable = { controller:pm_input_amount@var:pm_temp^num > 1 }
+                }
+
+                set_temp_variable = { br_token = controller:pm_input@var:pm_temp^1 }
+                set_temp_variable = { productivity_temp = controller:pm_input_amount@var:pm_temp^1 }
+                multiply_temp_variable = { productivity_temp = global.building_base_output_value@var:industry_token }
+                multiply_temp_variable = { productivity_temp = throughput_modifier_temp }
+                multiply_temp_variable = { productivity_temp = input_modifier_temp }
+                multiply_temp_variable = { productivity_temp = eco_of_scale_modifier_temp }
+                multiply_temp_variable = { productivity_temp = controller:price@var:br_token }
+                divide_temp_variable = { productivity_temp = global.base_price@var:br_token }
+                add_to_temp_variable = { expenses_temp = productivity_temp }
+                if = { # Input 2
+                    limit = {
+                        check_variable = { controller:pm_input_amount@var:pm_temp^num > 2 }
+                    }
+
+                    set_temp_variable = { br_token = controller:pm_input@var:pm_temp^2 }
+                    set_temp_variable = { productivity_temp = controller:pm_input_amount@var:pm_temp^2 }
+                    multiply_temp_variable = { productivity_temp = global.building_base_output_value@var:industry_token }
+                    multiply_temp_variable = { productivity_temp = throughput_modifier_temp }
+                    multiply_temp_variable = { productivity_temp = input_modifier_temp }
+                    multiply_temp_variable = { productivity_temp = eco_of_scale_modifier_temp }
+                    multiply_temp_variable = { productivity_temp = controller:price@var:br_token }
+                    divide_temp_variable = { productivity_temp = global.base_price@var:br_token }
+                    add_to_temp_variable = { expenses_temp = productivity_temp }
+                    if = { # Input 3
+                        limit = {
+                            check_variable = { controller:pm_input_amount@var:pm_temp^num > 3 }
+                        }
+
+                        set_temp_variable = { br_token = controller:pm_input@var:pm_temp^3 }
+                        set_temp_variable = { productivity_temp = controller:pm_input_amount@var:pm_temp^3 }
+                        multiply_temp_variable = { productivity_temp = global.building_base_output_value@var:industry_token }
+                        multiply_temp_variable = { productivity_temp = throughput_modifier_temp }
+                        multiply_temp_variable = { productivity_temp = input_modifier_temp }
+                        multiply_temp_variable = { productivity_temp = eco_of_scale_modifier_temp }
+                        multiply_temp_variable = { productivity_temp = controller:price@var:br_token }
+                        divide_temp_variable = { productivity_temp = global.base_price@var:br_token }
+                        add_to_temp_variable = { expenses_temp = productivity_temp }
+                        if = { # Input 4
+                            limit = {
+                                check_variable = { controller:pm_input_amount@var:pm_temp^num > 4 }
+                            }
+
+                            set_temp_variable = { br_token = controller:pm_input@var:pm_temp^4 }
+                            set_temp_variable = { productivity_temp = controller:pm_input_amount@var:pm_temp^4 }
+                            multiply_temp_variable = { productivity_temp = global.building_base_output_value@var:industry_token }
+                            multiply_temp_variable = { productivity_temp = throughput_modifier_temp }
+                            multiply_temp_variable = { productivity_temp = input_modifier_temp }
+                            multiply_temp_variable = { productivity_temp = eco_of_scale_modifier_temp }
+                            multiply_temp_variable = { productivity_temp = controller:price@var:br_token }
+                            divide_temp_variable = { productivity_temp = global.base_price@var:br_token }
+                            add_to_temp_variable = { expenses_temp = productivity_temp }
+                            if = { # Input 5
+                                limit = {
+                                    check_variable = { controller:pm_input_amount@var:pm_temp^num > 5 }
+                                }
+
+                                set_temp_variable = { br_token = controller:pm_input@var:pm_temp^5 }
+                                set_temp_variable = { productivity_temp = controller:pm_input_amount@var:pm_temp^5 }
+                                multiply_temp_variable = { productivity_temp = global.building_base_output_value@var:industry_token }
+                                multiply_temp_variable = { productivity_temp = throughput_modifier_temp }
+                                multiply_temp_variable = { productivity_temp = input_modifier_temp }
+                                multiply_temp_variable = { productivity_temp = eco_of_scale_modifier_temp }
+                                multiply_temp_variable = { productivity_temp = controller:price@var:br_token }
+                                divide_temp_variable = { productivity_temp = global.base_price@var:br_token }
+                                add_to_temp_variable = { expenses_temp = productivity_temp }
+                                if = { # Input 6
+                                    limit = {
+                                        check_variable = { controller:pm_input_amount@var:pm_temp^num > 6 }
+                                    }
+
+                                    set_temp_variable = { br_token = controller:pm_input@var:pm_temp^6 }
+                                    set_temp_variable = { productivity_temp = controller:pm_input_amount@var:pm_temp^6 }
+                                    multiply_temp_variable = { productivity_temp = global.building_base_output_value@var:industry_token }
+                                    multiply_temp_variable = { productivity_temp = throughput_modifier_temp }
+                                    multiply_temp_variable = { productivity_temp = input_modifier_temp }
+                                    multiply_temp_variable = { productivity_temp = eco_of_scale_modifier_temp }
+                                    multiply_temp_variable = { productivity_temp = controller:price@var:br_token }
+                                    divide_temp_variable = { productivity_temp = global.base_price@var:br_token }
+                                    add_to_temp_variable = { expenses_temp = productivity_temp }
+                                    if = { # Input 7
+                                        limit = {
+                                            check_variable = { controller:pm_input_amount@var:pm_temp^num > 7 }
+                                        }
+
+                                        set_temp_variable = { br_token = controller:pm_input@var:pm_temp^7 }
+                                        set_temp_variable = { productivity_temp = controller:pm_input_amount@var:pm_temp^7 }
+                                        multiply_temp_variable = { productivity_temp = global.building_base_output_value@var:industry_token }
+                                        multiply_temp_variable = { productivity_temp = throughput_modifier_temp }
+                                        multiply_temp_variable = { productivity_temp = input_modifier_temp }
+                                        multiply_temp_variable = { productivity_temp = eco_of_scale_modifier_temp }
+                                        multiply_temp_variable = { productivity_temp = controller:price@var:br_token }
+                                        divide_temp_variable = { productivity_temp = global.base_price@var:br_token }
+                                        add_to_temp_variable = { expenses_temp = productivity_temp }
+                                        if = { # Input 8
+                                            limit = {
+                                                check_variable = { controller:pm_input_amount@var:pm_temp^num > 8 }
+                                            }
+
+                                            set_temp_variable = { br_token = controller:pm_input@var:pm_temp^8 }
+                                            set_temp_variable = { productivity_temp = controller:pm_input_amount@var:pm_temp^8 }
+                                            multiply_temp_variable = { productivity_temp = global.building_base_output_value@var:industry_token }
+                                            multiply_temp_variable = { productivity_temp = throughput_modifier_temp }
+                                            multiply_temp_variable = { productivity_temp = input_modifier_temp }
+                                            multiply_temp_variable = { productivity_temp = eco_of_scale_modifier_temp }
+                                            multiply_temp_variable = { productivity_temp = controller:price@var:br_token }
+                                            divide_temp_variable = { productivity_temp = global.base_price@var:br_token }
+                                            add_to_temp_variable = { expenses_temp = productivity_temp }
+                                            if = { # Input 9
+                                                limit = {
+                                                    check_variable = { controller:pm_input_amount@var:pm_temp^num > 9 }
+                                                }
+
+                                                set_temp_variable = { br_token = controller:pm_input@var:pm_temp^9 }
+                                                set_temp_variable = { productivity_temp = controller:pm_input_amount@var:pm_temp^9 }
+                                                multiply_temp_variable = { productivity_temp = global.building_base_output_value@var:industry_token }
+                                                multiply_temp_variable = { productivity_temp = throughput_modifier_temp }
+                                                multiply_temp_variable = { productivity_temp = input_modifier_temp }
+                                                multiply_temp_variable = { productivity_temp = eco_of_scale_modifier_temp }
+                                                multiply_temp_variable = { productivity_temp = controller:price@var:br_token }
+                                                divide_temp_variable = { productivity_temp = global.base_price@var:br_token }
+                                                add_to_temp_variable = { expenses_temp = productivity_temp }
+                                                if = { # Input 10
+                                                    limit = {
+                                                        check_variable = { controller:pm_input_amount@var:pm_temp^num > 10 }
+                                                    }
+
+                                                    set_temp_variable = { br_token = controller:pm_input@var:pm_temp^10 }
+                                                    set_temp_variable = { productivity_temp = controller:pm_input_amount@var:pm_temp^10 }
+                                                    multiply_temp_variable = { productivity_temp = global.building_base_output_value@var:industry_token }
+                                                    multiply_temp_variable = { productivity_temp = throughput_modifier_temp }
+                                                    multiply_temp_variable = { productivity_temp = input_modifier_temp }
+                                                    multiply_temp_variable = { productivity_temp = eco_of_scale_modifier_temp }
+                                                    multiply_temp_variable = { productivity_temp = controller:price@var:br_token }
+                                                    divide_temp_variable = { productivity_temp = global.base_price@var:br_token }
+                                                    add_to_temp_variable = { expenses_temp = productivity_temp }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        # Capacities
+        set_temp_variable = { exp_temp = controller:pm_industrial_capacity_use@var:pm_temp }
+        multiply_temp_variable = { exp_temp = global.building_base_output_value@var:industry_token }
+        multiply_temp_variable = { exp_temp = input_modifier_temp }
+        multiply_temp_variable = { exp_temp = throughput_modifier_temp }
+        multiply_temp_variable = { exp_temp = eco_of_scale_modifier_temp }
+        multiply_temp_variable = { exp_temp = price_industrial_capacity }
+        divide_temp_variable = { exp_temp = global.base_price_industrial_capacity }
+        add_to_temp_variable = { expenses_temp = exp_temp }
+
+        set_temp_variable = { rev_temp = controller:pm_industrial_capacity@var:pm_temp }
+        multiply_temp_variable = { rev_temp = global.building_base_output_value@var:industry_token }
+        multiply_temp_variable = { rev_temp = output_modifier_temp }
+        multiply_temp_variable = { rev_temp = throughput_modifier_temp }
+        multiply_temp_variable = { rev_temp = eco_of_scale_modifier_temp }
+        multiply_temp_variable = { rev_temp = price_industrial_capacity }
+        divide_temp_variable = { rev_temp = global.base_price_industrial_capacity }
+        add_to_temp_variable = { revenue_temp = rev_temp }
+
+        set_temp_variable = { rev_temp = controller:pm_shipping_capacity@var:pm_temp }
+        multiply_temp_variable = { rev_temp = global.building_base_output_value@var:industry_token }
+        multiply_temp_variable = { rev_temp = output_modifier_temp }
+        multiply_temp_variable = { rev_temp = throughput_modifier_temp }
+        multiply_temp_variable = { rev_temp = eco_of_scale_modifier_temp }
+        multiply_temp_variable = { rev_temp = controller:price_shipping_capacity }
+        divide_temp_variable = { rev_temp = global.base_price_shipping_capacity }
+        add_to_temp_variable = { revenue_temp = rev_temp }
+
+        # Payroll Multiplier
+        set_temp_variable = { payroll_multiplier_temp = 0 }
+
+        set_temp_variable = { workforce_temp = controller:pm_workforce_laborers@var:pm_temp }
+        multiply_temp_variable = { workforce_temp = 2 }
+        add_to_temp_variable = { payroll_multiplier_temp = workforce_temp }
+
+        set_temp_variable = { workforce_temp = controller:pm_workforce_workers@var:pm_temp }
+        multiply_temp_variable = { workforce_temp = 5 }
+        add_to_temp_variable = { payroll_multiplier_temp = workforce_temp }
+
+        set_temp_variable = { workforce_temp = controller:pm_workforce_professionals@var:pm_temp }
+        multiply_temp_variable = { workforce_temp = 10 }
+        add_to_temp_variable = { payroll_multiplier_temp = workforce_temp }
+
+        set_temp_variable = { workforce_temp = controller:pm_workforce_specialists@var:pm_temp }
+        multiply_temp_variable = { workforce_temp = 20 }
+        add_to_temp_variable = { payroll_multiplier_temp = workforce_temp }
+
+        # Productivity
+        set_temp_variable = { productivity_temp = revenue_temp }
+        subtract_from_temp_variable = { productivity_temp = expenses_temp }
+        divide_temp_variable = { productivity_temp = global.building_base_employees@var:industry_token }
+		if = { limit = { NOT = { check_variable = { payroll_multiplier_temp = 0 } } } divide_temp_variable = { productivity_temp = payroll_multiplier_temp } }
+        
+
+        # Rev & Expenses
+        set_temp_variable = { core_revenue_temp = revenue_temp }
+        set_temp_variable = { core_expenses_temp = expenses_temp }
+
+        multiply_temp_variable = { revenue_temp = production_percentage@var:industry_token }
+        divide_temp_variable = { revenue_temp = 100 }
+        multiply_temp_variable = { revenue_temp = size@var:industry_token }
+
+        multiply_temp_variable = { expenses_temp = production_percentage@var:industry_token }
+        divide_temp_variable = { expenses_temp = 100 }
+        multiply_temp_variable = { expenses_temp = size@var:industry_token }
+    }
+    get_construction_cost = {
+        # Returns the construction cost of building an industry of size 1
+        # State or Country scope
+        # Input: pm_temp, am_temp, industry_token
+        # Output: total_construction_cost_temp
+
+        set_temp_variable = { construction_cost_temp = 1 }
+        add_to_temp_variable = { construction_cost_temp = industry_construction_cost_factor }
+
+        set_temp_variable = { total_construction_cost_temp = 0 }
+        if = { # Input 0
+            limit = {
+                check_variable = { controller:pm_construction_input_amount@var:pm_temp^num > 0 }
+            }
+
+            set_temp_variable = { br_token = controller:pm_construction_input@var:pm_temp^0 }
+            set_temp_variable = { amount_temp = controller:pm_construction_duration@var:pm_temp }
+            add_to_temp_variable = { amount_temp = controller:pm_construction_duration@var:am_temp }
+
+            multiply_temp_variable = { amount_temp = controller:pm_construction_input_amount@var:pm_temp^0 }
+            multiply_temp_variable = { amount_temp = global.building_base_output_value@var:industry_token }
+            multiply_temp_variable = { amount_temp = construction_cost_temp }
+            divide_temp_variable = { amount_temp = global.base_price@var:br_token }
+            multiply_temp_variable = { amount_temp = controller:price@var:br_token }
+            add_to_temp_variable = { total_construction_cost_temp = amount_temp }
+
+            
+            if = { # Input 0
+                limit = {
+                    check_variable = { controller:pm_construction_input_amount@var:pm_temp^num > 0 }
+                }
+
+                set_temp_variable = { br_token = controller:pm_construction_input@var:pm_temp^0 }
+                set_temp_variable = { amount_temp = controller:pm_construction_duration@var:pm_temp }
+                add_to_temp_variable = { amount_temp = controller:pm_construction_duration@var:am_temp }
+
+                multiply_temp_variable = { amount_temp = controller:pm_construction_input_amount@var:pm_temp^0 }
+                multiply_temp_variable = { amount_temp = global.building_base_output_value@var:industry_token }
+                multiply_temp_variable = { amount_temp = construction_cost_temp }
+                divide_temp_variable = { amount_temp = global.base_price@var:br_token }
+                multiply_temp_variable = { amount_temp = controller:price@var:br_token }
+
+                add_to_temp_variable = { total_construction_cost_temp = amount_temp }
+                if = { # Input 1
+                    limit = {
+                        check_variable = { controller:pm_construction_input_amount@var:pm_temp^num > 1 }
+                    }
+
+                    set_temp_variable = { br_token = controller:pm_construction_input@var:pm_temp^1 }
+                    set_temp_variable = { amount_temp = controller:pm_construction_duration@var:pm_temp }
+                    add_to_temp_variable = { amount_temp = controller:pm_construction_duration@var:am_temp }
+
+                    multiply_temp_variable = { amount_temp = controller:pm_construction_input_amount@var:pm_temp^1 }
+                    multiply_temp_variable = { amount_temp = global.building_base_output_value@var:industry_token }
+                    multiply_temp_variable = { amount_temp = construction_cost_temp }
+                    divide_temp_variable = { amount_temp = global.base_price@var:br_token }
+                    multiply_temp_variable = { amount_temp = controller:price@var:br_token }
+
+                    add_to_temp_variable = { total_construction_cost_temp = amount_temp }
+                    if = { # Input 2
+                        limit = {
+                            check_variable = { controller:pm_construction_input_amount@var:pm_temp^num > 2 }
+                        }
+
+                        set_temp_variable = { br_token = controller:pm_construction_input@var:pm_temp^2 }
+                        set_temp_variable = { amount_temp = controller:pm_construction_duration@var:pm_temp }
+                        add_to_temp_variable = { amount_temp = controller:pm_construction_duration@var:am_temp }
+
+                        multiply_temp_variable = { amount_temp = controller:pm_construction_input_amount@var:pm_temp^2 }
+                        multiply_temp_variable = { amount_temp = global.building_base_output_value@var:industry_token }
+                        multiply_temp_variable = { amount_temp = construction_cost_temp }
+                        divide_temp_variable = { amount_temp = global.base_price@var:br_token }
+                        multiply_temp_variable = { amount_temp = controller:price@var:br_token }
+
+                        add_to_temp_variable = { total_construction_cost_temp = amount_temp }
+                        if = { # Input 3
+                            limit = {
+                                check_variable = { controller:pm_construction_input_amount@var:pm_temp^num > 3 }
+                            }
+
+                            set_temp_variable = { br_token = controller:pm_construction_input@var:pm_temp^3 }
+                            set_temp_variable = { amount_temp = controller:pm_construction_duration@var:pm_temp }
+                            add_to_temp_variable = { amount_temp = controller:pm_construction_duration@var:am_temp }
+
+                            multiply_temp_variable = { amount_temp = controller:pm_construction_input_amount@var:pm_temp^3 }
+                            multiply_temp_variable = { amount_temp = global.building_base_output_value@var:industry_token }
+                            multiply_temp_variable = { amount_temp = construction_cost_temp }
+                            divide_temp_variable = { amount_temp = global.base_price@var:br_token }
+                            multiply_temp_variable = { amount_temp = controller:price@var:br_token }
+
+                            add_to_temp_variable = { total_construction_cost_temp = amount_temp }
+                            if = { # Input 4
+                                limit = {
+                                    check_variable = { controller:pm_construction_input_amount@var:pm_temp^num > 4 }
+                                }
+
+                                set_temp_variable = { br_token = controller:pm_construction_input@var:pm_temp^4 }
+                                set_temp_variable = { amount_temp = controller:pm_construction_duration@var:pm_temp }
+                                add_to_temp_variable = { amount_temp = controller:pm_construction_duration@var:am_temp }
+
+                                multiply_temp_variable = { amount_temp = controller:pm_construction_input_amount@var:pm_temp^4 }
+                                multiply_temp_variable = { amount_temp = global.building_base_output_value@var:industry_token }
+                                multiply_temp_variable = { amount_temp = construction_cost_temp }
+                                divide_temp_variable = { amount_temp = global.base_price@var:br_token }
+                                multiply_temp_variable = { amount_temp = controller:price@var:br_token }
+
+                                add_to_temp_variable = { total_construction_cost_temp = amount_temp }
+                                if = { # Input 5
+                                    limit = {
+                                        check_variable = { controller:pm_construction_input_amount@var:pm_temp^num > 5 }
+                                    }
+
+                                    set_temp_variable = { br_token = controller:pm_construction_input@var:pm_temp^5 }
+                                    set_temp_variable = { amount_temp = controller:pm_construction_duration@var:pm_temp }
+                                    add_to_temp_variable = { amount_temp = controller:pm_construction_duration@var:am_temp }
+
+                                    multiply_temp_variable = { amount_temp = controller:pm_construction_input_amount@var:pm_temp^5 }
+                                    multiply_temp_variable = { amount_temp = global.building_base_output_value@var:industry_token }
+                                    multiply_temp_variable = { amount_temp = construction_cost_temp }
+                                    divide_temp_variable = { amount_temp = global.base_price@var:br_token }
+                                    multiply_temp_variable = { amount_temp = controller:price@var:br_token }
+
+                                    add_to_temp_variable = { total_construction_cost_temp = amount_temp }
+                                    if = { # Input 6
+                                        limit = {
+                                            check_variable = { controller:pm_construction_input_amount@var:pm_temp^num > 6 }
+                                        }
+
+                                        set_temp_variable = { br_token = controller:pm_construction_input@var:pm_temp^6 }
+                                        set_temp_variable = { amount_temp = controller:pm_construction_duration@var:pm_temp }
+                                        add_to_temp_variable = { amount_temp = controller:pm_construction_duration@var:am_temp }
+
+                                        multiply_temp_variable = { amount_temp = controller:pm_construction_input_amount@var:pm_temp^6 }
+                                        multiply_temp_variable = { amount_temp = global.building_base_output_value@var:industry_token }
+                                        multiply_temp_variable = { amount_temp = construction_cost_temp }
+                                        divide_temp_variable = { amount_temp = global.base_price@var:br_token }
+                                        multiply_temp_variable = { amount_temp = controller:price@var:br_token }
+
+                                        add_to_temp_variable = { total_construction_cost_temp = amount_temp }
+                                        if = { # Input 7
+                                            limit = {
+                                                check_variable = { controller:pm_construction_input_amount@var:pm_temp^num > 7 }
+                                            }
+
+                                            set_temp_variable = { br_token = controller:pm_construction_input@var:pm_temp^7 }
+                                            set_temp_variable = { amount_temp = controller:pm_construction_duration@var:pm_temp }
+                                            add_to_temp_variable = { amount_temp = controller:pm_construction_duration@var:am_temp }
+
+                                            multiply_temp_variable = { amount_temp = controller:pm_construction_input_amount@var:pm_temp^7 }
+                                            multiply_temp_variable = { amount_temp = global.building_base_output_value@var:industry_token }
+                                            multiply_temp_variable = { amount_temp = construction_cost_temp }
+                                            divide_temp_variable = { amount_temp = global.base_price@var:br_token }
+                                            multiply_temp_variable = { amount_temp = controller:price@var:br_token }
+
+                                            add_to_temp_variable = { total_construction_cost_temp = amount_temp }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+#

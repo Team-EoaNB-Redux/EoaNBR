@@ -33,7 +33,7 @@ NDefines.NCountry.BASE_FUEL_GAIN_PER_OIL = 0.25						-- base amount of fuel gain
 NDefines.NCountry.BASE_FUEL_GAIN = 1.0						-- base amount of fuel gained hourly, independent of excess oil --2
 NDefines.NCountry.BASE_FUEL_CAPACITY = 500						-- base amount of fuel capacity --50k
 
-NDefines.NProduction.MAX_EQUIPMENT_RESOURCES_NEED = 6 	-- Max number of different strategic resources an equipment can be dependent on. --3
+NDefines.NProduction.MAX_EQUIPMENT_RESOURCES_NEED = 9 	-- Max number of different strategic resources an equipment can be dependent on. --3
 NDefines.NProduction.MAX_CIV_FACTORIES_PER_LINE = 18 -- Max number of factories that can be assigned a single production line.
 NDefines.NProduction.DEFAULT_MAX_NAV_FACTORIES_PER_LINE = 12
 NDefines.NProduction.FLOATING_HARBOR_MAX_NAV_FACTORIES_PER_LINE = 6
@@ -48,6 +48,7 @@ NDefines.NProduction.ANNEX_FUEL_RATIO = 0.5	-- How much fuel will be transferred
 NDefines.NProduction.MIN_POSSIBLE_TRAINING_MANPOWER = 5000	-- How many deployment lines minimum can be training --100k
 NDefines.NProduction.CAPITULATE_FUEL_RATIO = 0.25 -- How much fuel will be transferred on capitulation --.5
 NDefines.NProduction.PRODUCTION_RESOURCE_LACK_PENALTY = -0.4			-- Penalty decrease while lack of resource per factory --0.05
+NDefines.NProduction.CONVERSION_SPEED_BONUS = 0.5							-- Modifier to the production speed when converting equipment --0
 
 NDefines.NTechnology.BASE_TECH_COST = 2000 -- 100
 NDefines.NTechnology.MIN_RESEARCH_SPEED = 0.2						-- research speed can't go below this value
@@ -56,7 +57,7 @@ NDefines.NPolitics.BASE_POLITICAL_POWER_INCREASE = 1.0
 
 NDefines.NBuildings.MAX_SHARED_SLOTS = 81 -- 25
 NDefines.NBuildings.SUPPLY_ROUTE_RESOURCE_BONUS = 0 -- Needs to be 0 for eco calculations to work
-NDefines.NBuildings.INFRASTRUCTURE_RESOURCE_BONUS = 0.1 -- 10% per level
+NDefines.NBuildings.INFRASTRUCTURE_RESOURCE_BONUS = 0.0 -- 0% per level, Disabled for eco
 
 NDefines.NMilitary.WAR_SCORE_PROVINCE_FACTOR = 0.3 -- 2.0
 NDefines.NMilitary.WAR_SCORE_LEND_LEASE_GIVEN_IC_FACTOR = 0.1 -- 0.001
@@ -86,6 +87,10 @@ NDefines.NMilitary.EXPERIENCE_COMBAT_FACTOR = 0.05
 NDefines.NMilitary.LOW_ORG_FOR_ATTACK = 0.5                    -- at what org % we start affecting speed when doign hostile moves. scales down ZERO_ORG_MOVEMENT_MODIFIER
 NDefines.NMilitary.MIN_DIVISION_DEPLOYMENT_TRAINING = 0.05			-- Min level of division training
 NDefines.NMilitary.BORDER_WAR_WIN_DAYS_AGAINST_EMPTY_OPPONENTS = 30		-- border wars will be automatically won if no opponent shows up for this duration
+NDefines.NMilitary.CORPS_COMMANDER_DIVISIONS_CAP = 6			-- how many divisions a corps commander is limited to. 0 = inf, < 0 = blocked, changed to 12
+NDefines.NMilitary.DIVISION_SIZE_FOR_XP = 6                   -- how many battalions should a division have to count as a full divisions when calculating XP stuff, changed to 6, or 2 full brigades with victorian starting doctrine
+NDefines.NMilitary.FIELD_MARSHAL_ARMIES_CAP = 2				-- how many armies a field marshall is limited to. 0 = inf, < 0 = blocked
+NDefines.NMilitary.MIN_DIVISION_BRIGADE_HEIGHT = 2		-- Min height of regiments in division designer, set to 2, 3 with starting victorian doctrine
 
 NDefines.NAir.TOP_SPEED_DAMAGE_BONUS_FACTOR = 0.02 -- 0.025
 NDefines.NAir.COMBAT_BETTER_SPEED_DAMAGE_INCREASE = 0.45 -- 0.60

@@ -1,0 +1,107 @@
+ledger_quicksort = {
+	set_temp_variable = { stack_size = high }
+	subtract_from_temp_variable = { stack_size = low }
+	add_to_temp_variable = { stack_size = 1 }
+	resize_temp_array = {
+		array = stack
+		value = 0
+		size = stack_size
+	}
+
+	set_temp_variable = { top = 0 }
+	set_temp_variable = { stack^top = low }
+	add_to_temp_variable = { top = 1 }
+	set_temp_variable = { stack^top = high }
+	meta_effect = {
+		text = {
+			while_loop_effect = {
+				limit = {
+					check_variable = {
+						var = top
+						value = 0
+						compare = greater_than_or_equals
+					}
+				}
+				set_variable = { high = stack^top }
+				subtract_from_temp_variable = { top = 1 }
+				set_variable = { low = stack^top }
+				subtract_from_temp_variable = { top = 1 }
+
+				##### PARTITON #####
+				set_variable = { random_pivot = random }
+				multiply_variable = { random_pivot = high }
+				round_variable = random_pivot
+				add_to_variable = { random_pivot = low }
+				clamp_variable = {
+					var = random_pivot
+					min = low
+					max = high
+				}
+				set_temp_variable = { swap = ledger_countries^high }
+				set_variable = { ledger_countries^high = ledger_countries^random_pivot }
+				set_variable = { ledger_countries^random_pivot = swap }
+
+				set_temp_variable = { idx = low }
+				subtract_from_temp_variable = { idx = 1 }
+
+				var:ledger_countries^high = {
+					set_variable = { PREV.min = [VARIABLE] }
+				}
+
+				for_loop_effect = {
+					start = low
+					end = high
+					var:ledger_countries^v = {
+						set_variable = { PREV.tmp_sort = [VARIABLE] }
+					}
+					if = {
+						limit = {
+							check_variable = {
+								var = tmp_sort
+								value = min
+								compare = greater_than_or_equals
+							}
+						}
+						add_to_temp_variable = { idx = 1 }
+						set_temp_variable = { swap = ledger_countries^idx }
+						set_variable = { ledger_countries^idx = ledger_countries^v }
+						set_variable = { ledger_countries^v = swap }
+					}
+				}
+
+				add_to_temp_variable = { idx = 1 }
+				set_temp_variable = { swap = ledger_countries^idx }
+				set_variable = { ledger_countries^idx = ledger_countries^high }
+				set_variable = { ledger_countries^high = swap }
+
+				set_temp_variable = { qs_partition_return = idx }
+				#####
+
+				set_temp_variable = { qs_partition_return_plus_1 = qs_partition_return }
+				set_temp_variable = { qs_partition_return_minus_1 = qs_partition_return }
+				add_to_temp_variable = { qs_partition_return_plus_1 = 1 }
+				subtract_from_temp_variable = { qs_partition_return_minus_1 = 1 }
+
+				if = {
+					limit = { check_variable = { qs_partition_return_minus_1 > low } }
+					add_to_temp_variable = { top = 1 }
+					set_temp_variable = { stack^top = low }
+					add_to_temp_variable = { top = 1 }
+					set_temp_variable = { stack^top = qs_partition_return_minus_1 }
+				}
+
+				if = {
+					limit = { check_variable = { qs_partition_return_plus_1 < high } }
+					add_to_temp_variable = { top = 1 }
+					set_temp_variable = { stack^top = qs_partition_return_plus_1 }
+					add_to_temp_variable = { top = 1 }
+					set_temp_variable = { stack^top = high }
+				}
+			}
+		}
+		VARIABLE = "[ROOT.LedgerGetVariableToSort]"
+	}
+	clear_variable = min
+	clear_variable = tmp_sort
+	clear_variable = random_pivot
+}

@@ -869,7 +869,7 @@ A list of modifiers that can be used in ideas and dynamic modifiers. Each of the
         <td> Country </td>
     </tr>
     <tr>
-        <td> building_construction_speed_factor </td>
+        <td> industry_construction_speed_factor </td>
         <td> </td>
         <td> </td>
         <td> </td>
@@ -877,7 +877,7 @@ A list of modifiers that can be used in ideas and dynamic modifiers. Each of the
         <td> Country </td>
     </tr>
     <tr>
-        <td> building_construction_cost_factor </td>
+        <td> industry_construction_cost_factor </td>
         <td> </td>
         <td> </td>
         <td> </td>
@@ -885,7 +885,7 @@ A list of modifiers that can be used in ideas and dynamic modifiers. Each of the
         <td> Country </td>
     </tr>
     <tr>
-        <td> building_upgrade_speed_factor - NOT IMPLEMENTED </td>
+        <td> industry_upgrade_speed_factor - NOT IMPLEMENTED </td>
         <td> </td>
         <td> </td>
         <td> </td>
@@ -893,7 +893,7 @@ A list of modifiers that can be used in ideas and dynamic modifiers. Each of the
         <td> Country </td>
     </tr>
     <tr>
-        <td> building_upgrade_cost_factor - NOT IMPLEMENTED </td>
+        <td> industry_upgrade_cost_factor - NOT IMPLEMENTED </td>
         <td> </td>
         <td> </td>
         <td> </td>
