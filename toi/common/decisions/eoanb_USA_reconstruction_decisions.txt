@@ -491,26 +491,26 @@ USA_reconstruction_in_the_south = {
 
 		activation = {
 			custom_trigger_tooltip = {
-				tooltip = USARECON_southern_resistance_more_than_50_tt
-				check_variable = { USARECON_southern_resistance > 49 }
+				tooltip = USARECON_southern_resistance_more_than_30_tt
+				check_variable = { USARECON_southern_resistance > 29 }
 			}
 		}
 
 		cancel_trigger = {
 			custom_trigger_tooltip = {
-				tooltip = USARECON_southern_resistance_less_than_50_tt
-				check_variable = { USARECON_southern_resistance < 50 }
+				tooltip = USARECON_southern_resistance_less_than_30_tt
+				check_variable = { USARECON_southern_resistance < 30 }
 			}
 		}
 
 		is_good = no
 
-		days_mission_timeout = 100
+		days_mission_timeout = 60
 		timeout_effect = {
 			if = {
 				limit = {
 					AND = {
-						has_country_flag = usa_kkk_formed_flag
+						has_global_flag = usa_kkk_formed_flag
 						check_variable = { USARECON_southern_resistance > 90 }
 					}
 				}
@@ -559,7 +559,7 @@ USA_reconstruction_in_the_south = {
 USA_krack_down_on_the_klan = {
 	#eoanb_introduce_first_enforcement_act = call event that will introduce the act to Congress using parliament system
 	eoanb_introduce_first_enforcement_act = {
-		icon = generic_break_up_political_rally
+		icon = eng_trade_unions_support
 
 		allowed = {
 			original_tag = USA
@@ -567,13 +567,25 @@ USA_krack_down_on_the_klan = {
 
 		available = {
 			has_capitulated = no
-			NOT = { has_country_flag = USAROD_Reconstruction_Decision_Taken }
+			NOT = {
+				OR = {
+					has_country_flag = USARECON_Southern_Reconstruction_Over
+					has_completed_focus = USA_first_enforcement_act_passes
+					has_completed_focus = USA_first_enforcement_act_fails
+				}
+			}
 		}
 
 		visible = {
 			# has_capitulated = no
-			NOT = { has_country_flag = USARECON_Southern_Reconstruction_Over }
-			has_country_flag = usa_kkk_formed_flag
+			NOT = {
+				OR = {
+					has_country_flag = USARECON_Southern_Reconstruction_Over
+					has_completed_focus = USA_first_enforcement_act_passes
+					has_completed_focus = USA_first_enforcement_act_fails
+				}
+			}
+			has_global_flag = usa_kkk_formed_flag
 		}
 
 		days_remove = 56
@@ -599,7 +611,7 @@ USA_krack_down_on_the_klan = {
 		visible = {
 			# has_capitulated = no
 			NOT = { has_country_flag = USARECON_Southern_Reconstruction_Over }
-			has_completed_focus = USA_first_enforcement_act_passed
+			has_completed_focus = USA_first_enforcement_act_passes
 		}
 
 		days_remove = 28
@@ -631,7 +643,7 @@ USA_krack_down_on_the_klan = {
 		visible = {
 			# has_capitulated = no
 			NOT = { has_country_flag = USARECON_Southern_Reconstruction_Over }
-			has_completed_focus = USA_first_enforcement_act_passed
+			has_completed_focus = USA_first_enforcement_act_passes
 		}
 
 		days_remove = 28
@@ -664,7 +676,7 @@ USA_krack_down_on_the_klan = {
 		visible = {
 			# has_capitulated = no
 			NOT = { has_country_flag = USARECON_Southern_Reconstruction_Over }
-			has_completed_focus = USA_first_enforcement_act_passed
+			has_completed_focus = USA_first_enforcement_act_passes
 		}
 
 		days_remove = 28
@@ -781,6 +793,7 @@ USA_krack_down_on_the_klan = {
 	}
 	eoanb_usarecon_fight_klan_militias = {
 		icon = USA_usa_vs_kkk
+		on_map_mode = map_only
 		allowed = {
 			OR = {
 				tag = USA
@@ -792,7 +805,10 @@ USA_krack_down_on_the_klan = {
 			has_completed_focus = USA_third_enforcement_act
 			has_capitulated = no
 			NOT = { has_country_flag = USAROD_Reconstruction_Decision_Taken }
-			check_variable = { USARECON_southern_resistance > 90 }
+			divisions_in_state = {
+				size > 5
+				state = FROM
+			}
 			FROM = {
 				OWNER = {
 					has_capitulated = no
@@ -855,6 +871,53 @@ USA_krack_down_on_the_klan = {
 			USARECON_decrease_kkk_presence_15 = yes
 			FROM = {
 				USARECON_decrease_state_kkk_presence = yes
+			}
+		}
+	}
+	eoanb_usarecon_kkk_expands = {
+		icon = generic_civil_support
+		
+		allowed = {
+			original_tag = USA
+		}
+
+		available = {
+			always = no
+		}
+
+		activation = {
+			custom_trigger_tooltip = {
+				tooltip = USARECON_kkk_presence_more_than_10_tt
+				check_variable = { USARECON_kkk_presence > 9 }
+			}
+		}
+
+		cancel_trigger = {
+			custom_trigger_tooltip = {
+				tooltip = USARECON_kkk_presence_less_than_10_tt
+				check_variable = { USARECON_kkk_presence < 10 }
+			}
+		}
+
+		is_good = no
+
+		days_mission_timeout = 120
+		timeout_effect = {
+			random_state = {
+				limit = {
+					OR = {
+						has_dynamic_modifier = { modifier = kkk_presence_high }
+						has_dynamic_modifier = { modifier = kkk_presence_medium }
+						has_dynamic_modifier = { modifier = kkk_presence_low }
+					}
+				}
+				random_neighbor_state = {
+					limit = {
+						owns_or_subject_of = yes
+						is_core_of = CSA
+					}
+					USARECON_increase_state_kkk_presence = yes
+				}
 			}
 		}
 	}
