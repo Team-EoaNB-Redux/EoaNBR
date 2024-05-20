@@ -35,18 +35,53 @@ economy_count_tooling_workshops_effect = {
 economy_count_steel_foundry_effect = {
 	set_temp_variable = { x_temp = 0 }
 	every_owned_state = {
-		# limit = {
-		# 	has_variable = tooling_workshop_size
-		# 	# has_resources_amount = {
-		# 	# 	resource = iron
-		# 	# 	amount > 0
-		# 	# }
-		# }
+		limit = {
+			check_variable = {
+				size@token:steel_foundry > 0
+			}
+			# has_resources_amount = {
+			# 	resource = iron
+			# 	amount > 0
+			# }
+		}
 		add_to_temp_variable = { x_temp = size@token:steel_foundry }
 		log = "[THIS.getName] has [?size@token:steel_foundry]"
 	}
 	
 	log = "[?x_temp] total steel foundries\n"
+}
+
+economy_count_steel_foundry_global_effect = {
+	set_temp_variable = { x_temp = 0 }
+	set_temp_variable = { y_temp = 0 }
+	every_country = {
+		limit = {
+			any_owned_state = {
+				check_variable = {
+					size@token:steel_foundry > 0
+				}
+			}
+		}
+		every_owned_state = {
+			limit = {
+				check_variable = {
+					size@token:steel_foundry > 0
+				}
+				# has_resources_amount = {
+				# 	resource = iron
+				# 	amount > 0
+				# }
+			}
+			# set_temp_variable = { x_temp = 0 }
+			log = "[THIS.getName] has [?size@token:steel_foundry]"
+			add_to_temp_variable = { x_temp = size@token:steel_foundry }
+			add_to_temp_variable = { y_temp = size@token:steel_foundry }
+		}
+		
+		log = "[?x_temp] total steel foundries in [THIS.getName]"
+		set_temp_variable = { x_temp = 0 }
+	}
+	log = "[?y_temp] total steel foundries in world"
 }
 
 economy_count_textile_mill_effect = {
