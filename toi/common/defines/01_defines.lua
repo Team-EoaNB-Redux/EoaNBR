@@ -49,6 +49,8 @@ NDefines.NProduction.MIN_POSSIBLE_TRAINING_MANPOWER = 5000	-- How many deploymen
 NDefines.NProduction.CAPITULATE_FUEL_RATIO = 0.25 -- How much fuel will be transferred on capitulation --.5
 NDefines.NProduction.PRODUCTION_RESOURCE_LACK_PENALTY = -0.4			-- Penalty decrease while lack of resource per factory --0.05
 NDefines.NProduction.CONVERSION_SPEED_BONUS = 0.5							-- Modifier to the production speed when converting equipment --0
+NDefines.NProduction.MINIMUM_NUMBER_OF_FACTORIES_TAKEN_BY_CONSUMER_GOODS_VALUE = 0		-- The minimum number of factories we have to put on consumer goods, by value. --was 1
+NDefines.NProduction.MINIMUM_NUMBER_OF_FACTORIES_TAKEN_BY_CONSUMER_GOODS_PERCENT = 0	-- The minimum number of factories we have to put on consumer goods, in percent. -- was 0.1
 
 NDefines.NTechnology.BASE_TECH_COST = 2000 -- 100
 NDefines.NTechnology.MIN_RESEARCH_SPEED = 0.2						-- research speed can't go below this value
