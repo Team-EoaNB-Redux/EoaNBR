@@ -871,15 +871,238 @@
 		}
 	}
 
-	industries_investment_array = {
-		clear_array = valid_industries
+	industries_highest_productivity_update = {
+		# Country Scope
+		clear_array = valid_buildings
+		clear_array = valid_rgos
+
 		for_each_loop = {
-			array = global.industry_token_array
+			array = global.rgo_token_array
 			value = industry_token
 
 			if = {
 				limit = {
 					is_valid_industry = yes
+					any_controlled_state = {
+						check_variable = { resource@var:industry_token > 0 }
+					}
+				}
+				add_to_array = { valid_rgos = industry_token }
+
+				industry_get_highest_pm = yes
+				set_variable = { highest_productivity_pm@var:industry_token = highest_pm_temp }
+				set_variable = { highest_productivity@var:industry_token = highest_productivity_temp }
+			}
+		}
+		
+
+		for_each_loop = {
+			array = global.building_token_array
+			value = industry_token
+
+			if = {
+				limit = {
+					is_valid_industry = yes
+				}
+				add_to_array = { valid_buildings = industry_token }
+
+				industry_get_highest_pm = yes
+				set_variable = { highest_productivity_pm@var:industry_token = highest_pm_temp }
+				set_variable = { highest_productivity@var:industry_token = highest_productivity_temp }
+			}
+		}
+		
+		# Check for Infra/Railway/Port
+		if = {
+			limit = {
+				set_temp_variable = { industry_token = token:infrastructure }
+				is_valid_industry = yes
+			}
+			add_to_array = { valid_buildings = industry_token }
+
+			industry_get_highest_pm = yes
+			set_variable = { highest_productivity_pm@var:industry_token = highest_pm_temp }
+			set_variable = { highest_productivity@var:industry_token = highest_productivity_temp }
+		}
+		if = {
+			limit = {
+				set_temp_variable = { industry_token = token:railway }
+				is_valid_industry = yes
+			}
+			add_to_array = { valid_buildings = industry_token }
+
+			industry_get_highest_pm = yes
+			set_variable = { highest_productivity_pm@var:industry_token = highest_pm_temp }
+			set_variable = { highest_productivity@var:industry_token = highest_productivity_temp }
+		}
+		if = {
+			limit = {
+				set_temp_variable = { industry_token = token:port }
+				is_valid_industry = yes
+			}
+			add_to_array = { valid_buildings = industry_token }
+
+			industry_get_highest_pm = yes
+			set_variable = { highest_productivity_pm@var:industry_token = highest_pm_temp }
+			set_variable = { highest_productivity@var:industry_token = highest_productivity_temp }
+		}
+
+		
+		clear_array = industries_highest_productivity
+		for_each_loop = {
+			array = valid_buildings 
+			value = om_building
+
+			for_each_loop = {
+				array = industries_highest_productivity 
+				index = ii 
+				value = vv 
+				break = bb
+
+				if = { limit = { check_variable = { highest_productivity@var:vv < highest_productivity@var:om_building } }
+					add_to_array = { array = industries_highest_productivity value = om_building index = ii }
+					set_temp_variable = { bb = 1 }
+				}
+			}
+			if = { limit = { check_variable = { bb = 0 } }
+				add_to_array = { industries_highest_productivity = om_building }
+			}
+		}
+		for_each_loop = {
+			array = valid_rgos 
+			value = om_building
+
+			for_each_loop = {
+				array = industries_highest_productivity 
+				index = ii 
+				value = vv 
+				break = bb
+
+				if = { limit = { check_variable = { highest_productivity@var:vv < highest_productivity@var:om_building } }
+					add_to_array = { array = industries_highest_productivity value = om_building index = ii }
+					set_temp_variable = { bb = 1 }
+				}
+			}
+			if = { limit = { check_variable = { bb = 0 } }
+				add_to_array = { industries_highest_productivity = om_building }
+			}
+		}
+	}
+	industries_retoolable_update = {
+		# Country Scope
+		# Runs thru every industry to check if PM/AM is upgradable, then sets it if so.
+		
+		clear_variable = industries_pm_upgradable
+		clear_variable = industries_am_upgradable
+
+		every_controlled_state = {
+			for_each_loop = {
+				array = industries
+				value = industry_token
+
+				# PMs
+				clear_variable = pm_upgradable@var:industry_token
+				if = {
+					limit = { check_variable = { global.building_production_methods@var:industry_token^num > 1 } }
+					set_variable = { pm_upgradable@var:industry_token = 0 }
+
+					# Get index of PM
+					for_each_loop = {
+						array = global.building_production_methods@var:industry_token
+						value = pm_temp
+						index = pm_i
+						break = pm_brk
+						if = { limit = { check_variable = { pm_temp = production_method@var:industry_token } } set_temp_variable = { i_temp = pm_i } set_temp_variable = { pm_brk = 1 } }
+					}
+
+					# Check that PM isn't last one & that next PM is available
+					if = {
+						limit = {
+							add_to_temp_variable = { i_temp = 1 }
+							check_variable = { i_temp < global.building_production_methods@var:industry_token^num }
+
+							set_temp_variable = { pm_temp = global.building_production_methods@var:industry_token^i_temp }
+							is_valid_pm = yes
+
+							check_variable = { retooling_pm@var:industry_token = 0 }
+						}
+
+						# Compare current PM productivity against next level PM productivity
+						# If greater, set upgradable to new divided by old
+						if = {
+							limit = {
+								set_temp_variable = { pm_temp = production_method@var:industry_token }
+								get_pm_values = yes
+								set_temp_variable = { curr_pm_prod = productivity_temp }
+
+								set_temp_variable = { pm_temp = global.building_production_methods@var:industry_token^i_temp }
+								get_pm_values = yes
+
+								check_variable = { productivity_temp > curr_pm_prod }
+								check_variable = { productivity_temp > 0 }
+							}
+							set_variable = { pm_upgradable@var:industry_token = productivity_temp }
+							divide_variable = { pm_upgradable@var:industry_token = curr_pm_prod }
+							
+							if = { 
+								limit = { NOT = { is_in_array = { PREV.industries_pm_upgradable = industry_token } } } 
+								add_to_array = { PREV.industries_pm_upgradable = industry_token } 
+							}
+							# log = "[?industry_token.GetTokenLocalizedKey] in [THIS.GetName]: [?pm_upgradable@var:industry_token|+=] ([?pm_temp.GetTokenLocalizedKey])"
+						}
+					}
+
+				}
+
+				# AMs
+				clear_variable = am_upgradable@var:industry_token
+				if = {
+					limit = { check_variable = { global.building_automation_methods@var:industry_token^num > 1 } }
+
+					# Get index of PM
+					for_each_loop = {
+						array = global.building_automation_methods@var:industry_token
+						value = pm_temp
+						index = pm_i
+						break = pm_brk
+						if = { limit = { check_variable = { pm_temp = automation_method@var:industry_token } } set_temp_variable = { i_temp = pm_i } set_temp_variable = { pm_brk = 1 } }
+					}
+
+					# Check that PM isn't last one & that next PM is available
+					if = {
+						limit = {
+							add_to_temp_variable = { i_temp = 1 }
+							check_variable = { i_temp < global.building_automation_methods@var:industry_token^num }
+
+							set_temp_variable = { pm_temp = global.building_automation_methods@var:industry_token^i_temp }
+							is_valid_pm = yes
+
+							check_variable = { retooling_pm@var:industry_token = 0 }
+						}
+
+						# Compare next level PM productivity against base wage
+						# If greater, set upgradable to new divided by old
+						if = {
+							limit = {
+								set_temp_variable = { pm_temp = global.building_automation_methods@var:industry_token^i_temp }
+								get_pm_values = yes
+
+								set_temp_variable = { base_wage_temp = base_wage }
+								multiply_temp_variable = { base_wage_temp = 0.9 }
+								check_variable = { base_wage_temp > productivity_temp }
+								check_variable = { productivity_temp > 0 }
+							}
+							set_variable = { am_upgradable@var:industry_token = base_wage }
+							divide_variable = { am_upgradable@var:industry_token = productivity_temp }
+							
+							if = { 
+								limit = { NOT = { is_in_array = { PREV.industries_am_upgradable = industry_token } } } 
+								add_to_array = { PREV.industries_am_upgradable = industry_token } 
+							}
+							# log = "[?industry_token.GetTokenLocalizedKey] in [THIS.GetName]: [?am_upgradable@var:industry_token|+=] ([?pm_temp.GetTokenLocalizedKey])"
+						}
+					}
+
 				}
 			}
 		}
@@ -1553,6 +1776,57 @@
 		set_variable = { specialists_wage = base_wage }
 		multiply_variable = { specialists_wage = 20 }
 	}
+
+	industry_get_highest_pm = {
+		# State/Country Scope
+		# industry_token
+		# returns highest_pm_temp, highest_productivity_temp
+		
+		set_temp_variable = { highest_productivity_temp = -10 }
+		set_temp_variable = { highest_pm_temp = global.building_production_methods@var:industry_token^0 }
+
+		for_each_loop = {
+			array = global.building_production_methods@var:industry_token
+			value = pm_temp
+
+			if = {
+				limit = {
+					is_in_array = { controller:building_unlocked_pms@var:industry_token = pm_temp }
+					get_pm_values = yes
+					check_variable = { highest_productivity_temp < productivity_temp }
+				}
+				set_temp_variable = { highest_productivity_temp = productivity_temp }
+				set_temp_variable = { highest_pm_temp = pm_temp }
+			}
+		}
+	}
+	industry_get_highest_am = {
+		# State Scope (Can be used in country scope, but not advisable)
+		# industry_token
+		# returns highest_am_temp, highest_productivity_temp
+
+		set_temp_variable = { highest_productivity_temp = -10 }
+		set_temp_variable = { highest_am_temp = global.building_automation_methods@var:industry_token^0 }
+		set_temp_variable = { base_wage_temp = base_wage }
+		multiply_temp_variable = { base_wage_temp = 0.9 }
+
+		for_each_loop = {
+			array = global.building_automation_methods@var:industry_token
+			value = pm_temp
+
+			if = {
+				limit = {
+					is_in_array = { controller:building_unlocked_ams@var:industry_token = pm_temp }
+					get_pm_values = yes
+					# log = "[?industry_token.GetTokenLocalizedKey]: [?productivity_temp] < [?base_wage_temp]"
+					check_variable = { highest_productivity_temp < productivity_temp }
+					check_variable = { productivity_temp < base_wage_temp }
+				}
+				set_temp_variable = { highest_productivity_temp = productivity_temp }
+				set_temp_variable = { highest_am_temp = pm_temp }
+			}
+		}
+	}
 #
 
 # Industry Functions
@@ -1754,22 +2028,25 @@
 				limit = {
 					NOT = { check_variable = { production_method_temp = 0 } }
 				}
-				set_temp_variable = { retooling_pm@var:industry_token = production_method_temp }
+				set_variable = { retooling_pm@var:industry_token = production_method_temp }
 			}
 			else = {
-				set_temp_variable = { retooling_pm@var:industry_token = automation_method_temp }
+				set_variable = { retooling_pm@var:industry_token = automation_method_temp }
 			}
 
 			# Cost
 			set_temp_variable = { iuc_industry = industry_token }
 			industry_update_construction_retooling = yes
 
+			set_temp_variable = { pm_temp = retooling_pm@var:industry_token }
 			if = {
 				limit = {
 					check_variable = { no_cost_temp = 0 }
+					get_retooling_cost = yes
 				}
-				set_temp_variable = { initial_cost_temp = retooling_cost@var:industry_token }
+				set_temp_variable = { initial_cost_temp = total_retooling_cost_temp }
 				multiply_temp_variable = { initial_cost_temp = global.start_construction_cost_multiplier }
+				multiply_temp_variable = { initial_cost_temp = size@var:industry_token }
 				if = {
 					limit = {
 						check_variable = { financer_temp < 0 } #Corporation

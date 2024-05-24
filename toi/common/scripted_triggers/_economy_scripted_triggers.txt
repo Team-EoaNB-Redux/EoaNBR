@@ -10,7 +10,7 @@
 #}
 
 #INDUSTRIES
-	can_build_building = {
+	can_build_industry = {
 		# industry_token
 		# size_temp - defaulted to 1
 		# State Scope
@@ -19,10 +19,12 @@
 
 		if = {
 			limit = {
-				is_in_array = { global.industry_token_array = industry_token }
+				is_in_array = { global.building_token_array = industry_token }
 			}
-			check_variable = { buildings^num < 8 }
-			check_variable = { buildings^num < modifier@local_industry_slots }
+			OR = {
+				check_variable = { buildings^num < modifier@local_industry_slots }
+				is_in_array = { buildings = industry_token }
+			}
 		}
 		if = {
 			limit = {
@@ -32,6 +34,10 @@
 		}
 		else = {
 			if = { limit = { check_variable = { size_temp = 0 } } set_temp_variable = { size_temp = 1 } }
+
+			if = { limit = { is_in_array = { global.rgo_token_array = industry_token } }
+				NOT = { check_variable = { deposits@var:industry_token < size_temp } }
+			}
 			
 			is_valid_industry = yes
 			if = {
@@ -88,6 +94,35 @@
 			is_in_array = { array = buildings value = var:industry_token_temp }
 		}
 	}
+	has_industry = {
+		# Checks if state has this industry
+		# industry_token - checks if specific industry is in the state
+		custom_trigger_tooltip = {
+			tooltip = is_in_industry_slot_tt
+			is_in_array = { array = industries value = var:industry_token }
+			OR = {
+				check_variable = { size@industry_token > 0 }
+				check_variable = { construction@industry_token > 0 }
+			}
+		}
+	}
+    has_size_of_industry = {
+        # industry_token
+        # size_temp
+
+        if = {
+          limit = { check_variable = { size_temp = 0 } }
+          set_temp_variable = { size_temp = 1 }
+        }
+        custom_trigger_tooltip = {
+          tooltip = has_size_of_industry_tt
+          check_variable = {
+              var = size@var:industry_token
+              value = size_temp
+              compare = greater_than_or_equals
+          }
+      }
+    }
 #
 
 return_earliest_production_method = {
