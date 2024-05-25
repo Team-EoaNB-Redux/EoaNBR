@@ -1706,7 +1706,7 @@
 		set_temp_variable = { weight_temp = specialists_workforce }
 		multiply_temp_variable = { weight_temp = 20 }
 		add_to_temp_variable = { total_jobs_weight = weight_temp }
-		#log = "Jobs Weight: [?total_jobs_weight]"
+		# log = "Jobs Weight: [?total_jobs_weight]"
 
 		set_temp_variable = { remaining_jobs = total_jobs_weight }
 
@@ -1718,11 +1718,14 @@
 			if = {
 				limit = {
 					check_variable = { remaining_jobs > 0 }
+					NOT = { check_variable = { b_temp = token:subsistence_farm } }
 				}
 				# If there are still jobs to account for, then weight the jobs from this industry and add them up
 				set_temp_variable = { jobs_wage_to_count = payroll_multiplier@var:b_temp }
 				multiply_temp_variable = { jobs_wage_to_count = size@var:b_temp }
-
+				multiply_temp_variable = { jobs_wage_to_count = employment_target@var:b_temp }
+				divide_temp_variable = { jobs_wage_to_count = 100 }
+				
 				if = { limit = { check_variable = { jobs_wage_to_count > remaining_jobs } } set_temp_variable = { jobs_wage_to_count = remaining_jobs } }
 				subtract_from_temp_variable = { remaining_jobs = jobs_wage_to_count }
 				#set_temp_variable = { jobs_counted = jobs_wage_to_count }
@@ -1742,7 +1745,7 @@
 			}
 		}
 
-		#log = "Remaining Jobs: [?remaining_jobs]"
+		# log = "Remaining Jobs: [?remaining_jobs]"
 		# These remaining jobs get assigned the productivity of subsistence farms
 		if = {
 			limit = {
@@ -1753,8 +1756,13 @@
 			add_to_temp_variable = { base_wage_counting = remaining_jobs }
 		}
 
-		set_variable = { base_wage = base_wage_counting } # payroll_multiplier * size * productivity
-		divide_variable = { base_wage = total_jobs_weight } # payroll_multiplier * size
+		# set_temp_variable = { base_wage_temp = base_wage_counting }
+		# divide_temp_variable = { base_wage_temp = total_jobs_weight }
+		# multiply_temp_variable = { base_wage_temp = wage_factor }
+		# log = "Base Wage: [?base_wage_temp]"
+
+		set_variable = { base_wage = base_wage_counting } # payroll_multiplier * size * productivity * employment_target
+		divide_variable = { base_wage = total_jobs_weight } # payroll_multiplier * size (pops)
 		if = {
 			limit = {
 				check_variable = { base_wage < subs_farm_productivity }

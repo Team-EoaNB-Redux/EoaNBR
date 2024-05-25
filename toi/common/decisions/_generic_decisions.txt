@@ -458,7 +458,7 @@ eoanb_category_economic = {
 		}
 		fire_only_once = no
 		days_re_enable = 1000
-		days_remove = 90
+		days_remove = 180
 		custom_cost_trigger = {
 			check_variable = { debt_level < 50 }
 		}
@@ -467,7 +467,8 @@ eoanb_category_economic = {
 			civilian_factory_use = 1
 		}
 		complete_effect = {
-			debt_level_increase_by_2 = yes
+			set_temp_variable = { x_temp = -2000 }
+			add_treasury = yes
 		}
 		remove_effect = {
 			random_owned_controlled_state = {
@@ -727,6 +728,97 @@ eoanb_category_economic = {
 			modifier = {
 				factor = 10
 				date > 1875.1.1
+			}
+		}
+	}
+	eoanbr_decision_generic_economic_stimulus = {
+		icon = money
+		available = {
+			PS_pol_positive = yes
+			NOT = { has_idea = economic_boom }
+		}
+		visible = {
+			NOT = { has_idea = economic_boom }
+			check_variable = { modifier@government_investment_efficiency_factor > 0 }
+		}
+		fire_only_once = no
+		cost = 200
+		days_re_enable = 30
+		days_remove = 60
+		modifier = {
+			consumer_confidence_modifier = 5
+			investment_confidence_modifier = 10
+		}
+		complete_effect = {
+			set_temp_variable = { x_temp = -4 }
+			divide_temp_variable = { x_temp = modifier@government_investment_efficiency_factor }
+			add_treasury_gdp = yes
+			decrease_ps_by_one = yes
+			improve_economic_situation = yes
+		}
+		ai_will_do = {
+			base = 1
+			modifier = {
+				factor = 0
+				check_variable = { debt_level > 30 }
+			}
+			modifier = {
+				factor = 0
+				check_variable = { debt_level > 20 }
+				has_idea = fast_growth
+			}
+			modifier = {
+				factor = 100
+				has_idea = free_fall
+			}
+			modifier = {
+				factor = 10
+				has_idea = depression
+			}
+			modifier = {
+				factor = 5
+				has_idea = recession
+			}
+			modifier = {
+				factor = 2
+				has_idea = stagnation
+			}
+		}
+	}
+	eoanbr_decision_generic_business_loans = {
+		icon = money
+		available = {
+			set_temp_variable = { amount_temp = 0.3 }
+			divide_temp_variable = { amount_temp = modifier@government_investment_efficiency_factor }
+			multiply_temp_variable = { amount_temp = 0.12 }
+			multiply_temp_variable = { amount_temp = gdp_amount }
+			custom_trigger_tooltip = {
+				tooltip = eoanbr_decision_generic_business_loans_req1_tt
+				check_variable = { treasury > amount_temp }
+			}
+		}
+		visible = {
+			has_tech = tech_humanities_capitalism
+			check_variable = { debt_level < 50 }
+			check_variable = { modifier@government_investment_efficiency_factor > 0 }
+		}
+		fire_only_once = no
+		cost = 10
+		days_remove = 365
+		days_re_enable = 365
+		modifier = {
+			investment_confidence_modifier = 10
+		}
+		complete_effect = {
+			set_temp_variable = { x_temp = -0.3 }
+			divide_temp_variable = { x_temp = modifier@government_investment_efficiency_factor }
+			add_treasury_gdp = yes
+		}
+		ai_will_do = {
+			base = 1
+			modifier = {
+				factor = 0
+				check_variable = { debt_level > 20 }
 			}
 		}
 	}
