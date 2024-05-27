@@ -341,6 +341,12 @@
                     multiply_temp_variable = { attractiveness_temp = global.building_base_output_value@var:industry_token }
                     multiply_temp_variable = { attractiveness_temp = 0.05 }
                 }
+                if = {
+                    limit = {
+                        check_variable = { attractiveness_temp > 20 }
+                    }
+                    set_temp_variable = { attractiveness_temp = 20 }
+                }
                 set_variable = { investment_opportunity_attractiveness_scale@var:state_temp = attractiveness_temp }
                 add_to_variable = { investment_opportunity_attractiveness@var:state_temp = attractiveness_temp }
 
@@ -381,8 +387,8 @@
                         check_variable = { state_temp:available_workforce < 0 }
                     }
                     set_temp_variable = { attractiveness_temp = state_temp:available_workforce }
-                    divide_temp_variable = { attractiveness_temp = jobs }
-                    multiply_temp_variable = { attractiveness_temp = 100 }
+                    divide_temp_variable = { attractiveness_temp = state_temp:jobs }
+                    multiply_temp_variable = { attractiveness_temp = 200 }
                     add_to_variable = { investment_opportunity_attractiveness@var:state_temp = attractiveness_temp }
                 }
                 else_if = {
@@ -391,8 +397,8 @@
                         check_variable = { state_temp:available_workforce < 0 }
                     }
                     set_temp_variable = { attractiveness_temp = state_temp:available_workforce }
-                    divide_temp_variable = { attractiveness_temp = jobs }
-                    multiply_temp_variable = { attractiveness_temp = -100 }
+                    divide_temp_variable = { attractiveness_temp = state_temp:jobs }
+                    multiply_temp_variable = { attractiveness_temp = -200 }
                     add_to_variable = { investment_opportunity_attractiveness@var:state_temp = attractiveness_temp }
                 }
                 set_variable = { investment_opportunity_attractiveness_unemployment@var:state_temp = attractiveness_temp }
@@ -552,7 +558,6 @@
             if = { # EXPAND a CURRENT building 
                 limit = { 
                     NOT = { has_country_flag = investment_opportunity_done } # Nothing else was done
-                    always = no
                 }
                 # log = "Attemping EXPAND"
                 generate_investment_opportunity_expand = yes
@@ -983,6 +988,8 @@
                 limit = {
                     check_variable = { investment_opportunity_type@var:state_temp = 2 }
                 }
+                set_temp_variable = { industry_token = PREV.investment_opportunity_building@var:state_temp }
+
                 # Get PM
                 set_temp_variable = { i_temp = 0 }
                 for_each_loop = {
@@ -990,11 +997,10 @@
                     value = pm_temp
                     index = pm_i
                     break = pm_brk
-                    if = { limit = { check_variable = { pm_temp = production_method@var:industry_token } } set_temp_variable = { i_temp = pm_i } set_temp_variable = { pm_brk = 1 } }
+                    if = { limit = { check_variable = { pm_temp = state_temp:production_method@var:industry_token } } set_temp_variable = { i_temp = pm_i } set_temp_variable = { pm_brk = 1 } }
                 }
                 add_to_temp_variable = { i_temp = 1 }
 
-                set_temp_variable = { industry_token = PREV.investment_opportunity_building@var:state_temp }
                 set_temp_variable = { financer_temp = 0 }
                 set_temp_variable = { production_method_temp = global.building_production_methods@var:industry_token^i_temp }
                 set_temp_variable = { automation_method_temp = 0 }
@@ -1011,6 +1017,8 @@
                 limit = {
                     check_variable = { investment_opportunity_type@var:state_temp = 3 }
                 }
+                set_temp_variable = { industry_token = PREV.investment_opportunity_building@var:state_temp }
+
                 # Get AM
                 set_temp_variable = { i_temp = 0 }
                 for_each_loop = {
@@ -1018,11 +1026,10 @@
                     value = pm_temp
                     index = pm_i
                     break = pm_brk
-                    if = { limit = { check_variable = { pm_temp = automation_method@var:industry_token } } set_temp_variable = { i_temp = pm_i } set_temp_variable = { pm_brk = 1 } }
+                    if = { limit = { check_variable = { pm_temp = state_temp:automation_method@var:industry_token } } set_temp_variable = { i_temp = pm_i } set_temp_variable = { pm_brk = 1 } }
                 }
                 add_to_temp_variable = { i_temp = 1 }
 
-                set_temp_variable = { industry_token = PREV.investment_opportunity_building@var:state_temp }
                 set_temp_variable = { financer_temp = 0 }
                 set_temp_variable = { production_method_temp = 0 }
                 set_temp_variable = { automation_method_temp = global.building_automation_methods@var:industry_token^i_temp }

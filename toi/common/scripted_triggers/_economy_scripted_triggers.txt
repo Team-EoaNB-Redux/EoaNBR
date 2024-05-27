@@ -324,6 +324,15 @@ can_trade = {
 	NOT = { has_country_flag = rebel_uprising }
 	NOT = { has_country_flag = trade_restricted }
 }
+market_can_trade_by_sea = {
+	# Checks if market can trade by sea
+	var:market_leader = {
+		any_of_scopes = {
+			array = market_countries
+			can_trade_by_sea = yes
+		}
+	}
+}
 can_trade_by_sea = {
 	#Checks if you can trade with ANYONE by sea
 	# THIS DOES NOT CHECK IF YOU CAN TRADE IN GENERAL. USE CAN_TRADE FOR THAT.
@@ -354,23 +363,33 @@ can_trade_with = {
 	# Either neighbors or coastal
 	# If not neighbors, then neither under blockade
 
-	can_trade = yes
+	set_temp_variable = { country_market_leader_temp = country_temp:market_leader }
+
+	var:market_leader = { can_trade = yes }
 	country_exists = var:country_temp
 	NOT = { tag = var:country_temp }
-	NOT = { has_war_with = var:country_temp }
-	NOT = { var:country_temp = { is_embargoed_by = PREV } }
-	NOT = { var:country_temp = { is_embargoing = PREV } }
+	NOT = { has_war_with = var:country_market_leader_temp }
+	NOT = { var:country_market_leader_temp = { is_embargoed_by = var:market_leader } }
+	NOT = { var:country_market_leader_temp = { is_embargoing = var:market_leader } }
 
-	var:country_temp = {
+	var:country_market_leader_temp = {
 		can_trade = yes
 	}
 
 	OR = {
-		is_neighbor_of = var:country_temp
+		# is_neighbor_of = var:country_temp
+		var:country_temp = {
+			any_neighbor_country = {
+				check_variable = { market_leader = PREV.PREV.market_leader }
+			}
+		}
+		any_neighbor_country = {
+			check_variable = { market_leader = country_temp:market_leader }
+		}
 		AND = {
-			can_trade_by_sea = yes
+			market_can_trade_by_sea = yes
 			var:country_temp = {
-				can_trade_by_sea = yes
+				market_can_trade_by_sea = yes
 			}
 		}
 	}
