@@ -153,6 +153,84 @@
 			
 		}
 
+		# Adds x number of the given industry type in the state. If provided a production/automation method that is too advanced (that you don't have tech for) 
+		# or the building doesn't support, then it will auto adjust.
+		# Negative values do NOT work. Will not do anything if given an invalid industry token for the state.
+		# Does NOT cost anything. financier_temp will simply end up being the owner
+		add_x_industries = {
+			# x_temp 
+			# financer_temp
+			# industry_token
+			# production_method_temp
+			# automation_method_temp
+			# no_cost_temp
+
+
+			round_temp_variable = x_temp
+			if = {
+				limit = {
+					check_variable = { x_temp = 0 }
+				}
+				set_temp_variable = { x_temp = 1 }
+			}
+
+			custom_effect_tooltip = add_x_industries_tt
+
+			if = {
+				limit = {
+					NOT = { is_in_array = { controller:building_unlocked_pms@var:industry_token = production_method_temp } }
+				}
+				set_temp_variable = { production_method_temp = controller:latest_production_method@var:industry_token }
+			}
+			if = {
+				limit = {
+					NOT = { is_in_array = { controller:building_unlocked_ams@var:industry_token = automation_method_temp } }
+				}
+				set_temp_variable = { automation_method_temp = controller:latest_automation_method@var:industry_token }
+			}
+
+			if = {
+				limit = {
+					is_in_array = { global.industry_token_array = industry_token }
+					NOT = { check_variable = { global.building_unexpandable@var:industry_token = 1 } }
+					check_variable = { x_temp > 0 }
+					can_build_industry = yes
+				}
+				hidden_effect = {
+					add_to_variable = { size@var:industry_token = x_temp }
+
+					#Add building to array if it doesn't exist yet
+					if = {
+						limit = {
+							NOT = { is_in_array = { industries = industry_token } }
+						}
+						add_to_array = { industries = industry_token }
+						set_variable = { production_method@var:industry_token = production_method_temp }
+						set_variable = { automation_method@var:industry_token = automation_method_temp }
+					}
+					refresh_construction_list = yes
+					reload_industries_array = yes
+
+					var:controller = {
+						var:market_leader = {
+							market_update = yes
+						}
+						every_controlled_state = {
+							industries_update = yes
+							pops_update = yes
+						}
+					}
+					add_to_variable = { update_state_econ_window = 1 }
+				}
+			}
+			set_temp_variable = { x_temp = 0 }
+			set_temp_variable = { financer_temp = 0 }
+			set_temp_variable = { industry_token = 0 }
+			set_temp_variable = { production_method_temp = 0 }
+			set_temp_variable = { automation_method_temp = 0 }
+			set_temp_variable = { no_cost_temp = 0 }
+		}
+
 		# Removes X buildings from the state. Does NOT allow removal of Rice Paddies/Subsistence Farms. Negative values do NOT work. Any building which reaches size 0 will be removed from the state.
 		remove_x_industries = {
 			round_temp_variable = x_temp
