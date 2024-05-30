@@ -232,9 +232,16 @@ scripted_gui = {
 				can_build_industry = yes
 				is_fully_controlled_by = ROOT
 
+				OR = {
+					check_variable = { construction_financier@var:industry_token = ROOT }
+					check_variable = { construction@var:industry_token = 0 }
+				}
+
 				# Has enough starting capital
-					set_temp_variable = { pm_temp = controller:latest_production_method@var:v }
-					set_temp_variable = { am_temp = controller:latest_automation_method@var:v }
+					if = { limit = { has_variable = production_method@var:industry_token } set_temp_variable = { pm_temp = production_method@var:industry_token } }
+					else = { set_temp_variable = { pm_temp = controller:latest_production_method@var:v } }
+					if = { limit = { has_variable = automation_method@var:industry_token } set_temp_variable = { am_temp = automation_method@var:industry_token } }
+					else = { set_temp_variable = { am_temp = controller:latest_automation_method@var:v } }
 					get_construction_cost = yes
 
 					multiply_temp_variable = { total_construction_cost_temp = global.start_construction_cost_multiplier }
@@ -298,9 +305,16 @@ scripted_gui = {
 				can_build_industry = yes
 				is_fully_controlled_by = ROOT
 
+				OR = {
+					check_variable = { construction_financier@var:industry_token = ROOT }
+					check_variable = { construction@var:industry_token = 0 }
+				}
+
 				# Has enough starting capital
-					set_temp_variable = { pm_temp = controller:latest_production_method@token:railway }
-					set_temp_variable = { am_temp = controller:latest_automation_method@token:railway }
+					if = { limit = { has_variable = production_method@token:railway } set_temp_variable = { pm_temp = production_method@token:railway } }
+					else = { set_temp_variable = { pm_temp = controller:latest_production_method@var:v } }
+					if = { limit = { has_variable = automation_method@token:railway } set_temp_variable = { am_temp = automation_method@token:railway } }
+					else = { set_temp_variable = { am_temp = controller:latest_automation_method@var:v } }
 					get_construction_cost = yes
 
 					multiply_temp_variable = { total_construction_cost_temp = global.start_construction_cost_multiplier }
@@ -338,9 +352,16 @@ scripted_gui = {
 				is_coastal = yes
 				is_fully_controlled_by = ROOT
 
+				OR = {
+					check_variable = { construction_financier@var:industry_token = ROOT }
+					check_variable = { construction@var:industry_token = 0 }
+				}
+
 				# Has enough starting capital
-					set_temp_variable = { pm_temp = controller:latest_production_method@token:port }
-					set_temp_variable = { am_temp = controller:latest_automation_method@token:port }
+					if = { limit = { has_variable = production_method@token:port } set_temp_variable = { pm_temp = production_method@token:port } }
+					else = { set_temp_variable = { pm_temp = controller:latest_production_method@var:v } }
+					if = { limit = { has_variable = automation_method@token:port } set_temp_variable = { am_temp = automation_method@token:port } }
+					else = { set_temp_variable = { am_temp = controller:latest_automation_method@var:v } }
 					get_construction_cost = yes
 
 					multiply_temp_variable = { total_construction_cost_temp = global.start_construction_cost_multiplier }
@@ -411,8 +432,10 @@ scripted_gui = {
 				set_temp_variable = { x_temp = 1 }
 				set_temp_variable = { financer_temp = ROOT }
 				set_temp_variable = { industry_token = v }
-				set_temp_variable = { production_method_temp = controller:latest_production_method@var:v }
-				set_temp_variable = { automation_method_temp = controller:latest_automation_method@var:v }
+				if = { limit = { has_variable = production_method@var:industry_token } set_temp_variable = { production_method_temp = production_method@var:industry_token } }
+				else = { set_temp_variable = { production_method_temp = controller:latest_production_method@var:v } }
+				if = { limit = { has_variable = automation_method@var:industry_token } set_temp_variable = { automation_method_temp = automation_method@var:industry_token } }
+				else = { set_temp_variable = { automation_method_temp = controller:latest_automation_method@var:v } }
 				construct_x_industries = yes
 
 				ROOT = { budget_update = yes }
@@ -537,8 +560,10 @@ scripted_gui = {
 				set_temp_variable = { x_temp = 1 }
 				set_temp_variable = { financer_temp = ROOT }
 				set_temp_variable = { industry_token = token:railway }
-				set_temp_variable = { production_method_temp = controller:latest_production_method@token:railway }
-				set_temp_variable = { automation_method_temp = controller:latest_automation_method@token:railway }
+				if = { limit = { has_variable = production_method@token:railway } set_temp_variable = { production_method_temp = production_method@token:railway } }
+				else = { set_temp_variable = { production_method_temp = controller:latest_production_method@var:v } }
+				if = { limit = { has_variable = automation_method@token:railway } set_temp_variable = { automation_method_temp = automation_method@token:railway } }
+				else = { set_temp_variable = { automation_method_temp = controller:latest_automation_method@var:v } }
 				construct_x_industries = yes
 
 				ROOT = { budget_update = yes }
@@ -602,8 +627,10 @@ scripted_gui = {
 				set_temp_variable = { x_temp = 1 }
 				set_temp_variable = { financer_temp = ROOT }
 				set_temp_variable = { industry_token = token:port }
-				set_temp_variable = { production_method_temp = controller:latest_production_method@token:port }
-				set_temp_variable = { automation_method_temp = controller:latest_automation_method@token:port }
+				if = { limit = { has_variable = production_method@token:port } set_temp_variable = { production_method_temp = production_method@token:port } }
+				else = { set_temp_variable = { production_method_temp = controller:latest_production_method@var:v } }
+				if = { limit = { has_variable = automation_method@token:port } set_temp_variable = { automation_method_temp = automation_method@token:port } }
+				else = { set_temp_variable = { automation_method_temp = controller:latest_automation_method@var:v } }
 				construct_x_industries = yes
 
 				ROOT = { budget_update = yes }
@@ -3323,11 +3350,15 @@ scripted_gui = {
 				}
 			}
 			fund_all_opportunities_button_click_enabled = {
+				check_variable = { investment_fund_spending < investment_fund_target_spending }
+				
 				check_variable = { treasury > investment_opportunity_fund_all_cost }
 				check_variable = { investment_opportunity_fund_all_cost > 0 }
 				check_variable = { investment_opportunities^num > 0 }
 			}
 			fund_opportunity_button_click_enabled = {
+				check_variable = { investment_fund_spending < investment_fund_target_spending }
+
 				set_temp_variable = { cost_temp = investment_opportunity_cost@var:v }
 				subtract_from_temp_variable = { cost_temp = investment_opportunity_investment@var:v }
 				check_variable = { treasury > cost_temp }
