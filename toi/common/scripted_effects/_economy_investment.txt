@@ -1,3 +1,7 @@
+#
+# New Investment System:
+# Much the same as the old, but instead the main array stores a state which is used with targetted vars to store info about an investment opportunity
+# This way, you can have multiple IOs in the same state
 
 # Investment Opportunities
     investment_opportunities_monthly = {
@@ -43,10 +47,11 @@
         }
         for_each_loop = {
             array = investment_opportunities
-            value = state_temp
+            value = io_num_temp
             index = ii
 
-            set_temp_variable = { industry_token = investment_opportunity_building@var:state_temp }
+            set_temp_variable = { state_temp = investment_opportunity_state@var:io_num_temp }
+            set_temp_variable = { industry_token = investment_opportunity_building@var:io_num_temp }
 
             var:state_temp = {
                 set_state_flag = current_investment_opportunity_flag
@@ -56,13 +61,13 @@
                 if = {
                     limit = {
                         OR = {
-                            check_variable = { investment_opportunity_type@var:state_temp = 0 } # Build
-                            check_variable = { investment_opportunity_type@var:state_temp = 1 } # Expand
+                            check_variable = { investment_opportunity_type@var:io_num_temp = 0 } # Build
+                            check_variable = { investment_opportunity_type@var:io_num_temp = 1 } # Expand
                         }
                     }
                     if = {
                         limit = {
-                            check_variable = { investment_opportunity_type@var:state_temp = 0 } # Build New
+                            check_variable = { investment_opportunity_type@var:io_num_temp = 0 } # Build New
                         }
                         set_temp_variable = { pm_temp = latest_production_method@var:industry_token }
                         set_temp_variable = { am_temp = latest_automation_method@var:industry_token }
@@ -86,21 +91,21 @@
                     add_to_temp_variable = { modifier_temp = state_temp:industry_construction_speed_factor }
                     divide_temp_variable = { months_temp = modifier_temp }
                     
-                    set_variable = { investment_opportunity_time@var:state_temp = months_temp }
+                    set_variable = { investment_opportunity_time@var:io_num_temp = months_temp }
 
                     # Cost
-                    set_variable = { investment_opportunity_monthly_cost@var:state_temp = total_construction_cost_temp }
-                    divide_variable = { investment_opportunity_monthly_cost@var:state_temp = months_temp }
-                    set_variable = { investment_opportunity_total_cost@var:state_temp = total_construction_cost_temp }
+                    set_variable = { investment_opportunity_monthly_cost@var:io_num_temp = total_construction_cost_temp }
+                    divide_variable = { investment_opportunity_monthly_cost@var:io_num_temp = months_temp }
+                    set_variable = { investment_opportunity_total_cost@var:io_num_temp = total_construction_cost_temp }
 
                     set_temp_variable = { initial_cost_temp = total_construction_cost_temp }
                     multiply_temp_variable = { initial_cost_temp = global.start_construction_cost_multiplier }
-                    set_variable = { investment_opportunity_cost@var:state_temp = initial_cost_temp }
-                    add_to_variable = { investment_opportunity_total_cost@var:state_temp = initial_cost_temp }
+                    set_variable = { investment_opportunity_cost@var:io_num_temp = initial_cost_temp }
+                    add_to_variable = { investment_opportunity_total_cost@var:io_num_temp = initial_cost_temp }
                 }
                 else_if = {
                     limit = {
-                        check_variable = { investment_opportunity_type@var:state_temp = 2 } # Upgrade PM
+                        check_variable = { investment_opportunity_type@var:io_num_temp = 2 } # Upgrade PM
                     }
 					# Get PM
                     set_temp_variable = { i_temp = 0 }
@@ -109,7 +114,7 @@
 						value = pm_temp
 						index = pm_i
 						break = pm_brk
-						if = { limit = { check_variable = { pm_temp = production_method@var:industry_token } } set_temp_variable = { i_temp = pm_i } set_temp_variable = { pm_brk = 1 } }
+						if = { limit = { check_variable = { pm_temp = state_temp:production_method@var:industry_token } } set_temp_variable = { i_temp = pm_i } set_temp_variable = { pm_brk = 1 } }
 					}
                     add_to_temp_variable = { i_temp = 1 }
 
@@ -126,24 +131,24 @@
                     set_temp_variable = { modifier_temp = 1 }
                     add_to_temp_variable = { modifier_temp = state_temp:industry_construction_speed_factor }
                     divide_temp_variable = { months_temp = modifier_temp }
-                    set_variable = { investment_opportunity_time@var:state_temp = months_temp }
+                    set_variable = { investment_opportunity_time@var:io_num_temp = months_temp }
 
                     # Size
                     multiply_temp_variable = { total_retooling_cost_temp = state_temp:size@var:industry_token }
 
                     # Cost
-                    set_variable = { investment_opportunity_monthly_cost@var:state_temp = total_retooling_cost_temp }
-                    divide_variable = { investment_opportunity_monthly_cost@var:state_temp = months_temp }
-                    set_variable = { investment_opportunity_total_cost@var:state_temp = total_retooling_cost_temp }
+                    set_variable = { investment_opportunity_monthly_cost@var:io_num_temp = total_retooling_cost_temp }
+                    divide_variable = { investment_opportunity_monthly_cost@var:io_num_temp = months_temp }
+                    set_variable = { investment_opportunity_total_cost@var:io_num_temp = total_retooling_cost_temp }
 
                     set_temp_variable = { initial_cost_temp = total_retooling_cost_temp }
                     multiply_temp_variable = { initial_cost_temp = global.start_construction_cost_multiplier }
-                    set_variable = { investment_opportunity_cost@var:state_temp = initial_cost_temp }
-                    add_to_variable = { investment_opportunity_total_cost@var:state_temp = initial_cost_temp }
+                    set_variable = { investment_opportunity_cost@var:io_num_temp = initial_cost_temp }
+                    add_to_variable = { investment_opportunity_total_cost@var:io_num_temp = initial_cost_temp }
                 }
                 else_if = {
                     limit = {
-                        check_variable = { investment_opportunity_type@var:state_temp = 3 } # Upgrade AM
+                        check_variable = { investment_opportunity_type@var:io_num_temp = 3 } # Upgrade AM
                     }
 					# Get AM
                     set_temp_variable = { i_temp = 0 }
@@ -152,7 +157,7 @@
 						value = pm_temp
 						index = pm_i
 						break = pm_brk
-						if = { limit = { check_variable = { pm_temp = automation_method@var:industry_token } } set_temp_variable = { i_temp = pm_i } set_temp_variable = { pm_brk = 1 } }
+						if = { limit = { check_variable = { pm_temp = state_temp:automation_method@var:industry_token } } set_temp_variable = { i_temp = pm_i } set_temp_variable = { pm_brk = 1 } }
 					}
                     add_to_temp_variable = { i_temp = 1 }
 
@@ -169,28 +174,28 @@
                     set_temp_variable = { modifier_temp = 1 }
                     add_to_temp_variable = { modifier_temp = state_temp:industry_construction_speed_factor }
                     divide_temp_variable = { months_temp = modifier_temp }
-                    set_variable = { investment_opportunity_time@var:state_temp = months_temp }
+                    set_variable = { investment_opportunity_time@var:io_num_temp = months_temp }
 
                     # Size
                     multiply_temp_variable = { total_retooling_cost_temp = state_temp:size@var:industry_token }
 
                     # Cost
-                    set_variable = { investment_opportunity_monthly_cost@var:state_temp = total_retooling_cost_temp }
-                    divide_variable = { investment_opportunity_monthly_cost@var:state_temp = months_temp }
-                    set_variable = { investment_opportunity_total_cost@var:state_temp = total_retooling_cost_temp }
+                    set_variable = { investment_opportunity_monthly_cost@var:io_num_temp = total_retooling_cost_temp }
+                    divide_variable = { investment_opportunity_monthly_cost@var:io_num_temp = months_temp }
+                    set_variable = { investment_opportunity_total_cost@var:io_num_temp = total_retooling_cost_temp }
 
                     set_temp_variable = { initial_cost_temp = total_retooling_cost_temp }
                     multiply_temp_variable = { initial_cost_temp = global.start_construction_cost_multiplier }
-                    set_variable = { investment_opportunity_cost@var:state_temp = initial_cost_temp }
-                    add_to_variable = { investment_opportunity_total_cost@var:state_temp = initial_cost_temp }
+                    set_variable = { investment_opportunity_cost@var:io_num_temp = initial_cost_temp }
+                    add_to_variable = { investment_opportunity_total_cost@var:io_num_temp = initial_cost_temp }
                 }
 
                 if = {
                     limit = {
-                        check_variable = { investment_opportunity_investment@var:state_temp < investment_opportunity_cost@var:state_temp }
+                        check_variable = { investment_opportunity_investment@var:io_num_temp < investment_opportunity_cost@var:io_num_temp }
                     }
-                    add_to_variable = { investment_opportunity_fund_all_cost = investment_opportunity_cost@var:state_temp }
-                    subtract_from_variable = { investment_opportunity_fund_all_cost = investment_opportunity_investment@var:state_temp }
+                    add_to_variable = { investment_opportunity_fund_all_cost = investment_opportunity_cost@var:io_num_temp }
+                    subtract_from_variable = { investment_opportunity_fund_all_cost = investment_opportunity_investment@var:io_num_temp }
                 }
             #
 
@@ -199,16 +204,16 @@
                 set_temp_variable = { attract_factor_temp = state_temp:building_attractiveness_factor@var:industry_token }
                 add_to_temp_variable = { attract_factor_temp = 1 }
 
-                set_variable = { investment_opportunity_attractiveness@var:state_temp = 100 }
-                set_variable = { investment_opportunity_attractiveness_factor@var:state_temp = state_temp:building_attractiveness_factor@var:industry_token }
+                set_variable = { investment_opportunity_attractiveness@var:io_num_temp = 100 }
+                set_variable = { investment_opportunity_attractiveness_factor@var:io_num_temp = state_temp:building_attractiveness_factor@var:industry_token }
 
                 # Production of inputs
                 set_temp_variable = { attractiveness_temp = 0 }
                 if = { # New/Expand Building
                     limit = {
                         OR = {
-                            check_variable = { investment_opportunity_type@var:state_temp = 0 }
-                            check_variable = { investment_opportunity_type@var:state_temp = 1 }
+                            check_variable = { investment_opportunity_type@var:io_num_temp = 0 }
+                            check_variable = { investment_opportunity_type@var:io_num_temp = 1 }
                         }
                     }
                     clear_temp_array = r_token_array
@@ -254,13 +259,13 @@
                         }
                     }
                 }
-                set_variable = { investment_opportunity_attractiveness_inputs@var:state_temp = attractiveness_temp }
-                add_to_variable = { investment_opportunity_attractiveness@var:state_temp = attractiveness_temp }
+                set_variable = { investment_opportunity_attractiveness_inputs@var:io_num_temp = attractiveness_temp }
+                add_to_variable = { investment_opportunity_attractiveness@var:io_num_temp = attractiveness_temp }
 
                 # Productivity
                 if = { # New Building
                     limit = {
-                        check_variable = { investment_opportunity_type@var:state_temp = 0 }
+                        check_variable = { investment_opportunity_type@var:io_num_temp = 0 }
                         var:state_temp = {
                             set_temp_variable = { pm_temp = controller:latest_production_method@var:industry_token }
                             get_pm_values = yes
@@ -271,8 +276,8 @@
                 else_if = { # Current Building
                     limit = {
                         OR = {
-                            check_variable = { investment_opportunity_type@var:state_temp = 1 }
-                            check_variable = { investment_opportunity_type@var:state_temp = 2 }
+                            check_variable = { investment_opportunity_type@var:io_num_temp = 1 }
+                            check_variable = { investment_opportunity_type@var:io_num_temp = 2 }
                         }
                     }
                     set_temp_variable = { attractiveness_temp = state_temp:productivity@var:industry_token }
@@ -281,13 +286,13 @@
                     set_temp_variable = { attractiveness_temp = state_temp:base_wage }
                 }
                 multiply_temp_variable = { attractiveness_temp = 4 }
-                set_variable = { investment_opportunity_attractiveness_productivity@var:state_temp = attractiveness_temp }
-                add_to_variable = { investment_opportunity_attractiveness@var:state_temp = attractiveness_temp }
+                set_variable = { investment_opportunity_attractiveness_productivity@var:io_num_temp = attractiveness_temp }
+                add_to_variable = { investment_opportunity_attractiveness@var:io_num_temp = attractiveness_temp }
 
                 # Wages
                 if = {
                     limit = {
-                        check_variable = { investment_opportunity_type@var:state_temp = 3 }
+                        check_variable = { investment_opportunity_type@var:io_num_temp = 3 }
                         var:state_temp = {
                             get_pm_values = yes
                         }
@@ -298,14 +303,14 @@
                     set_temp_variable = { attractiveness_temp = state_temp:base_wage }
                 }
                 multiply_temp_variable = { attractiveness_temp = -4 }
-                set_variable = { investment_opportunity_attractiveness_wages@var:state_temp = attractiveness_temp }
-                add_to_variable = { investment_opportunity_attractiveness@var:state_temp = attractiveness_temp }
+                set_variable = { investment_opportunity_attractiveness_wages@var:io_num_temp = attractiveness_temp }
+                add_to_variable = { investment_opportunity_attractiveness@var:io_num_temp = attractiveness_temp }
 
                 # Industrial Capacity
                 set_temp_variable = { attractiveness_temp = 0 }
                 # if = {
                 #     limit = {
-                #         NOT = { check_variable = { investment_opportunity_type@var:state_temp = 2 } }
+                #         NOT = { check_variable = { investment_opportunity_type@var:io_num_temp = 2 } }
                 #     }
                 #     set_temp_variable = { difference_temp = state_temp:industrial_capacity }
                 #     subtract_from_temp_variable = { difference_temp = state_temp:industrial_capacity_use }
@@ -328,14 +333,14 @@
                 #         multiply_temp_variable = { attractiveness_temp = 10 }
                 #     }
                 # }
-                set_variable = { investment_opportunity_attractiveness_industrial_capacity@var:state_temp = attractiveness_temp }
-                add_to_variable = { investment_opportunity_attractiveness@var:state_temp = attractiveness_temp }
+                set_variable = { investment_opportunity_attractiveness_industrial_capacity@var:io_num_temp = attractiveness_temp }
+                add_to_variable = { investment_opportunity_attractiveness@var:io_num_temp = attractiveness_temp }
 
                 # Economies of Scale
                 set_temp_variable = { attractiveness_temp = 0 }
                 if = {
                     limit = {
-                        NOT = { check_variable = { investment_opportunity_type@var:state_temp = 0 } }
+                        NOT = { check_variable = { investment_opportunity_type@var:io_num_temp = 0 } }
                     }
                     set_temp_variable = { attractiveness_temp = state_temp:size@var:industry_token }
                     multiply_temp_variable = { attractiveness_temp = global.building_base_output_value@var:industry_token }
@@ -347,15 +352,15 @@
                     }
                     set_temp_variable = { attractiveness_temp = 20 }
                 }
-                set_variable = { investment_opportunity_attractiveness_scale@var:state_temp = attractiveness_temp }
-                add_to_variable = { investment_opportunity_attractiveness@var:state_temp = attractiveness_temp }
+                set_variable = { investment_opportunity_attractiveness_scale@var:io_num_temp = attractiveness_temp }
+                add_to_variable = { investment_opportunity_attractiveness@var:io_num_temp = attractiveness_temp }
 
                 # Other
                 set_temp_variable = { attractiveness_temp = 0 }
-                set_variable = { investment_opportunity_attractiveness_other@var:state_temp = attractiveness_temp }
-                add_to_variable = { investment_opportunity_attractiveness_other@var:state_temp = attract_modifier_temp }
-                add_to_variable = { investment_opportunity_attractiveness@var:state_temp = attract_modifier_temp }
-                add_to_variable = { investment_opportunity_attractiveness@var:state_temp = attractiveness_temp }
+                set_variable = { investment_opportunity_attractiveness_other@var:io_num_temp = attractiveness_temp }
+                add_to_variable = { investment_opportunity_attractiveness_other@var:io_num_temp = attract_modifier_temp }
+                add_to_variable = { investment_opportunity_attractiveness@var:io_num_temp = attract_modifier_temp }
+                add_to_variable = { investment_opportunity_attractiveness@var:io_num_temp = attractiveness_temp }
 
                 # Negative for non-core territory & non-owned territory
                 set_temp_variable = { attractiveness_temp = 0 }
@@ -376,35 +381,35 @@
                     add_to_temp_variable = { attractiveness_temp = -50 }
                 }
                 
-                add_to_variable = { investment_opportunity_attractiveness_other@var:state_temp = attractiveness_temp }
-                add_to_variable = { investment_opportunity_attractiveness@var:state_temp = attractiveness_temp }
+                add_to_variable = { investment_opportunity_attractiveness_other@var:io_num_temp = attractiveness_temp }
+                add_to_variable = { investment_opportunity_attractiveness@var:io_num_temp = attractiveness_temp }
 
                 # Unemployment
                 set_temp_variable = { attractiveness_temp = 0 }
                 if = { # If not enough employees, then reduce attractiveness
                     limit = {
-                        NOT = { check_variable = { investment_opportunity_type@var:state_temp = 2 } }
+                        NOT = { check_variable = { investment_opportunity_type@var:io_num_temp = 2 } }
                         check_variable = { state_temp:available_workforce < 0 }
                     }
                     set_temp_variable = { attractiveness_temp = state_temp:available_workforce }
                     divide_temp_variable = { attractiveness_temp = state_temp:jobs }
                     multiply_temp_variable = { attractiveness_temp = 200 }
-                    add_to_variable = { investment_opportunity_attractiveness@var:state_temp = attractiveness_temp }
+                    add_to_variable = { investment_opportunity_attractiveness@var:io_num_temp = attractiveness_temp }
                 }
                 else_if = {
                     limit = {
-                        check_variable = { investment_opportunity_type@var:state_temp = 3 }
+                        check_variable = { investment_opportunity_type@var:io_num_temp = 3 }
                         check_variable = { state_temp:available_workforce < 0 }
                     }
                     set_temp_variable = { attractiveness_temp = state_temp:available_workforce }
                     divide_temp_variable = { attractiveness_temp = state_temp:jobs }
                     multiply_temp_variable = { attractiveness_temp = -200 }
-                    add_to_variable = { investment_opportunity_attractiveness@var:state_temp = attractiveness_temp }
+                    add_to_variable = { investment_opportunity_attractiveness@var:io_num_temp = attractiveness_temp }
                 }
-                set_variable = { investment_opportunity_attractiveness_unemployment@var:state_temp = attractiveness_temp }
+                set_variable = { investment_opportunity_attractiveness_unemployment@var:io_num_temp = attractiveness_temp }
 
                 
-                multiply_variable = { investment_opportunity_attractiveness@var:state_temp = attract_factor_temp }
+                multiply_variable = { investment_opportunity_attractiveness@var:io_num_temp = attract_factor_temp }
             #
         }
         divide_variable = { investment_opportunity_fund_all_cost = modifier@government_investment_efficiency_factor }
@@ -416,9 +421,9 @@
         clear_array = investment_opportunities_sort
         for_each_loop = {
             array = investment_opportunities
-            value = state_temp
+            value = io_num_temp
             
-            set_temp_variable = { effective_wage_om = investment_opportunity_attractiveness@var:state_temp }
+            set_temp_variable = { effective_wage_om = investment_opportunity_attractiveness@var:io_num_temp }
 
             for_each_loop = {
                 array = investment_opportunities_sort
@@ -434,7 +439,7 @@
                     }
                     add_to_array = { 
                         array = investment_opportunities_sort 
-                        value = state_temp
+                        value = io_num_temp
                         index = ii
                     }
                     set_temp_variable = { bb = 1 }
@@ -444,15 +449,15 @@
                 limit = {
                     check_variable = { bb = 0 }
                 }
-                add_to_array = { investment_opportunities_sort = state_temp }
+                add_to_array = { investment_opportunities_sort = io_num_temp }
             }
         }
         
         clear_array = investment_opportunities
         for_each_loop = {
             array = investment_opportunities_sort
-            value = state_temp
-            add_to_array = { investment_opportunities = state_temp }
+            value = io_num_temp
+            add_to_array = { investment_opportunities = io_num_temp }
         }
         clear_array = investment_opportunities_sort
     }
@@ -509,24 +514,14 @@
                     NOT = { has_country_flag = investment_opportunity_done } # Nothing else was done
                     OR = {
                         AND = {
-                            check_variable = { investment_opportunities^num > 3 }
-                            NOT = {
-                                any_of = {
-                                    array = investment_opportunities
-                                    value = state_temp
-                                    check_variable = { investment_opportunity_type@var:state_temp = 0 }
-                                }
-                            }
-                        }
-                        AND = {
                             any_controlled_state = {
                                 check_variable = { buildings^num = 0 } # DOESN'T have a building
                                 check_variable = { available_workforce > 20 } # Has more than enough to fill a building
                                 NOT = { has_state_flag = current_investment_opportunity_flag } # State doesn't have an IO for it.
                             }
-                            check_variable = { random < 0.25 }
+                            check_variable = { random < 0.1 }
                         }
-                        check_variable = { random < 0.1 }
+                        check_variable = { random < 0.05 }
                     }
                 }
                 # log = "Attemping BUILD"
@@ -581,8 +576,15 @@
                     set_temp_variable = { industrial_cap_temp = industrial_capacity_use }
                     multiply_temp_variable = { industrial_cap_temp = 1.05 }
                     check_variable = { industrial_cap_temp > industrial_capacity } # Either Lacks industrial capacity or is getting close
-                    NOT = { has_state_flag = current_investment_opportunity_flag } # State doesn't have an IO for it.
                     NOT = { check_variable = { construction@token:railway > 0 } } # Currently not building a railway
+                    NOT = {
+                        any_of = {
+                            array = PREV.investment_opportunities
+                            value = io_num_temp
+                            check_variable = { PREV.investment_opportunity_building@var:io_num_temp = industry_token }
+                            check_variable = { PREV.investment_opportunity_state@var:io_num_temp = THIS }
+                        }
+                    }
                 }
                 set_temp_variable = { chosen_state = THIS }
             }
@@ -592,7 +594,7 @@
                     NOT = { check_variable = { chosen_state = 0 } }
                     NOT = { check_variable = { industry_token = 0 } }
                 } 
-                log = "RAILWAY - [?industry_token.GetTokenLocalizedKey]: [?chosen_state.GetName]"
+                # log = "RAILWAY - [?industry_token.GetTokenLocalizedKey]: [?chosen_state.GetName]"
 
                 set_country_flag = investment_opportunity_done
                 set_temp_variable = { investment_building_temp = industry_token }
@@ -614,6 +616,15 @@
                 limit = { 
                     is_in_array = { global.building_token_array = select_token }
                     check_variable = { highest_productivity@var:select_token > 1 }
+                    NOT = {
+                        check_variable = { investment_opportunities^num < 25 }
+                        any_of = {
+                            array = investment_opportunities
+                            value = io_num_temp
+                            check_variable = { investment_opportunity_type@var:io_num_temp = 0 }
+                            check_variable = { investment_opportunity_building@var:io_num_temp = var:select_token }
+                        }
+                    }
                     check_variable = { random < 0.3 }
                 }
                 set_temp_variable = { industry_token = select_token }
@@ -627,10 +638,17 @@
                 limit = {
                     check_variable = { buildings^num = 0 } # DOESN'T have a industry that isn't a subsistence farm
                     check_variable = { rgos^num = 0 } # DOESN'T have a industry that isn't a subsistence farm
-                    check_variable = { pops_workforce > 10 } # Has enough to fill a building
-                    NOT = { has_state_flag = current_investment_opportunity_flag } # State doesn't have an IO for it.
+                    check_variable = { available_workforce > 10 } # Has enough to fill a building
                     can_build_industry = yes # Enough building slots, arable land, etc.
                     NOT = { is_in_array = { industries = industry_token } } # Not already present
+                    NOT = { # Not already an IO
+                        any_of = {
+                            array = PREV.investment_opportunities
+                            value = io_num_temp
+                            check_variable = { PREV.investment_opportunity_building@var:io_num_temp = industry_token }
+                            check_variable = { PREV.investment_opportunity_state@var:io_num_temp = THIS }
+                        }
+                    }
                 }
                 set_temp_variable = { chosen_state = THIS }
             }
@@ -642,25 +660,43 @@
                 random_controlled_state = {
                     limit = {
                         check_variable = { buildings^num = 0 } # DOESN'T have a building
-                        check_variable = { pops_workforce > 20 } # Has enough workers
-                        NOT = { has_state_flag = current_investment_opportunity_flag } # State doesn't have an IO for it.
+                        check_variable = { available_workforce > 20 } # Has enough workers
                         can_build_industry = yes # Enough building slots, arable land, etc.
                         NOT = { is_in_array = { industries = industry_token } } # Not already present
+                        NOT = { # Not already an IO
+                            any_of = {
+                                array = PREV.investment_opportunities
+                                value = io_num_temp
+                                check_variable = { PREV.investment_opportunity_building@var:io_num_temp = industry_token }
+                                check_variable = { PREV.investment_opportunity_state@var:io_num_temp = THIS }
+                            }
+                        }
                     }
                     set_temp_variable = { chosen_state = THIS }
                 }
             }
 
-            if = { # If no state is chosen, choose a state no restrictions
+            if = { # If no state is chosen, choose a state with at least 2 building slots open
                 limit = {
                     check_variable = { chosen_state = 0 }
                 }
                 random_controlled_state = {
                     limit = {
-                        check_variable = { pops_workforce > 10 } # Has enough workers for it to be worth it
-                        NOT = { has_state_flag = current_investment_opportunity_flag } # State doesn't have an IO for it.
+                        set_temp_variable = { building_slots_avail_temp = modifier@local_industry_slots }
+                        subtract_from_temp_variable = { building_slots_avail_temp = buildings^num }
+                        check_variable = { building_slots_avail_temp > 1 }
+
+                        check_variable = { available_workforce > 10 } # Has enough workers for it to be worth it
                         can_build_industry = yes # Enough building slots, arable land, etc.
                         NOT = { is_in_array = { industries = industry_token } } # Not already present
+                        NOT = { # Not already an IO
+                            any_of = {
+                                array = PREV.investment_opportunities
+                                value = io_num_temp
+                                check_variable = { PREV.investment_opportunity_building@var:io_num_temp = industry_token }
+                                check_variable = { PREV.investment_opportunity_state@var:io_num_temp = THIS }
+                            }
+                        }
                     }
                     set_temp_variable = { chosen_state = THIS }
                 }
@@ -694,12 +730,20 @@
                     is_in_array = { global.building_token_array = select_token }
                     check_variable = { highest_productivity@var:select_token > 1 }
                     any_controlled_state = {
-                        NOT = { has_state_flag = current_investment_opportunity_flag }
                         check_variable = { size@var:select_token > 0 }
                         check_variable = { profitability@var:select_token > 0.05 }
                         check_variable = { employment_percentage@var:select_token > 75 }
                         check_variable = { construction@var:select_token = 0 }
                         can_build_industry = yes # Enough building slots, arable land, etc.
+                        NOT = { # Not already an IO
+                            any_of = {
+                                array = PREV.investment_opportunities
+                                value = io_num_temp
+                                check_variable = { PREV.investment_opportunity_type@var:io_num_temp = 1 }
+                                check_variable = { PREV.investment_opportunity_building@var:io_num_temp = select_token }
+                                check_variable = { PREV.investment_opportunity_state@var:io_num_temp = THIS }
+                            }
+                        }
                     }
                     check_variable = { random < 0.3 }
                 }
@@ -712,12 +756,20 @@
         set_temp_variable = { profitability_temp = 0 }
         every_controlled_state = { # Pick a state
             limit = {
-                NOT = { has_state_flag = current_investment_opportunity_flag }
                 check_variable = { size@var:industry_token > 0 }
                 check_variable = { profitability@var:industry_token > profitability_temp }
                 check_variable = { employment_percentage@var:industry_token > 75 }
                 check_variable = { construction@var:industry_token = 0 }
                 can_build_industry = yes # Enough building slots, arable land, etc.
+                NOT = { # Not already an IO
+                    any_of = {
+                        array = PREV.investment_opportunities
+                        value = io_num_temp
+                        check_variable = { PREV.investment_opportunity_type@var:io_num_temp = 1 }
+                        check_variable = { PREV.investment_opportunity_building@var:io_num_temp = industry_token }
+                        check_variable = { PREV.investment_opportunity_state@var:io_num_temp = THIS }
+                    }
+                }
             }
             set_temp_variable = { profitability_temp = profitability@var:industry_token }
             set_temp_variable = { chosen_state = THIS }
@@ -749,9 +801,18 @@
             if = { 
                 limit = { 
                     any_controlled_state = {
-                        NOT = { has_state_flag = current_investment_opportunity_flag }
                         check_variable = { pm_upgradable@var:select_token > 1 }
 						check_variable = { retooling_pm@var:select_token = 0 }
+				        check_variable = { size@var:select_token > 0 }
+                        NOT = { # Not already an IO
+                            any_of = {
+                                array = PREV.investment_opportunities
+                                value = io_num_temp
+                                check_variable = { PREV.investment_opportunity_type@var:io_num_temp = 2 }
+                                check_variable = { PREV.investment_opportunity_building@var:io_num_temp = select_token }
+                                check_variable = { PREV.investment_opportunity_state@var:io_num_temp = THIS }
+                            }
+                        }
                     }
                 }
                 set_temp_variable = { industry_token = select_token }
@@ -762,9 +823,18 @@
         set_temp_variable = { chosen_state = 0 }
         random_controlled_state = { # Pick a state
             limit = {
-                NOT = { has_state_flag = current_investment_opportunity_flag }
                 check_variable = { pm_upgradable@var:industry_token > 1 }
+				check_variable = { size@var:industry_token > 0 }
 				check_variable = { retooling_pm@var:industry_token = 0 }
+                NOT = { # Not already an IO
+                    any_of = {
+                        array = PREV.investment_opportunities
+                        value = io_num_temp
+                        check_variable = { PREV.investment_opportunity_type@var:io_num_temp = 2 }
+                        check_variable = { PREV.investment_opportunity_building@var:io_num_temp = industry_token }
+                        check_variable = { PREV.investment_opportunity_state@var:io_num_temp = THIS }
+                    }
+                }
             }
             set_temp_variable = { chosen_state = THIS }
         }
@@ -795,9 +865,18 @@
             if = { 
                 limit = { 
                     any_controlled_state = {
-                        NOT = { has_state_flag = current_investment_opportunity_flag }
                         check_variable = { am_upgradable@var:select_token > 1 }
 						check_variable = { retooling_pm@var:select_token = 0 }
+				        check_variable = { size@var:select_token > 0 }
+                        NOT = { # Not already an IO
+                            any_of = {
+                                array = PREV.investment_opportunities
+                                value = io_num_temp
+                                check_variable = { PREV.investment_opportunity_type@var:io_num_temp = 3 }
+                                check_variable = { PREV.investment_opportunity_building@var:io_num_temp = select_token }
+                                check_variable = { PREV.investment_opportunity_state@var:io_num_temp = THIS }
+                            }
+                        }
                     }
                 }
                 set_temp_variable = { industry_token = select_token }
@@ -808,9 +887,18 @@
         set_temp_variable = { chosen_state = 0 }
         random_controlled_state = { # Pick a state
             limit = {
-                NOT = { has_state_flag = current_investment_opportunity_flag }
                 check_variable = { am_upgradable@var:industry_token > 1 }
+				check_variable = { size@var:industry_token > 0 }
 				check_variable = { retooling_pm@var:select_token = 0 }
+                NOT = { # Not already an IO
+                    any_of = {
+                        array = PREV.investment_opportunities
+                        value = io_num_temp
+                        check_variable = { PREV.investment_opportunity_type@var:io_num_temp = 3 }
+                        check_variable = { PREV.investment_opportunity_building@var:io_num_temp = industry_token }
+                        check_variable = { PREV.investment_opportunity_state@var:io_num_temp = THIS }
+                    }
+                }
             }
             set_temp_variable = { chosen_state = THIS }
         }
@@ -885,6 +973,23 @@
             }
         }
     }
+    allocate_io_number = {
+        set_temp_variable = { io_num_temp = 0 }
+        for_loop_effect = {
+            start = 1
+            end = 1001
+            break = io_num_brk
+            value = io_num_temp
+
+            if = {
+                limit = {
+                    NOT = { has_variable = investment_opportunity_state@var:io_num_temp }
+                }
+                set_temp_variable = { io_num_brk = 1 }
+            }
+        }
+        # log = "IO Used: [?io_num_temp]"
+    }
     add_investment_opportunity = {
         if = { # Need to have build/expand/upgrade fired before this
             limit = {
@@ -892,12 +997,18 @@
             }
             clr_country_flag = investment_opportunity_done
 
-            add_to_array = { investment_opportunities = chosen_state }
-            set_variable = { investment_opportunity_building@var:chosen_state = investment_building_temp }
-            set_variable = { investment_opportunity_type@var:chosen_state = investment_type_temp }
-            set_variable = { investment_opportunity_investment@var:chosen_state = 0 }
+            allocate_io_number = yes
+            if = {
+                limit = { check_variable = { io_num_brk = 1 } }
 
-            investment_opportunities_update = yes
+                add_to_array = { investment_opportunities = io_num_temp }
+                set_variable = { investment_opportunity_state@var:io_num_temp = chosen_state }
+                set_variable = { investment_opportunity_building@var:io_num_temp = investment_building_temp }
+                set_variable = { investment_opportunity_type@var:io_num_temp = investment_type_temp }
+                set_variable = { investment_opportunity_investment@var:io_num_temp = 0 }
+
+                investment_opportunities_update = yes
+            }
         }
     }
 #
@@ -907,40 +1018,41 @@
 
         set_temp_variable = { i_temp = investment_opportunities^num }
         subtract_from_temp_variable = { i_temp = 1 }
-        set_temp_variable = { state_temp = investment_opportunities^i_temp }
+        set_temp_variable = { io_num_temp = investment_opportunities^i_temp }
         
         remove_investment_opportunity = yes
     }
     remove_investment_opportunity = {
-        # state_temp
+        # io_num_temp
+        # log = "IO Removed: [?io_num_temp]"
 
-        remove_from_array = { investment_opportunities = state_temp }
+        remove_from_array = { investment_opportunities = io_num_temp }
 
-        clear_variable = investment_opportunity_type@var:state_temp
-        clear_variable = investment_opportunity_building@var:state_temp
+        clear_variable = investment_opportunity_state@var:io_num_temp
+        clear_variable = investment_opportunity_type@var:io_num_temp
+        clear_variable = investment_opportunity_building@var:io_num_temp
 
-        clear_variable = investment_opportunity_investment@var:state_temp
-        clear_variable = investment_opportunity_cost@var:state_temp
-        clear_variable = investment_opportunity_monthly_cost@var:state_temp
-        clear_variable = investment_opportunity_industrial_goods_cost@var:state_temp
-        clear_variable = investment_opportunity_total_cost@var:state_temp
+        clear_variable = investment_opportunity_investment@var:io_num_temp
+        clear_variable = investment_opportunity_cost@var:io_num_temp
+        clear_variable = investment_opportunity_monthly_cost@var:io_num_temp
+        clear_variable = investment_opportunity_total_cost@var:io_num_temp
 
-        clear_variable = investment_opportunity_attractiveness@var:state_temp
-        clear_variable = investment_opportunity_attractiveness_factor@var:state_temp
-        clear_variable = investment_opportunity_attractiveness_inputs@var:state_temp
-        clear_variable = investment_opportunity_attractiveness_productivity@var:state_temp
-        clear_variable = investment_opportunity_attractiveness_wages@var:state_temp
-        clear_variable = investment_opportunity_attractiveness_scale@var:state_temp
-        clear_variable = investment_opportunity_attractiveness_unemployment@var:state_temp
-        clear_variable = investment_opportunity_attractiveness_industrial_capacity@var:state_temp
-        clear_variable = investment_opportunity_attractiveness_other@var:state_temp
+        clear_variable = investment_opportunity_attractiveness@var:io_num_temp
+        clear_variable = investment_opportunity_attractiveness_factor@var:io_num_temp
+        clear_variable = investment_opportunity_attractiveness_inputs@var:io_num_temp
+        clear_variable = investment_opportunity_attractiveness_productivity@var:io_num_temp
+        clear_variable = investment_opportunity_attractiveness_wages@var:io_num_temp
+        clear_variable = investment_opportunity_attractiveness_scale@var:io_num_temp
+        clear_variable = investment_opportunity_attractiveness_unemployment@var:io_num_temp
+        clear_variable = investment_opportunity_attractiveness_industrial_capacity@var:io_num_temp
+        clear_variable = investment_opportunity_attractiveness_other@var:io_num_temp
     }
     clear_investment_opportunities = {
         set_temp_variable = { size_temp = investment_opportunities^num }
         for_loop_effect = {
             end = size_temp value = i_temp
 
-            set_temp_variable = { state_temp = investment_opportunities^0 }
+            set_temp_variable = { io_num_temp = investment_opportunities^0 }
             remove_investment_opportunity = yes
         }
         investment_opportunities_update = yes
@@ -950,47 +1062,47 @@
     evaluate_investment_opportunities = {
         for_each_loop = {
             array = investment_opportunities
-            value = state_temp
+            value = io_num_temp
             index = ii
             evaluate_investment_opportunity = yes
         }
     }
-
     evaluate_investment_opportunity = {
-        # state_temp
+        # io_num_temp
 
+        set_temp_variable = { state_temp = investment_opportunity_state@var:io_num_temp }
         if = {
             limit = {
-                NOT = { check_variable = { investment_opportunity_cost@var:state_temp > investment_opportunity_investment@var:state_temp } }
+                NOT = { check_variable = { investment_opportunity_cost@var:io_num_temp > investment_opportunity_investment@var:io_num_temp } }
             }
 
             if = {
                 limit = {
                     OR = {
-                        check_variable = { investment_opportunity_type@var:state_temp = 0 }
-                        check_variable = { investment_opportunity_type@var:state_temp = 1 }
+                        check_variable = { investment_opportunity_type@var:io_num_temp = 0 }
+                        check_variable = { investment_opportunity_type@var:io_num_temp = 1 }
                     }
                 }
                 var:state_temp = {
                     set_temp_variable = { x_temp = 1 }
-                    set_temp_variable = { industry_token = PREV.investment_opportunity_building@var:state_temp }
+                    set_temp_variable = { industry_token = PREV.investment_opportunity_building@var:io_num_temp }
                     set_temp_variable = { financer_temp = 0 }
                     set_temp_variable = { production_method_temp = PREV.latest_production_method@var:industry_token }
                     set_temp_variable = { automation_method_temp = PREV.latest_automation_method@var:industry_token }
                     
                     construct_x_industries_no_update = yes
                 }
-                set_temp_variable = { industry_token = investment_opportunity_building@var:state_temp }
-                add_to_variable = { investment_fund = investment_opportunity_investment@var:state_temp }
+                set_temp_variable = { industry_token = investment_opportunity_building@var:io_num_temp }
+                add_to_variable = { investment_fund = investment_opportunity_investment@var:io_num_temp }
                 add_to_variable = { investment_fund_spending_construction = state_temp:construction_cost@var:industry_token }
                 add_to_variable = { investment_fund_spending = state_temp:construction_cost@var:industry_token }
                 subtract_from_variable = { investment_fund_balance = state_temp:construction_cost@var:industry_token }
             }
             else_if = {
                 limit = {
-                    check_variable = { investment_opportunity_type@var:state_temp = 2 }
+                    check_variable = { investment_opportunity_type@var:io_num_temp = 2 }
                 }
-                set_temp_variable = { industry_token = investment_opportunity_building@var:state_temp }
+                set_temp_variable = { industry_token = investment_opportunity_building@var:io_num_temp }
 
                 # Get PM
                 set_temp_variable = { i_temp = 0 }
@@ -1011,17 +1123,17 @@
                 var:state_temp = {
                     retool_industry_no_update = yes
                 }
-                set_temp_variable = { industry_token = investment_opportunity_building@var:state_temp }
-                add_to_variable = { investment_fund = investment_opportunity_investment@var:state_temp }
+                set_temp_variable = { industry_token = investment_opportunity_building@var:io_num_temp }
+                add_to_variable = { investment_fund = investment_opportunity_investment@var:io_num_temp }
                 add_to_variable = { investment_fund_spending_retooling = state_temp:retooling_cost@var:industry_token }
                 add_to_variable = { investment_fund_spending = state_temp:retooling_cost@var:industry_token }
                 subtract_from_variable = { investment_fund_balance = state_temp:retooling_cost@var:industry_token }
             }
             else_if = {
                 limit = {
-                    check_variable = { investment_opportunity_type@var:state_temp = 3 }
+                    check_variable = { investment_opportunity_type@var:io_num_temp = 3 }
                 }
-                set_temp_variable = { industry_token = investment_opportunity_building@var:state_temp }
+                set_temp_variable = { industry_token = investment_opportunity_building@var:io_num_temp }
 
                 # Get AM
                 set_temp_variable = { i_temp = 0 }
@@ -1042,15 +1154,22 @@
                 var:state_temp = {
                     retool_industry_no_update = yes
                 }
-                set_temp_variable = { industry_token = investment_opportunity_building@var:state_temp }
-                add_to_variable = { investment_fund = investment_opportunity_investment@var:state_temp }
+                set_temp_variable = { industry_token = investment_opportunity_building@var:io_num_temp }
+                add_to_variable = { investment_fund = investment_opportunity_investment@var:io_num_temp }
                 add_to_variable = { investment_fund_spending_retooling = state_temp:retooling_cost@var:industry_token }
                 add_to_variable = { investment_fund_spending = state_temp:retooling_cost@var:industry_token }
                 subtract_from_variable = { investment_fund_balance = state_temp:retooling_cost@var:industry_token }
             }
+            # log = "Investment: [?investment_opportunity_investment@var:io_num_temp]"
 
             remove_investment_opportunity = yes
         }
+    }
+
+    check_investment_opportunity = {
+        # Checks if IO is still valid. If not, removes it (and refunds money if any was put in)
+        # io_num_temp
+
     }
 #
 
@@ -1127,10 +1246,10 @@
                 check_variable = { investment_opportunities^num > 0 }
                 check_variable = { ifm_temp < investment_opportunities_cap }
             }
-            set_temp_variable = { state_temp = investment_opportunities^0 }
+            set_temp_variable = { io_num_temp = investment_opportunities^0 }
 
-            set_temp_variable = { spending_amount_temp = investment_opportunity_cost@var:state_temp }
-            subtract_from_temp_variable = { spending_amount_temp = investment_opportunity_investment@var:state_temp }
+            set_temp_variable = { spending_amount_temp = investment_opportunity_cost@var:io_num_temp }
+            subtract_from_temp_variable = { spending_amount_temp = investment_opportunity_investment@var:io_num_temp }
 
             if = { # Enough money
                 limit = {
@@ -1138,12 +1257,12 @@
                 }
                 subtract_from_variable = { investment_fund = spending_amount_temp }
                 subtract_from_temp_variable = { spending_cap_temp = spending_amount_temp }
-                set_variable = { investment_opportunity_investment@var:state_temp = investment_opportunity_cost@var:state_temp }
+                set_variable = { investment_opportunity_investment@var:io_num_temp = investment_opportunity_cost@var:io_num_temp }
                 evaluate_investment_opportunity = yes
             }
             else = { # Not enough money
                 subtract_from_variable = { investment_fund = spending_cap_temp }
-                add_to_variable = { investment_opportunity_investment@var:state_temp = spending_cap_temp }
+                add_to_variable = { investment_opportunity_investment@var:io_num_temp = spending_cap_temp }
                 set_temp_variable = { spending_cap_temp = 0 }
             }
 
