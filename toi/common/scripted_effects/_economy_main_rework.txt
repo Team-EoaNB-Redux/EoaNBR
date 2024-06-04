@@ -4317,9 +4317,16 @@
 	}
 	set_debt = {
 		# x_temp
+		# country_temp
 		# Sets the debt to x_temp (thousands)
 		
-		subtract_from_temp_variable = { x_temp = national_debt_k }
+		if = {
+			limit = { check_variable = { country_temp = 0 } }
+			subtract_from_temp_variable = { x_temp = debt_to_bank_k@THIS }
+		}
+		else = {
+			subtract_from_temp_variable = { x_temp = debt_to_bank_k@var:country_temp }
+		}
 		add_debt = yes
 	}
 	add_debt_to_gdp = {
@@ -4337,6 +4344,7 @@
 		#INPUT:
 			#x_temp - Amount of money to borrow in thousands.
 			#country_temp - Which country to specifically borrow from, set to 0 to borrow money from any country
+			#ignore_limits_temp - Ignores borrowing limits
 			
 		if = {
 			limit = {
@@ -4362,6 +4370,7 @@
 			if = {
 				limit = {
 					check_variable = { borrow_temp_k > country_temp:national_bank_amount_left_k }
+					check_variable = { ignore_limits_temp = 0 }
 				}
 				set_temp_variable = { borrow_temp_k = country_temp:national_bank_amount_left_k }
 			}
@@ -4414,6 +4423,7 @@
 		else = {
 			set_temp_variable = { borrow_temp = 0 }
 		}
+		set_temp_variable = { ignore_limits_temp = 0 }
 	}
 	remove_debt = {
 		#Scope: Country

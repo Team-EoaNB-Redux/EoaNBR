@@ -159,6 +159,15 @@ _init_trade = {
 
             if = {
                 limit = {
+                    has_variable = initial_offers@var:r_token
+                }
+                set_temp_variable = { resource_temp = r_token }
+                set_temp_variable = { amount_temp = initial_offers@var:r_token }
+                set_temp_variable = { no_update_temp = 1 }
+                set_trade = yes
+            }
+            else_if = {
+                limit = {
                     NOT = { is_in_array = { global.non_tradeable_resources = r_token } }
                     OR = {
                         check_variable = { demand@var:r_token > 0 }
@@ -248,9 +257,68 @@ _country_fin = {
     }
     investment_fund_update = yes
     
-    # Budget
-    budget_update = yes
+    # Initializes debt
     national_debt_update = yes
+    if = {
+        limit = {
+            has_variable = starting_debt
+        }
+        set_temp_variable = { x_temp = starting_debt }
+        set_temp_variable = { ignore_limits_temp = 1 }
+        set_debt = yes
+    }
+    else_if = {
+        limit = {
+            has_variable = starting_debt_gdp
+        }
+        set_temp_variable = { x_temp = starting_debt_gdp }
+        set_temp_variable = { ignore_limits_temp = 1 }
+        set_debt_to_gdp = yes
+    }
+    for_each_loop = {
+        array = global.countries
+        value = country_temp
+        if = {
+            limit = { check_variable = { starting_debt@var:country_temp > 0 } }
+            set_temp_variable = { x_temp = starting_debt@var:country_temp }
+            set_temp_variable = { ignore_limits_temp = 1 }
+            set_debt = yes
+        }
+    }
+    
+    # Budget
+    set_variable = { military_spending_percentage = 100 }
+    budget_update = yes
+    while_loop_effect = {
+        limit = {
+            AND = {
+                check_variable = { net_budget < 0 }
+                OR = {
+                    check_variable = { sales_tax_percentage < sales_tax_max }
+                    check_variable = { income_tax_lower_strata_percentage < income_tax_lower_strata_max }
+                    check_variable = { income_tax_middle_strata_percentage < income_tax_middle_strata_max }
+                    check_variable = { income_tax_upper_strata_percentage < income_tax_upper_strata_max }
+                }
+            }
+        }
+
+        if = { limit = { check_variable = { sales_tax_percentage < sales_tax_max } } 
+            add_to_variable = { sales_tax_percentage = 10 }
+        }
+        else_if = { limit = { check_variable = { income_tax_lower_strata_percentage < income_tax_lower_strata_max } } 
+            add_to_variable = { income_tax_lower_strata_percentage = 10 }
+        }
+        else_if = { limit = { check_variable = { income_tax_middle_strata_percentage < income_tax_middle_strata_max } } 
+            add_to_variable = { income_tax_middle_strata_percentage = 10 }
+        }
+        else_if = { limit = { check_variable = { income_tax_upper_strata_percentage < income_tax_upper_strata_max } } 
+            add_to_variable = { income_tax_upper_strata_percentage = 10 }
+        }
+        
+        budget_clamp = yes
+        taxes_update = yes
+        net_budget_update = yes
+    }
 
     # Graphs & Displays
     initialize_country_gdp_graph = yes
@@ -1898,37 +1966,57 @@ country_pops_industry_recalc = {
                 INDUSTRY = "[?industry_token.GetTokenKey]"
             }
 
+            if = {
+                limit = {
+                    has_variable = starting_pm@var:industry_token
+                }
+                set_variable = { production_method@var:industry_token = starting_pm@var:industry_token }
+            }
+            if = {
+                limit = {
+                    has_variable = starting_am@var:industry_token
+                }
+                set_variable = { automation_method@var:industry_token = starting_am@var:industry_token }
+            }
+
             if = { # Set PM & AM to country's starting pm
                 limit = { check_variable = { size@var:industry_token > 0 } }
                 if = {
-                    limit = {
-                        NOT = { is_core_of = var:controller }
-                        has_variable = controller:non_core_starting_pm@var:industry_token
+                    limit = { NOT = { has_variable = production_method@var:industry_token } }
+                    if = {
+                        limit = {
+                            NOT = { is_core_of = var:controller }
+                            has_variable = controller:non_core_starting_pm@var:industry_token
+                        }
+                        set_variable = { production_method@var:industry_token = controller:non_core_starting_pm@var:industry_token }
                     }
-                    set_variable = { production_method@var:industry_token = controller:non_core_starting_pm@var:industry_token }
-                }
-                else_if = {
-                    limit = {
-                        has_variable = controller:starting_pm@var:industry_token
+                    else_if = {
+                        limit = {
+                            has_variable = controller:starting_pm@var:industry_token
+                        }
+                        set_variable = { production_method@var:industry_token = controller:starting_pm@var:industry_token }
                     }
-                    set_variable = { production_method@var:industry_token = controller:starting_pm@var:industry_token }
+                    else = { set_variable = { production_method@var:industry_token = controller:latest_production_method@var:industry_token } }
                 }
-                else = { set_variable = { production_method@var:industry_token = controller:latest_production_method@var:industry_token } }
                 
                 if = {
-                    limit = {
-                        NOT = { is_core_of = var:controller }
-                        has_variable = controller:non_core_starting_am@var:industry_token
+                    limit = { NOT = { has_variable = automation_method@var:industry_token } }
+
+                    if = {
+                        limit = {
+                            NOT = { is_core_of = var:controller }
+                            has_variable = controller:non_core_starting_am@var:industry_token
+                        }
+                        set_variable = { automation_method@var:industry_token = controller:non_core_starting_am@var:industry_token }
                     }
-                    set_variable = { automation_method@var:industry_token = controller:non_core_starting_am@var:industry_token }
-                }
-                else_if = {
-                    limit = {
-                        has_variable = controller:starting_am@var:industry_token
+                    else_if = {
+                        limit = {
+                            has_variable = controller:starting_am@var:industry_token
+                        }
+                        set_variable = { automation_method@var:industry_token = controller:starting_am@var:industry_token }
                     }
-                    set_variable = { automation_method@var:industry_token = controller:starting_am@var:industry_token }
+                    else = { set_variable = { automation_method@var:industry_token = controller:latest_automation_method@var:industry_token } }
                 }
-                else = { set_variable = { automation_method@var:industry_token = controller:latest_automation_method@var:industry_token } }
             }
         }
         
@@ -1950,99 +2038,117 @@ country_pops_industry_recalc = {
 
                 # Set PM & AM to country's starting pm
                 if = {
-                    limit = {
-                        NOT = { is_core_of = var:controller }
-                        has_variable = controller:non_core_starting_pm@var:rgo_token
+                    limit = { NOT = { has_variable = production_method@var:industry_token } }
+                    if = {
+                        limit = {
+                            NOT = { is_core_of = var:controller }
+                            has_variable = controller:non_core_starting_pm@var:rgo_token
+                        }
+                        set_variable = { production_method@var:rgo_token = controller:non_core_starting_pm@var:rgo_token }
                     }
-                    set_variable = { production_method@var:rgo_token = controller:non_core_starting_pm@var:rgo_token }
-                }
-                else_if = {
-                    limit = {
-                        has_variable = controller:starting_pm@var:rgo_token
+                    else_if = {
+                        limit = {
+                            has_variable = controller:starting_pm@var:rgo_token
+                        }
+                        set_variable = { production_method@var:rgo_token = controller:starting_pm@var:rgo_token }
                     }
-                    set_variable = { production_method@var:rgo_token = controller:starting_pm@var:rgo_token }
+                    else = { set_variable = { production_method@var:rgo_token = controller:latest_production_method@var:rgo_token } }
                 }
-                else = { set_variable = { production_method@var:rgo_token = controller:latest_production_method@var:rgo_token } }
                 
                 if = {
-                    limit = {
-                        NOT = { is_core_of = var:controller }
-                        has_variable = controller:non_core_starting_am@var:rgo_token
+                    limit = { NOT = { has_variable = automation_method@var:industry_token } }
+                    if = {
+                        limit = {
+                            NOT = { is_core_of = var:controller }
+                            has_variable = controller:non_core_starting_am@var:rgo_token
+                        }
+                        set_variable = { automation_method@var:rgo_token = controller:non_core_starting_am@var:rgo_token }
                     }
-                    set_variable = { automation_method@var:rgo_token = controller:non_core_starting_am@var:rgo_token }
-                }
-                else_if = {
-                    limit = {
-                        has_variable = controller:starting_am@var:rgo_token
+                    else_if = {
+                        limit = {
+                            has_variable = controller:starting_am@var:rgo_token
+                        }
+                        set_variable = { automation_method@var:rgo_token = controller:starting_am@var:rgo_token }
                     }
-                    set_variable = { automation_method@var:rgo_token = controller:starting_am@var:rgo_token }
+                    else = { set_variable = { automation_method@var:rgo_token = controller:latest_automation_method@var:rgo_token } }
                 }
-                else = { set_variable = { automation_method@var:rgo_token = controller:latest_automation_method@var:rgo_token } }
             }
         }
 
         # Special
             # Railway
             if = {
-                limit = {
-                    NOT = { is_core_of = var:controller }
-                    has_variable = controller:non_core_starting_pm@token:railway
+                limit = { NOT = { has_variable = production_method@token:railway } }
+                if = {
+                    limit = {
+                        NOT = { is_core_of = var:controller }
+                        has_variable = controller:non_core_starting_pm@token:railway
+                    }
+                    set_variable = { production_method@token:railway = controller:non_core_starting_pm@token:railway }
                 }
-                set_variable = { production_method@token:railway = controller:non_core_starting_pm@token:railway }
-            }
-            else_if = {
-                limit = {
-                    has_variable = controller:starting_pm@token:railway
+                else_if = {
+                    limit = {
+                        has_variable = controller:starting_pm@token:railway
+                    }
+                    set_variable = { production_method@token:railway = controller:starting_pm@token:railway }
                 }
-                set_variable = { production_method@token:railway = controller:starting_pm@token:railway }
+                else = { set_variable = { production_method@token:railway = controller:latest_production_method@token:railway } }
             }
-            else = { set_variable = { production_method@token:railway = controller:latest_production_method@token:railway } }
             
             if = {
-                limit = {
-                    NOT = { is_core_of = var:controller }
-                    has_variable = controller:non_core_starting_am@token:railway
+                limit = { NOT = { has_variable = automation_method@token:railway } }
+                if = {
+                    limit = {
+                        NOT = { is_core_of = var:controller }
+                        has_variable = controller:non_core_starting_am@token:railway
+                    }
+                    set_variable = { automation_method@token:railway = controller:non_core_starting_am@token:railway }
                 }
-                set_variable = { automation_method@token:railway = controller:non_core_starting_am@token:railway }
-            }
-            else_if = {
-                limit = {
-                    has_variable = controller:starting_am@token:railway
+                else_if = {
+                    limit = {
+                        has_variable = controller:starting_am@token:railway
+                    }
+                    set_variable = { automation_method@token:railway = controller:starting_am@token:railway }
                 }
-                set_variable = { automation_method@token:railway = controller:starting_am@token:railway }
+                else = { set_variable = { automation_method@token:railway = controller:latest_automation_method@token:railway } }
             }
-            else = { set_variable = { automation_method@token:railway = controller:latest_automation_method@token:railway } }
             
             # Port
             if = {
-                limit = {
-                    NOT = { is_core_of = var:controller }
-                    has_variable = controller:non_core_starting_pm@token:port
+                limit = { NOT = { has_variable = production_method@token:port } }
+                if = {
+                    limit = {
+                        NOT = { is_core_of = var:controller }
+                        has_variable = controller:non_core_starting_pm@token:port
+                    }
+                    set_variable = { production_method@token:port = controller:non_core_starting_pm@token:port }
                 }
-                set_variable = { production_method@token:port = controller:non_core_starting_pm@token:port }
-            }
-            else_if = {
-                limit = {
-                    has_variable = controller:starting_pm@token:port
+                else_if = {
+                    limit = {
+                        has_variable = controller:starting_pm@token:port
+                    }
+                    set_variable = { production_method@token:port = controller:starting_pm@token:port }
                 }
-                set_variable = { production_method@token:port = controller:starting_pm@token:port }
+                else = { set_variable = { production_method@token:port = controller:latest_production_method@token:port } }
             }
-            else = { set_variable = { production_method@token:port = controller:latest_production_method@token:port } }
             
             if = {
-                limit = {
-                    NOT = { is_core_of = var:controller }
-                    has_variable = controller:non_core_starting_am@token:port
+                limit = { NOT = { has_variable = automation_method@token:port } }
+                if = {
+                    limit = {
+                        NOT = { is_core_of = var:controller }
+                        has_variable = controller:non_core_starting_am@token:port
+                    }
+                    set_variable = { automation_method@token:port = controller:non_core_starting_am@token:port }
                 }
-                set_variable = { automation_method@token:port = controller:non_core_starting_am@token:port }
-            }
-            else_if = {
-                limit = {
-                    has_variable = controller:starting_am@token:port
+                else_if = {
+                    limit = {
+                        has_variable = controller:starting_am@token:port
+                    }
+                    set_variable = { automation_method@token:port = controller:starting_am@token:port }
                 }
-                set_variable = { automation_method@token:port = controller:starting_am@token:port }
+                else = { set_variable = { automation_method@token:port = controller:latest_automation_method@token:port } }
             }
-            else = { set_variable = { automation_method@token:port = controller:latest_automation_method@token:port } }
 
             # Military Factory
             set_variable = { size@token:arms_factory = arms_factory_level }
@@ -2469,6 +2575,7 @@ country_pops_industry_recalc = {
             if = {
                 limit = {
                     NOT = { check_variable = { production_method@var:industry_token = highest_pm_temp } }
+                    NOT = { has_variable = starting_pm@var:industry_token }
                     NOT = { has_variable = controller:starting_pm@var:industry_token }
                     NOT = {
                         NOT = { is_core_of = var:controller }
@@ -2503,6 +2610,7 @@ country_pops_industry_recalc = {
             if = {
                 limit = {
                     NOT = { check_variable = { automation_method@var:industry_token = highest_pm_temp } }
+                    NOT = { has_variable = starting_am@var:industry_token }
                     NOT = { has_variable = controller:starting_am@var:industry_token }
                     NOT = {
                         NOT = { is_core_of = var:controller }
