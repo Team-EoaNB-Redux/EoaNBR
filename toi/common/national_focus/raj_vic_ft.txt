@@ -845,6 +845,25 @@ focus_tree = {
 		search_filters = { FOCUS_FILTER_MANPOWER }
 	
 		completion_reward = {
+			hidden_effect = {
+				add_dynamic_modifier = { modifier = RAJ_agrarianism }
+			}
+			RAJ = {
+				set_temp_variable = { param_token = token:RAJ_agrarianism_idea }
+				set_temp_variable = { param_op = token:new_dyn_mod }
+				if = {
+					limit = { start_dyn_mod = yes }
+					set_temp_variable = { political_power_factor_@var:dyn_mod = 0 }
+					set_temp_variable = { monthly_population_@var:dyn_mod = 0.3 }
+					set_temp_variable = { conscription_factor_@var:dyn_mod = 0 }
+					set_temp_variable = { consumer_goods_factor_@var:dyn_mod = 0 }
+					set_temp_variable = { research_speed_factor_@var:dyn_mod = 0 }
+					set_temp_variable = { global_building_slots_factor_@var:dyn_mod = 0 }
+					set_temp_variable = { production_factory_efficiency_gain_factor_@var:dyn_mod = 0 }
+					set_temp_variable = { cotton_plantation_output_factor_@var:dyn_mod = 0 }
+					if = { limit = { end_dyn_mod = yes } commit_dyn_mod = yes }
+				}
+			}
 			custom_effect_tooltip = tooltip_white_line
 			custom_effect_tooltip = RAJ_agrarianism_tt
 		}
@@ -868,7 +887,13 @@ focus_tree = {
 		search_filters = { FOCUS_FILTER_MANPOWER }
 	
 		completion_reward = {
-
+			set_temp_variable = { param_token = token:RAJ_agrarianism_idea }
+			set_temp_variable = { param_op = token:change_dyn_mod }
+			if = {
+				limit = { start_dyn_mod = yes }
+				add_to_temp_variable = { conscription_factor_@var:dyn_mod = 0.15 }
+				if = { limit = { end_dyn_mod = yes } commit_dyn_mod = yes }
+			}
 		}
 		ai_will_do = {
 			factor = 40
@@ -890,7 +915,13 @@ focus_tree = {
 		search_filters = { FOCUS_FILTER_POLITICAL }
 	
 		completion_reward = {
-
+			set_temp_variable = { param_token = token:RAJ_agrarianism_idea }
+			set_temp_variable = { param_op = token:change_dyn_mod }
+			if = {
+				limit = { start_dyn_mod = yes }
+				add_to_temp_variable = { political_power_factor_@var:dyn_mod = 0.1 }
+				if = { limit = { end_dyn_mod = yes } commit_dyn_mod = yes }
+			}
 		}
 		ai_will_do = {
 			factor = 40
@@ -913,7 +944,14 @@ focus_tree = {
 		search_filters = { FOCUS_FILTER_STABILITY }
 	
 		completion_reward = {
-
+			set_temp_variable = { param_token = token:RAJ_agrarianism_idea }
+			set_temp_variable = { param_op = token:change_dyn_mod }
+			if = {
+				limit = { start_dyn_mod = yes }
+				add_to_temp_variable = { consumer_goods_factor_@var:dyn_mod = -0.05 }
+				add_to_temp_variable = { cotton_plantation_output_factor_@var:dyn_mod = 0.05 }
+				if = { limit = { end_dyn_mod = yes } commit_dyn_mod = yes }
+			}
 		}
 		ai_will_do = {
 			factor = 40
@@ -927,7 +965,12 @@ focus_tree = {
 		y = 2
 		cost = 35
 	
-		available = { 
+		available = {
+			RAJ = {
+				owns_state = 423
+				owns_state = 427
+				owns_state = 424
+			}
 		}
 
 		relative_position_id = RAJ_vic_decentralize_rural_public_services
@@ -935,7 +978,37 @@ focus_tree = {
 		search_filters = { FOCUS_FILTER_STABILITY }
 	
 		completion_reward = {
-
+			427 = {
+				set_temp_variable = { industry_token = token:luxuries_plantation }
+				set_temp_variable = { x_temp = 1 }
+				add_x_industries = yes
+				custom_effect_tooltip = tooltip_white_line
+				add_extra_state_shared_building_slots = 1
+			}
+			custom_effect_tooltip = tooltip_white_line
+			activate_targeted_decision = { target = 423 decision = RAJ_south_madras_cash_crops }
+			custom_effect_tooltip = which_has_the_following_effect
+			effect_tooltip = {
+				423 = {
+					set_temp_variable = { industry_token = token:luxuries_plantation }
+					set_temp_variable = { x_temp = 1 }
+					add_x_industries = yes
+					custom_effect_tooltip = tooltip_white_line
+					add_extra_state_shared_building_slots = 1
+				}
+			}
+			custom_effect_tooltip = tooltip_white_line
+			activate_targeted_decision = { target = 424 decision = RAJ_north_madras_cash_crops }
+			custom_effect_tooltip = which_has_the_following_effect
+			effect_tooltip = {
+				424 = {
+					set_temp_variable = { industry_token = token:luxuries_plantation }
+					set_temp_variable = { x_temp = 1 }
+					add_x_industries = yes
+					custom_effect_tooltip = tooltip_white_line
+					add_extra_state_shared_building_slots = 1
+				}
+			}
 		}
 		ai_will_do = {
 			factor = 40
@@ -957,7 +1030,19 @@ focus_tree = {
 		search_filters = { FOCUS_FILTER_STABILITY }
 	
 		completion_reward = {
-
+			custom_effect_tooltip = RAJ_fishing_tt
+			custom_effect_tooltip = tooltip_white_line
+			add_timed_idea = {
+				idea = RAJ_fishing_idea
+				days = 100
+			}
+			custom_effect_tooltip = tooltip_white_line
+			custom_effect_tooltip = RAJ_fishing_idea_tt
+			custom_effect_tooltip = RAJ_forestry_tt
+			add_to_variable = { RAJ_agrarianism_offmap_civs = 1 }		# If editing, be sure to edit the loc tooltip aswell
+			hidden_effect = {
+				add_offsite_building = { type = industrial_complex level = 1 }
+			}
 		}
 		ai_will_do = {
 			factor = 40
@@ -976,10 +1061,24 @@ focus_tree = {
 
 		relative_position_id = RAJ_vic_agrarianism
 		prerequisite = { focus = RAJ_vic_agrarianism }
-		search_filters = { FOCUS_FILTER_STABILITY }
+		search_filters = { FOCUS_FILTER_PRODUCTION FOCUS_FILTER_INDUSTRY }
 	
 		completion_reward = {
-
+			set_temp_variable = { param_token = token:RAJ_agrarianism_idea }
+			set_temp_variable = { param_op = token:change_dyn_mod }
+			if = {
+				limit = { start_dyn_mod = yes }
+				add_to_temp_variable = { production_factory_efficiency_gain_factor_@var:dyn_mod = 0.05 }
+				if = { limit = { end_dyn_mod = yes } commit_dyn_mod = yes }
+			}
+			custom_effect_tooltip = tooltip_white_line
+			custom_effect_tooltip = RAJ_cottage_decisions_tt
+			hidden_effect = {
+				activate_targeted_decision = { target = 436 decision = RAJ_cottage_industries }
+				activate_targeted_decision = { target = 443 decision = RAJ_cottage_industries }
+				activate_targeted_decision = { target = 977 decision = RAJ_cottage_industries }
+				activate_targeted_decision = { target = 435 decision = RAJ_cottage_industries }
+			}
 		}
 		ai_will_do = {
 			factor = 40
@@ -987,7 +1086,7 @@ focus_tree = {
 	}
 
 	focus = {
-		id = RAJ_vic_a_law_check
+		id = RAJ_vic_economic_council
 		icon = GFX_noicon
 		x = 0
 		y = 2
@@ -998,10 +1097,16 @@ focus_tree = {
 
 		relative_position_id = RAJ_vic_cottage_industries
 		prerequisite = { focus = RAJ_vic_cottage_industries }
-		search_filters = { FOCUS_FILTER_STABILITY }
+		search_filters = { FOCUS_FILTER_INDUSTRY }
 	
 		completion_reward = {
-
+			set_temp_variable = { param_token = token:RAJ_agrarianism_idea }
+			set_temp_variable = { param_op = token:change_dyn_mod }
+			if = {
+				limit = { start_dyn_mod = yes }
+				add_to_temp_variable = { global_building_slots_factor_@var:dyn_mod = 0.15 }
+				if = { limit = { end_dyn_mod = yes } commit_dyn_mod = yes }
+			}
 		}
 		ai_will_do = {
 			factor = 40
@@ -1018,13 +1123,26 @@ focus_tree = {
 		available = { 
 		}
 
-		relative_position_id = RAJ_vic_a_law_check
-		prerequisite = { focus = RAJ_vic_a_law_check }
+		relative_position_id = RAJ_vic_economic_council
+		prerequisite = { focus = RAJ_vic_economic_council }
 		mutually_exclusive = { focus = RAJ_vic_laissez_faire_economics }
 		search_filters = { FOCUS_FILTER_STABILITY }
 	
 		completion_reward = {
-
+			set_temp_variable = { param_token = token:RAJ_agrarianism_idea }
+			set_temp_variable = { param_op = token:change_dyn_mod }
+			if = {
+				limit = { start_dyn_mod = yes }
+				add_to_temp_variable = { production_factory_efficiency_gain_factor_@var:dyn_mod = 0.1 }
+				add_to_temp_variable = { research_speed_factor_@var:dyn_mod = 0.05 }
+				if = { limit = { end_dyn_mod = yes } commit_dyn_mod = yes }
+			}
+			custom_effect_tooltip = tooltip_white_line
+			custom_effect_tooltip = RAJ_food_processing_tt
+			add_to_variable = { RAJ_agrarianism_offmap_civs = 1 }		# If editing, be sure to edit the loc tooltip aswell
+			hidden_effect = {
+				add_offsite_building = { type = industrial_complex level = 1 }
+			}
 		}
 		ai_will_do = {
 			factor = 40
@@ -1041,13 +1159,20 @@ focus_tree = {
 		available = { 
 		}
 
-		relative_position_id = RAJ_vic_a_law_check
-		prerequisite = { focus = RAJ_vic_a_law_check }
+		relative_position_id = RAJ_vic_economic_council
+		prerequisite = { focus = RAJ_vic_economic_council }
 		mutually_exclusive = { focus = RAJ_vic_moderate_intervention }
 		search_filters = { FOCUS_FILTER_STABILITY }
 	
 		completion_reward = {
-
+			set_temp_variable = { param_token = token:RAJ_agrarianism_idea }
+			set_temp_variable = { param_op = token:change_dyn_mod }
+			if = {
+				limit = { start_dyn_mod = yes }
+				add_to_temp_variable = { production_factory_efficiency_gain_factor_@var:dyn_mod = 0.15 }
+				add_to_temp_variable = { political_power_factor_@var:dyn_mod = 0.1 }
+				if = { limit = { end_dyn_mod = yes } commit_dyn_mod = yes }
+			}
 		}
 		ai_will_do = {
 			factor = 40
@@ -1113,7 +1238,8 @@ focus_tree = {
 		search_filters = { FOCUS_FILTER_STABILITY }
 	
 		completion_reward = {
-
+			add_one_random_infrastructure = yes
+			add_one_random_infrastructure = yes
 		}
 		ai_will_do = {
 			factor = 40
@@ -1135,7 +1261,91 @@ focus_tree = {
 		search_filters = { FOCUS_FILTER_STABILITY }
 	
 		completion_reward = {
-
+			if = {
+				limit = { has_completed_focus = RAJ_vic_agrarianism }
+				set_temp_variable = { param_token = token:RAJ_agrarianism_idea }
+				set_temp_variable = { param_op = token:change_dyn_mod }
+				if = {
+					limit = { start_dyn_mod = yes }
+					add_to_temp_variable = { production_factory_efficiency_gain_factor_@var:dyn_mod = 0.025 }
+					if = { limit = { end_dyn_mod = yes } commit_dyn_mod = yes }
+				}
+				custom_effect_tooltip = tooltip_white_line
+				activate_targeted_decision = { target = 429 decision = RAJ_textile_subsidies }
+				custom_effect_tooltip = which_has_the_following_effect
+				effect_tooltip = {
+					429 = {
+						set_temp_variable = { industry_token = token:textile_mill }
+						set_temp_variable = { x_temp = 1 }
+						add_x_industries = yes
+					}
+				}
+			}
+			else_if = {
+				limit = { has_completed_focus = RAJ_vic_pursue_industrialization }
+				set_temp_variable = { param_token = token:RAJ_industrialization_idea }
+				set_temp_variable = { param_op = token:change_dyn_mod }
+				if = {
+					limit = { start_dyn_mod = yes }
+					add_to_temp_variable = { production_factory_max_efficiency_factor_@var:dyn_mod = 0.025 }
+					if = { limit = { end_dyn_mod = yes } commit_dyn_mod = yes }
+				}
+				custom_effect_tooltip = tooltip_white_line
+				activate_targeted_decision = { target = 429 decision = RAJ_textile_subsidies }
+				custom_effect_tooltip = which_has_the_following_effect
+				effect_tooltip = {
+					429 = {
+						set_temp_variable = { industry_token = token:textile_mill }
+						set_temp_variable = { x_temp = 1 }
+						add_x_industries = yes
+						custom_effect_tooltip = tooltip_white_line
+						add_extra_state_shared_building_slots = 1
+						add_building_construction = { type = industrial_complex level = 1 }
+					}
+				}
+			}
+			else = {
+				custom_effect_tooltip = RAJ_if_argarianism
+				set_temp_variable = { param_token = token:RAJ_agrarianism_idea }
+				set_temp_variable = { param_op = token:change_dyn_mod }
+				if = {
+					limit = { start_dyn_mod = yes }
+					add_to_temp_variable = { production_factory_efficiency_gain_factor_@var:dyn_mod = 0.025 }
+					if = { limit = { end_dyn_mod = yes } commit_dyn_mod = yes }
+				}
+				custom_effect_tooltip = tooltip_white_line
+				activate_targeted_decision = { target = 429 decision = RAJ_textile_subsidies }
+				custom_effect_tooltip = which_has_the_following_effect
+				effect_tooltip = {
+					429 = {
+						set_temp_variable = { industry_token = token:textile_mill }
+						set_temp_variable = { x_temp = 1 }
+						add_x_industries = yes
+					}
+				}
+				custom_effect_tooltip = tooltip_white_line
+				custom_effect_tooltip = RAJ_if_industrialisation
+				set_temp_variable = { param_token = token:RAJ_industrialization_idea }
+				set_temp_variable = { param_op = token:change_dyn_mod }
+				if = {
+					limit = { start_dyn_mod = yes }
+					add_to_temp_variable = { production_factory_max_efficiency_factor_@var:dyn_mod = 0.05 }
+					if = { limit = { end_dyn_mod = yes } commit_dyn_mod = yes }
+				}
+				custom_effect_tooltip = tooltip_white_line
+				activate_targeted_decision = { target = 429 decision = RAJ_textile_subsidies }
+				custom_effect_tooltip = which_has_the_following_effect
+				effect_tooltip = {
+					429 = {
+						set_temp_variable = { industry_token = token:textile_mill }
+						set_temp_variable = { x_temp = 1 }
+						add_x_industries = yes
+						custom_effect_tooltip = tooltip_white_line
+						add_extra_state_shared_building_slots = 1
+						add_building_construction = { type = industrial_complex level = 1 }
+					}
+				}
+			}
 		}
 		ai_will_do = {
 			factor = 40
@@ -1231,7 +1441,65 @@ focus_tree = {
 		search_filters = { FOCUS_FILTER_STABILITY }
 	
 		completion_reward = {
-
+			if = {
+				limit = { has_completed_focus = RAJ_vic_agrarianism }
+				set_temp_variable = { param_token = token:RAJ_agrarianism_idea }
+				set_temp_variable = { param_op = token:change_dyn_mod }
+				if = {
+					limit = { start_dyn_mod = yes }
+					add_to_temp_variable = { production_factory_efficiency_gain_factor_@var:dyn_mod = -0.025 }
+					if = { limit = { end_dyn_mod = yes } commit_dyn_mod = yes }
+				}
+				custom_effect_tooltip = tooltip_white_line
+				activate_mission_tooltip = RAJ_bombay_calcutta_line
+				hidden_effect = {
+					activate_mission = RAJ_bombay_calcutta_line
+				}
+			}
+			else_if = {
+				limit = { has_completed_focus = RAJ_vic_pursue_industrialization }
+				set_temp_variable = { param_token = token:RAJ_industrialization_idea }
+				set_temp_variable = { param_op = token:change_dyn_mod }
+				if = {
+					limit = { start_dyn_mod = yes }
+					add_to_temp_variable = { production_factory_max_efficiency_factor_@var:dyn_mod = -0.05 }
+					if = { limit = { end_dyn_mod = yes } commit_dyn_mod = yes }
+				}
+				custom_effect_tooltip = tooltip_white_line
+				activate_mission_tooltip = RAJ_bombay_calcutta_line
+				hidden_effect = {
+					activate_mission = RAJ_bombay_calcutta_line
+				}
+			}
+			else = {
+				custom_effect_tooltip = RAJ_if_argarianism
+				set_temp_variable = { param_token = token:RAJ_agrarianism_idea }
+				set_temp_variable = { param_op = token:change_dyn_mod }
+				if = {
+					limit = { start_dyn_mod = yes }
+					add_to_temp_variable = { consumer_goods_factor_@var:dyn_mod = -0.025 }
+					if = { limit = { end_dyn_mod = yes } commit_dyn_mod = yes }
+				}
+				custom_effect_tooltip = tooltip_white_line
+				activate_mission_tooltip = RAJ_bombay_calcutta_line
+				hidden_effect = {
+					activate_mission = RAJ_bombay_calcutta_line
+				}
+				custom_effect_tooltip = tooltip_white_line
+				custom_effect_tooltip = RAJ_if_industrialisation
+				set_temp_variable = { param_token = token:RAJ_industrialization_idea }
+				set_temp_variable = { param_op = token:change_dyn_mod }
+				if = {
+					limit = { start_dyn_mod = yes }
+					add_to_temp_variable = { consumer_goods_factor_@var:dyn_mod = -0.05 }
+					if = { limit = { end_dyn_mod = yes } commit_dyn_mod = yes }
+				}
+				custom_effect_tooltip = tooltip_white_line
+				activate_mission_tooltip = RAJ_bombay_calcutta_line
+				hidden_effect = {
+					activate_mission = RAJ_bombay_calcutta_line
+				}
+			}
 		}
 		ai_will_do = {
 			factor = 40
@@ -1253,7 +1521,45 @@ focus_tree = {
 		search_filters = { FOCUS_FILTER_STABILITY }
 	
 		completion_reward = {
-
+			if = {
+				limit = { has_completed_focus = RAJ_vic_agrarianism }
+				set_temp_variable = { param_token = token:RAJ_agrarianism_idea }
+				set_temp_variable = { param_op = token:change_dyn_mod }
+				if = {
+					limit = { start_dyn_mod = yes }
+					add_to_temp_variable = { production_factory_efficiency_gain_factor_@var:dyn_mod = -0.025 }
+					if = { limit = { end_dyn_mod = yes } commit_dyn_mod = yes }
+				}
+			}
+			else_if = {
+				limit = { has_completed_focus = RAJ_vic_pursue_industrialization }
+				set_temp_variable = { param_token = token:RAJ_industrialization_idea }
+				set_temp_variable = { param_op = token:change_dyn_mod }
+				if = {
+					limit = { start_dyn_mod = yes }
+					add_to_temp_variable = { production_factory_max_efficiency_factor_@var:dyn_mod = -0.05 }
+					if = { limit = { end_dyn_mod = yes } commit_dyn_mod = yes }
+				}
+			}
+			else = {
+				custom_effect_tooltip = RAJ_if_argarianism
+				set_temp_variable = { param_token = token:RAJ_agrarianism_idea }
+				set_temp_variable = { param_op = token:change_dyn_mod }
+				if = {
+					limit = { start_dyn_mod = yes }
+					add_to_temp_variable = { production_factory_efficiency_gain_factor_@var:dyn_mod = 0.05 }
+					if = { limit = { end_dyn_mod = yes } commit_dyn_mod = yes }
+				}
+				custom_effect_tooltip = tooltip_white_line
+				custom_effect_tooltip = RAJ_if_industrialisation
+				set_temp_variable = { param_token = token:RAJ_industrialization_idea }
+				set_temp_variable = { param_op = token:change_dyn_mod }
+				if = {
+					limit = { start_dyn_mod = yes }
+					add_to_temp_variable = { production_factory_start_efficiency_factor_@var:dyn_mod = 0.075 }
+					if = { limit = { end_dyn_mod = yes } commit_dyn_mod = yes }
+				}
+			}
 		}
 		ai_will_do = {
 			factor = 40
@@ -1275,7 +1581,56 @@ focus_tree = {
 		search_filters = { FOCUS_FILTER_STABILITY }
 	
 		completion_reward = {
-
+			add_ideas = RAJ_broad_rail
+			custom_effect_tooltip = tooltip_white_line
+			custom_effect_tooltip = RAJ_fishing_idea_tt
+			if = {
+				limit = { has_completed_focus = RAJ_vic_pursue_industrialization }
+				effect_tooltip = {
+					set_temp_variable = { param_token = token:RAJ_industrialization_idea }
+					set_temp_variable = { param_op = token:change_dyn_mod }
+					if = {
+						limit = { start_dyn_mod = yes }
+						add_to_temp_variable = { consumer_goods_factor_@var:dyn_mod = -0.025 }
+						if = { limit = { end_dyn_mod = yes } commit_dyn_mod = yes }
+					}
+				}
+			}
+			else_if = {
+				limit = { has_completed_focus = RAJ_vic_agrarianism }
+				effect_tooltip = {
+					set_temp_variable = { param_token = token:RAJ_agrarianism_idea }
+					set_temp_variable = { param_op = token:change_dyn_mod }
+					if = {
+						limit = { start_dyn_mod = yes }
+						add_to_temp_variable = { conscription_factor_@var:dyn_mod = 0.05 }
+						if = { limit = { end_dyn_mod = yes } commit_dyn_mod = yes }
+					}
+				}
+			}
+			else = {
+				custom_effect_tooltip = RAJ_if_argarianism
+				effect_tooltip = {
+					set_temp_variable = { param_token = token:RAJ_agrarianism_idea }
+					set_temp_variable = { param_op = token:change_dyn_mod }
+					if = {
+						limit = { start_dyn_mod = yes }
+						add_to_temp_variable = { conscription_factor_@var:dyn_mod = 0.05 }
+						if = { limit = { end_dyn_mod = yes } commit_dyn_mod = yes }
+					}
+				}
+				custom_effect_tooltip = tooltip_white_line
+				custom_effect_tooltip = RAJ_if_industrialisation
+				effect_tooltip = {
+					set_temp_variable = { param_token = token:RAJ_industrialization_idea }
+					set_temp_variable = { param_op = token:change_dyn_mod }
+					if = {
+						limit = { start_dyn_mod = yes }
+						add_to_temp_variable = { consumer_goods_factor_@var:dyn_mod = -0.025 }
+						if = { limit = { end_dyn_mod = yes } commit_dyn_mod = yes }
+					}
+				}
+			}
 		}
 		ai_will_do = {
 			factor = 40
@@ -1482,7 +1837,13 @@ focus_tree = {
 		search_filters = { FOCUS_FILTER_STABILITY }
 	
 		completion_reward = {
-
+			set_temp_variable = { param_token = token:RAJ_industrialization_idea }
+			set_temp_variable = { param_op = token:change_dyn_mod }
+			if = {
+				limit = { start_dyn_mod = yes }
+				add_to_temp_variable = { consumer_goods_factor_@var:dyn_mod = 0.1 }
+				if = { limit = { end_dyn_mod = yes } commit_dyn_mod = yes }
+			}
 		}
 		ai_will_do = {
 			factor = 40
@@ -1505,7 +1866,13 @@ focus_tree = {
 		search_filters = { FOCUS_FILTER_STABILITY }
 	
 		completion_reward = {
-
+			set_temp_variable = { param_token = token:RAJ_industrialization_idea }
+			set_temp_variable = { param_op = token:change_dyn_mod }
+			if = {
+				limit = { start_dyn_mod = yes }
+				add_to_temp_variable = { production_speed_industrial_complex_factor_@var:dyn_mod = 0.1 }
+				if = { limit = { end_dyn_mod = yes } commit_dyn_mod = yes }
+			}
 		}
 		ai_will_do = {
 			factor = 40
