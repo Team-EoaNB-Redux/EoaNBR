@@ -1065,36 +1065,38 @@
         add_to_variable = { other_spending = modifier_spending }
 
         #Military
-            set_variable = { military_spending@token:resource_food = 0 }
-            set_variable = { military_spending@token:resource_consumer_goods = 0 }
-            set_variable = { military_spending@token:resource_luxury_goods = 0 }
-            set_variable = { military_spending@token:resource_industrial_goods = 0 }
-
             set_variable = { military_army_spending = 0 }
             set_variable = { military_navy_spending = 0 }
             for_each_loop = {
-                array = global.resource_token_array
-                value = r_token
+                array = global.unit_types
+                value = unit_type_temp
 
-                set_temp_variable = { cost_temp = military_army_demand@var:r_token }
-                multiply_temp_variable = { cost_temp = price@var:r_token }
-                add_to_variable = { military_army_spending = cost_temp }
-                add_to_variable = { military_spending@var:r_token = cost_temp }
+                set_variable = { military_spending@var:unit_type_temp = military_cost@var:unit_type_temp }
+                multiply_variable = { military_spending@var:unit_type_temp = military_spending_percentage }
+                divide_variable = { military_spending@var:unit_type_temp = 100 }
+                add_to_variable = { military_army_spending = military_spending@var:unit_type_temp }
 
-                set_temp_variable = { cost_temp = military_navy_demand@var:r_token }
-                multiply_temp_variable = { cost_temp = price@var:r_token }
-                add_to_variable = { military_navy_spending = cost_temp }
-                add_to_variable = { military_spending@var:r_token = cost_temp }
+                set_variable = { military_spending_per@var:unit_type_temp = military_cost_per@var:unit_type_temp }
+                multiply_variable = { military_spending_per@var:unit_type_temp = military_spending_percentage }
+                divide_variable = { military_spending_per@var:unit_type_temp = 100 }
+            }
+            for_each_loop = {
+                array = global.ship_types
+                value = unit_type_temp
 
-                set_temp_variable = { cost_temp = military_airforce_demand@var:r_token }
-                multiply_temp_variable = { cost_temp = price@var:r_token }
-                add_to_variable = { military_airforce_spending = cost_temp }
-                add_to_variable = { military_spending@var:r_token = cost_temp }
+                set_variable = { military_spending@var:unit_type_temp = military_cost@var:unit_type_temp }
+                multiply_variable = { military_spending@var:unit_type_temp = military_spending_percentage }
+                divide_variable = { military_spending@var:unit_type_temp = 100 }
+                add_to_variable = { military_navy_spending = military_spending@var:unit_type_temp }
+                
+                set_variable = { military_spending_per@var:unit_type_temp = military_cost_per@var:unit_type_temp }
+                multiply_variable = { military_spending_per@var:unit_type_temp = military_spending_percentage }
+                divide_variable = { military_spending_per@var:unit_type_temp = 100 }
             }
             
-            divide_variable = { military_army_spending = modifier@bureaucratic_efficiency_factor }
-            divide_variable = { military_navy_spending = modifier@bureaucratic_efficiency_factor }
-            divide_variable = { military_airforce_spending = modifier@bureaucratic_efficiency_factor }
+            # divide_variable = { military_army_spending = modifier@bureaucratic_efficiency_factor } - Already done
+            # divide_variable = { military_navy_spending = modifier@bureaucratic_efficiency_factor }
+            # divide_variable = { military_airforce_spending = modifier@bureaucratic_efficiency_factor }
 
             set_variable = { military_spending = military_army_spending }
             add_to_variable = { military_spending = military_navy_spending }

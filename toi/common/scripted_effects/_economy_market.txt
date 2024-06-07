@@ -655,333 +655,96 @@
 	}
 
 	calculate_military_demand = {
-		battalion_count_update = yes
-
 		set_temp_variable = { equipment_cost_factor_temp = modifier@military_equipment_cost_factor }
 		add_to_temp_variable = { equipment_cost_factor_temp = 1 }
 		set_temp_variable = { naval_equipment_cost_factor_temp = modifier@military_equipment_cost_factor }
 		add_to_temp_variable = { naval_equipment_cost_factor_temp = modifier@naval_equipment_cost_factor }
 		add_to_temp_variable = { naval_equipment_cost_factor_temp = 1 }
 
-		#Needs
-			#Reset
-				set_variable = { military_need@token:resource_food = 0 } #Food
-				set_variable = { military_need@token:resource_consumer_goods = 0 } #Basic Supplies
-				set_variable = { military_need@token:resource_luxury_goods = 0 } #Officer stuff
-				set_variable = { military_need@token:resource_industrial_goods = 0 } #Machinery, Heavy Gun Parts, Building Materials, etc.
-			#
+		for_each_loop = {
+			array = global.resource_token_array
+			value = r_token
 
-			#Army Needs
-				#Infantry
-				set_temp_variable = { need_temp = global.infantry_need@token:resource_food }
-				multiply_temp_variable = { need_temp = infantry_battalions_weighted }
-				add_to_variable = { military_need@token:resource_food = need_temp }
+			set_variable = { military_consumption@var:r_token = 0 }
+		}
 
-				set_temp_variable = { need_temp = global.infantry_need@token:resource_consumer_goods }
-				multiply_temp_variable = { need_temp = infantry_battalions_weighted }
-				add_to_variable = { military_need@token:resource_consumer_goods = need_temp }
+		# Land Units
+		for_each_loop = {
+			array = global.unit_types
+			value = unit_type_temp
 
-				set_temp_variable = { need_temp = global.infantry_need@token:resource_luxury_goods }
-				multiply_temp_variable = { need_temp = infantry_battalions_weighted }
-				add_to_variable = { military_need@token:resource_luxury_goods = need_temp }
+			set_variable = { military_cost@var:unit_type_temp = 0 }
+			if = {
+				limit = {
+					check_variable = { num_battalions_with_type@var:unit_type_temp > 0 }
+				}
+				set_variable = { military_cost_per@var:unit_type_temp = 0 }
 
-				set_temp_variable = { need_temp = global.infantry_need@token:resource_industrial_goods }
-				multiply_temp_variable = { need_temp = infantry_battalions_weighted }
-				add_to_variable = { military_need@token:resource_industrial_goods = need_temp }
+				for_each_loop = {
+					array = global.unit_input@var:unit_type_temp
+					value = r_token
+					index = i_temp
 
-				#Militia
-				set_temp_variable = { need_temp = global.militia_need@token:resource_food }
-				multiply_temp_variable = { need_temp = militia_battalions_weighted }
-				add_to_variable = { military_need@token:resource_food = need_temp }
+					set_temp_variable = { amount_temp = global.unit_input_amount@var:unit_type_temp^i_temp }
+					multiply_temp_variable = { amount_temp = equipment_cost_factor_temp }
+					divide_temp_variable = { amount_temp = modifier@bureaucratic_efficiency_factor }
+					divide_temp_variable = { amount_temp = 2 }
+					set_temp_variable = { cost_temp = amount_temp }
+					multiply_temp_variable = { cost_temp = price@var:r_token }
+					add_to_variable = { military_cost_per@var:unit_type_temp = cost_temp }
 
-				set_temp_variable = { need_temp = global.militia_need@token:resource_consumer_goods }
-				multiply_temp_variable = { need_temp = militia_battalions_weighted }
-				add_to_variable = { military_need@token:resource_consumer_goods = need_temp }
+					multiply_temp_variable = { amount_temp = num_battalions_with_type@var:unit_type_temp }
+					multiply_temp_variable = { cost_temp = num_battalions_with_type@var:unit_type_temp }
+					add_to_variable = { military_cost@var:unit_type_temp = cost_temp }
+					add_to_variable = { military_consumption@var:r_token = amount_temp }
+				}
+				# log = "[?unit_type_temp.GetTokenLocalizedKey] - [?military_cost@var:unit_type_temp|R] ([?military_cost_per@var:unit_type_temp|R] x [?num_battalions_with_type@var:unit_type_temp])"
+			}
+		}
 
-				set_temp_variable = { need_temp = global.militia_need@token:resource_luxury_goods }
-				multiply_temp_variable = { need_temp = militia_battalions_weighted }
-				add_to_variable = { military_need@token:resource_luxury_goods = need_temp }
+		# Ships
+		for_each_loop = {
+			array = global.ship_types
+			value = unit_type_temp
 
-				set_temp_variable = { need_temp = global.militia_need@token:resource_industrial_goods }
-				multiply_temp_variable = { need_temp = militia_battalions_weighted }
-				add_to_variable = { military_need@token:resource_industrial_goods = need_temp }
+			set_variable = { military_cost@var:unit_type_temp = 0 }
+			if = {
+				limit = {
+					check_variable = { num_ships_with_type@var:unit_type_temp > 0 }
+				}
+				set_variable = { military_cost_per@var:unit_type_temp = 0 }
 
-				#Artillery
-				set_temp_variable = { need_temp = global.artillery_need@token:resource_food }
-				multiply_temp_variable = { need_temp = artillery_battalions_weighted }
-				add_to_variable = { military_need@token:resource_food = need_temp }
+				for_each_loop = {
+					array = global.unit_input@var:unit_type_temp
+					value = r_token
+					index = i_temp
 
-				set_temp_variable = { need_temp = global.artillery_need@token:resource_consumer_goods }
-				multiply_temp_variable = { need_temp = artillery_battalions_weighted }
-				add_to_variable = { military_need@token:resource_consumer_goods = need_temp }
+					set_temp_variable = { amount_temp = global.unit_input_amount@var:unit_type_temp^i_temp }
+					multiply_temp_variable = { amount_temp = naval_equipment_cost_factor_temp }
+					divide_temp_variable = { amount_temp = modifier@bureaucratic_efficiency_factor }
+					divide_temp_variable = { amount_temp = 3 }
+					set_temp_variable = { cost_temp = amount_temp }
+					multiply_temp_variable = { cost_temp = price@var:r_token }
+					add_to_variable = { military_cost_per@var:unit_type_temp = cost_temp }
 
-				set_temp_variable = { need_temp = global.artillery_need@token:resource_luxury_goods }
-				multiply_temp_variable = { need_temp = artillery_battalions_weighted }
-				add_to_variable = { military_need@token:resource_luxury_goods = need_temp }
+					multiply_temp_variable = { amount_temp = num_ships_with_type@var:unit_type_temp }
+					multiply_temp_variable = { cost_temp = num_ships_with_type@var:unit_type_temp }
+					add_to_variable = { military_cost@var:unit_type_temp = cost_temp }
+					add_to_variable = { military_consumption@var:r_token = amount_temp }
+				}
+				# log = "[?unit_type_temp.GetTokenLocalizedKey] - [?military_cost@var:unit_type_temp|R] ([?military_cost_per@var:unit_type_temp|R] x [?num_ships_with_type@var:unit_type_temp])"
+			}
+		}
 
-				set_temp_variable = { need_temp = global.artillery_need@token:resource_industrial_goods }
-				multiply_temp_variable = { need_temp = artillery_battalions_weighted }
-				add_to_variable = { military_need@token:resource_industrial_goods = need_temp }
-
-				#Cavalry
-				set_temp_variable = { need_temp = global.cavalry_need@token:resource_food }
-				multiply_temp_variable = { need_temp = cavalry_battalions_weighted }
-				add_to_variable = { military_need@token:resource_food = need_temp }
-
-				set_temp_variable = { need_temp = global.cavalry_need@token:resource_consumer_goods }
-				multiply_temp_variable = { need_temp = cavalry_battalions_weighted }
-				add_to_variable = { military_need@token:resource_consumer_goods = need_temp }
-
-				set_temp_variable = { need_temp = global.cavalry_need@token:resource_luxury_goods }
-				multiply_temp_variable = { need_temp = cavalry_battalions_weighted }
-				add_to_variable = { military_need@token:resource_luxury_goods = need_temp }
-
-				set_temp_variable = { need_temp = global.cavalry_need@token:resource_industrial_goods }
-				multiply_temp_variable = { need_temp = cavalry_battalions_weighted }
-				add_to_variable = { military_need@token:resource_industrial_goods = need_temp }
-
-				#Mobile
-				set_temp_variable = { need_temp = global.mobile_need@token:resource_food }
-				multiply_temp_variable = { need_temp = mobile_battalions_weighted }
-				add_to_variable = { military_need@token:resource_food = need_temp }
-
-				set_temp_variable = { need_temp = global.mobile_need@token:resource_consumer_goods }
-				multiply_temp_variable = { need_temp = mobile_battalions_weighted }
-				add_to_variable = { military_need@token:resource_consumer_goods = need_temp }
-
-				set_temp_variable = { need_temp = global.mobile_need@token:resource_luxury_goods }
-				multiply_temp_variable = { need_temp = mobile_battalions_weighted }
-				add_to_variable = { military_need@token:resource_luxury_goods = need_temp }
-
-				set_temp_variable = { need_temp = global.mobile_need@token:resource_industrial_goods }
-				multiply_temp_variable = { need_temp = mobile_battalions_weighted }
-				add_to_variable = { military_need@token:resource_industrial_goods = need_temp }
-
-				#Armor
-				set_temp_variable = { need_temp = global.armor_need@token:resource_food }
-				multiply_temp_variable = { need_temp = armor_battalions_weighted }
-				add_to_variable = { military_need@token:resource_food = need_temp }
-
-				set_temp_variable = { need_temp = global.armor_need@token:resource_consumer_goods }
-				multiply_temp_variable = { need_temp = armor_battalions_weighted }
-				add_to_variable = { military_need@token:resource_consumer_goods = need_temp }
-
-				set_temp_variable = { need_temp = global.armor_need@token:resource_luxury_goods }
-				multiply_temp_variable = { need_temp = armor_battalions_weighted }
-				add_to_variable = { military_need@token:resource_luxury_goods = need_temp }
-
-				set_temp_variable = { need_temp = global.armor_need@token:resource_industrial_goods }
-				multiply_temp_variable = { need_temp = armor_battalions_weighted }
-				add_to_variable = { military_need@token:resource_industrial_goods = need_temp }
-
-				#Robotic
-				set_temp_variable = { need_temp = global.robotic_need@token:resource_food }
-				multiply_temp_variable = { need_temp = robotic_battalions_weighted }
-				add_to_variable = { military_need@token:resource_food = need_temp }
-
-				set_temp_variable = { need_temp = global.robotic_need@token:resource_consumer_goods }
-				multiply_temp_variable = { need_temp = robotic_battalions_weighted }
-				add_to_variable = { military_need@token:resource_consumer_goods = need_temp }
-
-				set_temp_variable = { need_temp = global.robotic_need@token:resource_luxury_goods }
-				multiply_temp_variable = { need_temp = robotic_battalions_weighted }
-				add_to_variable = { military_need@token:resource_luxury_goods = need_temp }
-
-				set_temp_variable = { need_temp = global.robotic_need@token:resource_industrial_goods }
-				multiply_temp_variable = { need_temp = robotic_battalions_weighted }
-				add_to_variable = { military_need@token:resource_industrial_goods = need_temp }
-
-				#Support
-				set_temp_variable = { need_temp = global.support_need@token:resource_food }
-				multiply_temp_variable = { need_temp = support_battalions_weighted }
-				add_to_variable = { military_need@token:resource_food = need_temp }
-
-				set_temp_variable = { need_temp = global.support_need@token:resource_consumer_goods }
-				multiply_temp_variable = { need_temp = support_battalions_weighted }
-				add_to_variable = { military_need@token:resource_consumer_goods = need_temp }
-
-				set_temp_variable = { need_temp = global.support_need@token:resource_luxury_goods }
-				multiply_temp_variable = { need_temp = support_battalions_weighted }
-				add_to_variable = { military_need@token:resource_luxury_goods = need_temp }
-
-				set_temp_variable = { need_temp = global.support_need@token:resource_industrial_goods }
-				multiply_temp_variable = { need_temp = support_battalions_weighted }
-				add_to_variable = { military_need@token:resource_industrial_goods = need_temp }
-
-				#Total
-				multiply_variable = { military_need@token:resource_food = naval_equipment_cost_factor_temp }
-				multiply_variable = { military_need@token:resource_consumer_goods = naval_equipment_cost_factor_temp }
-				multiply_variable = { military_need@token:resource_luxury_goods = naval_equipment_cost_factor_temp }
-				multiply_variable = { military_need@token:resource_industrial_goods = naval_equipment_cost_factor_temp }
-
-				set_variable = { military_army_need@token:resource_food = military_need@token:resource_food }
-				set_variable = { military_army_need@token:resource_consumer_goods = military_need@token:resource_consumer_goods }
-				set_variable = { military_army_need@token:resource_luxury_goods = military_need@token:resource_luxury_goods }
-				set_variable = { military_army_need@token:resource_industrial_goods = military_need@token:resource_industrial_goods }
-			#
-
-			#Navy Needs
-				set_variable = { military_navy_need@token:resource_food = 0 }
-				set_variable = { military_navy_need@token:resource_consumer_goods = 0 }
-				set_variable = { military_navy_need@token:resource_luxury_goods = 0 }
-				set_variable = { military_navy_need@token:resource_industrial_goods = 0 }
-
-				#Screen
-				set_temp_variable = { need_temp = global.screen_need@token:resource_food }
-				multiply_temp_variable = { need_temp = screen_ships_weighted }
-				add_to_variable = { military_navy_need@token:resource_food = need_temp }
-
-				set_temp_variable = { need_temp = global.screen_need@token:resource_consumer_goods }
-				multiply_temp_variable = { need_temp = screen_ships_weighted }
-				add_to_variable = { military_navy_need@token:resource_consumer_goods = need_temp }
-
-				set_temp_variable = { need_temp = global.screen_need@token:resource_luxury_goods }
-				multiply_temp_variable = { need_temp = screen_ships_weighted }
-				add_to_variable = { military_navy_need@token:resource_luxury_goods = need_temp }
-
-				set_temp_variable = { need_temp = global.screen_need@token:resource_industrial_goods }
-				multiply_temp_variable = { need_temp = screen_ships_weighted }
-				add_to_variable = { military_navy_need@token:resource_industrial_goods = need_temp }
-
-				#Capital
-				set_temp_variable = { need_temp = global.capital_need@token:resource_food }
-				multiply_temp_variable = { need_temp = capital_ships_weighted }
-				add_to_variable = { military_navy_need@token:resource_food = need_temp }
-
-				set_temp_variable = { need_temp = global.capital_need@token:resource_consumer_goods }
-				multiply_temp_variable = { need_temp = capital_ships_weighted }
-				add_to_variable = { military_navy_need@token:resource_consumer_goods = need_temp }
-
-				set_temp_variable = { need_temp = global.capital_need@token:resource_luxury_goods }
-				multiply_temp_variable = { need_temp = capital_ships_weighted }
-				add_to_variable = { military_navy_need@token:resource_luxury_goods = need_temp }
-
-				set_temp_variable = { need_temp = global.capital_need@token:resource_industrial_goods }
-				multiply_temp_variable = { need_temp = capital_ships_weighted }
-				add_to_variable = { military_navy_need@token:resource_industrial_goods = need_temp }
-
-				#Submarine
-				set_temp_variable = { need_temp = global.submarine_need@token:resource_food }
-				multiply_temp_variable = { need_temp = submarine_ships_weighted }
-				add_to_variable = { military_navy_need@token:resource_food = need_temp }
-
-				set_temp_variable = { need_temp = global.submarine_need@token:resource_consumer_goods }
-				multiply_temp_variable = { need_temp = submarine_ships_weighted }
-				add_to_variable = { military_navy_need@token:resource_consumer_goods = need_temp }
-
-				set_temp_variable = { need_temp = global.submarine_need@token:resource_luxury_goods }
-				multiply_temp_variable = { need_temp = submarine_ships_weighted }
-				add_to_variable = { military_navy_need@token:resource_luxury_goods = need_temp }
-
-				set_temp_variable = { need_temp = global.submarine_need@token:resource_industrial_goods }
-				multiply_temp_variable = { need_temp = submarine_ships_weighted }
-				add_to_variable = { military_navy_need@token:resource_industrial_goods = need_temp }
-
-				#Total
-				multiply_variable = { military_navy_need@token:resource_food = equipment_cost_factor_temp }
-				multiply_variable = { military_navy_need@token:resource_consumer_goods = equipment_cost_factor_temp }
-				multiply_variable = { military_navy_need@token:resource_luxury_goods = equipment_cost_factor_temp }
-				multiply_variable = { military_navy_need@token:resource_industrial_goods = equipment_cost_factor_temp }
-
-				add_to_variable = { military_need@token:resource_food = military_navy_need@token:resource_food }
-				add_to_variable = { military_need@token:resource_consumer_goods = military_navy_need@token:resource_consumer_goods }
-				add_to_variable = { military_need@token:resource_luxury_goods = military_navy_need@token:resource_luxury_goods }
-				add_to_variable = { military_need@token:resource_industrial_goods = military_navy_need@token:resource_industrial_goods }
-			#
-
-			#Airforce Needs
-				set_variable = { military_airforce_need@token:resource_food = num_deployed_planes }
-				multiply_variable = { military_airforce_need@token:resource_food = global.deployed_planes_need@token:resource_food }
-
-				set_variable = { military_airforce_need@token:resource_consumer_goods = num_deployed_planes }
-				multiply_variable = { military_airforce_need@token:resource_consumer_goods = global.deployed_planes_need@token:resource_consumer_goods }
-
-				set_variable = { military_airforce_need@token:resource_luxury_goods = num_deployed_planes }
-				multiply_variable = { military_airforce_need@token:resource_luxury_goods = global.deployed_planes_need@token:resource_luxury_goods } #so much steak
-
-				set_variable = { military_airforce_need@token:resource_industrial_goods = num_deployed_planes }
-				multiply_variable = { military_airforce_need@token:resource_industrial_goods = global.deployed_planes_need@token:resource_industrial_goods }
-				
-				multiply_variable = { military_airforce_need@token:resource_food = equipment_cost_factor_temp }
-				multiply_variable = { military_airforce_need@token:resource_consumer_goods = equipment_cost_factor_temp }
-				multiply_variable = { military_airforce_need@token:resource_luxury_goods = equipment_cost_factor_temp }
-				multiply_variable = { military_airforce_need@token:resource_industrial_goods = equipment_cost_factor_temp }
-
-				add_to_variable = { military_need@token:resource_food = military_airforce_need@token:resource_food }
-				add_to_variable = { military_need@token:resource_consumer_goods = military_airforce_need@token:resource_consumer_goods }
-				add_to_variable = { military_need@token:resource_luxury_goods = military_airforce_need@token:resource_luxury_goods }
-				add_to_variable = { military_need@token:resource_industrial_goods = military_airforce_need@token:resource_industrial_goods }
-			#
-		#
 		#Demand
-			#Army
-			set_variable = { military_army_demand@token:resource_food = military_army_need@token:resource_food }
-			multiply_variable = { military_army_demand@token:resource_food = military_spending_percentage }
-			divide_variable = { military_army_demand@token:resource_food = 100 }
+		for_each_loop = {
+			array = global.resource_token_array
+			value = r_token
 
-			set_variable = { military_army_demand@token:resource_consumer_goods = military_army_need@token:resource_consumer_goods }
-			multiply_variable = { military_army_demand@token:resource_consumer_goods = military_spending_percentage }
-			divide_variable = { military_army_demand@token:resource_consumer_goods = 100 }
-
-			set_variable = { military_army_demand@token:resource_luxury_goods = military_army_need@token:resource_luxury_goods }
-			multiply_variable = { military_army_demand@token:resource_luxury_goods = military_spending_percentage }
-			divide_variable = { military_army_demand@token:resource_luxury_goods = 100 }
-
-			set_variable = { military_army_demand@token:resource_industrial_goods = military_army_need@token:resource_industrial_goods }
-			multiply_variable = { military_army_demand@token:resource_industrial_goods = military_spending_percentage }
-			divide_variable = { military_army_demand@token:resource_industrial_goods = 100 }
-
-			#Navy
-			set_variable = { military_navy_demand@token:resource_food = military_navy_need@token:resource_food }
-			multiply_variable = { military_navy_demand@token:resource_food = military_spending_percentage }
-			divide_variable = { military_navy_demand@token:resource_food = 100 }
-
-			set_variable = { military_navy_demand@token:resource_consumer_goods = military_navy_need@token:resource_consumer_goods }
-			multiply_variable = { military_navy_demand@token:resource_consumer_goods = military_spending_percentage }
-			divide_variable = { military_navy_demand@token:resource_consumer_goods = 100 }
-
-			set_variable = { military_navy_demand@token:resource_luxury_goods = military_navy_need@token:resource_luxury_goods }
-			multiply_variable = { military_navy_demand@token:resource_luxury_goods = military_spending_percentage }
-			divide_variable = { military_navy_demand@token:resource_luxury_goods = 100 }
-
-			set_variable = { military_navy_demand@token:resource_industrial_goods = military_navy_need@token:resource_industrial_goods }
-			multiply_variable = { military_navy_demand@token:resource_industrial_goods = military_spending_percentage }
-			divide_variable = { military_navy_demand@token:resource_industrial_goods = 100 }
-
-			#Airforce
-			set_variable = { military_airforce_demand@token:resource_food = military_airforce_need@token:resource_food }
-			multiply_variable = { military_airforce_demand@token:resource_food = military_spending_percentage }
-			divide_variable = { military_airforce_demand@token:resource_food = 100 }
-
-			set_variable = { military_airforce_demand@token:resource_consumer_goods = military_airforce_need@token:resource_consumer_goods }
-			multiply_variable = { military_airforce_demand@token:resource_consumer_goods = military_spending_percentage }
-			divide_variable = { military_airforce_demand@token:resource_consumer_goods = 100 }
-
-			set_variable = { military_airforce_demand@token:resource_luxury_goods = military_airforce_need@token:resource_luxury_goods }
-			multiply_variable = { military_airforce_demand@token:resource_luxury_goods = military_spending_percentage }
-			divide_variable = { military_airforce_demand@token:resource_luxury_goods = 100 }
-
-			set_variable = { military_airforce_demand@token:resource_industrial_goods = military_airforce_need@token:resource_industrial_goods }
-			multiply_variable = { military_airforce_demand@token:resource_industrial_goods = military_spending_percentage }
-			divide_variable = { military_airforce_demand@token:resource_industrial_goods = 100 }
-
-			#Total
-			set_variable = { military_demand@token:resource_food = military_need@token:resource_food }
-			multiply_variable = { military_demand@token:resource_food = military_spending_percentage }
-			divide_variable = { military_demand@token:resource_food = 100 }
-
-			set_variable = { military_demand@token:resource_consumer_goods = military_need@token:resource_consumer_goods }
-			multiply_variable = { military_demand@token:resource_consumer_goods = military_spending_percentage }
-			divide_variable = { military_demand@token:resource_consumer_goods = 100 }
-
-			set_variable = { military_demand@token:resource_luxury_goods = military_need@token:resource_luxury_goods }
-			multiply_variable = { military_demand@token:resource_luxury_goods = military_spending_percentage }
-			divide_variable = { military_demand@token:resource_luxury_goods = 100 }
-
-			set_variable = { military_demand@token:resource_industrial_goods = military_need@token:resource_industrial_goods }
-			multiply_variable = { military_demand@token:resource_industrial_goods = military_spending_percentage }
-			divide_variable = { military_demand@token:resource_industrial_goods = 100 }
-		#
+			set_variable = { military_demand@var:r_token = military_consumption@var:r_token }
+			multiply_variable = { military_demand@var:r_token = military_spending_percentage }
+			divide_variable = { military_demand@var:r_token = 100 }
+		}
 	}
 #
 
