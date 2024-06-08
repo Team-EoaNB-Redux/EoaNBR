@@ -55,7 +55,7 @@ NDefines.NProduction.MINIMUM_NUMBER_OF_FACTORIES_TAKEN_BY_CONSUMER_GOODS_PERCENT
 NDefines.NTechnology.BASE_TECH_COST = 2000 -- 100
 NDefines.NTechnology.MIN_RESEARCH_SPEED = 0.2						-- research speed can't go below this value
 
-NDefines.NPolitics.BASE_POLITICAL_POWER_INCREASE = 1.0
+NDefines.NPolitics.BASE_POLITICAL_POWER_INCREASE = 1.5
 
 NDefines.NBuildings.MAX_SHARED_SLOTS = 81 -- 25
 NDefines.NBuildings.SUPPLY_ROUTE_RESOURCE_BONUS = 0 -- Needs to be 0 for eco calculations to work
