@@ -2139,15 +2139,23 @@ country_pops_industry_recalc = {
             subtract_from_variable = { peasants_workforce = capitalists_workforce }
         }
         
+        set_temp_variable = { aristocrats_jobs_temp = aristocrats_jobs }
+        subtract_from_temp_variable = { aristocrats_jobs_temp = owner_jobs@token:subsistence_farm }
+        if = {
+            limit = {
+                check_variable = { aristocrats_jobs_temp < 0 }
+            }
+            set_temp_variable = { aristocrats_jobs_temp = 0 }
+        }
         if = { # Aristocrats
             limit = {
-                check_variable = { aristocrats_jobs > peasants_workforce }
+                check_variable = { aristocrats_jobs_temp > peasants_workforce }
             }
             set_variable = { aristocrats_workforce = peasants_workforce }
             set_variable = { peasants_workforce = 0 }
         }
         else = {
-            set_variable = { aristocrats_workforce = aristocrats_jobs }
+            set_variable = { aristocrats_workforce = aristocrats_jobs_temp }
             subtract_from_variable = { peasants_workforce = aristocrats_workforce }
         }
         
@@ -2200,6 +2208,15 @@ country_pops_industry_recalc = {
         }
         
         # Updates Subsistence Farms
+        subsist_and_arable_update = yes
+
+        # Subs Farm Aristocrats
+        set_temp_variable = { aristocrats_jobs_temp = peasants_employed@token:subsistence_farm }
+        multiply_temp_variable = { aristocrats_jobs_temp = 0.02 }
+        add_to_variable = { aristocrats_workforce = aristocrats_jobs_temp }
+        subtract_from_variable = { peasants_workforce = aristocrats_jobs_temp }
+
+        # Updates Subsistence Farms Again
         subsist_and_arable_update = yes
         
         # Updates Jobs Fulfillment
