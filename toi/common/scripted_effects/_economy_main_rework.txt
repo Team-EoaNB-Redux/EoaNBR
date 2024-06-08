@@ -4450,6 +4450,7 @@
 			set_temp_variable = { borrow_temp = 0 }
 		}
 		set_temp_variable = { ignore_limits_temp = 0 }
+		set_temp_variable = { country_temp = 0 }
 	}
 	remove_debt = {
 		#Scope: Country
@@ -4459,16 +4460,10 @@
 			#country_temp - Which country to specifically repay to, set to 0 to repay debts owed to any country
 			#			  - If the repay amount is higher than the owed amount, only the owed amount is payed. The excess is not payed out further
 
+		set_temp_variable = { debt_repayed_k = 0 }
 		if = {
 			limit = {
 				check_variable = { x_temp > 0 }
-			}
-
-			if = {
-				limit = {
-					check_variable = { country_temp = 0 }
-				}
-				set_temp_variable = { country_temp = THIS }
 			}
 
 			#log = "Country: [?country_temp.GetName]"
@@ -4479,55 +4474,83 @@
 				value = repay_temp_k
 				tooltip = debt_change_positive_tooltip
 			}
+
 			if = {
 				limit = {
-					check_variable = { repay_temp_k > debt_to_bank_k@var:country_temp }
+					check_variable = { country_temp = 0 }
 				}
-				set_temp_variable = { repay_temp_k = debt_to_bank_k@var:country_temp }
-			}
-			#log = "Repay Amount: [?repay_temp_k]K"
-			
-			if = {
-				limit = {
-					check_variable = { repay_temp_k < 0 }
+				set_temp_variable = { country_temp = THIS }
+				remove_debt_internal = yes
+				add_to_temp_variable = { debt_repayed_k = repay_temp_k }
+
+				set_temp_variable = { bank_temp = 0 }
+				while_loop_effect = {
+					limit = {
+						check_variable = { debt_repayed_k < x_temp }
+						check_variable = { debt_to_bank_country^num > 0 }
+					}
+					set_temp_variable = { repay_temp_k = x_temp }
+					subtract_from_temp_variable = { repay_temp_k = debt_repayed_k }
+					set_temp_variable = { country_temp = debt_to_bank_country^0 }
+					remove_debt_internal = yes
+					add_to_temp_variable = { debt_repayed_k = repay_temp_k }
 				}
-				set_temp_variable = { repay_temp_k = 0 }
-				set_temp_variable = { repay_temp = 0 }
 			}
 			else = {
-				set_temp_variable = { repay_temp = repay_temp_k }
-				multiply_temp_variable = { repay_temp = 1000 }
-
-				if = {
-					limit = {
-						check_variable = { repay_temp_k < debt_to_bank_k@var:country_temp }
-					}
-					subtract_from_variable = { debt_to_bank_k@var:country_temp = repay_temp_k }
-					subtract_from_variable = { country_temp:money_lent_k@THIS = repay_temp_k }
-				}
-				else = {
-					remove_from_array = { array = debt_to_bank_country value = country_temp }
-					remove_from_array = { array = country_temp:money_lent_country value = THIS }
-					clear_variable = debt_to_bank_k@var:country_temp
-					clear_variable = country_temp:money_lent_k@THIS
-				}
-				#log = "Debt to Bank K ([THIS.GetName]): [?debt_to_bank_k@var:country_temp]K"
-				#log = "Money Lent K ([?country_temp.GetName]): [?country_temp:money_lent_k@THIS]K"
-
-				if = {
-					limit = {
-						NOT = { check_variable = { country_temp = THIS } }
-					}
-					var:country_temp = {
-						national_debt_update = yes
-					}
-				}
+				remove_debt_internal = yes
+				add_to_temp_variable = { debt_repayed_k = repay_temp_k }
 			}
+
 
 			national_debt_update = yes
 		}
+		set_temp_variable = { repay_temp = debt_repayed_k }
+		multiply_temp_variable = { repay_temp = 1000 }
+		set_temp_variable = { country_temp = 0 }
+	}
+	remove_debt_internal = {
+		# Takes in repay_temp_k and country_temp and removes that amount of money from that.
+		# Outputs repay_temp_k which is the amount of debt actually repaid
+
+		if = {
+			limit = {
+				check_variable = { repay_temp_k > debt_to_bank_k@var:country_temp }
+			}
+			set_temp_variable = { repay_temp_k = debt_to_bank_k@var:country_temp }
+		}
+		#log = "Repay Amount: [?repay_temp_k]K"
+		
+		if = {
+			limit = {
+				check_variable = { repay_temp_k < 0 }
+			}
+			set_temp_variable = { repay_temp_k = 0 }
+		}
 		else = {
-			set_temp_variable = { repay_temp = 0 }
+			if = {
+				limit = {
+					check_variable = { repay_temp_k < debt_to_bank_k@var:country_temp }
+				}
+				subtract_from_variable = { debt_to_bank_k@var:country_temp = repay_temp_k }
+				subtract_from_variable = { country_temp:money_lent_k@THIS = repay_temp_k }
+			}
+			else = {
+				remove_from_array = { array = debt_to_bank_country value = country_temp }
+				remove_from_array = { array = country_temp:money_lent_country value = THIS }
+				clear_variable = debt_to_bank_k@var:country_temp
+				clear_variable = country_temp:money_lent_k@THIS
+			}
+			#log = "Debt to Bank K ([THIS.GetName]): [?debt_to_bank_k@var:country_temp]K"
+			#log = "Money Lent K ([?country_temp.GetName]): [?country_temp:money_lent_k@THIS]K"
+
+			if = {
+				limit = {
+					NOT = { check_variable = { country_temp = THIS } }
+				}
+				var:country_temp = {
+					national_debt_update = yes
+				}
+			}
 		}
 	}
 	borrow_money = {
