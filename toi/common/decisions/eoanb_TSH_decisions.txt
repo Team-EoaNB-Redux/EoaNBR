@@ -20,6 +20,10 @@ EOANBSYS_pandemics_decision_category = {
 		timeout_effect = {
 			add_political_power = -15
 			country_event = JAP_tokugawa_shogunate.14
+			effect_tooltip = {
+				set_temp_variable = { eoanb_prestige_change = 3 }
+				eoanb_change_prestige_score = yes
+			}
 		}
 	}
 }
@@ -249,6 +253,24 @@ eoanb_category_institutions = {
 		complete_effect = {
 			set_country_flag = tsh_purchase_rangaku_flag
 			country_event = JAP_tokugawa_shogunate.25
+			effect_tooltip = {
+				random_list = {
+					1 = {
+						set_temp_variable = { institution_progress_temp = 5 }
+						eoanbr_institutions_innovative_change = yes
+						set_temp_variable = { institution_progress_temp = 10 }
+						eoanbr_institutions_humanitive_change = yes
+						EOANBSYS_national_crisis_progress_add_two = yes 
+					}
+					1 = {
+						set_temp_variable = { institution_progress_temp = 3 }
+						eoanbr_institutions_innovative_change = yes
+						set_temp_variable = { institution_progress_temp = 5 }
+						eoanbr_institutions_humanitive_change = yes
+						EOANBSYS_national_crisis_progress_minus_one = yes
+					}
+				}
+			}
 		}
 	}
 	TSH_decision_foreign_engineering_manuals = {
@@ -300,7 +322,7 @@ eoanb_category_institutions = {
 		}
 
 		remove_effect = {
-			add_tech_bonus = { bonus = 0.2 uses = 1 category = industry }
+			add_tech_bonus = { bonus = 0.2 uses = 1 category = cat_industry_techs }
 			set_temp_variable = { institution_progress_temp = 2 }
 			eoanbr_institutions_innovative_change = yes
 		}
@@ -412,7 +434,7 @@ eoanb_category_institutions = {
 		days_remove = 470
 
 		modifier = {
-			treasury_gain_monthly_per_gdp = 0.02
+			treasury_gain_monthly_per_gdp = 0.002
 		}
 		remove_effect = {
 			set_temp_variable = { institution_progress_temp = 2 }
@@ -420,7 +442,7 @@ eoanb_category_institutions = {
 			random_owned_controlled_state = {
 				add_building_construction = {
 					type = arms_factory
-					level = 1 
+					level = 1
 					instant_build = yes
 				}
 			}
@@ -428,18 +450,18 @@ eoanb_category_institutions = {
 	}
 }
 
-eoanb_category_industry = {
+TSH_Category_Bakumatsu_Modernization = {
 	TSH_decision_nagasaki_coal_mines = {
 		icon = coal
 
-		allowed = { tag = TSH }
-
 		available = {
-			has_war = no
+			set_temp_variable = { x_temp = 500 }
+			has_treasury = yes
 		}
 
 		visible = {
 			has_completed_focus = JAP_vic_harnessing_of_steam
+			controls_state = 1260
 		}
 
 		highlight_states = { state = 1260 }
@@ -447,17 +469,44 @@ eoanb_category_industry = {
 		fire_only_once = yes
 		is_good = yes
 
-		cost = 35
+		cost = 25
 
 		days_remove = 180
 
 		modifier = {
-			treasury_cost_monthly_per_gdp = 0.05
+			treasury_cost_monthly = 50
 		}
 
 		complete_effect = {
+			set_temp_variable = { x_temp = -500 }
+			add_treasury = yes
 			country_event = JAP_tokugawa_shogunate.32
-
+			effect_tooltip = {
+				1260 = {
+					add_extra_state_shared_building_slots = 1
+					add_manpower = 8400
+					add_resource = {
+						type = coal
+						amount = 12
+					}
+				}
+				if = {
+					limit = { SAG = { is_subject_of = ROOT } }
+					SAG = {
+						set_temp_variable = { institution_progress_temp = 2 }
+						eoanbr_institutions_innovative_change = yes
+						random_owned_state = {
+							add_extra_state_shared_building_slots = 1
+							add_manpower = 3500
+							add_resource = {
+								type = coal
+								amount = 5
+							}
+						}
+						add_opinion_modifier = { target = ROOT modifier = TSH_assisting_daimyo }
+					}
+				}
+			}
 		}
 	}
 	TSH_decision_niigata_coal_mines = {
@@ -466,7 +515,8 @@ eoanb_category_industry = {
 		allowed = { tag = TSH }
 
 		available = {
-			has_war = no
+			set_temp_variable = { x_temp = 250 }
+			has_treasury = yes
 		}
 
 		visible = {
@@ -478,16 +528,59 @@ eoanb_category_industry = {
 		fire_only_once = yes
 		is_good = yes
 
-		cost = 35
+		cost = 25
 
 		days_remove = 180
 
 		modifier = {
-			treasury_cost_monthly_per_gdp = 0.05
+			treasury_cost_monthly = 25
 		}
 
 		complete_effect = {
+			set_temp_variable = { x_temp = -250 }
+			add_treasury = yes
 			country_event = JAP_tokugawa_shogunate.33
+			effect_tooltip = {
+				set_temp_variable = { institution_progress_temp = 1 }
+				eoanbr_institutions_innovative_change = yes
+				if = {
+					limit = { owns_state = 534 }
+					534 = {
+						add_extra_state_shared_building_slots = 1
+						add_manpower = 5600
+						add_resource = {
+							type = coal
+							amount = 8
+						}
+					}
+				}
+				else = {
+					random_owned_state = {
+						add_extra_state_shared_building_slots = 1
+						add_manpower = 4000
+						add_resource = {
+							type = coal
+							amount = 8
+						}
+					}
+				}
+				if = {
+					limit = { DTE = { is_subject_of = ROOT } }
+					DTE = {
+						set_temp_variable = { institution_progress_temp = 2 }
+						eoanbr_institutions_innovative_change = yes
+						capital_scope = {
+							add_extra_state_shared_building_slots = 1
+							add_manpower = 3500
+							add_resource = {
+								type = coal
+								amount = 5
+							}
+						}
+						add_opinion_modifier = { target = ROOT modifier = TSH_assisting_daimyo }
+					}
+				}
+			}
 		}
 	}
 	TSH_decision_yokosuka_steel_mill = {
@@ -497,7 +590,8 @@ eoanb_category_industry = {
 
 		available = {
 			has_war = no
-			num_of_civilian_factories_available_for_projects > 0
+			set_temp_variable = { x_temp = 10000 }
+			has_treasury = yes
 		}
 
 		visible = {
@@ -514,36 +608,35 @@ eoanb_category_industry = {
 		days_remove = 180
 
 		modifier = {
-			civilian_factory_use = 1
-			treasury_cost_monthly = 20
+			treasury_cost_monthly = 100
 		}
 
 		complete_effect = {
+			set_temp_variable = { x_temp = -10000 }
+			add_treasury = yes
 			set_temp_variable = { institution_progress_temp = 2 }
 			eoanbr_institutions_innovative_change = yes
 			if = {
 				limit = { owns_state = 282 }
 				282 = {
 					add_extra_state_shared_building_slots = 1
-					add_building_construction = {
-						type = steel_mill
-						level = 1
-						instant_build = yes
+					add_manpower = 10000
+					set_temp_variable = { industry_token = token:steel_foundry }
+					set_temp_variable = { x_temp = 1 }
+					add_x_industries = yes
+					add_victory_points = {
+						province = 7157
+						value = 1
 					}
-				}
-				add_victory_points = {
-					province = 7157
-					value = 1
 				}
 			}
 			else = {
 				random_owned_state = {
 					add_extra_state_shared_building_slots = 1
-					add_building_construction = {
-						type = steel_mill
-						level = 1
-						instant_build = yes
-					}
+					add_manpower = 7500
+					set_temp_variable = { industry_token = token:steel_foundry }
+					set_temp_variable = { x_temp = 1 }
+					add_x_industries = yes
 				}
 			}
 		}
@@ -555,7 +648,8 @@ eoanb_category_industry = {
 
 		available = {
 			has_war = no
-			num_of_civilian_factories_available_for_projects > 0
+			set_temp_variable = { x_temp = 1200 }
+			has_treasury = yes
 		}
 
 		visible = {
@@ -572,23 +666,23 @@ eoanb_category_industry = {
 		days_remove = 180
 
 		modifier = {
-			civilian_factory_use = 1
-			treasury_cost_monthly = 20
+			treasury_cost_monthly = 12
 		}
 
 		complete_effect = {
+			set_temp_variable = { x_temp = -1200 }
+			add_treasury = yes
 			set_temp_variable = { institution_progress_temp = 2 }
 			eoanbr_institutions_innovative_change = yes
 			if = {
 				limit = { owns_state = 1266 }
 				1266 = {
 					add_extra_state_shared_building_slots = 1
+					add_manpower = 2800
 					add_resource = {
 						type = iron
 						amount = 4
 					}
-				}
-				hidden_effect = {
 					add_victory_points = {
 						province = 13931
 						value = 1
@@ -598,6 +692,7 @@ eoanb_category_industry = {
 			else = {
 				random_owned_state = {
 					add_extra_state_shared_building_slots = 1
+					add_manpower = 2000
 					add_resource = {
 						type = iron
 						amount = 4
@@ -613,7 +708,8 @@ eoanb_category_industry = {
 
 		available = {
 			has_war = no
-			num_of_civilian_factories_available_for_projects > 0
+			set_temp_variable = { x_temp = 1500 }
+			has_treasury = yes
 		}
 
 		visible = {
@@ -630,30 +726,36 @@ eoanb_category_industry = {
 		days_remove = 180
 
 		modifier = {
-			civilian_factory_use = 1
-			treasury_cost_monthly = 20
+			treasury_cost_monthly = 15
 		}
 
 		complete_effect = {
+			set_temp_variable = { x_temp = -1500 }
+			add_treasury = yes
+		}
+
+		remove_effect = {
 			set_temp_variable = { institution_progress_temp = 2 }
 			eoanbr_institutions_innovative_change = yes
 			if = {
 				limit = { owns_state = 1260 }
 				1260 = {
 					add_extra_state_shared_building_slots = 1
+					add_manpower = 4200
 					add_resource = {
 						type = iron
 						amount = 6
 					}
-				}
-				add_victory_points = {
-					province = 9950
-					value = 1
+					add_victory_points = {
+						province = 9950
+						value = 1
+					}
 				}
 			}
 			else = {
 				random_owned_state = {
 					add_extra_state_shared_building_slots = 1
+					add_manpower = 3000
 					add_resource = {
 						type = iron
 						amount = 6
@@ -669,7 +771,8 @@ eoanb_category_industry = {
 
 		available = {
 			has_war = no
-			num_of_civilian_factories_available_for_projects > 0
+			set_temp_variable = { x_temp = 6500 }
+			has_treasury = yes
 		}
 
 		visible = {
@@ -686,22 +789,25 @@ eoanb_category_industry = {
 		days_remove = 180
 
 		modifier = {
-			civilian_factory_use = 1
-			treasury_cost_monthly = 20
+			treasury_cost_monthly = 65
 		}
 
 		complete_effect = {
+			set_temp_variable = { x_temp = -6500 }
+			add_treasury = yes
+		}
+
+		remove_effect = {
 			set_temp_variable = { institution_progress_temp = 2 }
 			eoanbr_institutions_innovative_change = yes
 			if = {
 				limit = { owns_state = 1260 }
 				1260 = {
 					add_extra_state_shared_building_slots = 1
-					add_building_construction = {
-						type = steel_mill
-						level = 1
-						instant_build = yes
-					}
+					add_manpower = 7000
+					set_temp_variable = { industry_token = token:steel_foundry }
+					set_temp_variable = { x_temp = 1 }
+					add_x_industries = yes
 				}
 				add_victory_points = {
 					province = 9950
@@ -711,11 +817,10 @@ eoanb_category_industry = {
 			else = {
 				random_owned_state = {
 					add_extra_state_shared_building_slots = 1
-					add_building_construction = {
-						type = steel_mill
-						level = 1
-						instant_build = yes
-					}
+					add_manpower = 5000
+					set_temp_variable = { industry_token = token:steel_foundry }
+					set_temp_variable = { x_temp = 1 }
+					add_x_industries = yes
 				}
 			}
 		}
@@ -728,7 +833,8 @@ eoanb_category_industry = {
 
 		available = {
 			has_war = no
-			num_of_civilian_factories_available_for_projects > 0
+			set_temp_variable = { x_temp = 6500 }
+			has_treasury = yes
 		}
 
 		visible = {
@@ -745,17 +851,22 @@ eoanb_category_industry = {
 		days_remove = 270
 
 		modifier = {
-			civilian_factory_use = 1
-			treasury_cost_monthly = 20
+			treasury_cost_monthly = 65
 		}
 
 		complete_effect = {
+			set_temp_variable = { x_temp = -6500 }
+			add_treasury = yes
+		}
+
+		remove_effect = {
 			set_temp_variable = { institution_progress_temp = 1 }
 			eoanbr_institutions_innovative_change = yes
 			if = {
 				limit = { owns_state = 282 }
 				282 = {
 					add_extra_state_shared_building_slots = 1
+					add_manpower = 7000
 					add_building_construction = {
 						type = arms_factory
 						level = 1
@@ -770,6 +881,7 @@ eoanb_category_industry = {
 			else = {
 				random_owned_state = {
 					add_extra_state_shared_building_slots = 1
+					add_manpower = 5000
 					add_building_construction = {
 						type = arms_factory
 						level = 1
@@ -786,7 +898,8 @@ eoanb_category_industry = {
 
 		available = {
 			has_war = no
-			num_of_civilian_factories_available_for_projects > 0
+			set_temp_variable = { x_temp = 8000 }
+			has_treasury = yes
 		}
 
 		visible = {
@@ -803,22 +916,30 @@ eoanb_category_industry = {
 		days_remove = 270
 
 		modifier = {
-			civilian_factory_use = 1
-			treasury_cost_monthly = 20
+			treasury_cost_monthly = 80
 		}
 
 		complete_effect = {
+			set_temp_variable = { x_temp = -8000 }
+			add_treasury = yes
+		}
+
+		remove_effect = {
 			set_temp_variable = { institution_progress_temp = 1 }
 			eoanbr_institutions_innovative_change = yes
 			if = {
 				limit = { owns_state = 1260 }
 				1260 = {
 					add_extra_state_shared_building_slots = 1
+					add_manpower = 7500
 					add_building_construction = {
 						type = dockyard
 						level = 1
 						instant_build = yes
 					}
+					set_temp_variable = { industry_token = token:port }
+					set_temp_variable = { x_temp = 1 }
+					add_x_industries = yes
 					add_victory_points = {
 						province = 9950
 						value = 1
@@ -828,11 +949,10 @@ eoanb_category_industry = {
 			else = {
 				random_owned_state = {
 					add_extra_state_shared_building_slots = 1
-					add_building_construction = {
-						type = steel_mill
-						level = 1
-						instant_build = yes
-					}
+					add_manpower = 5250
+					set_temp_variable = { industry_token = token:steel_foundry }
+					set_temp_variable = { x_temp = 1 }
+					add_x_industries = yes
 				}
 			}
 		}
@@ -846,7 +966,8 @@ eoanb_category_industry = {
 
 		available = {
 			has_war = no
-			num_of_civilian_factories_available_for_projects > 2
+			set_temp_variable = { x_temp = 12500 }
+			has_treasury = yes
 		}
 
 		visible = {
@@ -862,24 +983,54 @@ eoanb_category_industry = {
 		days_remove = 720
 
 		modifier = {
-			civilian_factory_use = 3
+			treasury_cost_monthly = 125
+		}
+
+		complete_effect = {
+			set_temp_variable = { x_temp = -12500 }
+			add_treasury = yes
 		}
 
 		remove_effect = {
 			set_temp_variable = { institution_progress_temp = 1 }
 			eoanbr_institutions_innovative_change = yes
-			532 = {
-				add_extra_state_shared_building_slots = 1
-				add_building_construction = {
-					type = dockyard
-					level = 1
-					instant_build = yes
+			if = {
+				limit = { owns_state = 532 }
+				532 = {
+					add_extra_state_shared_building_slots = 1
+					add_manpower = 7000
+					add_building_construction = {
+						type = dockyard
+						level = 1
+						instant_build = yes
+					}
+					add_building_construction = {
+						type = naval_base
+						level = 1
+						province = 10125
+						instant_build = yes
+					}
+					set_temp_variable = { industry_token = token:port }
+					set_temp_variable = { x_temp = 1 }
+					add_x_industries = yes
 				}
-				add_building_construction = {
-					type = naval_base
-					level = 1
-					province = 10125
-					instant_build = yes
+			}
+			else = {
+				random_owned_controlled_state = {
+					limit = {
+						is_in_home_area = yes
+						is_demilitarized_zone = no
+					}
+					add_extra_state_shared_building_slots = 1
+					add_manpower = 5000
+					add_building_construction = {
+						type = dockyard
+						level = 1
+						instant_build = yes
+					}
+					set_temp_variable = { industry_token = token:port }
+					set_temp_variable = { x_temp = 1 }
+					add_x_industries = yes
 				}
 			}
 			random_owned_controlled_state = {
@@ -888,11 +1039,15 @@ eoanb_category_industry = {
 					is_demilitarized_zone = no
 				}
 				add_extra_state_shared_building_slots = 1
+				add_manpower = 5000
 				add_building_construction = {
 					type = dockyard
 					level = 1
 					instant_build = yes
 				}
+				set_temp_variable = { industry_token = token:port }
+				set_temp_variable = { x_temp = 1 }
+				add_x_industries = yes
 			}
 		}
 
@@ -910,7 +1065,8 @@ eoanb_category_industry = {
 
 		available = {
 			has_war = no
-			num_of_civilian_factories_available_for_projects > 2
+			set_temp_variable = { x_temp = 12500 }
+			has_treasury = yes
 		}
 
 		visible = {
@@ -926,7 +1082,12 @@ eoanb_category_industry = {
 		days_remove = 720
 
 		modifier = {
-			civilian_factory_use = 3
+			treasury_cost_monthly = 125
+		}
+
+		complete_effect = {
+			set_temp_variable = { x_temp = -12500 }
+			add_treasury = yes
 		}
 
 		remove_effect = {
@@ -934,6 +1095,7 @@ eoanb_category_industry = {
 			eoanbr_institutions_innovative_change = yes
 			532 = {
 				add_extra_state_shared_building_slots = 1
+				add_manpower = 7000
 				add_building_construction = {
 					type = arms_factory
 					level = 1
@@ -952,6 +1114,7 @@ eoanb_category_industry = {
 					is_demilitarized_zone = no
 				}
 				add_extra_state_shared_building_slots = 1
+				add_manpower = 5000
 				add_building_construction = {
 					type = arms_factory
 					level = 1
@@ -974,12 +1137,13 @@ eoanb_category_industry = {
 
 		available = {
 			has_war = no
-			num_of_civilian_factories_available_for_projects > 0
-			1106 = { is_controlled_by = TSH }
+			owns_state = 1106
+			set_temp_variable = { x_temp = 4800 }
+			has_treasury = yes
 		}
 
 		visible = {
-			has_completed_focus = JAP_vic_develop_osaka
+			has_completed_focus = JAP_vic_strengthen_silk_industry
 		}
 
 		allowed = { tag = TSH }
@@ -991,18 +1155,17 @@ eoanb_category_industry = {
 		days_remove = 350
 
 		modifier = {
-			civilian_factory_use = 1
-			treasury_cost_monthly = 20
+			treasury_cost_monthly = 40
 		}
 
 		remove_effect = {
 			1106 = {
 				add_extra_state_shared_building_slots = 1
+				add_manpower = 2800
 				add_resource = {
-					type = fabric
-					amount = 3
+					type = textiles
+					amount = 4
 				}
-				add_manpower = 1500
 				add_victory_points = {
 					province = 11960
 					value = 1
@@ -1023,12 +1186,13 @@ eoanb_category_industry = {
 
 		available = {
 			has_war = no
-			num_of_civilian_factories_available_for_projects > 0
 			1266 = { is_controlled_by = TSH }
+			set_temp_variable = { x_temp = 25000 }
+			has_treasury = yes
 		}
 
 		visible = {
-			has_completed_focus = JAP_vic_develop_osaka
+			has_completed_focus = JAP_vic_strengthen_silk_industry
 		}
 
 		allowed = { tag = TSH }
@@ -1040,18 +1204,21 @@ eoanb_category_industry = {
 		days_remove = 350
 
 		modifier = {
-			civilian_factory_use = 1
-			treasury_cost_monthly = 20
+			treasury_cost_monthly = 180
+		}
+
+		complete_effect = {
+			set_temp_variable = { x_temp = -25000 }
+			add_treasury = yes
 		}
 
 		remove_effect = {
 			1266 = {
 				add_extra_state_shared_building_slots = 1
-				add_resource = {
-					type = fabric
-					amount = 3
-				}
-				add_manpower = 1500
+				set_temp_variable = { industry_token = token:textile_mill }
+				set_temp_variable = { x_temp = 3 }
+				add_x_industries = yes
+				add_manpower = 21000
 				add_victory_points = {
 					province = 13930
 					value = 1
@@ -1072,12 +1239,13 @@ eoanb_category_industry = {
 
 		available = {
 			has_war = no
-			num_of_civilian_factories_available_for_projects > 0
-			1263 = { is_controlled_by = TSH }
+			owns_state = 1263
+			set_temp_variable = { x_temp = 18000 }
+			has_treasury = yes
 		}
 
 		visible = {
-			has_completed_focus = JAP_vic_develop_osaka
+			has_completed_focus = JAP_vic_strengthen_silk_industry
 		}
 
 		allowed = { tag = TSH }
@@ -1089,18 +1257,21 @@ eoanb_category_industry = {
 		days_remove = 350
 
 		modifier = {
-			civilian_factory_use = 1
-			treasury_cost_monthly = 20
+			treasury_cost_monthly = 120
+		}
+
+		complete_effect = {
+			set_temp_variable = { x_temp = -18000 }
+			add_treasury = yes
 		}
 
 		remove_effect = {
 			1263 = {
 				add_extra_state_shared_building_slots = 1
-				add_resource = {
-					type = fabric
-					amount = 3
-				}
-				add_manpower = 1500
+				set_temp_variable = { industry_token = token:textile_mill }
+				set_temp_variable = { x_temp = 2 }
+				add_x_industries = yes
+				add_manpower = 14000
 				add_victory_points = {
 					province = 7072
 					value = 1
@@ -1121,12 +1292,13 @@ eoanb_category_industry = {
 
 		available = {
 			has_war = no
-			num_of_civilian_factories_available_for_projects > 0
-			1261 = { is_controlled_by = TSH }
+			owns_state = 1261
+			set_temp_variable = { x_temp = 18000 }
+			has_treasury = yes
 		}
 
 		visible = {
-			has_completed_focus = JAP_vic_develop_osaka
+			has_completed_focus = JAP_vic_strengthen_silk_industry
 		}
 
 		allowed = { tag = TSH }
@@ -1138,18 +1310,21 @@ eoanb_category_industry = {
 		days_remove = 350
 
 		modifier = {
-			civilian_factory_use = 1
-			treasury_cost_monthly = 20
+			treasury_cost_monthly = 120
+		}
+
+		complete_effect = {
+			set_temp_variable = { x_temp = -18000 }
+			add_treasury = yes
 		}
 
 		remove_effect = {
 			1261 = {
 				add_extra_state_shared_building_slots = 1
-				add_resource = {
-					type = fabric
-					amount = 3
-				}
-				add_manpower = 1500
+				set_temp_variable = { industry_token = token:textile_mill }
+				set_temp_variable = { x_temp = 2 }
+				add_x_industries = yes
+				add_manpower = 14000
 				add_victory_points = {
 					province = 1092
 					value = 1
@@ -1165,17 +1340,18 @@ eoanb_category_industry = {
 		icon = fabric
 
 		highlight_states = {
-			state = 1258
+			state = 1269
 		}
 
 		available = {
 			has_war = no
-			num_of_civilian_factories_available_for_projects > 0
-			1258 = { is_controlled_by = TSH }
+			owns_state = 1269
+			set_temp_variable = { x_temp = 18000 }
+			has_treasury = yes
 		}
 
 		visible = {
-			has_completed_focus = JAP_vic_develop_osaka
+			has_completed_focus = JAP_vic_strengthen_silk_industry
 		}
 
 		allowed = { tag = TSH }
@@ -1187,18 +1363,21 @@ eoanb_category_industry = {
 		days_remove = 350
 
 		modifier = {
-			civilian_factory_use = 1
-			treasury_cost_monthly = 20
+			treasury_cost_monthly = 120
+		}
+
+		complete_effect = {
+			set_temp_variable = { x_temp = -18000 }
+			add_treasury = yes
 		}
 
 		remove_effect = {
 			1258 = {
 				add_extra_state_shared_building_slots = 1
-				add_resource = {
-					type = fabric
-					amount = 3
-				}
-				add_manpower = 1500
+				set_temp_variable = { industry_token = token:textile_mill }
+				set_temp_variable = { x_temp = 2 }
+				add_x_industries = yes
+				add_manpower = 14000
 				add_victory_points = {
 					province = 11925
 					value = 1
@@ -1229,7 +1408,6 @@ eoanb_category_development = {
 
 		available = {
 			has_war = no
-			num_of_civilian_factories_available_for_projects > 0
 		}
 
 		visible = {
@@ -1245,7 +1423,7 @@ eoanb_category_development = {
 		days_remove = 180
 
 		modifier = {
-			treasury_cost_monthly_per_gdp = 0.05
+			treasury_cost_monthly = 100
 		}
 
 		remove_effect = {
@@ -1256,35 +1434,35 @@ eoanb_category_development = {
 				limit = { owns_state = 1261 }
 				1261 = {
 					add_manpower = 5000
-					add_extra_state_shared_building_slots = 1
+					increase_state_category = yes
 				}
 			}
 			if = {
 				limit = { owns_state = 1263 }
 				1263 = {
 					add_manpower = 5000
-					add_extra_state_shared_building_slots = 1
+					increase_state_category = yes
 				}
 			}
 			if = {
 				limit = { owns_state = 1106 }
 				1106 = {
 					add_manpower = 5000
-					add_extra_state_shared_building_slots = 1
+					increase_state_category = yes
 				}
 			}
 			if = {
 				limit = { owns_state = 1267 }
 				1267 = {
 					add_manpower = 5000
-					add_extra_state_shared_building_slots = 1
+					increase_state_category = yes
 				}
 			}
 			if = {
 				limit = { owns_state = 1266 }
 				1266 = {
 					add_manpower = 5000
-					add_extra_state_shared_building_slots = 1
+					increase_state_category = yes
 				}
 			}
 		}
@@ -1317,6 +1495,7 @@ eoanb_category_development = {
 			EOANBSYS_national_crisis_progress_minus_two = yes
 			if = {
 				limit = { has_idea = TSH_spirit_vic_sakoku_kemi }
+				decrease_ps_by_one = yes
 				swap_ideas = {
 					remove_idea = TSH_spirit_vic_sakoku_kemi
 					add_idea = TSH_spirit_vic_sakoku_kemi_1
@@ -1331,11 +1510,16 @@ eoanb_category_development = {
 			}
 			else = {
 				remove_ideas = TSH_spirit_vic_sakoku_kemi_2
+				increase_ps_by_one = yes
 			}
 		}
 	}
 	TSH_decision_tackle_kabuna_monopolies = {
 		icon = generic_economy
+
+		available = {
+			PS_pol_positive = yes
+		}
 
 		visible = {
 			has_completed_focus = JAP_vic_kabuna_monopoly_question
@@ -1344,13 +1528,19 @@ eoanb_category_development = {
 
 		cost = 50
 
-		days_remove = 250
+		days_remove = 450
 
 		fire_only_once = yes
 		is_good = yes
 
 		modifier = {
 			political_power_gain = -0.10
+			investment_confidence_modifier = -15
+			textile_mill_attractiveness_factor = -0.85
+		}
+
+		complete_effect = {
+			decrease_ps_by_two = yes
 		}
 
 		remove_effect = {
@@ -1370,21 +1560,14 @@ eoanb_category_development = {
 
 		available = {
 			has_war = no
-			num_of_civilian_factories_available_for_projects > 0
 			532 = {
-				OR = {
-					OWNER = { tag = ROOT }
-					OWNER = { is_subject_of = ROOT }
-				}
-				OWNER = { has_war = no }
+				is_controlled_by_ROOT_or_subject = yes
 			}
 			1265 = {
-				OR = {
-					OWNER = { tag = ROOT }
-					OWNER = { is_subject_of = ROOT }
-				}
-				OWNER = { has_war = no }
+				is_controlled_by_ROOT_or_subject = yes
 			}
+			set_temp_variable = { x_temp = 7500 }
+			has_treasury = yes
 		}
 
 		visible = {
@@ -1400,8 +1583,12 @@ eoanb_category_development = {
 		days_remove = 180
 
 		modifier = {
-			civilian_factory_use = 1
-			treasury_cost_monthly = 20
+			treasury_cost_monthly = 45
+		}
+
+		complete_effect = {
+			set_temp_variable = { x_temp = -7500 }
+			addd_treasury = yes
 		}
 
 		remove_effect = {
@@ -1412,6 +1599,9 @@ eoanb_category_development = {
 					instant_build = yes
 				}
 				add_extra_state_shared_building_slots = 1
+				set_temp_variable = { industry_token = token:rice_paddy }
+				set_temp_variable = { x_temp = 1 }
+				add_x_industries = yes
 				if = {
 					limit = { NOT = { is_owned_by = ROOT } }
 					OWNER = {
@@ -1432,6 +1622,10 @@ eoanb_category_development = {
 					instant_build = yes
 				}
 				add_extra_state_shared_building_slots = 1
+				
+				set_temp_variable = { industry_token = token:luxuries_plantation }
+				set_temp_variable = { x_temp = 1 }
+				add_x_industries = yes
 				if = {
 					limit = { NOT = { is_owned_by = ROOT } }
 					OWNER = {
@@ -1465,18 +1659,10 @@ eoanb_category_development = {
 			has_war = no
 			num_of_civilian_factories_available_for_projects > 0
 			535 = {
-				OR = {
-					OWNER = { tag = ROOT }
-					OWNER = { is_subject_of = ROOT }
-				}
-				OWNER = { has_war = no }
+				is_controlled_by_ROOT_or_subject = yes
 			}
 			1106 = {
-				OR = {
-					OWNER = { tag = ROOT }
-					OWNER = { is_subject_of = ROOT }
-				}
-				OWNER = { has_war = no }
+				is_controlled_by_ROOT_or_subject = yes
 			}
 		}
 
@@ -1558,18 +1744,10 @@ eoanb_category_development = {
 			has_war = no
 			num_of_civilian_factories_available_for_projects > 0
 			534 = {
-				OR = {
-					OWNER = { tag = ROOT }
-					OWNER = { is_subject_of = ROOT }
-				}
-				OWNER = { has_war = no }
+				is_controlled_by_ROOT_or_subject = yes
 			}
 			282 = {
-				OR = {
-					OWNER = { tag = ROOT }
-					OWNER = { is_subject_of = ROOT }
-				}
-				OWNER = { has_war = no }
+				is_controlled_by_ROOT_or_subject = yes
 			}
 		}
 
@@ -1651,18 +1829,10 @@ eoanb_category_development = {
 			has_war = no
 			num_of_civilian_factories_available_for_projects > 0
 			1267 = {
-				OR = {
-					OWNER = { tag = ROOT }
-					OWNER = { is_subject_of = ROOT }
-				}
-				OWNER = { has_war = no }
+				is_controlled_by_ROOT_or_subject = yes
 			}
 			533 = {
-				OR = {
-					OWNER = { tag = ROOT }
-					OWNER = { is_subject_of = ROOT }
-				}
-				OWNER = { has_war = no }
+				is_controlled_by_ROOT_or_subject = yes
 			}
 		}
 
@@ -1741,11 +1911,7 @@ eoanb_category_development = {
 			has_war = no
 			num_of_civilian_factories_available_for_projects > 0
 			282 = {
-				OR = {
-					OWNER = { tag = ROOT }
-					OWNER = { is_subject_of = ROOT }
-				}
-				OWNER = { has_war = no }
+				is_controlled_by_ROOT_or_subject = yes
 			}
 		}
 
@@ -2343,7 +2509,7 @@ eoanb_category_military = {
 
 		modifier = {
 			political_power_gain = -0.05
-			treasury_cost_monthly_per_gdp = 0.01
+			treasury_cost_monthly_per_gdp = 0.001
 		}
 
 		remove_effect = {
@@ -2380,7 +2546,7 @@ eoanb_category_military = {
 
 		modifier = {
 			political_power_gain = -0.05
-			treasury_cost_monthly_per_gdp = 0.01
+			treasury_cost_monthly_per_gdp = 0.001
 		}
 
 		remove_effect = {
@@ -2421,13 +2587,13 @@ eoanb_category_military = {
 
 		modifier = {
 			political_power_gain = -0.05
-			treasury_cost_monthly_per_gdp = 0.01
+			treasury_cost_monthly_per_gdp = 0.001
 		}
 
 		remove_effect = {
 			set_temp_variable = { institution_progress_temp = 10 }
 			eoanbr_institutions_innovative_change = yes
-			TSH = { add_equipment_to_stockpile = { type = cannon_equipment_0 amount = 75 producer = ENG } }
+			TSH = { add_equipment_to_stockpile = { type = field_artillery_equipment_0 amount = 75 producer = ENG } }
 		}
 
 		ai_will_do = {
@@ -2592,7 +2758,7 @@ eoanb_category_navy = {
 		modifier = {
 			political_power_gain = -0.2
 			command_power_gain = -0.5
-			treasury_cost_monthly_per_gdp = 0.10
+			treasury_cost_monthly_per_gdp = 0.010
 		}
 
 		remove_effect = {

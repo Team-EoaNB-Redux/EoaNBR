@@ -13,7 +13,13 @@ scripted_map_modes = {
 						FROM = { check_variable = { num_of_institutions > 0 } }
 					}
 					set_temp_variable = { hue = FROM.num_of_institutions }
-					divide_temp_variable = { hue = global.num_of_institutions }
+					if = {
+						limit = { check_variable = { global.num_of_institutions < 12 } }
+						divide_temp_variable = { hue = 12 }
+					}
+					else = {
+						divide_temp_variable = { hue = global.num_of_institutions }
+					}
 					multiply_temp_variable = { hue = 5 }
 
 					set_temp_variable = { hmod = hue }
@@ -127,7 +133,13 @@ scripted_map_modes = {
 						FROM = { check_variable = { num_of_institutions > 0 } }
 					}
 					set_temp_variable = { hue = FROM.num_of_institutions }
-					divide_temp_variable = { hue = global.num_of_institutions }
+					if = {
+						limit = { check_variable = { global.num_of_institutions < 12 } }
+						divide_temp_variable = { hue = 12 }
+					}
+					else = {
+						divide_temp_variable = { hue = global.num_of_institutions }
+					}
 					multiply_temp_variable = { hue = 5 }
 
 					set_temp_variable = { hmod = hue }
@@ -247,7 +259,7 @@ scripted_map_modes = {
 						FROM = { check_variable = { pops_sol > 0 } }
 					}
 					set_temp_variable = { hue = FROM.pops_sol }
-					divide_temp_variable = { hue = 50 }
+					divide_temp_variable = { hue = 100 }
 					multiply_temp_variable = { hue = 5 }
 
 					set_temp_variable = { hmod = hue }
@@ -329,12 +341,12 @@ scripted_map_modes = {
 					}
 					set_temp_variable = { alpha = 1 }
 				}
-		else = {
-			set_temp_variable = { red = 1 }
-						set_temp_variable = { green = 0 }
-						set_temp_variable = { blue = 0 }
-			set_temp_variable = { alpha = 1 }
-		}
+				else = {
+					set_temp_variable = { red = 1 }
+					set_temp_variable = { green = 0 }
+					set_temp_variable = { blue = 0 }
+					set_temp_variable = { alpha = 1 }
+				}
 
 				#set_temp_variable = { thickness = 1 }
 				set_temp_variable = { highlighted = 0 }
@@ -363,24 +375,21 @@ scripted_map_modes = {
 			type = country
 
 			color = {
-				if = {
-					limit = { FROM = { is_subject = yes } }
-					set_temp_variable = { sphere_leader = FROM.OVERLORD }
+				FROM = {
 					if = {
-						limit = { var:sphere_leader = { is_subject = yes } }
-						set_temp_variable = { sphere_leader = sphere_leader.sphere_leader }
+						limit = { has_variable = market_leader }
+						set_temp_variable = { red = global.red@var:market_leader }
+						set_temp_variable = { green = global.green@var:market_leader }
+						set_temp_variable = { blue = global.blue@var:market_leader }
 					}
-					set_temp_variable = { red = global.red@var:sphere_leader }
-					set_temp_variable = { green = global.green@var:sphere_leader }
-					set_temp_variable = { blue = global.blue@var:sphere_leader }
+					else = {
+						set_temp_variable = { red = global.red@var:THIS }
+						set_temp_variable = { green = global.green@var:THIS }
+						set_temp_variable = { blue = global.blue@var:THIS }
+					}
+					set_temp_variable = { alpha = 1 }
+					set_temp_variable = { thickness = 40 }
 				}
-				else = {
-					set_temp_variable = { red = global.red@var:FROM }
-					set_temp_variable = { green = global.green@var:FROM }
-					set_temp_variable = { blue = global.blue@var:FROM }
-				}
-				set_temp_variable = { alpha = 1 }
-				set_temp_variable = { thickness = 40 }
 			}
 
 			targets = {
@@ -393,23 +402,44 @@ scripted_map_modes = {
 			type = country
 
 			color = {
-				if = {
-					limit = { FROM = { is_subject = yes } }
-					set_temp_variable = { sphere_leader = FROM.OVERLORD }
+				FROM = {
 					if = {
-						limit = { var:sphere_leader = { is_subject = yes } }
-						set_temp_variable = { sphere_leader = sphere_leader.sphere_leader }
+						limit = {
+							check_variable = {
+								market_leader = ROOT.market_leader
+							}
+						}
+						set_temp_variable = { red = 0.5 }
+						set_temp_variable = { green = 0.5 }
+						set_temp_variable = { blue = 0.7 }
+						set_temp_variable = { alpha = 0.55 }
+						if = {
+							limit = {
+								check_variable = {
+									market_leader = THIS
+								}
+							}
+							set_temp_variable = { alpha = 0.75 }
+						}
 					}
-					set_temp_variable = { red = global.red@var:sphere_leader }
-					set_temp_variable = { green = global.green@var:sphere_leader }
-					set_temp_variable = { blue = global.blue@var:sphere_leader }
+					else_if = {
+						limit = {
+							set_temp_variable = { country_temp = THIS }
+							ROOT = { can_trade_with = no }
+						}
+						set_temp_variable = { red = 0.7 }
+						set_temp_variable = { green = 0.5 }
+						set_temp_variable = { blue = 0.5 }
+						set_temp_variable = { alpha = 0.55 }
+					}
+					else = {
+						set_temp_variable = { red = 0.5 }
+						set_temp_variable = { green = 0.7 }
+						set_temp_variable = { blue = 0.5 }
+						set_temp_variable = { alpha = 0.55 }
+					}
 				}
-				else = {
-					set_temp_variable = { red = global.red@var:FROM }
-					set_temp_variable = { green = global.green@var:FROM }
-					set_temp_variable = { blue = global.blue@var:FROM }
-				}
-				set_temp_variable = { alpha = 0.65 }
+				# set_temp_variable = { alpha = 0.65 }
 
 				#always = yes
 			}
@@ -426,6 +456,74 @@ scripted_map_modes = {
 
 		update_daily = no
 	}
+	# market_map_mode = {
+	# 	top = {
+	# 		type = country
+
+	# 		color = {
+	# 			if = {
+	# 				limit = { FROM = { is_subject = yes } }
+	# 				set_temp_variable = { sphere_leader = FROM.OVERLORD }
+	# 				if = {
+	# 					limit = { var:sphere_leader = { is_subject = yes } }
+	# 					set_temp_variable = { sphere_leader = sphere_leader.sphere_leader }
+	# 				}
+	# 				set_temp_variable = { red = global.red@var:sphere_leader }
+	# 				set_temp_variable = { green = global.green@var:sphere_leader }
+	# 				set_temp_variable = { blue = global.blue@var:sphere_leader }
+	# 			}
+	# 			else = {
+	# 				set_temp_variable = { red = global.red@var:FROM }
+	# 				set_temp_variable = { green = global.green@var:FROM }
+	# 				set_temp_variable = { blue = global.blue@var:FROM }
+	# 			}
+	# 			set_temp_variable = { alpha = 1 }
+	# 			set_temp_variable = { thickness = 40 }
+	# 		}
+
+	# 		targets = {
+
+	# 		}
+
+	# 		thickness = yes
+	# 	}
+	# 	bottom = {
+	# 		type = country
+
+	# 		color = {
+	# 			if = {
+	# 				limit = { FROM = { is_subject = yes } }
+	# 				set_temp_variable = { sphere_leader = FROM.OVERLORD }
+	# 				if = {
+	# 					limit = { var:sphere_leader = { is_subject = yes } }
+	# 					set_temp_variable = { sphere_leader = sphere_leader.sphere_leader }
+	# 				}
+	# 				set_temp_variable = { red = global.red@var:sphere_leader }
+	# 				set_temp_variable = { green = global.green@var:sphere_leader }
+	# 				set_temp_variable = { blue = global.blue@var:sphere_leader }
+	# 			}
+	# 			else = {
+	# 				set_temp_variable = { red = global.red@var:FROM }
+	# 				set_temp_variable = { green = global.green@var:FROM }
+	# 				set_temp_variable = { blue = global.blue@var:FROM }
+	# 			}
+	# 			set_temp_variable = { alpha = 0.65 }
+
+	# 			#always = yes
+	# 		}
+
+	# 		targets = {
+
+	# 		}
+
+	# 		thickness = no
+	# 	}
+
+	# 	far_text = country
+	# 	near_text = country
+
+	# 	update_daily = no
+	# }
 	gdp_map_mode = {
 		top = {
 			type = state
@@ -674,4 +772,129 @@ scripted_map_modes = {
 
 		update_daily = no
 	}
+	# workforce_map_mode = {
+	# 	top = {
+	# 		type = state
+
+	# 		color = {
+	# 			set_temp_variable = { red = 0.0 }
+	# 			set_temp_variable = { blue = 0.0 }
+	# 			set_temp_variable = { green = 0.0 }
+	# 			set_temp_variable = { alpha = 1 }
+	# 			if = {
+	# 				limit = {
+	# 					FROM = { check_variable = { gdp_per_capita > 0 } }
+	# 				}
+	# 				set_temp_variable = { hue = FROM.gdp_per_capita }
+	# 				divide_temp_variable = { hue = global.highest_state_gdp_c }
+	# 				multiply_temp_variable = { hue = 5 }
+
+	# 				set_temp_variable = { hmod = hue }
+	# 				#multiply_temp_variable = { hmod = 6 }
+	# 				if = {
+	# 					limit = {
+	# 						NOT = { check_variable = { hmod < 2 } }
+	# 					}
+	# 					subtract_from_temp_variable = { hmod = 2 }
+	# 					if = {
+	# 						limit = {
+	# 							NOT = { check_variable = { hmod < 2 } }
+	# 						}
+	# 						subtract_from_temp_variable = { hmod = 2 }
+	# 					}
+	# 				}
+	# 				subtract_from_temp_variable = { hmod = 1 }
+	# 				if = {
+	# 					limit = {
+	# 					   check_variable = { hmod < 0 }
+	# 					}
+	# 					multiply_temp_variable = { hmod = -1 }
+	# 				}
+
+	# 				set_temp_variable = { xmod = 1 }
+	# 				subtract_from_temp_variable = { xmod = hmod }
+
+	# 				set_temp_variable = { x = 1 }
+	# 				multiply_temp_variable = { x = xmod }
+
+	# 				#multiply_temp_variable = { hue = 6 }
+	# 				if = {
+	# 					limit = {
+	# 						check_variable = { hue < 1 }
+	# 					}
+	# 					set_temp_variable = { red = 1 }
+	# 					set_temp_variable = { green = x }
+	# 					set_temp_variable = { blue = 0 }
+	# 				}
+	# 				else_if = {
+	# 					limit = {
+	# 						check_variable = { hue < 2 }
+	# 					}
+	# 					set_temp_variable = { red = x }
+	# 					set_temp_variable = { green = 1 }
+	# 					set_temp_variable = { blue = 0 }
+	# 				}
+	# 				else_if = {
+	# 					limit = {
+	# 						check_variable = { hue < 3 }
+	# 					}
+	# 					set_temp_variable = { red = 0 }
+	# 					set_temp_variable = { green = 1 }
+	# 					set_temp_variable = { blue = x }
+	# 				}
+	# 				else_if = {
+	# 					limit = {
+	# 						check_variable = { hue < 4 }
+	# 					}
+	# 					set_temp_variable = { red = 0 }
+	# 					set_temp_variable = { green = x }
+	# 					set_temp_variable = { blue = 1 }
+	# 				}
+	# 				else_if = {
+	# 					limit = {
+	# 						check_variable = { hue < 5 }
+	# 					}
+	# 					set_temp_variable = { red = x }
+	# 					set_temp_variable = { green = 0 }
+	# 					set_temp_variable = { blue = 1 }
+	# 				}
+	# 				else_if = {
+	# 					limit = {
+	# 						check_variable = { hue < 6 }
+	# 					}
+	# 					set_temp_variable = { red = 1 }
+	# 					set_temp_variable = { green = 0 }
+	# 					set_temp_variable = { blue = x }
+	# 				}
+	# 				set_temp_variable = { alpha = 1 }
+	# 			}
+	# 	else = {
+	# 		set_temp_variable = { red = 1 }
+	# 					set_temp_variable = { green = 0 }
+	# 					set_temp_variable = { blue = 0 }
+	# 		set_temp_variable = { alpha = 1 }
+	# 	}
+
+	# 			#set_temp_variable = { thickness = 1 }
+	# 			set_temp_variable = { highlighted = 0 }
+
+	# 			#always = yes
+	# 		}
+
+	# 		targets = {
+
+	# 		}
+
+	# 		thickness = no
+	# 	}
+
+	# 	bottom = {
+	# 		type = none
+	# 	}
+
+	# 	far_text = country
+	# 	near_text = state
+
+	# 	update_daily = no
+	# }
 }

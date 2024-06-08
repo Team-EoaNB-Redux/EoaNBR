@@ -1,0 +1,442 @@
+eoanbr_pandemic_constants = {
+	#malaria
+		set_variable = { global.pandemic_likelihood@token:disease_malaria = 20 }
+		set_variable = { global.pandemic_difficulty@token:disease_malaria = 0 }
+		set_variable = { global.pandemic_death_rate@token:disease_malaria = 0.8 }
+		set_variable = { global.pandemic_germ_type@token:disease_malaria = token:germ_parasytic }
+		set_variable = { global.pandemic_max_sol@token:disease_malaria = 25 }
+	#
+	#cholera
+		set_variable = { global.pandemic_likelihood@token:disease_cholera = 20 }
+		set_variable = { global.pandemic_difficulty@token:disease_cholera = 0 }
+		set_variable = { global.pandemic_death_rate@token:disease_cholera = 0.5 }
+		set_variable = { global.pandemic_germ_type@token:disease_cholera = token:germ_bacterial }
+		set_variable = { global.pandemic_max_sol@token:disease_cholera = 35 }
+	#
+	#bubonic
+		set_variable = { global.pandemic_likelihood@token:disease_bubonic = 0 }
+		set_variable = { global.pandemic_difficulty@token:disease_bubonic = 0 }
+		set_variable = { global.pandemic_death_rate@token:disease_bubonic = 2.2 }
+		set_variable = { global.pandemic_germ_type@token:disease_bubonic = token:germ_bacterial }
+		set_variable = { global.pandemic_min_sol@token:disease_bubonic = 15 }
+		set_variable = { global.pandemic_max_sol@token:disease_bubonic = 35 }
+	#
+	#spanish_flu
+		set_variable = { global.pandemic_likelihood@token:disease_spanish_flu = 0 }
+		set_variable = { global.pandemic_difficulty@token:disease_spanish_flu = 0 }
+		set_variable = { global.pandemic_death_rate@token:disease_spanish_flu = 0.8 }
+		set_variable = { global.pandemic_germ_type@token:disease_spanish_flu = token:germ_viral }
+		set_variable = { global.pandemic_min_sol@token:disease_spanish_flu = 15 }
+		set_variable = { global.pandemic_max_sol@token:disease_spanish_flu = 50 }
+	#
+	#influenza
+		set_variable = { global.pandemic_likelihood@token:disease_influenza = 10 }
+		set_variable = { global.pandemic_difficulty@token:disease_influenza = 0 }
+		set_variable = { global.pandemic_death_rate@token:disease_influenza = 0.2 }
+		set_variable = { global.pandemic_germ_type@token:disease_influenza = token:germ_viral }
+		set_variable = { global.pandemic_min_sol@token:disease_influenza = 25 }
+	#
+	#typhus
+		set_variable = { global.pandemic_likelihood@token:disease_typhus = 10 }
+		set_variable = { global.pandemic_difficulty@token:disease_typhus = 0 }
+		set_variable = { global.pandemic_death_rate@token:disease_typhus = 0.5 }
+		set_variable = { global.pandemic_germ_type@token:disease_typhus = token:germ_parasytic }
+		set_variable = { global.pandemic_max_sol@token:disease_typhus = 60 }
+	#
+	#ebola
+		set_variable = { global.pandemic_likelihood@token:disease_ebola = 0 }
+		set_variable = { global.pandemic_difficulty@token:disease_ebola = 0 }
+		set_variable = { global.pandemic_death_rate@token:disease_ebola = 1.3 }
+		set_variable = { global.pandemic_germ_type@token:disease_ebola = token:germ_viral }
+		set_variable = { global.pandemic_max_sol@token:disease_ebola = 45 }
+	#
+	#coronavirus
+		set_variable = { global.pandemic_likelihood@token:disease_coronavirus = 0 }
+		set_variable = { global.pandemic_difficulty@token:disease_coronavirus = 0 }
+		set_variable = { global.pandemic_death_rate@token:disease_coronavirus = 0.3 }
+		set_variable = { global.pandemic_germ_type@token:disease_coronavirus = token:germ_viral }
+		set_variable = { global.pandemic_min_sol@token:disease_coronavirus = 30 }
+	#
+}
+eoanbr_pandemic_setup_1857 = {
+	#diseases
+		add_to_variable = { global.pandemic_known_array = token:disease_malaria }
+		add_to_variable = { global.pandemic_known_array = token:disease_cholera }
+		add_to_variable = { global.pandemic_known_array = token:disease_bubonic }
+
+		add_to_variable = { global.pandemic_active_array = token:disease_malaria }
+		add_to_variable = { global.pandemic_active_array = token:disease_cholera }
+		add_to_variable = { global.pandemic_active_array = token:disease_bubonic }
+	#
+}
+eoanbr_pandemic_setup = {
+	every_country = {
+		random_list = {
+			500 = {
+				# None
+			}
+			5 = {
+				modifier = {
+					NOT = { is_in_array = { array = global.pandemic_active_array value = token:disease_malaria } }
+					factor = 0
+				}
+				modifier = {
+					add = global.pandemic_likelihood@token:disease_malaria
+				}
+				modifier = {
+					add = pandemic_likelihood@token:disease_malaria
+				}
+				modifier = {
+					set_temp_variable = { disease_resistance_efficiency_modifier_temp = modifier@disease_resistance_efficiency_modifier }
+					multiply_temp_variable = { disease_resistance_efficiency_modifier_temp = -1 }
+					add = disease_resistance_efficiency_modifier_temp
+				}
+				modifier = {
+					set_temp_variable = { disease_resistance_efficiency_factor_temp = 1 }
+					add_to_temp_variable = { disease_resistance_efficiency_factor_temp = modifier@disease_resistance_efficiency_factor }
+					factor = disease_resistance_efficiency_factor_temp
+				}
+				modifier = {
+					set_temp_variable = { parasytic_resistance_efficiency_modifier_temp = modifier@parasytic_resistance_efficiency_modifier }
+					multiply_temp_variable = { parasytic_resistance_efficiency_modifier_temp = -1 }
+					add = parasytic_resistance_efficiency_modifier_temp
+				}
+				modifier = {
+					set_temp_variable = { parasytic_resistance_efficiency_factor_temp = 1 }
+					add_to_temp_variable = { parasytic_resistance_efficiency_factor_temp = modifier@parasytic_resistance_efficiency_factor }
+					factor = parasytic_resistance_efficiency_factor_temp
+				}
+				modifier = {
+					capital_scope = {
+						OR = {
+							check_variable = { pops_sol > global.pandemic_max_sol@token:disease_malaria }
+							check_variable = { pops_sol < global.pandemic_min_sol@token:disease_malaria }
+						}
+					}
+					factor = 0
+				}
+				set_temp_variable = { pandemic_temp = token:disease_malaria }
+				eoanbr_pandemic_country_setup = yes
+			}
+			5 = {
+				modifier = {
+					NOT = { is_in_array = { array = global.pandemic_active_array value = token:disease_cholera } }
+					factor = 0
+				}
+				modifier = {
+					add = global.pandemic_likelihood@token:disease_cholera
+				}
+				modifier = {
+					add = pandemic_likelihood@token:disease_cholera
+				}
+				modifier = {
+					set_temp_variable = { disease_resistance_efficiency_modifier_temp = modifier@disease_resistance_efficiency_modifier }
+					multiply_temp_variable = { disease_resistance_efficiency_modifier_temp = -1 }
+					add = disease_resistance_efficiency_modifier_temp
+				}
+				modifier = {
+					set_temp_variable = { disease_resistance_efficiency_factor_temp = 1 }
+					add_to_temp_variable = { disease_resistance_efficiency_factor_temp = modifier@disease_resistance_efficiency_factor }
+					factor = disease_resistance_efficiency_factor_temp
+				}
+				modifier = {
+					set_temp_variable = { parasytic_resistance_efficiency_modifier_temp = modifier@parasytic_resistance_efficiency_modifier }
+					multiply_temp_variable = { parasytic_resistance_efficiency_modifier_temp = -1 }
+					add = parasytic_resistance_efficiency_modifier_temp
+				}
+				modifier = {
+					set_temp_variable = { parasytic_resistance_efficiency_factor_temp = 1 }
+					add_to_temp_variable = { parasytic_resistance_efficiency_factor_temp = modifier@parasytic_resistance_efficiency_factor }
+					factor = parasytic_resistance_efficiency_factor_temp
+				}
+				modifier = {
+					capital_scope = {
+						OR = {
+							check_variable = { pops_sol > global.pandemic_max_sol@token:disease_cholera }
+							check_variable = { pops_sol < global.pandemic_min_sol@token:disease_cholera }
+						}
+					}
+					factor = 0
+				}
+				set_temp_variable = { pandemic_temp = token:disease_cholera }
+				eoanbr_pandemic_country_setup = yes
+			}
+			5 = {
+				modifier = {
+					NOT = { is_in_array = { array = global.pandemic_active_array value = token:disease_bubonic } }
+					factor = 0
+				}
+				modifier = {
+					add = global.pandemic_likelihood@token:disease_bubonic
+				}
+				modifier = {
+					add = pandemic_likelihood@token:disease_bubonic
+				}
+				modifier = {
+					set_temp_variable = { disease_resistance_efficiency_modifier_temp = modifier@disease_resistance_efficiency_modifier }
+					multiply_temp_variable = { disease_resistance_efficiency_modifier_temp = -1 }
+					add = disease_resistance_efficiency_modifier_temp
+				}
+				modifier = {
+					set_temp_variable = { disease_resistance_efficiency_factor_temp = 1 }
+					add_to_temp_variable = { disease_resistance_efficiency_factor_temp = modifier@disease_resistance_efficiency_factor }
+					factor = disease_resistance_efficiency_factor_temp
+				}
+				modifier = {
+					set_temp_variable = { bacterial_resistance_efficiency_modifier_temp = modifier@bacterial_resistance_efficiency_modifier }
+					multiply_temp_variable = { bacterial_resistance_efficiency_modifier_temp = -1 }
+					add = bacterial_resistance_efficiency_modifier_temp
+				}
+				modifier = {
+					set_temp_variable = { bacterial_resistance_efficiency_factor_temp = 1 }
+					add_to_temp_variable = { bacterial_resistance_efficiency_factor_temp = modifier@bacterial_resistance_efficiency_factor }
+					factor = bacterial_resistance_efficiency_factor_temp
+				}
+				modifier = {
+					capital_scope = {
+						OR = {
+							check_variable = { pops_sol > global.pandemic_max_sol@token:disease_bubonic }
+							check_variable = { pops_sol < global.pandemic_min_sol@token:disease_bubonic }
+						}
+					}
+					factor = 0
+				}
+				set_temp_variable = { pandemic_temp = token:disease_bubonic }
+				eoanbr_pandemic_country_setup = yes
+			}
+			5 = {
+				modifier = {
+					NOT = { is_in_array = { array = global.pandemic_active_array value = token:disease_spanish_flu } }
+					factor = 0
+				}
+				modifier = {
+					add = global.pandemic_likelihood@token:disease_spanish_flu
+				}
+				modifier = {
+					add = pandemic_likelihood@token:disease_spanish_flu
+				}
+				modifier = {
+					set_temp_variable = { disease_resistance_efficiency_modifier_temp = modifier@disease_resistance_efficiency_modifier }
+					multiply_temp_variable = { disease_resistance_efficiency_modifier_temp = -1 }
+					add = disease_resistance_efficiency_modifier_temp
+				}
+				modifier = {
+					set_temp_variable = { disease_resistance_efficiency_factor_temp = 1 }
+					add_to_temp_variable = { disease_resistance_efficiency_factor_temp = modifier@disease_resistance_efficiency_factor }
+					factor = disease_resistance_efficiency_factor_temp
+				}
+				modifier = {
+					set_temp_variable = { viral_resistance_efficiency_modifier_temp = modifier@viral_resistance_efficiency_modifier }
+					multiply_temp_variable = { viral_resistance_efficiency_modifier_temp = -1 }
+					add = viral_resistance_efficiency_modifier_temp
+				}
+				modifier = {
+					set_temp_variable = { viral_resistance_efficiency_factor_temp = 1 }
+					add_to_temp_variable = { viral_resistance_efficiency_factor_temp = modifier@viral_resistance_efficiency_factor }
+					factor = viral_resistance_efficiency_factor_temp
+				}
+				modifier = {
+					capital_scope = {
+						OR = {
+							check_variable = { pops_sol > global.pandemic_max_sol@token:disease_spanish_flu }
+							check_variable = { pops_sol < global.pandemic_min_sol@token:disease_spanish_flu }
+						}
+					}
+					factor = 0
+				}
+				set_temp_variable = { pandemic_temp = token:disease_spanish_flu }
+				eoanbr_pandemic_country_setup = yes
+			}
+			5 = {
+				modifier = {
+					NOT = { is_in_array = { array = global.pandemic_active_array value = token:disease_influenza } }
+					factor = 0
+				}
+				modifier = {
+					add = global.pandemic_likelihood@token:disease_influenza
+				}
+				modifier = {
+					add = pandemic_likelihood@token:disease_influenza
+				}
+				modifier = {
+					set_temp_variable = { disease_resistance_efficiency_modifier_temp = modifier@disease_resistance_efficiency_modifier }
+					multiply_temp_variable = { disease_resistance_efficiency_modifier_temp = -1 }
+					add = disease_resistance_efficiency_modifier_temp
+				}
+				modifier = {
+					set_temp_variable = { disease_resistance_efficiency_factor_temp = 1 }
+					add_to_temp_variable = { disease_resistance_efficiency_factor_temp = modifier@disease_resistance_efficiency_factor }
+					factor = disease_resistance_efficiency_factor_temp
+				}
+				modifier = {
+					set_temp_variable = { viral_resistance_efficiency_modifier_temp = modifier@viral_resistance_efficiency_modifier }
+					multiply_temp_variable = { viral_resistance_efficiency_modifier_temp = -1 }
+					add = viral_resistance_efficiency_modifier_temp
+				}
+				modifier = {
+					set_temp_variable = { viral_resistance_efficiency_factor_temp = 1 }
+					add_to_temp_variable = { viral_resistance_efficiency_factor_temp = modifier@viral_resistance_efficiency_factor }
+					factor = viral_resistance_efficiency_factor_temp
+				}
+				modifier = {
+					capital_scope = {
+						OR = {
+							check_variable = { pops_sol > global.pandemic_max_sol@token:disease_influenza }
+							check_variable = { pops_sol < global.pandemic_min_sol@token:disease_influenza }
+						}
+					}
+					factor = 0
+				}
+				set_temp_variable = { pandemic_temp = token:disease_influenza }
+				eoanbr_pandemic_country_setup = yes
+			}
+			5 = {
+				modifier = {
+					NOT = { is_in_array = { array = global.pandemic_active_array value = token:disease_typhus } }
+					factor = 0
+				}
+				modifier = {
+					add = global.pandemic_likelihood@token:disease_typhus
+				}
+				modifier = {
+					add = pandemic_likelihood@token:disease_typhus
+				}
+				modifier = {
+					set_temp_variable = { disease_resistance_efficiency_modifier_temp = modifier@disease_resistance_efficiency_modifier }
+					multiply_temp_variable = { disease_resistance_efficiency_modifier_temp = -1 }
+					add = disease_resistance_efficiency_modifier_temp
+				}
+				modifier = {
+					set_temp_variable = { disease_resistance_efficiency_factor_temp = 1 }
+					add_to_temp_variable = { disease_resistance_efficiency_factor_temp = modifier@disease_resistance_efficiency_factor }
+					factor = disease_resistance_efficiency_factor_temp
+				}
+				modifier = {
+					set_temp_variable = { parasytic_resistance_efficiency_modifier_temp = modifier@parasytic_resistance_efficiency_modifier }
+					multiply_temp_variable = { parasytic_resistance_efficiency_modifier_temp = -1 }
+					add = parasytic_resistance_efficiency_modifier_temp
+				}
+				modifier = {
+					set_temp_variable = { parasytic_resistance_efficiency_factor_temp = 1 }
+					add_to_temp_variable = { parasytic_resistance_efficiency_factor_temp = modifier@parasytic_resistance_efficiency_factor }
+					factor = parasytic_resistance_efficiency_factor_temp
+				}
+				modifier = {
+					capital_scope = {
+						OR = {
+							check_variable = { pops_sol > global.pandemic_max_sol@token:disease_typhus }
+							check_variable = { pops_sol < global.pandemic_min_sol@token:disease_typhus }
+						}
+					}
+					factor = 0
+				}
+				set_temp_variable = { pandemic_temp = token:disease_typhus }
+				eoanbr_pandemic_country_setup = yes
+			}
+			5 = {
+				modifier = {
+					NOT = { is_in_array = { array = global.pandemic_active_array value = token:disease_ebola } }
+					factor = 0
+				}
+				modifier = {
+					add = global.pandemic_likelihood@token:disease_ebola
+				}
+				modifier = {
+					add = pandemic_likelihood@token:disease_ebola
+				}
+				modifier = {
+					set_temp_variable = { disease_resistance_efficiency_modifier_temp = modifier@disease_resistance_efficiency_modifier }
+					multiply_temp_variable = { disease_resistance_efficiency_modifier_temp = -1 }
+					add = disease_resistance_efficiency_modifier_temp
+				}
+				modifier = {
+					set_temp_variable = { disease_resistance_efficiency_factor_temp = 1 }
+					add_to_temp_variable = { disease_resistance_efficiency_factor_temp = modifier@disease_resistance_efficiency_factor }
+					factor = disease_resistance_efficiency_factor_temp
+				}
+				modifier = {
+					set_temp_variable = { viral_resistance_efficiency_modifier_temp = modifier@viral_resistance_efficiency_modifier }
+					multiply_temp_variable = { viral_resistance_efficiency_modifier_temp = -1 }
+					add = viral_resistance_efficiency_modifier_temp
+				}
+				modifier = {
+					set_temp_variable = { viral_resistance_efficiency_factor_temp = 1 }
+					add_to_temp_variable = { viral_resistance_efficiency_factor_temp = modifier@viral_resistance_efficiency_factor }
+					factor = viral_resistance_efficiency_factor_temp
+				}
+				modifier = {
+					capital_scope = {
+						OR = {
+							check_variable = { pops_sol > global.pandemic_max_sol@token:disease_ebola }
+							check_variable = { pops_sol < global.pandemic_min_sol@token:disease_ebola }
+						}
+					}
+					factor = 0
+				}
+				set_temp_variable = { pandemic_temp = token:disease_ebola }
+				eoanbr_pandemic_country_setup = yes
+			}
+			5 = {
+				modifier = {
+					NOT = { is_in_array = { array = global.pandemic_active_array value = token:disease_coronavirus } }
+					factor = 0
+				}
+				modifier = {
+					add = global.pandemic_likelihood@token:disease_coronavirus
+				}
+				modifier = {
+					add = pandemic_likelihood@token:disease_coronavirus
+				}
+				modifier = {
+					set_temp_variable = { disease_resistance_efficiency_modifier_temp = modifier@disease_resistance_efficiency_modifier }
+					multiply_temp_variable = { disease_resistance_efficiency_modifier_temp = -1 }
+					add = disease_resistance_efficiency_modifier_temp
+				}
+				modifier = {
+					set_temp_variable = { disease_resistance_efficiency_factor_temp = 1 }
+					add_to_temp_variable = { disease_resistance_efficiency_factor_temp = modifier@disease_resistance_efficiency_factor }
+					factor = disease_resistance_efficiency_factor_temp
+				}
+				modifier = {
+					set_temp_variable = { viral_resistance_efficiency_modifier_temp = modifier@viral_resistance_efficiency_modifier }
+					multiply_temp_variable = { viral_resistance_efficiency_modifier_temp = -1 }
+					add = viral_resistance_efficiency_modifier_temp
+				}
+				modifier = {
+					set_temp_variable = { viral_resistance_efficiency_factor_temp = 1 }
+					add_to_temp_variable = { viral_resistance_efficiency_factor_temp = modifier@viral_resistance_efficiency_factor }
+					factor = viral_resistance_efficiency_factor_temp
+				}
+				modifier = {
+					capital_scope = {
+						OR = {
+							check_variable = { pops_sol > global.pandemic_max_sol@token:disease_coronavirus }
+							check_variable = { pops_sol < global.pandemic_min_sol@token:disease_coronavirus }
+						}
+					}
+					factor = 0
+				}
+				set_temp_variable = { pandemic_temp = token:disease_coronavirus }
+				eoanbr_pandemic_country_setup = yes
+			}
+
+		}
+	}
+}
+eoanbr_pandemic_country_setup = {
+	#news_event = eoanbr_pandemics.1
+	#activate_mission = eoanbr_pandemics_progress_counter
+	if = {
+		limit = {
+			NOT = { is_in_array = { global.pandemic_known_array = pandemic_temp } }
+		}
+		add_to_array = { global.pandemic_known_array = pandemic_temp }
+		if = {
+			limit = {
+				check_variable = { pandemic_temp = token:disease_spanish_flu }
+			}
+			set_variable = { eoanbr_pandemics_great_flu_spark = THIS.id }
+		}
+	}
+
+}

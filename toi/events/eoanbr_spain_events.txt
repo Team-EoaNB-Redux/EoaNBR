@@ -1082,7 +1082,10 @@ country_event = { #Militia system
 
 	immediate = {
 		# log = "[THIS.GetTag]: firing = spain_debug.1"
-		hidden_effect = { ROOT = { every_owned_state = { limit = { SPR_homeland_states = yes } SPR_call_national_militia_units = yes } } }
+		every_owned_state = {
+			limit = { is_in_home_area = yes }
+			SPR_call_national_militia_units = yes
+		}
 	}
 }
 
@@ -1097,39 +1100,6 @@ country_event = { #Militia system
 	}
 } 
 
-country_event = { #Debt system initial announcement
-	id = spain.8
-	title = spain.8.t
-	desc = spain.8.d
-	
-	is_triggered_only = yes
-
-	option = {
-		name = spain.8.a
-		# log = "option:		name = spain.8.a"
-		ai_chance = { factor = 100 }
-		if = {
-			limit = { NOT = { has_country_flag = paying_debt } }
-			activate_decision = eoanb_decision_debt_repayments 
-		}
-	}
-}
-
-country_event = { #Debt system
-	id = calc_spain_debt.1
-	hidden = yes
-	is_triggered_only = yes
-
-	immediate = {
-		# log = "[THIS.GetTag]: firing = calc_spain_debt.1"
-		hidden_effect = {
-			ROOT = {
-				SPR_calculate_debt_time = yes
-			}
-		}
-	}
-}
-
 country_event = { #Debt system bankrupcy avoiding
 	id = SPR_bankruptcy_events.1
 	title = SPR_bankruptcy_events.1.t
@@ -1143,6 +1113,20 @@ country_event = { #Debt system bankrupcy avoiding
 		ai_chance = { 
 			base = 100 
 		}
+
+		# TODO
+		# Give UK ownership of Valuables, Iron, Copper, Chemicals RGOs in Andalusia
+		# This would give UK profits of those RGOs in exchange for money
+		set_temp_variable = { x_temp = -3000 }
+		add_treasury = yes
+
+		SPR = {
+			set_temp_variable = { x_temp = 3000 }
+			add_treasury = yes
+		}
+
+		custom_effect_tooltip = SPR_sell_andalusia_mining_rights_tt
+		
 		if = {
 			limit = { has_dlc = "Man the Guns" }
 			SPR = { give_resource_rights = { receiver = ENG state = 169 } }
@@ -1151,7 +1135,12 @@ country_event = { #Debt system bankrupcy avoiding
 			add_political_power = 200
 		}
 		hidden_effect = { 
-			169 = { set_state_flag = SPR_sold_andalusia_mining_rights_flag } 
+			169 = { 
+				set_state_flag = SPR_sold_andalusia_mining_rights_flag
+				add_dynamic_modifier = {
+					modifier = SPR_sold_andalusia_resource_rights
+				}
+			} 
 			SPR = { country_event = { id = SPR_bankruptcy_events.2 days = 3 } }
 		}
 	}
@@ -2110,6 +2099,12 @@ country_event = { #Peru offers vivanco-pareja  - SPR
 		ai_chance = { factor = 100 }
 		PRU={country_event = {id = peru.7}}
 	}
+	option = {#the perfect excuse
+		name = spain.26.b
+		# log = "option:		name = spain.26.a"
+		ai_chance = { factor = 0 }
+		PRU={country_event = {id = peru.14}}
+	}
 }
 
 country_event = { #Chile bars us from recoaling  - SPR
@@ -2161,6 +2156,11 @@ country_event = { #Pareja blocades valparaiso  - CHL
 				targeted_alliance = PRU
 				enemy = SPR
 				hostility_reason = asked_to_join
+			}
+			PRU={
+				country_event ={
+					id = peru.15
+				}
 			}
 			SPR={
 				remove_mission = SPR_south_american_war_PRU
@@ -2216,13 +2216,14 @@ country_event = { #Tensions boil over  - USA
 		# log = "option:		name = spain.30.a"
 		ai_chance = { factor = 100 }
 		SPR = {
+			set_country_flag = USA_takes_land_on_abandon
 			country_event = {
 				id = usa.158
 				days = 60
 			}
 		}
 	}
-	option = {#send the demand
+	option = {#abadon monroe
 		name = spain.30.b
 		# log = "option:		name = spain.30.b"
 		ai_chance = { factor = 0 }
@@ -2254,293 +2255,400 @@ country_event = {
 				is_historical_focus_on = yes
 			}
 		}
-		USA = {
-			transfer_state = 315
-			transfer_state = 1350
-			if = {
-				limit = {
-					1022 = {
-						OR = {
-							is_owned_by = SPR
-							owner = {
-								is_puppet_of = SPR
+		set_country_flag = SPR_driven_from_americas
+		if={
+			limit={
+				has_country_flag = USA_takes_land_on_abandon
+			}
+			USA = {#takes Caribbean and Philippines if tensions boil over
+				#Cede Cuba
+				CUB={
+					every_core_state={
+						limit= {
+							owner={
+								OR={
+									original_tag = SPR
+									is_subject_of = SPR
+								}
 							}
-							owner = {
+						}
+						transfer_state_to = USA
+					}
+				}
+				if = {#guantanamo
+					limit = {
+						1022 = {
+							OR = {
+								is_owned_by = SPR
+								owner = {
+									is_puppet_of = SPR
+								}
+								owner = {
+									is_subject_of = SPR
+								}
+							}
+						}
+					}
+					transfer_state = 1022
+				}
+				#cede Puerto Rico
+				if = {
+					limit = {
+						686 = {
+							OR = {
+								is_owned_by = SPR
+								owner = {
+									is_puppet_of = SPR
+								}
+								owner = {
+									is_subject_of = SPR
+								}
+							}
+						}
+					}
+					transfer_state = 686
+				}
+				#Dominica
+				if = {
+					limit = {
+						319 = {
+							OR = {
+								is_owned_by = SPR
+								owner = {
+									is_puppet_of = SPR
+								}
+								owner = {
+									is_subject_of = SPR
+								}
+							}
+						}
+					}
+					transfer_state = 319
+				}
+				if = {
+					limit = {
+						1318 = {
+							OR = {
+								is_owned_by = SPR
+								owner = {
+									is_puppet_of = SPR
+								}
+								owner = {
+									is_subject_of = SPR
+								}
+							}
+						}
+					}
+					transfer_state = 1318
+				}
+				#Haiti
+				if = {
+					limit = {
+						790 = {
+							OR = {
+								is_owned_by = SPR
+								owner = {
+									is_puppet_of = SPR
+								}
+								owner = {
+									is_subject_of = SPR
+								}
+							}
+						}
+					}
+					transfer_state = 790
+				}
+				if = {
+					limit = {
+						318 = {
+							OR = {
+								is_owned_by = SPR
+								owner = {
+									is_puppet_of = SPR
+								}
+								owner = {
+									is_subject_of = SPR
+								}
+							}
+						}
+					}
+					transfer_state = 318
+				}
+				#guam
+				if = {
+					limit = {
+						638 = {
+							OR = {
+								is_owned_by = SPR
+								owner = {
+									is_puppet_of = SPR
+								}
+								owner = {
+									is_subject_of = SPR
+								}
+							}
+						}
+					}
+					transfer_state = 638
+				}
+				#USA takes Phillippines if war has happened
+				if={
+					limit={
+						has_global_flag = Spanish_American_War_Occured
+					}
+					SPH={
+						every_core_state={
+							limit= {
+								owner={
+									OR={
+										original_tag = SPR
+										is_subject_of = SPR
+									}
+								}
+							}
+							transfer_state_to = USA
+							remove_core_of = SPH
+						}
+					}
+					SPR={#clean-up
+						annex_country = {
+							target = SPH
+							transfer_troops = yes
+						}
+					}
+				}
+			}
+		}
+		else={#release Caribbean
+			CUB={
+				every_core_state={
+					limit= {
+						owner={
+							OR={
+								original_tag = SPR
 								is_subject_of = SPR
 							}
 						}
 					}
+					transfer_state_to = USA
 				}
-				transfer_state = 1022
 			}
-			if = {
-				limit = {
-					686 = {
-						OR = {
-							is_owned_by = SPR
-							owner = {
-								is_puppet_of = SPR
-							}
-							owner = {
-								is_subject_of = SPR
+			CUB={
+				if = {#guantanamo
+					limit = {
+						1022 = {
+							OR = {
+								is_owned_by = SPR
+								owner = {
+									is_puppet_of = SPR
+								}
+								owner = {
+									is_subject_of = SPR
+								}
 							}
 						}
 					}
+					transfer_state = 1022
 				}
-				transfer_state = 686
 			}
-			if = {
-				limit = {
-					319 = {
-						OR = {
-							is_owned_by = SPR
-							owner = {
-								is_puppet_of = SPR
-							}
-							owner = {
-								is_subject_of = SPR
+			#Puerto Rico
+			PRT={
+				if = {
+					limit = {
+						686 = {
+							OR = {
+								is_owned_by = SPR
+								owner = {
+									is_puppet_of = SPR
+								}
+								owner = {
+									is_subject_of = SPR
+								}
 							}
 						}
 					}
+					transfer_state = 686
 				}
-				transfer_state = 319
 			}
-			if = {
-				limit = {
-					1318 = {
-						OR = {
-							is_owned_by = SPR
-							owner = {
-								is_puppet_of = SPR
-							}
-							owner = {
-								is_subject_of = SPR
+			DOM={
+				#Dominica
+				if = {
+					limit = {
+						319 = {
+							OR = {
+								is_owned_by = SPR
+								owner = {
+									is_puppet_of = SPR
+								}
+								owner = {
+									is_subject_of = SPR
+								}
 							}
 						}
 					}
+					transfer_state = 319
 				}
-				transfer_state = 1318
-			}
-			if = {
-				limit = {
-					1319 = {
-						OR = {
-							is_owned_by = SPR
-							owner = {
-								is_puppet_of = SPR
-							}
-							owner = {
-								is_subject_of = SPR
+				if = {
+					limit = {
+						1318 = {
+							OR = {
+								is_owned_by = SPR
+								owner = {
+									is_puppet_of = SPR
+								}
+								owner = {
+									is_subject_of = SPR
+								}
 							}
 						}
 					}
+					transfer_state = 1318
 				}
-				transfer_state = 1319
 			}
-			if = {
-				limit = {
-					638 = {
-						OR = {
-							is_owned_by = SPR
-							owner = {
-								is_puppet_of = SPR
-							}
-							owner = {
-								is_subject_of = SPR
+			#Haiti
+			HAI={
+				if = {
+					limit = {
+						790 = {
+							OR = {
+								is_owned_by = SPR
+								owner = {
+									is_puppet_of = SPR
+								}
+								owner = {
+									is_subject_of = SPR
+								}
 							}
 						}
 					}
+					transfer_state = 790
 				}
-				transfer_state = 638
-			}
-			if = {
-				limit = {
-					1022 = {
-						OR = {
-							is_owned_by = SPR
-							owner = {
-								is_puppet_of = SPR
-							}
-							owner = {
-								is_subject_of = SPR
-							}
-						}
-					}
-				}
-				transfer_state = 1022
-			}
-			if = {
-				limit = {
-					627 = {
-						OR = {
-							is_owned_by = SPR
-							owner = {
-								is_puppet_of = SPR
-							}
-							owner = {
-								is_subject_of = SPR
+				if = {
+					limit = {
+						318 = {
+							OR = {
+								is_owned_by = SPR
+								owner = {
+									is_puppet_of = SPR
+								}
+								owner = {
+									is_subject_of = SPR
+								}
 							}
 						}
 					}
+					transfer_state = 318
 				}
-				transfer_state = 627
 			}
-			if = {
-				limit = {
-					628 = {
-						OR = {
-							is_owned_by = SPR
-							owner = {
-								is_puppet_of = SPR
-							}
-							owner = {
-								is_subject_of = SPR
-							}
+		}
+		#Mexico
+		MEX={
+			every_core_state={
+				limit= {
+					owner={
+						OR={
+							original_tag = SPR
+							is_subject_of = SPR
 						}
 					}
 				}
-				transfer_state = 628
+				transfer_state_to = MEX
 			}
-			if = {
-				limit = {
-					625 = {
-						OR = {
-							is_owned_by = SPR
-							owner = {
-								is_puppet_of = SPR
-							}
-							owner = {
-								is_subject_of = SPR
-							}
+		}
+		if = {
+			limit = {
+				MEC={
+					is_subject_of = SPR
+				}
+			}
+			SPR={
+				set_autonomy = {
+					target = MEC
+					autonomy_state = autonomy_free
+					end_wars = no
+					end_civil_wars = no
+				}
+			}
+			MEC={drop_cosmetic_tag = yes}
+		}
+		if = {
+			limit = {
+				MXE={
+					is_subject_of = SPR
+				}
+			}
+			SPR={
+				set_autonomy = {
+					target = MXE
+					autonomy_state = autonomy_free
+					end_wars = no
+					end_civil_wars = no
+				}
+			}
+				MXE={drop_cosmetic_tag = yes}
+		}
+		if = {
+			limit = {
+				MEX={
+					is_subject_of = SPR
+				}
+			}
+			SPR={
+				set_autonomy = {
+					target = MEX
+					autonomy_state = autonomy_free
+					end_wars = no
+					end_civil_wars = no
+				}
+			}
+			MEX={drop_cosmetic_tag = yes}
+		}
+		#Chile
+		CHL={
+			every_core_state={
+				limit= {
+					owner={
+						OR={
+							original_tag = SPR
+							is_subject_of = SPR
 						}
 					}
 				}
-				transfer_state = 625
+				transfer_state_to = CHL
 			}
-			if = {
-				limit = {
-					624 = {
-						OR = {
-							is_owned_by = SPR
-							owner = {
-								is_puppet_of = SPR
-							}
-							owner = {
-								is_subject_of = SPR
-							}
+		}
+		#Peru
+		PRU={
+			every_core_state={
+				limit= {
+					owner={
+						OR={
+							original_tag = SPR
+							is_subject_of = SPR
 						}
 					}
 				}
-				transfer_state = 624
+				transfer_state_to = PRU
 			}
-			if = {
-				limit = {
-					327 = {
-						OR = {
-							is_owned_by = SPR
-							owner = {
-								is_puppet_of = SPR
-							}
-							owner = {
-								is_subject_of = SPR
-							}
-						}
-					}
-				}
-				transfer_state = 327
-			}
-			if = {
-				limit = {
-					623 = {
-						OR = {
-							is_owned_by = SPR
-							owner = {
-								is_puppet_of = SPR
-							}
-							owner = {
-								is_subject_of = SPR
-							}
-						}
-					}
-				}
-				transfer_state = 623
-			}
-			if = {
-				limit = {
-					626 = {
-						OR = {
-							is_owned_by = SPR
-							owner = {
-								is_puppet_of = SPR
-							}
-							owner = {
-								is_subject_of = SPR
-							}
-						}
-					}
-				}
-				transfer_state = 626
-			}
-			#controls mexico
-			if = {
-				limit = {
-					MEC={
-						is_subject_of = SPR
-					}
-				}
-				SPR={
-					set_autonomy = {
-						target = MEC
-						autonomy_state = autonomy_free
-						end_wars = no
-						end_civil_wars = no
-					}
+		}
+		if = {
+			limit = {
+				PRU={
+					is_subject_of = SPR
 				}
 			}
-			if = {
-				limit = {
-					MXE={
-						is_subject_of = SPR
-					}
-				}
-				SPR={
-					set_autonomy = {
-						target = MXE
-						autonomy_state = autonomy_free
-						end_wars = no
-						end_civil_wars = no
-					}
+			SPR={
+				set_autonomy = {
+					target = PRU
+					autonomy_state = autonomy_free
+					end_wars = no
+					end_civil_wars = no
 				}
 			}
-			if = {
-				limit = {
-					MEX={
-						is_subject_of = SPR
-					}
-				}
-				SPR={
-					set_autonomy = {
-						target = MEX
-						autonomy_state = autonomy_free
-						end_wars = no
-						end_civil_wars = no
-					}
-				}
+			PRU={#clean-up
+				drop_cosmetic_tag = yes
+				remove_ideas = {PRU_reimposed_imperial_yoke}
 			}
-			if = {
-				limit = {
-					SPR={
-						controls_state = 277
-					}
-				}
-				SPR={
-					release = MEX
-				}
-			}
-
-
-
-
 		}
 	}
 }
@@ -2781,4 +2889,223 @@ country_event = { #battle of Alcolea
 		country_event ={id = spain.37 days = 10}
 	}
 }
+country_event = { #69 election
+	id = spain.41
+	title = spain.41.t
+	desc = spain.41.d
+	picture = GFX_plan_de_escuadra
 
+	immediate = {
+		# log = "[THIS.GetTag]: firing = spain.40"
+	}
+	
+	is_triggered_only = yes
+
+	option = {#Liberal Union-Progressive
+		name = spain.41.a
+		# log = "option:		name = spain.40.a"
+		ai_chance = { factor = 100 }
+		set_country_flag = SPR_6dy_regency
+		mark_focus_tree_layout_dirty = yes
+	}
+	option = {#Federalist
+		name = spain.41.b
+		# log = "option:		name = spain.40.a"
+		ai_chance = { factor = 5 }
+		set_country_flag = SPR_6dy_federal_69
+		mark_focus_tree_layout_dirty = yes
+	}
+	option = {#carlist
+		name = spain.41.c
+		# log = "option:		name = spain.40.a"
+		ai_chance = { factor = 3 }
+		set_country_flag = SPR_6dy_carlist_69
+		mark_focus_tree_layout_dirty = yes
+	}
+}
+country_event = { #Victory in the SA-Spainish war
+	id = spain.42
+	title = spain.42.t
+	desc = spain.42.d
+	picture = GFX_plan_de_escuadra
+
+	immediate = {
+		# log = "[THIS.GetTag]: firing = spain.40"
+	}
+	
+	is_triggered_only = yes
+
+	option = {#decide on a individual level
+		name = spain.42.a
+		# log = "option:		name = spain.40.a"
+		ai_chance = { factor = 100 }
+		country_event = {id = spain.43 days = 1}
+		country_event = {id = spain.44 days = 2}
+	}
+	option = {#restablish Viceroyalty of Peru
+		name = spain.42.b
+		# log = "option:		name = spain.40.a"
+		ai_chance = { factor = 12 }
+		add_to_variable = {
+			SPR_USA_american_tension=9
+			tooltip = SPR_tension_increase_effect_tooltip
+		}
+		custom_effect_tooltip = SPR_reestablish_viceroyalty_peru
+		hidden_effect={
+			set_nationality = {
+				target_country = PRU
+				character = SPR_eusebio_salazar_mazarredo
+			}
+			PRU={
+				set_country_flag = autonomy_hispanic_crown_union_flag
+				store_current_ideologies = yes
+			}
+			set_autonomy = {
+				target = PRU
+				autonomous_state = autonomy_hispanic_crown_union
+				end_wars = yes
+				end_civil_wars = yes
+			}
+			PRU={
+				load_prevous_ideologies = yes
+				add_ideas = {
+					PRU_reimposed_imperial_yoke
+				}
+				add_country_leader_role = {
+					character = SPR_eusebio_salazar_mazarredo
+					promote_leader = yes
+					country_leader = {
+						ideology = conserv_liberal
+						expire = "1965.1.1.1"
+						traits = {  }
+					}
+				}
+				set_politics = {
+					ruling_party = centrism
+				}
+				remove_ideas ={
+					PRU_ecuadorian_volunteers PRU_post_cw_instability PRU_post_cw_instability2 PRU_1856_constitution
+				}
+				annex_country = {
+					target = CHL
+					transfer_troops = no
+				}
+				set_cosmetic_tag = PRU_SPR_viceroyalty
+			}
+		}
+	}
+}
+country_event = { #Demands on Peru
+	id = spain.43
+	title = spain.43.t
+	desc = spain.43.d
+	picture = GFX_plan_de_escuadra
+
+	immediate = {
+		# log = "[THIS.GetTag]: firing = spain.40"
+	}
+	
+	is_triggered_only = yes
+
+	option = {#Puntitive
+		name = spain.43.a
+		# log = "option:		name = spain.40.a"
+		ai_chance = { factor = 100 }
+		set_temp_variable = { x_temp = 24 }
+		add_treasury_gdp = yes
+		PRU={
+			debt_level_increase_by_6 = yes
+		}
+	}
+	option = {#Force Spanish control over the Guano Supply
+		name = spain.43.b
+		# log = "option:		name = spain.40.a"
+		ai_chance = { factor = 1 }
+		PRU={
+			remove_ideas = PRU_guano_era
+		}
+		add_ideas = PRU_guano_treaty
+	}
+}
+country_event = { #Demands on Chile
+	id = spain.44
+	title = spain.44.t
+	desc = spain.44.d
+	picture = GFX_plan_de_escuadra
+
+	immediate = {
+		# log = "[THIS.GetTag]: firing = spain.40"
+	}
+	
+	is_triggered_only = yes
+
+	option = {#Puntitive
+		name = spain.44.a
+		# log = "option:		name = spain.40.a"
+		ai_chance = { factor = 100 }
+		set_temp_variable = { x_temp = 24 }
+		add_treasury_gdp = yes
+		CHL={
+			debt_level_increase_by_6 = yes
+		}
+	}
+	option = {#Simply Force them to recoal our Fleet
+		name = spain.44.b
+		# log = "option:		name = spain.40.a"
+		ai_chance = { factor = 1 }
+		set_temp_variable = {eoanb_prestige_change = 2}
+		eoanb_change_prestige_score = yes
+		subtract_from_variable = {
+			SPR_USA_american_tension=3
+			tooltip = SPR_tension_decrease_effect_tooltip
+		}
+		CHL={
+			give_military_access = ROOT
+		}
+	}
+}
+
+country_event = { #Treaty of Friendship with Peru
+	id = spain.45
+	title = spain.45.t
+	desc = spain.45.d
+	picture = GFX_plan_de_escuadra
+
+	immediate = {
+		# log = "[THIS.GetTag]: firing = spain.40"
+	}
+	
+	is_triggered_only = yes
+
+	option = {#
+		name = spain.45.a
+		# log = "option:		name = spain.40.a"
+		ai_chance = { factor = 100 }
+		
+	}
+}
+country_event = { #Search for a king I
+	id = spain.46
+	title = spain.46.t
+	desc = spain.46.d
+	picture = GFX_plan_de_escuadra
+
+	immediate = {
+		# log = "[THIS.GetTag]: firing = spain.40"
+	}
+	
+	is_triggered_only = yes
+
+	option = {#Luis I, the portugese candidate
+		name = spain.46.a
+		# log = "option:		name = spain.40.a"
+		ai_chance = { factor = 100 }
+		
+	}
+	option = {#Antonio I, the Duke of Montpensier
+		name = spain.46.b
+		# log = "option:		name = spain.40.a"
+		ai_chance = { factor = 100 }
+		
+	}
+}

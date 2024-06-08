@@ -1,0 +1,183 @@
+create_sorted_array = {
+	if = {
+		limit = {
+			check_variable = { last_sort_var = sort_var }
+		}
+		set_variable = { middle = ledger_countries^num }
+		set_temp_variable = { len = ledger_countries^num }
+		subtract_from_temp_variable = { len = 1 }
+		divide_variable = { middle = 2 }
+		round_variable = middle
+		for_loop_effect = {
+			start = 0
+			end = middle
+
+			set_temp_variable = { reverse = len }
+			subtract_from_temp_variable = { reverse = v }
+			set_temp_variable = { swap = ledger_countries^v }
+			set_variable = { ledger_countries^v = ledger_countries^reverse }
+			set_variable = { ledger_countries^reverse = swap }
+		}
+		clear_variable = middle
+	}
+	else = {
+		set_temp_variable = { ledger_qs_compare = 0 }
+		set_variable = { high = ledger_countries^num }
+		subtract_from_variable = { high = 1 }
+		set_variable = { low = 0 }
+		ledger_quicksort = yes
+		set_variable = { last_sort_var = sort_var }
+		clear_variable = high
+		clear_variable = low
+	}
+}
+
+get_deployed_air_force_size = {
+	set_variable = { deployed_air_force_size = num_deployed_planes }
+	
+}
+
+get_strategic_building_levels = {
+	every_owned_state = {
+		limit = { is_controlled_by = PREV }
+		add_to_variable = { PREV.nuclear_reactors = building_level@nuclear_reactor }
+		add_to_variable = { PREV.rocket_sites = building_level@rocket_site }
+	}
+}
+
+update_misc_vars = {
+	set_variable = {
+		consumer_goods_factories = num_of_civilian_factories
+	}
+	multiply_variable = {
+		consumer_goods_factories = modifier@consumer_goods_factor
+	}
+	set_variable = {
+		effective_civilian_factories = num_of_civilian_factories
+	}
+	subtract_from_variable = {
+		effective_civilian_factories = consumer_goods_factories
+	}
+	set_temp_variable = {
+		civ_factories_multiplier = modifier@production_speed_buildings_factor
+	}
+	multiply_temp_variable = {
+		civ_factories_multiplier = effective_civilian_factories
+	}
+	add_to_variable = {
+		effective_civilian_factories = civ_factories_multiplier
+	}
+	set_variable = {
+		effective_military_factories = num_of_military_factories
+	}
+	set_temp_variable = {
+		mil_factories_multiplier = modifier@industrial_capacity_factory
+	}
+	multiply_temp_variable = {
+		mil_factories_multiplier = effective_military_factories
+	}
+	add_to_variable = {
+		effective_military_factories = mil_factories_multiplier
+	}
+	set_variable = {
+		effective_naval_factories = num_of_naval_factories
+	}
+	set_temp_variable = {
+		nav_factories_multiplier = modifier@industrial_capacity_dockyard
+	}
+	multiply_temp_variable = {
+		nav_factories_multiplier = effective_naval_factories
+	}
+	add_to_variable = {
+		effective_naval_factories = nav_factories_multiplier
+	}
+	set_variable = {
+		num_controlled_states_including_subjects = num_controlled_states
+	}
+	for_each_scope_loop = {
+		array = subjects
+		add_to_variable = {
+			PREV.num_controlled_states_including_subjects = num_controlled_states
+		}
+	}
+	if = {
+		limit = { is_faction_leader = yes }
+		set_variable = { faction_battalions = num_battalions }
+		set_variable = { faction_ships = num_ships }
+		set_variable = { faction_air = deployed_air_force_size }
+		set_variable = { faction_industry = num_of_factories }
+		set_variable = { faction_controlled_states = num_of_controlled_states }
+		for_each_scope_loop = {
+			array = allies
+			add_to_variable = { PREV.faction_battalions = num_battalions }
+			add_to_variable = { PREV.faction_ships = num_ships }
+			add_to_variable = { PREV.faction_air = deployed_air_force_size }
+			add_to_variable = { PREV.faction_industry = num_of_factories }
+			add_to_variable = { PREV.faction_controlled_states = num_of_controlled_states }
+		}
+	}
+	else = {
+		clear_variable = faction_battalions
+		clear_variable = faction_ships
+		clear_variable = faction_air
+		clear_variable = faction_industry
+		clear_variable = faction_controlled_states
+	}
+}
+
+open_ledger = {
+	update_ledger_country_array = yes
+	every_country = {
+		limit = {
+			#econ_can_use_economy_system = yes
+		}
+		update_economy_tab = yes
+	}
+	set_variable = { ledger_open = 1 }
+}
+
+update_ledger_country_array = {
+	clear_variable = last_sort_var
+	clear_array = ledger_countries
+	every_country = {
+		limit = {
+		#	is_major = yes
+			NOT = { tag = ZZZ }
+		}
+		get_deployed_air_force_size = yes
+		update_misc_vars = yes
+		get_strategic_building_levels = yes
+		add_to_array = {
+			PREV.ledger_countries = THIS
+		}
+	}
+	# every_country = {
+	# 	limit = {
+	# 	#	is_major = no
+	# 		NOT = { tag = ZZZ }
+	# 	}
+	# 	get_deployed_air_force_size = yes
+	# 	update_misc_vars = yes
+	# 	get_strategic_building_levels = yes
+	# 	add_to_array = {
+	# 		PREV.ledger_countries = THIS
+	# 	}
+	# }
+}
+
+update_ledger_faction_array = {
+	clear_variable = last_sort_var
+	clear_array = ledger_countries
+	every_country = {
+		limit = {
+			is_faction_leader = yes
+			NOT = { tag = ZZZ }
+		}
+		get_deployed_air_force_size = yes
+		update_misc_vars = yes
+		get_strategic_building_levels = yes
+		add_to_array = {
+			PREV.ledger_countries = THIS
+		}
+	}
+}

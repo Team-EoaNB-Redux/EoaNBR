@@ -8,11 +8,11 @@ A list of technologies that are currently used to add institution progress
 		<th>Amount</th>
 	</tr>
 	<tr>
-		<td>tech_pre_rifle_equipment0</td>
+		<td>tech_infantry_pre_rifle_equipment_0</td>
 		<td>2</td>
 	</tr>
 	<tr>
-		<td>tech_pre_rifle_equipment1</td>
+		<td>tech_infantry_pre_rifle_equipment_1</td>
 		<td>2</td>
 	</tr>
 	<tr>
@@ -65,7 +65,7 @@ A list of technologies that are currently used to add institution progress
 		<th>Amount</th>
 	</tr>
 	<tr>
-		<td>tech_pre_rifle_equipment0</td>
+		<td>tech_infantry_pre_rifle_equipment_0</td>
 		<td>5</td>
 	</tr>
 	<tr>
@@ -101,7 +101,7 @@ A list of technologies that are currently used to add institution progress
 		<td>2</td>
 	</tr>
 	<tr>
-		<td>tech_pre_rifle_equipment2</td>
+		<td>tech_infantry_pre_rifle_equipment_2</td>
 		<td>2</td>
 	</tr>
 	<tr>
@@ -166,7 +166,7 @@ A list of technologies that are currently used to add institution progress
 		<td>2</td>
 	</tr>
 	<tr>
-		<td>tech_pre_rifle_equipment2</td>
+		<td>tech_infantry_pre_rifle_equipment_2</td>
 		<td>1</td>
 	</tr>
 	<tr>
