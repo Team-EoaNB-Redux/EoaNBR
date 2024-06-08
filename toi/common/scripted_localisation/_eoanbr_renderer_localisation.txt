@@ -5,7 +5,7 @@
 # param_cutoff: The number of elements to render before cutting off recursion, defaults to 30 (the default value of `NGame.MAX_SCRIPTED_LOC_RECURSION`.)
 # param_cutoff_suffix: If you pass a token here, its localization will be used as the indicator for a list that has exceeded param_cutoff, instead of "..."
 defined_text = {
-	name = RenderTestArray
+	name = render_test_array
 	text = {
 		trigger = {
 			# Idiom to copy `test_array` into temp array `param_array`
@@ -25,7 +25,7 @@ defined_text = {
       set_temp_variable = { param_cutoff = 4 }
       # set_temp_variable = { param_cutoff_suffix = token:array_cutoff_suffix_none }
 		}
-		localization_key = "[RenderArray]"
+		localization_key = "[render_array]"
 	}
 }
 
@@ -36,7 +36,7 @@ defined_text = {
 # Be sure to set the define `NGame.MAX_SCRIPTED_LOC_RECURSION` to a value greater than the maximum list length you will be rendering!
 # If you do change that define, be sure to change the default value for `param_cutoff` in here!
 defined_text = {
-	name = RenderArray
+	name = render_array
 	text = {
 		trigger = {
 			check_variable = { param_array^num > 0 }
@@ -53,7 +53,7 @@ defined_text = {
       # If we haven't got a valid param_cutoff_suffix, use the default, which is array_cutoff_suffix_ellipsis ("...").
       if = { limit = { check_variable = { param_cutoff_suffix?0 = 0 } } set_temp_variable = { param_cutoff_suffix = token:array_cutoff_suffix_ellipsis } }
 		}
-		localization_key = "[RenderArrayInner]"
+		localization_key = "[render_array_inner]"
 	}
 }
 
@@ -63,8 +63,8 @@ defined_text = {
 # which would make it subject to tail-call optimization (compiling down to an efficient loop) in a proper functional language.
 # Unfortunately, Clausewitz is... not such a language, to say the least lmao
 defined_text = {
-  name = RenderArrayInner
-	text = { # Loop case: increment i, then if it is within the array bounds, render the element at i and then call RenderArrayInner to continue.
+  name = render_array_inner
+	text = { # Loop case: increment i, then if it is within the array bounds, render the element at i and then call render_array_inner to continue.
 		trigger = {
 			add_to_temp_variable = { i = 1 }
 			AND = {
@@ -73,7 +73,7 @@ defined_text = {
       }
       set_temp_variable = { v = param_array^i }
 		}
-		localization_key = "[RenderArrayInfix][RenderArrayElement][RenderArrayInner]" # Recurse!
+		localization_key = "[render_array_infix][render_array_element][render_array_inner]" # Recurse!
 	}
   text = { # Cutoff case: when we have exceeded param_cutoff without reaching the end of the array, render the cutoff suffix and stop recursing.
     trigger = { check_variable = { i = param_cutoff } check_variable = { i < param_array^num }       log = "[?param_cutoff_suffix.GetTokenKey]"
@@ -88,7 +88,7 @@ defined_text = {
 ### Renders the infix (like a newline or a comma) going before each element, according to param_infix and param_last_infix.
 # param_infix is the infix for the body of the list, param_last_infix is an optional override for the last element in the list.
 defined_text = {
-	name = RenderArrayInfix
+	name = render_array_infix
 	text = { # No infix precedes the first element
 		trigger = { check_variable = { i = 0 } }
 		localization_key = ""
@@ -114,7 +114,7 @@ defined_text = {
 # You can define your own custom renderer behaviours at the bottom,
 # by adding cases checking for the relevant custom renderer ideas, defined in the appropriate part of `common/ideas/EU_array_renderer.txt`.
 defined_text = {
-	name = RenderArrayElement
+	name = render_array_element
   text = {
     trigger = { check_variable = { param_renderer?0 = 0 } }
 		localization_key = "[?v]"
@@ -190,7 +190,6 @@ defined_text = {
 		}
 		localization_key = "[modifier_mutation_render]"
 	}
-
   ####### END CUSTOM ELEMENT RENDERERS #######
   ############################################
 	text = {
