@@ -1246,6 +1246,61 @@ defined_text = {
 			localization_key = "[GetAdjustedAmountNoSign]"
 		}
 	}
+	defined_text = { # GetEmployed
+		name = GetEmployed
+		text = {
+			trigger = {
+				set_temp_variable = { amount_temp = employed }
+			}
+			localization_key = "[GetAdjustedAmountThousandsNoSign]"
+		}
+	}
+	defined_text = { # GetJobs
+		name = GetJobs
+		text = {
+			trigger = {
+				set_temp_variable = { amount_temp = jobs }
+			}
+			localization_key = "[GetAdjustedAmountThousandsNoSign]"
+		}
+	}
+	defined_text = { # GetAvailableWorkforce
+		name = GetAvailableWorkforce
+		text = {
+			trigger = {
+				set_temp_variable = { amount_temp = available_workforce }
+			}
+			localization_key = "[GetAdjustedAmountThousandsNoSign]"
+		}
+	}
+	defined_text = { # GetPopDividends
+		name = GetPopDividends
+		text = {
+			trigger = {
+				set_temp_variable = { amount_temp = aristocrats_dividends }
+				add_to_temp_variable = { amount_temp = capitalists_dividends }
+			}
+			localization_key = "[GetPositiveAdjustedAmount]"
+		}
+	}
+	defined_text = { # GetAristocratsDividends
+		name = GetAristocratsDividends
+		text = {
+			trigger = {
+				set_temp_variable = { amount_temp = aristocrats_dividends }
+			}
+			localization_key = "[GetPositiveAdjustedAmount]"
+		}
+	}
+	defined_text = { # GetCapitalistsDividends
+		name = GetCapitalistsDividends
+		text = {
+			trigger = {
+				set_temp_variable = { amount_temp = capitalists_dividends }
+			}
+			localization_key = "[GetPositiveAdjustedAmount]"
+		}
+	}
 #
 
 #Industries
@@ -1331,7 +1386,7 @@ defined_text = {
 					set_temp_variable = { pm_output_temp = global.building_base_production@var:industry_token^pm_output_i }
 					set_temp_variable = { amount_temp = production@var:industry_token^pm_output_i }
 
-					check_variable = { pm_output_i < input@var:industry_token^num }
+					check_variable = { pm_output_i < global.building_base_production@var:industry_token^num }
 					NOT = { check_variable = { amount_temp = 0 } }
 				}
 				localization_key = industry_pm_output_loc
@@ -1800,6 +1855,18 @@ defined_text = {
 					set_temp_variable = { amount_temp = total_construction_cost_temp }
 				}
 				localization_key = "[GetSpendingAmount]"
+			}
+		}
+		defined_text = { # GetIndustryConstructionProductivity - v
+			name = GetIndustryConstructionProductivity
+			text = {
+				trigger = {
+					set_temp_variable = { industry_token = v }
+					if = { limit = { has_variable = production_method@var:industry_token } set_temp_variable = { pm_temp = production_method@var:industry_token } }
+					else = { set_temp_variable = { pm_temp = controller:latest_production_method@var:v } }
+					get_pm_values = yes
+				}
+				localization_key = "[?productivity_temp|2+]"
 			}
 		}
 	#
@@ -3398,6 +3465,12 @@ defined_text = {
 			localization_key = investment_opportunity_upgrade
 		}
 		text = {
+			trigger = {
+				check_variable = { investment_opportunity_type@var:v = 3 }
+			}
+			localization_key = investment_opportunity_upgrade_am
+		}
+		text = {
 			localization_key = "[?investment_opportunity_building@var:v.GetTokenLocalizedKey]"
 		}
 	}
@@ -3407,7 +3480,7 @@ defined_text = {
 			trigger = {
 				set_temp_variable = { gubb = investment_opportunity_building@var:v }
 			}
-			localization_key = "GFX_[?gubb.GetTokenKey]_icon"
+			localization_key = "GFX_[?gubb.GetTokenKey]"
 		}
 	}
 	defined_text = {
@@ -3869,19 +3942,19 @@ defined_text = {
                 trigger = {
                     check_variable = { corporation_type = 2 }
                 }
-                localization_key = "GFX_resource_consumer_goods"
+                localization_key = "GFX_consumer_goods_factory"
             }
             text = {
                 trigger = {
                     check_variable = { corporation_type = 3 }
                 }
-                localization_key = "GFX_resource_luxury_goods"
+                localization_key = "GFX_luxuries"
             }
             text = {
                 trigger = {
                     check_variable = { corporation_type = 6 }
                 }
-                localization_key = "GFX_resource_industrial_goods"
+                localization_key = "GFX_appliances"
             }
         }
     #
@@ -5122,6 +5195,16 @@ defined_text = {
 		text = {
 			trigger = {
 				set_temp_variable = { amount_temp = military_payroll_spending }
+			}
+			localization_key = "[GetSpendingAmount]"
+		}
+	}
+	defined_text = { # GetMilitaryIndustrySpending
+		name = GetMilitaryIndustrySpending
+		text = {
+			trigger = {
+				set_temp_variable = { amount_temp = military_production_payroll_spending }
+				add_to_temp_variable = { amount_temp = military_production_resources_spending }
 			}
 			localization_key = "[GetSpendingAmount]"
 		}
@@ -6858,6 +6941,7 @@ defined_text = {
 				text = {
 					trigger = {
 						set_temp_variable = { amount_temp = workforce_earnings_avg }
+						divide_temp_variable = { amount_temp = 2 }
 					}
 					localization_key = "[GetPositiveAdjustedAmount]"
 				}

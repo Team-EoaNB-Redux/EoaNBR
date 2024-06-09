@@ -10,7 +10,7 @@
 #}
 
 #INDUSTRIES
-	can_build_building = {
+	can_build_industry = {
 		# industry_token
 		# size_temp - defaulted to 1
 		# State Scope
@@ -19,10 +19,12 @@
 
 		if = {
 			limit = {
-				is_in_array = { global.industry_token_array = industry_token }
+				is_in_array = { global.building_token_array = industry_token }
 			}
-			check_variable = { buildings^num < 8 }
-			check_variable = { buildings^num < modifier@local_industry_slots }
+			OR = {
+				check_variable = { buildings^num < modifier@local_industry_slots }
+				is_in_array = { buildings = industry_token }
+			}
 		}
 		if = {
 			limit = {
@@ -32,6 +34,10 @@
 		}
 		else = {
 			if = { limit = { check_variable = { size_temp = 0 } } set_temp_variable = { size_temp = 1 } }
+
+			if = { limit = { is_in_array = { global.rgo_token_array = industry_token } }
+				NOT = { check_variable = { deposits@var:industry_token < size_temp } }
+			}
 			
 			is_valid_industry = yes
 			if = {
@@ -88,8 +94,48 @@
 			is_in_array = { array = buildings value = var:industry_token_temp }
 		}
 	}
-#
+	has_industry = {
+		# Checks if state has this industry
+		# industry_token - checks if specific industry is in the state
+		custom_trigger_tooltip = {
+			tooltip = is_in_industry_slot_tt
+			is_in_array = { array = industries value = var:industry_token }
+			OR = {
+				check_variable = { size@industry_token > 0 }
+				check_variable = { construction@industry_token > 0 }
+			}
+		}
+	}
+	has_size_of_industry = {
+			# industry_token
+			# size_temp
 
+			if = {
+				limit = { check_variable = { size_temp = 0 } }
+				set_temp_variable = { size_temp = 1 }
+			}
+			custom_trigger_tooltip = {
+				tooltip = has_size_of_industry_tt
+				check_variable = {
+						var = size@var:industry_token
+						value = size_temp
+						compare = greater_than_or_equals
+				}
+		}
+	}
+#
+#TREASURY
+has_treasury = {
+	# x_temp - money
+	custom_trigger_tooltip = {
+		tooltip = has_treasury_tt
+		check_variable = {
+			var = treasury
+			value = x_temp
+			compare = greater_than_or_equals
+		}
+	}
+}
 return_earliest_production_method = {
 	# building_token
 	# State Scope
@@ -289,6 +335,15 @@ can_trade = {
 	NOT = { has_country_flag = rebel_uprising }
 	NOT = { has_country_flag = trade_restricted }
 }
+market_can_trade_by_sea = {
+	# Checks if market can trade by sea
+	var:market_leader = {
+		any_of_scopes = {
+			array = market_countries
+			can_trade_by_sea = yes
+		}
+	}
+}
 can_trade_by_sea = {
 	#Checks if you can trade with ANYONE by sea
 	# THIS DOES NOT CHECK IF YOU CAN TRADE IN GENERAL. USE CAN_TRADE FOR THAT.
@@ -319,23 +374,33 @@ can_trade_with = {
 	# Either neighbors or coastal
 	# If not neighbors, then neither under blockade
 
-	can_trade = yes
+	set_temp_variable = { country_market_leader_temp = country_temp:market_leader }
+
+	var:market_leader = { can_trade = yes }
 	country_exists = var:country_temp
 	NOT = { tag = var:country_temp }
-	NOT = { has_war_with = var:country_temp }
-	NOT = { var:country_temp = { is_embargoed_by = PREV } }
-	NOT = { var:country_temp = { is_embargoing = PREV } }
+	NOT = { has_war_with = var:country_market_leader_temp }
+	NOT = { var:country_market_leader_temp = { is_embargoed_by = var:market_leader } }
+	NOT = { var:country_market_leader_temp = { is_embargoing = var:market_leader } }
 
-	var:country_temp = {
+	var:country_market_leader_temp = {
 		can_trade = yes
 	}
 
 	OR = {
-		is_neighbor_of = var:country_temp
+		# is_neighbor_of = var:country_temp
+		var:country_temp = {
+			any_neighbor_country = {
+				check_variable = { market_leader = PREV.PREV.market_leader }
+			}
+		}
+		any_neighbor_country = {
+			check_variable = { market_leader = country_temp:market_leader }
+		}
 		AND = {
-			can_trade_by_sea = yes
+			market_can_trade_by_sea = yes
 			var:country_temp = {
-				can_trade_by_sea = yes
+				market_can_trade_by_sea = yes
 			}
 		}
 	}

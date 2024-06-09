@@ -21,7 +21,7 @@ focus_tree = {
 	focus = {
 		id = ENG_focus_sepoy_rebellion
 		icon = GFX_focus_RAJ_lions_of_the_great_war
-		x = 7
+		x = 9
 		y = 0
 		cost = 70
 
@@ -40,36 +40,40 @@ focus_tree = {
 		icon = GFX_Focus_Continent_India
 		x = 5
 		y = 1
-		cost = 35
+		cost = 60
 
 		ai_will_do = {
 			factor = 100
 		}
+		relative_position_id = ENG_focus_sepoy_rebellion
 		prerequisite = { focus = ENG_focus_sepoy_rebellion }
 
 		completion_reward = {
-			custom_effect_tooltip = eoanb_tt_focus_ENG_defend_jewel
 			RAJ = { add_ideas = ENG_idea_defend_RAJ }
+			custom_effect_tooltip = tooltip_white_line
+			custom_effect_tooltip = eoanb_tt_focus_ENG_defend_jewel
 		}
 	}
 
 	focus = {
 		id = ENG_focus_cause_of_sepoy
 		icon = GFX_Focus_Partisans_Popularize
-		x = 3
-		y = 2
+		x = -2
+		y = 1
 		cost = 7
 
 		ai_will_do = {
 			factor = 100
 		}
+		relative_position_id = ENG_focus_defend_jewel
 		prerequisite = { focus = ENG_focus_defend_jewel }
 		search_filters = { FOCUS_FILTER_STABILITY }
 
 		completion_reward = {
-			add_war_support = 0.02
 			RAJ = { add_stability = 0.02 }
 			RAJ = { add_war_support = 0.02 }
+			add_war_support = 0.02
+			custom_effect_tooltip = tooltip_white_line
 			custom_effect_tooltip = eoanb_tt_focus_ENG_cause_of_sepoy
 		}
 	}
@@ -77,36 +81,37 @@ focus_tree = {
 	focus = {
 		id = ENG_focus_blame_muslims
 		icon = GFX_goal_generic_forceful_treaty
-		x = 2
-		y = 3
-		cost = 35
+		x = -1
+		y = 1
+		cost = 30
 
 		ai_will_do = {
 			factor = 100
 		}
+		relative_position_id = ENG_focus_cause_of_sepoy
 		prerequisite = { focus = ENG_focus_cause_of_sepoy }
 		mutually_exclusive = { focus = ENG_focus_blame_sikhs }
 		search_filters = { FOCUS_FILTER_HISTORICAL }
 
 		completion_reward = {
-			#Add consequences for states with muslim majority later, when religion system is implemented
 			if = {
 				limit = {
-					RAJ = { has_idea = religion_sikh }
+					any_core_state = {
+						limit = {
+							is_owned_and_controlled_by = RAJ
+							set_variable = { religion_temp = religion_sunni }
+							is_majority_religion_in_state = yes
+						}
+					}
 				}
-				RAJ = { add_stability = 0.05 }
-				custom_effect_tooltip = eoanb_tt_focus_ENG_muslims_offended
-			}
-			if = {
-				limit = {
-					RAJ = { has_idea = religion_sunni }
+				RAJ = { 
+					set_temp_variable = { RAJ_muslim_discontent_delta = 0.05 }
+					RAJ_muslim_discontent_increase = yes
+					custom_effect_tooltip = tooltip_white_line
 				}
-				RAJ = { add_stability = -0.05 }
-				custom_effect_tooltip = eoanb_tt_focus_ENG_muslims_offended
 			}
 			else = {
-				RAJ = { add_stability = 0.02 }
-				custom_effect_tooltip = eoanb_tt_focus_ENG_muslims_offended
+				RAJ = { add_stability = -0.02 }
 			}
 		}
 	}
@@ -114,41 +119,38 @@ focus_tree = {
 	focus = {
 		id = ENG_focus_blame_sikhs
 		icon = GFX_focus_RAJ_indian_gurkhas
-		x = 4
-		y = 3
-		cost = 7
+		x = 1
+		y = 1
+		cost = 30
 
 		ai_will_do = {
 			factor = 100
 		}
+		relative_position_id = ENG_focus_cause_of_sepoy
 		prerequisite = { focus = ENG_focus_cause_of_sepoy }
 		mutually_exclusive = { focus = ENG_focus_blame_muslims }
 		search_filters = { FOCUS_FILTER_STABILITY }
 		search_filters = { FOCUS_FILTER_ALTHISTORY }
 
 		completion_reward = {
-			#Add consequences for states with muslim majority later, when religion system is implemented
 			if = {
 				limit = {
-					RAJ = { has_idea = religion_sikh }
+					any_core_state = {
+						limit = {
+							is_owned_and_controlled_by = RAJ
+							set_variable = { religion_temp = religion_sikh }
+							is_majority_religion_in_state = yes
+						}
+					}
 				}
-				RAJ = { add_stability = -0.05 }
-				custom_effect_tooltip = eoanb_tt_focus_ENG_sikhs_offended
-			}
-			if = {
-				limit = {
-					RAJ = { has_idea = religion_sunni }
+				RAJ = { 
+					set_temp_variable = { RAJ_sikh_discontent_delta = 0.05 }
+					RAJ_sikh_discontent_increase = yes
+					custom_effect_tooltip = tooltip_white_line
 				}
-				RAJ = { add_stability = 0.05 }
-				custom_effect_tooltip = eoanb_tt_focus_ENG_sikhs_offended
 			}
 			else = {
-				RAJ = { add_stability = 0.02 }
-				custom_effect_tooltip = eoanb_tt_focus_ENG_sikhs_offended
-			}
-			hidden_effect={#offending the sikhs makes them more likely to side with SRS
-				KAR={set_country_flag = ENG_offened_sikhs}
-				KAS={set_country_flag = ENG_offened_sikhs}
+				RAJ = { add_stability = -0.02 }
 			}
 		}
 	}
@@ -156,13 +158,14 @@ focus_tree = {
 	focus = {
 		id = ENG_focus_lessons_cawnpore
 		icon = GFX_focus_RAJ_indianisation_of_army
-		x = 7
-		y = 2
+		x = 0
+		y = 1
 		cost = 35
 
 		ai_will_do = {
 			factor = 100
 		}
+		relative_position_id = ENG_focus_defend_jewel
 		prerequisite = { focus = ENG_focus_defend_jewel }
 
 		completion_reward = {
@@ -174,14 +177,15 @@ focus_tree = {
 	focus = {
 		id = ENG_focus_colin_campbell_india
 		icon = GFX_goal_focus_send_colin_campbell
-		x = 6
-		y = 3
-		cost = 20
+		x = 2
+		y = 1
+		cost = 7
 
 		ai_will_do = {
 			factor = 100
 		}
-		prerequisite = { focus = ENG_focus_lessons_cawnpore }
+		relative_position_id = ENG_focus_defend_jewel
+		prerequisite = { focus = ENG_focus_defend_jewel }
 
 		completion_reward = {
 			custom_effect_tooltip = eoanb_tt_focus_ENG_colin_campbell
@@ -198,43 +202,53 @@ focus_tree = {
 	focus = {
 		id = ENG_focus_central_indian_campaign
 		icon = GFX_focus_RAJ_two_nation_theory
-		x = 6
-		y = 4
-		cost = 35
+		x = -1
+		y = 1
+		cost = 30
 
 		ai_will_do = {
 			factor = 100
 		}
+		relative_position_id = ENG_focus_colin_campbell_india
 		prerequisite = { focus = ENG_focus_colin_campbell_india }
+		prerequisite = { focus = ENG_focus_lessons_cawnpore }
 		bypass = { NOT = { RAJ = { has_war_with = SRS } } }
 
 		completion_reward = {
-			custom_effect_tooltip = eoanb_tt_focus_ENG_defend_jewel
 			RAJ = { add_ideas = ENG_idea_RAJ_central_campaign }
+			custom_effect_tooltip = tooltip_white_line
+			custom_effect_tooltip = eoanb_tt_focus_ENG_defend_jewel
 		}
 	}
 
 	focus = {
 		id = ENG_focus_restore_peace_india
 		icon = GFX_Focus_Diplomatic_Ally_ENG
-		x = 6
-		y = 5
+		x = 0
+		y = 1
 		cost = 35
 
 		ai_will_do = {
 			factor = 100
 		}
-		prerequisite = { focus = ENG_focus_central_indian_campaign }
+		relative_position_id = ENG_focus_sepoy_rebellion
+		prerequisite = { focus = ENG_focus_sepoy_rebellion }
 		mutually_exclusive = { focus = ENG_focus_humiliation_by_sepoy }
-		available = { SRS = { exists = no } }
-		search_filters = { FOCUS_FILTER_STABILITY }
-		search_filters = { FOCUS_FILTER_HISTORICAL}
+		available = {
+			custom_trigger_tooltip = {
+				tooltip = RAJ_SR_ongoing_NOT
+				NOT = { has_war_with = SRS }
+			}
+		}
+		search_filters = { FOCUS_FILTER_STABILITY FOCUS_FILTER_HISTORICAL }
 
 		completion_reward = {
-			add_stability = 0.05
 			RAJ = { add_stability = 0.05 }
+			custom_effect_tooltip = tooltip_white_line
 			custom_effect_tooltip = eoanb_tt_focus_ENG_RAJ_peace
 			hidden_effect = {
+				add_stability = 0.05
+				add_war_support = 0.05
 				clr_global_flag = eoanb_flag_sepoy_rebellion_ongoing
 				SRS = { remove_state_core = 437 }
 				SRS = { remove_state_core = 438 }
@@ -248,17 +262,19 @@ focus_tree = {
 	focus = {
 		id = ENG_focus_preliminary_suppression
 		icon = GFX_Focus_Freedom_Press_controlled
-		x = 8
-		y = 3
-		cost = 70
+		x = 1
+		y = 1
+		cost = 45
 
 		ai_will_do = {
 			factor = 100
 		}
-		prerequisite = { focus = ENG_focus_lessons_cawnpore }
+		relative_position_id = ENG_focus_colin_campbell_india
+		prerequisite = { focus = ENG_focus_colin_campbell_india }
 
 		completion_reward = {
-			RAJ = { add_ideas = ENG_idea_RAJ_preliminary_suppression }
+			RAJ = { add_timed_idea = { idea = ENG_idea_RAJ_preliminary_suppression days = 365 } }
+			custom_effect_tooltip = tooltip_white_line
 			custom_effect_tooltip = eoanb_tt_focus_ENG_preliminary_suppression
 			hidden_effect = {
 				if = {
@@ -288,26 +304,27 @@ focus_tree = {
 	focus = {
 		id = ENG_focus_humiliation_by_sepoy
 		icon = GFX_Focus_Partisans_Stop_Fund
-		x = 8
-		y = 5
+		x = 2
+		y = 1
 		cost = 35
 
 		ai_will_do = {
 			factor = 100
 		}
+		relative_position_id = ENG_focus_sepoy_rebellion
 		mutually_exclusive = { focus = ENG_focus_restore_peace_india }
 		available = {
 			always = no
 		}
-		search_filters = { FOCUS_FILTER_STABILITY }
-		search_filters = { FOCUS_FILTER_ALTHISTORY }
+		search_filters = { FOCUS_FILTER_STABILITY FOCUS_FILTER_ALTHISTORY }
 
 		completion_reward = {
-			add_stability = -0.05
-			add_war_support = -0.05
 			RAJ = { add_stability = -0.1 }
+			custom_effect_tooltip = tooltip_white_line
 			custom_effect_tooltip = eoanb_tt_focus_ENG_humiliation_SRS
 			hidden_effect = {
+				add_stability = -0.05
+				add_war_support = -0.05
 				RAJ = {
 					add_to_variable = {
 						var = ENG_RAJ_revolt_risk
@@ -322,13 +339,14 @@ focus_tree = {
 	focus = {
 		id = ENG_focus_repeal_gse_act
 		icon = GFX_Focus_Law_Vote_1
-		x = 11
+		x = -2
 		y = 1
 		cost = 35
 
 		ai_will_do = {
 			factor = 100
 		}
+		relative_position_id = ENG_focus_sepoy_rebellion
 		prerequisite = { focus = ENG_focus_sepoy_rebellion }
 		bypass = { NOT = { RAJ = { has_idea = ENG_idea_RAJ_gse_act } } }
 		available = {
@@ -337,6 +355,7 @@ focus_tree = {
 
 		completion_reward = {
 			RAJ = { remove_ideas = ENG_idea_RAJ_gse_act }
+			custom_effect_tooltip = tooltip_white_line
 			add_opinion_modifier = { target = RAJ modifier = eoanb_om_repealed_gse_act_ENG_RAJ }
 			reverse_add_opinion_modifier = { target = RAJ modifier = eoanb_om_repealed_gse_act_ENG_RAJ }
 		}
@@ -345,8 +364,8 @@ focus_tree = {
 	focus = {
 		id = ENG_focus_prepare_negotiations
 		icon = GFX_goal_focus_question_eic
-		x = 9
-		y = 2
+		x = -2
+		y = 1
 		cost = 7
 
 		ai_will_do = {
@@ -355,12 +374,13 @@ focus_tree = {
 		available={
 			RAJ = { has_war_with = SRS}
 		}
+		relative_position_id = ENG_focus_repeal_gse_act
 		prerequisite = { focus = ENG_focus_repeal_gse_act }
 		bypass = { NOT = { RAJ = { has_war_with = SRS } } }
 
 		completion_reward = {
-			add_political_power = 50
 			RAJ = { add_political_power = 50 }
+			custom_effect_tooltip = tooltip_white_line
 			add_opinion_modifier = { target = RAJ modifier = eoanb_om_prepared_negotiations_ENG_RAJ }
 			reverse_add_opinion_modifier = { target = RAJ modifier = eoanb_om_prepared_negotiations_ENG_RAJ }
 		}
@@ -369,40 +389,26 @@ focus_tree = {
 	focus = {
 		id = ENG_focus_repeal_regulatory_act
 		icon = GFX_Focus_Ideology_Support_Liberalism
-		x = 11
-		y = 2
+		x = 0
+		y = 1
 		cost = 35
 
 		ai_will_do = {
 			factor = 100
 		}
 		available={
-			OR={
-				SRS={exists = no}
-				NOT={RAJ = { has_war_with = SRS}}
-			}
+
 		}
+		relative_position_id = ENG_focus_repeal_gse_act
 		prerequisite = { focus = ENG_focus_repeal_gse_act }
 		search_filters = { FOCUS_FILTER_STABILITY }
 
 		completion_reward = {
 			add_stability = 0.02
-			custom_effect_tooltip = eoanb_tt_focus_ENG_repeal_regulatory_act
-			hidden_effect = {
-				if = {
-					limit = { OR = {
-						has_dlc = "Together for Victory"
-						has_dlc = "Waking the Tiger"
-						has_dlc = "Death or Dishonor"
-					} }
-					RAJ = {
-						add_autonomy_score = {
-							value = 100
-						}
-					}
-				}
-				else = {
-					add_political_power = 50
+			#custom_effect_tooltip = eoanb_tt_focus_ENG_repeal_regulatory_act
+			RAJ = {
+				add_autonomy_score = {
+					value = 100
 				}
 			}
 		}
@@ -411,19 +417,32 @@ focus_tree = {
 	focus = {
 		id = ENG_focus_stop_lapse_doctrine
 		icon = GFX_goal_focus_princely_local_governments
-		x = 10
-		y = 4
+		x = 2
+		y = 1
 		cost = 70
 
 		ai_will_do = {
 			factor = 20
 		}
+		relative_position_id = ENG_focus_repeal_regulatory_act
 		prerequisite = { focus = ENG_focus_repeal_regulatory_act }
-		mutually_exclusive = { focus = ENG_focus_continue_annex_policy }
+		mutually_exclusive = { focus = ENG_focus_continue_policy_of_annexation }
 		available = { RAJ = { is_subject_of = ENG } }
 		search_filters = { FOCUS_FILTER_HISTORICAL }
 
 		completion_reward = {
+			RAJ = {
+				custom_effect_tooltip = eoanb_tt_focus_ENG_stop_lapse_doctrine
+				custom_effect_tooltip = tooltip_white_line
+				set_temp_variable = { RAJ_muslim_discontent_delta = 0.075 }
+				RAJ_muslim_discontent_increase = yes
+				custom_effect_tooltip = tooltip_white_line
+				custom_effect_tooltip = tooltip_white_line
+				set_temp_variable = { RAJ_sikh_discontent_delta = 0.075 }
+				RAJ_sikh_discontent_increase = yes
+			}
+			custom_effect_tooltip = tooltip_white_line
+			#custom_effect_tooltip = eoanb_tt_focus_ENG_stop_lapse_doctrine_extended
 			if = {
 				limit = {
 					RAJ = {
@@ -441,32 +460,21 @@ focus_tree = {
 					}
 				}
 			}
-			custom_effect_tooltip = eoanb_tt_focus_ENG_stop_lapse_doctrine
-			hidden_effect = {
-				if = {
-					limit = { OR = {
-						has_dlc = "Together for Victory"
-						has_dlc = "Waking the Tiger"
-						has_dlc = "Death or Dishonor"
-					} }
-					RAJ = {
-						add_autonomy_score = {
-							value = 50
-						}
+			#hidden_effect = {
+				RAJ = {
+					add_autonomy_score = {
+						value = 50
 					}
 				}
-				else = {
-					add_political_power = 25
-				}
-			}
+			#}
 		}
 	}
 
 	focus = {
-		id = ENG_focus_continue_annex_policy
+		id = ENG_focus_continue_policy_of_annexation
 		icon = GFX_goal_focus_british_colonial_empire
-		x = 12
-		y = 4
+		x = -2
+		y = 1
 		cost = 70
 
 		ai_will_do = {
@@ -476,35 +484,22 @@ focus_tree = {
 				is_historical_focus_on = yes
 			}
 		}
+		relative_position_id = ENG_focus_repeal_regulatory_act
 		prerequisite = { focus = ENG_focus_repeal_regulatory_act }
 		mutually_exclusive = { focus = ENG_focus_stop_lapse_doctrine }
 		available = {
-			TRA = { exists = yes }
 			RAJ = { is_subject_of = ENG }
 		}
 		bypass = {
-			OR = {
-				TRA = { has_war_with = RAJ }
-				TRA = { exists = no }
-			}
+
 		}
 
 		select_effect = {
 			hidden_effect = {
-				if = {
-					limit = { OR = {
-						has_dlc = "Together for Victory"
-						has_dlc = "Waking the Tiger"
-						has_dlc = "Death or Dishonor"
-					} }
-					RAJ = {
-						add_autonomy_score = {
-							value = -50
-						}
+				RAJ = {
+					add_autonomy_score = {
+						value = -50
 					}
-				}
-				else = {
-					add_political_power = 50
 				}
 			}
 			RAJ = {
@@ -518,34 +513,50 @@ focus_tree = {
 		search_filters = { FOCUS_FILTER_ALTHISTORY }
 
 		completion_reward = {
-			custom_effect_tooltip = eoanb_tt_focus_ENG_continue_annex_policy
-			if = {
-				limit = {
-					TRA = { exists = yes }
-				}
-				RAJ = {
+			#custom_effect_tooltip = eoanb_tt_focus_ENG_continue_annex_policy
+			RAJ = {
+				if = {
+					limit = {
+						TRA = { exists = yes }
+					}
 					annex_country = {
 						target = TRA
 						transfer_troops = yes
 					}
 				}
+				custom_effect_tooltip = tooltip_white_line
+				set_temp_variable = { RAJ_muslim_discontent_delta = 0.075 }
+				RAJ_muslim_discontent_increase = yes
+				custom_effect_tooltip = tooltip_white_line
+				custom_effect_tooltip = tooltip_white_line
+				set_temp_variable = { RAJ_sikh_discontent_delta = 0.075 }
+				RAJ_sikh_discontent_increase = yes
 			}
+			custom_effect_tooltip = tooltip_white_line
+			add_to_variable = { RAJ_annexation_cost = -20 }
+			custom_effect_tooltip = RAJ_annexation_cost_tt
 		}
 	}
 
 	focus = {
-		id = ENG_focus_direct_RAJ_control
+		id = ENG_focus_assume_control
 		icon = GFX_goal_focus_british_military_government
-		x = 9
-		y = 6
-		cost = 70
+		x = -1
+		y = 1
+		cost = 35
 
 		ai_will_do = {
 			factor = 80
 		}
-		prerequisite = { focus = ENG_focus_continue_annex_policy focus = ENG_focus_stop_lapse_doctrine }
-		mutually_exclusive = { focus = ENG_focus_the_RAJ_compromise focus = ENG_focus_grant_RAJ_autonomy }
-		available = { RAJ = { is_subject_of = ENG } }
+		relative_position_id = ENG_focus_continue_policy_of_annexation
+		prerequisite = { focus = ENG_focus_continue_policy_of_annexation }
+		mutually_exclusive = { focus = ENG_focus_the_RAJ_compromise focus = ENG_focus_autonomous_jewel }
+		available = { 
+			RAJ = { 
+				is_subject_of = ENG
+				surrender_progress > 0.15 
+			}
+		}
 		search_filters = { FOCUS_FILTER_ALTHISTORY }
 
 		completion_reward = {
@@ -567,14 +578,14 @@ focus_tree = {
 						value = THIS
 					}
 				}
-				if = {
-					limit = {
-						OR = {
-							has_dlc = "Together for Victory"
-							has_dlc = "Waking the Tiger"
-							has_dlc = "Death or Dishonor"
-						}
-					}
+				# if = {
+				# 	limit = {
+				# 		OR = {
+				# 			has_dlc = "Together for Victory"
+				# 			has_dlc = "Waking the Tiger"
+				# 			has_dlc = "Death or Dishonor"
+				# 		}
+				# 	}
 					RAJ={store_current_ideologies = yes}
 					set_autonomy = {
 						target = RAJ
@@ -594,21 +605,21 @@ focus_tree = {
 						load_prevous_ideologies = yes
 					}
 
-				}
-				else = {
-					RAJ={store_current_ideologies = yes}
-					puppet = RAJ
-					RAJ={load_prevous_ideologies = yes}
-					for_each_scope_loop = {
-						array = RAJ.keep_vassals_autonomy_transfer
-						break = break_var
+				# }
+				# else = {
+				# 	RAJ={store_current_ideologies = yes}
+				# 	puppet = RAJ
+				# 	RAJ={load_prevous_ideologies = yes}
+				# 	for_each_scope_loop = {
+				# 		array = RAJ.keep_vassals_autonomy_transfer
+				# 		break = break_var
 
-						RAJ={
-							puppet = PREV
-						}
-						load_prevous_ideologies = yes
-					}
-				}
+				# 		RAJ={
+				# 			puppet = PREV
+				# 		}
+				# 		load_prevous_ideologies = yes
+				# 	}
+				# }
 				RAJ = {
 					clr_country_flag = AFR_is_a_colonial_company_flag
 					drop_cosmetic_tag = yes
@@ -621,8 +632,8 @@ focus_tree = {
 	focus = {
 		id = ENG_focus_the_RAJ_compromise
 		icon = GFX_goal_focus_form_british_raj
-		x = 11
-		y = 6
+		x = 0
+		y = 2
 		cost = 70
 
 		ai_will_do = {
@@ -632,8 +643,9 @@ focus_tree = {
 				is_historical_focus_on = yes
 			}
 		}
-		prerequisite = { focus = ENG_focus_continue_annex_policy focus = ENG_focus_stop_lapse_doctrine }
-		mutually_exclusive = { focus = ENG_focus_direct_RAJ_control focus = ENG_focus_grant_RAJ_autonomy }
+		relative_position_id = ENG_focus_repeal_regulatory_act
+		prerequisite = { focus = ENG_focus_continue_policy_of_annexation focus = ENG_focus_stop_lapse_doctrine }
+		mutually_exclusive = { focus = ENG_focus_assume_control focus = ENG_focus_autonomous_jewel }
 		available = {
 			RAJ = {
 				is_subject_of = ENG
@@ -660,6 +672,15 @@ focus_tree = {
 					}
 				}
 			}
+			RAJ = {
+				set_temp_variable = { RAJ_muslim_discontent_delta = 0.015 }
+				RAJ_muslim_discontent_decrease = yes
+				custom_effect_tooltip = tooltip_white_line
+				custom_effect_tooltip = tooltip_white_line
+				set_temp_variable = { RAJ_sikh_discontent_delta = 0.015 }
+				RAJ_sikh_discontent_decrease = yes
+			}
+			custom_effect_tooltip = tooltip_white_line
 			custom_effect_tooltip = eoanb_tt_focus_ENG_RAJ_compromise
 			hidden_effect = {
 				every_country={
@@ -672,14 +693,14 @@ focus_tree = {
 						value = THIS
 					}
 				}
-				if = {
-					limit = {
-						OR = {
-							has_dlc = "Together for Victory"
-							has_dlc = "Waking the Tiger"
-							has_dlc = "Death or Dishonor"
-						}
-					}
+				# if = {
+				# 	limit = {
+				# 		OR = {
+				# 			has_dlc = "Together for Victory"
+				# 			has_dlc = "Waking the Tiger"
+				# 			has_dlc = "Death or Dishonor"
+				# 		}
+				# 	}
 					RAJ={store_current_ideologies = yes}
 					set_autonomy = {
 						target = RAJ
@@ -699,21 +720,21 @@ focus_tree = {
 						load_prevous_ideologies = yes
 					}
 
-				}
-				else = {
-					RAJ={store_current_ideologies = yes}
-					puppet = RAJ
-					RAJ={load_prevous_ideologies = yes}
-					for_each_scope_loop = {
-						array = RAJ.keep_vassals_autonomy_transfer
-						break = break_var
+				# }
+				# else = {
+				# 	RAJ={store_current_ideologies = yes}
+				# 	puppet = RAJ
+				# 	RAJ={load_prevous_ideologies = yes}
+				# 	for_each_scope_loop = {
+				# 		array = RAJ.keep_vassals_autonomy_transfer
+				# 		break = break_var
 
-						RAJ={
-							puppet = PREV
-						}
-						load_prevous_ideologies = yes
-					}
-				}
+				# 		RAJ={
+				# 			puppet = PREV
+				# 		}
+				# 		load_prevous_ideologies = yes
+				# 	}
+				# }
 				RAJ = {
 					drop_cosmetic_tag = yes
 					clr_country_flag = AFR_is_a_colonial_company_flag
@@ -724,17 +745,18 @@ focus_tree = {
 	}
 
 	focus = {
-		id = ENG_focus_grant_RAJ_autonomy
+		id = ENG_focus_autonomous_jewel
 		icon = GFX_goal_focus_government_glass
-		x = 13
-		y = 6
-		cost = 70
+		x = 3
+		y = 1
+		cost = 35
 
 		ai_will_do = {
 			factor = 100
 		}
-		prerequisite = { focus = ENG_focus_continue_annex_policy focus = ENG_focus_stop_lapse_doctrine }
-		mutually_exclusive = { focus = ENG_focus_direct_RAJ_control focus = ENG_focus_the_RAJ_compromise }
+		relative_position_id = ENG_focus_stop_lapse_doctrine
+		prerequisite = { focus = ENG_focus_stop_lapse_doctrine }
+		mutually_exclusive = { focus = ENG_focus_assume_control focus = ENG_focus_the_RAJ_compromise }
 		available = {
 			RAJ = {
 				is_subject_of = ENG
@@ -830,7 +852,6 @@ focus_tree = {
 					}
 				}
 			}
-			custom_effect_tooltip = eoanb_tt_focus_ENG_grant_RAJ_autonomy
 			hidden_effect = {
 				every_country={
 					limit={
@@ -842,14 +863,14 @@ focus_tree = {
 						value = THIS
 					}
 				}
-				if = {
-					limit = {
-						OR = {
-							has_dlc = "Together for Victory"
-							has_dlc = "Waking the Tiger"
-							has_dlc = "Death or Dishonor"
-						}
-					}
+				# if = {
+				# 	limit = {
+				# 		OR = {
+				# 			has_dlc = "Together for Victory"
+				# 			has_dlc = "Waking the Tiger"
+				# 			has_dlc = "Death or Dishonor"
+				# 		}
+				# 	}
 					RAJ={store_current_ideologies = yes}
 					set_autonomy = {
 						target = RAJ
@@ -869,21 +890,21 @@ focus_tree = {
 						load_prevous_ideologies = yes
 					}
 
-				}
-				else = {
-					RAJ={store_current_ideologies = yes}
-					puppet = RAJ
-					RAJ={load_prevous_ideologies = yes}
-					for_each_scope_loop = {
-						array = RAJ.keep_vassals_autonomy_transfer
-						break = break_var
+				# }
+				# else = {
+				# 	RAJ={store_current_ideologies = yes}
+				# 	puppet = RAJ
+				# 	RAJ={load_prevous_ideologies = yes}
+				# 	for_each_scope_loop = {
+				# 		array = RAJ.keep_vassals_autonomy_transfer
+				# 		break = break_var
 
-						RAJ={
-							puppet = PREV
-						}
-						load_prevous_ideologies = yes
-					}
-				}
+				# 		RAJ={
+				# 			puppet = PREV
+				# 		}
+				# 		load_prevous_ideologies = yes
+				# 	}
+				# }
 				RAJ = {
 					drop_cosmetic_tag = yes
 					clr_country_flag = AFR_is_a_colonial_company_flag
@@ -894,541 +915,372 @@ focus_tree = {
 	}
 
 	focus = {
-		id = ENG_focus_develop_RAJ_factory
-		icon = GFX_goal_focus_develop_canada
-		x = 10
-		y = 7
-		cost = 140
+		id = ENG_focus_nationalize_indian_industries
+		icon = GFX_noicon
+		x = 0
+		y = 1
+		cost = 30
 
 		ai_will_do = {
 			factor = 100
 		}
-		prerequisite = { focus = ENG_focus_direct_RAJ_control focus = ENG_focus_the_RAJ_compromise focus = ENG_focus_grant_RAJ_autonomy }
 		available = { RAJ = { is_subject_of = ENG } }
+
+		relative_position_id = ENG_focus_assume_control
+		prerequisite = { focus = ENG_focus_assume_control }
+		search_filters = { FOCUS_FILTER_STABILITY }
 
 		completion_reward = {
 			RAJ = {
-				random_owned_controlled_state = {
-					limit = {
-						free_building_slots = {
-							building = industrial_complex
-							size > 0
-							include_locked = yes
-						}
-						OR = {
-							is_in_home_area = yes
-							NOT = {
-								owner = {
-									any_owned_state = {
-										free_building_slots = {
-											building = industrial_complex
-											size > 0
-											include_locked = yes
-										}
-										is_in_home_area = yes
-									}
-								}
-							}
-						}
-					}
-					add_extra_state_shared_building_slots = 1
-					add_building_construction = {
-						type = industrial_complex
-						level = 1
-						instant_build = yes
-					}
-				}
+				custom_effect_tooltip = tooltip_white_line
+				add_one_random_civilian_factory = yes
 			}
 		}
 	}
 
 	focus = {
-		id = ENG_focus_develop_RAJ_infrastructure
-		icon = GFX_goal_focus_develop_canada
-		x = 12
-		y = 7
-		cost = 140
+		id = ENG_focus_the_english_brownman
+		icon = GFX_noicon
+		x = 0
+		y = 1
+		cost = 30
 
 		ai_will_do = {
 			factor = 100
 		}
-		prerequisite = { focus = ENG_focus_direct_RAJ_control focus = ENG_focus_the_RAJ_compromise focus = ENG_focus_grant_RAJ_autonomy }
 		available = { RAJ = { is_subject_of = ENG } }
+
+		relative_position_id = ENG_focus_nationalize_indian_industries
+		prerequisite = { focus = ENG_focus_nationalize_indian_industries }
+		search_filters = { FOCUS_FILTER_STABILITY }
+
+		completion_reward = {
+
+		}
+	}
+
+	focus = {
+		id = ENG_focus_control_manufacturing_act
+		icon = GFX_noicon
+		x = -2
+		y = 1
+		cost = 60
+
+		ai_will_do = {
+			factor = 100
+		}
+		available = { RAJ = { is_subject_of = ENG } }
+
+		relative_position_id = ENG_focus_nationalize_indian_industries
+		prerequisite = { focus = ENG_focus_nationalize_indian_industries }
+		search_filters = { FOCUS_FILTER_STABILITY }
 
 		completion_reward = {
 			RAJ = {
-				random_owned_controlled_state = {
-					limit = {
-						free_building_slots = {
-							building = infrastructure
-							size > 0
-						}
-						OR = {
-							is_in_home_area = yes
-							NOT = {
-								owner = {
-									any_owned_state = {
-										free_building_slots = {
-											building = infrastructure
-											size > 0
-										}
-										is_in_home_area = yes
-									}
-								}
-							}
-						}
-					}
-					add_building_construction = {
-						type = infrastructure
-						level = 1
-						instant_build = yes
-					}
-				}
-				random_owned_controlled_state = {
-					limit = {
-						free_building_slots = {
-							building = infrastructure
-							size > 0
-						}
-						OR = {
-							is_in_home_area = yes
-							NOT = {
-								owner = {
-									any_owned_state = {
-										free_building_slots = {
-											building = infrastructure
-											size > 0
-										}
-										is_in_home_area = yes
-									}
-								}
-							}
-						}
-					}
-					add_building_construction = {
-						type = infrastructure
-						level = 1
-						instant_build = yes
-					}
-				}
-				random_owned_controlled_state = {
-					limit = {
-						free_building_slots = {
-							building = infrastructure
-							size > 0
-						}
-						OR = {
-							is_in_home_area = yes
-							NOT = {
-								owner = {
-									any_owned_state = {
-										free_building_slots = {
-											building = infrastructure
-											size > 0
-										}
-										is_in_home_area = yes
-									}
-								}
-							}
-						}
-					}
-					add_building_construction = {
-						type = infrastructure
-						level = 1
-						instant_build = yes
-					}
-				}
+				swap_ideas = { remove_idea = RAJ_idea_failing_economy add_idea = RAJ_idea_failing_economy_2 }
 			}
 		}
 	}
 
-	#------------------------------------------------------------------------------------------
-	# EAST-INDIA COMPANY BRACH
-	#------------------------------------------------------------------------------------------
+	focus = {
+		id = ENG_focus_subsidize_indian_infrastructure
+		icon = GFX_noicon
+		x = -1
+		y = 1
+		cost = 45
+
+		ai_will_do = {
+			factor = 100
+		}
+		available = { RAJ = { is_subject_of = ENG } }
+
+		relative_position_id = ENG_focus_the_RAJ_compromise
+		prerequisite = { focus = ENG_focus_the_RAJ_compromise }
+		mutually_exclusive = { focus = ENG_focus_indian_paid_infrastructure }
+		search_filters = { FOCUS_FILTER_INDUSTRY }
+
+		completion_reward = {
+
+		}
+	}
 
 	focus = {
-		id = ENG_focus_viceroy_india_investigate
-		icon = GFX_focus_generic_home_defense
-		x = 16
-		y = 0
+		id = ENG_focus_indian_paid_infrastructure
+		icon = GFX_noicon
+		x = 1
+		y = 1
+		cost = 45
+
+		ai_will_do = {
+			factor = 100
+		}
+		available = { RAJ = { is_subject_of = ENG } }
+
+		relative_position_id = ENG_focus_the_RAJ_compromise
+		prerequisite = { focus = ENG_focus_the_RAJ_compromise }
+		mutually_exclusive = { focus = ENG_focus_subsidize_indian_infrastructure }
+		search_filters = { FOCUS_FILTER_INDUSTRY }
+
+		completion_reward = {
+
+		}
+	}
+
+	focus = {
+		id = ENG_focus_attract_sale_of_british_goods
+		icon = GFX_noicon
+		x = 1
+		y = 1
+		cost = 30
+
+		ai_will_do = {
+			factor = 100
+		}
+		available = { RAJ = { is_subject_of = ENG } }
+
+		relative_position_id = ENG_focus_subsidize_indian_infrastructure
+		prerequisite = { focus = ENG_focus_subsidize_indian_infrastructure focus = ENG_focus_indian_paid_infrastructure }
+		search_filters = { FOCUS_FILTER_INDUSTRY }
+
+		completion_reward = {
+
+		}
+	}
+
+	focus = {
+		id = ENG_focus_renounce_lapse_doctrine
+		icon = GFX_noicon
+		x = -2
+		y = 1
+		cost = 7
+
+		ai_will_do = {
+			factor = 0
+		}
+		available = { RAJ = { is_subject_of = ENG } }
+
+		relative_position_id = ENG_focus_autonomous_jewel
+		prerequisite = { focus = ENG_focus_the_RAJ_compromise focus = ENG_focus_autonomous_jewel }
+		search_filters = { FOCUS_FILTER_INDUSTRY }
+
+		completion_reward = {
+			add_political_power = -500
+		}
+	}
+
+	focus = {
+		id = ENG_focus_soften_english_language_requirements
+		icon = GFX_noicon
+		x = 0
+		y = 1
 		cost = 35
 
 		ai_will_do = {
-			factor = 40
+			factor = 100
 		}
-		available = { SRS = { exists = no } }
-		search_filters = { FOCUS_FILTER_STABILITY }
+		available = { RAJ = { is_subject_of = ENG } }
+
+		relative_position_id = ENG_focus_autonomous_jewel
+		prerequisite = { focus = ENG_focus_autonomous_jewel }
+		search_filters = { FOCUS_FILTER_INDUSTRY }
 
 		completion_reward = {
-			add_political_power = -25
-			RAJ = { add_stability = 0.02 }
-			custom_effect_tooltip = eoanb_tt_focus_ENG_viceroy_india_investigate
-			hidden_effect = {
-				if = {
-					limit = { OR = {
-						has_dlc = "Together for Victory"
-						has_dlc = "Waking the Tiger"
-						has_dlc = "Death or Dishonor"
-					} }
-					RAJ = {
-						add_autonomy_score = {
-							value = -50
-						}
-					}
-				}
-				else = {
-					puppet = RAJ
-				}
-			}
+
 		}
 	}
 
 	focus = {
-		id = ENG_focus_peel_commission
-		icon = GFX_goal_focus_peel_comission
-		x = 16
+		id = ENG_focus_encourage_interstate_cooperation
+		icon = GFX_noicon
+		x = 2
 		y = 1
-		cost = 70
+		cost = 35
 
 		ai_will_do = {
-			factor = 40
+			factor = 100
 		}
-		prerequisite = { focus = ENG_focus_viceroy_india_investigate }
-		search_filters = { FOCUS_FILTER_STABILITY }
+		available = { RAJ = { is_subject_of = ENG } }
+
+		relative_position_id = ENG_focus_autonomous_jewel
+		prerequisite = { focus = ENG_focus_autonomous_jewel }
+		search_filters = { FOCUS_FILTER_INDUSTRY }
 
 		completion_reward = {
-			add_political_power = -100
-			add_stability = 0.05
-			custom_effect_tooltip = eoanb_tt_focus_ENG_peel_commision
-			hidden_effect = {
-				if = {
-					limit = {
-						RAJ = {
-							check_variable = {
-								var = ENG_RAJ_revolt_risk
-								value = 1
-								compare = greater_than_or_equals
-							}
-						}
-					}
-					RAJ = {
-						subtract_from_variable = {
-							var = ENG_RAJ_revolt_risk
-							value = 1
-						}
-					}
-				}
-				else = {
-					RAJ = { add_political_power = 1 }
-				}
-			}
+
 		}
 	}
 
 	focus = {
-		id = ENG_focus_india_regional_recruitment
-		icon = GFX_Focus_Partisans_Fund
-		x = 15
-		y = 2
-		cost = 70
+		id = ENG_focus_empty
+		icon = GFX_noicon
+		x = 1
+		y = 1
+		cost = 35
 
 		ai_will_do = {
-			factor = 40
-			modifier = {
-				factor = 0
-				is_historical_focus_on = yes
-			}
+			factor = 100
 		}
-		prerequisite = { focus = ENG_focus_peel_commission }
-		mutually_exclusive = { focus = ENG_focus_india_european_recruitment }
-		search_filters = { FOCUS_FILTER_HISTORICAL }
-		search_filters = { FOCUS_FILTER_MILITARY }
+		available = { RAJ = { is_subject_of = ENG } }
+
+		relative_position_id = ENG_focus_soften_english_language_requirements
+		prerequisite = { focus = ENG_focus_soften_english_language_requirements focus = ENG_focus_encourage_interstate_cooperation }
+		search_filters = { FOCUS_FILTER_INDUSTRY }
 
 		completion_reward = {
-			RAJ = { add_ideas = ENG_idea_RAJ_army_indian }
-			add_political_power = 50
-			custom_effect_tooltip = eoanb_tt_focus_ENG_india_regional_recruitment
-			hidden_effect = {
-				if = {
-					limit = {
-						RAJ = {
-							check_variable = {
-								var = ENG_RAJ_revolt_risk
-								value = 1
-								compare = greater_than_or_equals
-							}
-						}
-					}
-					RAJ = {
-						subtract_from_variable = {
-							var = ENG_RAJ_revolt_risk
-							value = 1
-						}
-					}
-				}
-				else = {
-					RAJ = { add_political_power = 1 }
-				}
-			}
+
 		}
 	}
 
-	focus = {
-		id = ENG_focus_mixed_regiments
-		icon = GFX_focus_generic_military_academy
-		x = 15
-		y = 3
-		cost = 70
+	# focus = {
+	# 	id = ENG_focus_develop_RAJ_factory
+	# 	icon = GFX_goal_focus_develop_canada
+	# 	x = 1
+	# 	y = 1
+	# 	cost = 140
 
-		ai_will_do = {
-			factor = 40
-		}
-		prerequisite = { focus = ENG_focus_india_regional_recruitment }
-		search_filters = { FOCUS_FILTER_MILITARY }
+	# 	ai_will_do = {
+	# 		factor = 100
+	# 	}
+	# 	relative_position_id = ENG_focus_assume_control
+	# 	prerequisite = { focus = ENG_focus_assume_control focus = ENG_focus_the_RAJ_compromise focus = ENG_focus_autonomous_jewel }
+	# 	available = { RAJ = { is_subject_of = ENG } }
 
-		completion_reward = {
-			RAJ = {
-				swap_ideas = {
-					remove_idea = ENG_idea_RAJ_army_indian
-					add_idea = ENG_idea_RAJ_army_indian_2
-				}
-			}
-		}
-	}
+	# 	completion_reward = {
+		# 	RAJ = {
+		# 		random_owned_controlled_state = {
+		# 			limit = {
+		# 				free_building_slots = {
+		# 					building = industrial_complex
+		# 					size > 0
+		# 					include_locked = yes
+		# 				}
+		# 				OR = {
+		# 					is_in_home_area = yes
+		# 					NOT = {
+		# 						owner = {
+		# 							any_owned_state = {
+		# 								free_building_slots = {
+		# 									building = industrial_complex
+		# 									size > 0
+		# 									include_locked = yes
+		# 								}
+		# 								is_in_home_area = yes
+		# 							}
+		# 						}
+		# 					}
+		# 				}
+		# 			}
+		# 			add_extra_state_shared_building_slots = 1
+		# 			add_building_construction = {
+		# 				type = industrial_complex
+		# 				level = 1
+		# 				instant_build = yes
+		# 			}
+		# 		}
+		# 	}
+		# }
+	# }
 
-	focus = {
-		id = ENG_focus_india_nation_law
-		icon = GFX_Focus_Law_Vote_1
-		x = 15
-		y = 4
-		cost = 70
+	# focus = {
+	# 	id = ENG_focus_develop_RAJ_infrastructure
+	# 	icon = GFX_goal_focus_develop_canada
+	# 	x = 1
+	# 	y = 1
+	# 	cost = 140
 
-		ai_will_do = {
-			factor = 40
-		}
-		prerequisite = { focus = ENG_focus_mixed_regiments }
-		search_filters = { FOCUS_FILTER_MILITARY }
+	# 	ai_will_do = {
+	# 		factor = 100
+	# 	}
+	# 	relative_position_id = ENG_focus_the_RAJ_compromise
+	# 	prerequisite = { focus = ENG_focus_assume_control focus = ENG_focus_the_RAJ_compromise focus = ENG_focus_autonomous_jewel }
+	# 	available = { RAJ = { is_subject_of = ENG } }
 
-		completion_reward = {
-			RAJ = {
-				swap_ideas = {
-					remove_idea = ENG_idea_RAJ_army_indian_2
-					add_idea = ENG_idea_RAJ_army_indian_3
-				}
-			}
-			custom_effect_tooltip = eoanb_tt_focus_ENG_india_nation_law
-			hidden_effect = {
-				if = {
-					limit = {
-						RAJ = {
-							check_variable = {
-								var = ENG_RAJ_revolt_risk
-								value = 1
-								compare = greater_than_or_equals
-							}
-						}
-					}
-					RAJ = {
-						subtract_from_variable = {
-							var = ENG_RAJ_revolt_risk
-							value = 1
-						}
-					}
-				}
-				else = {
-					RAJ = { add_political_power = 1 }
-				}
-			}
-		}
-	}
-
-	focus = {
-		id = ENG_focus_respect_indian_culture
-		icon = GFX_goal_focus_form_british_raj
-		x = 15
-		y = 5
-		cost = 70
-
-		ai_will_do = {
-			factor = 40
-		}
-		prerequisite = { focus = ENG_focus_india_nation_law }
-		search_filters = { FOCUS_FILTER_MILITARY }
-
-		completion_reward = {
-			RAJ = {
-				swap_ideas = {
-					remove_idea = ENG_idea_RAJ_army_indian_3
-					add_idea = ENG_idea_RAJ_army_indian_4
-				}
-			}
-			custom_effect_tooltip = eoanb_tt_focus_ENG_respect_indian_culture
-			hidden_effect = {
-				if = {
-					limit = {
-						RAJ = {
-							check_variable = {
-								var = ENG_RAJ_revolt_risk
-								value = 1
-								compare = greater_than_or_equals
-							}
-						}
-					}
-					RAJ = {
-						subtract_from_variable = {
-							var = ENG_RAJ_revolt_risk
-							value = 1
-						}
-					}
-				}
-				else = {
-					RAJ = { add_political_power = 1 }
-				}
-			}
-		}
-	}
-
-	focus = {
-		id = ENG_focus_india_european_recruitment
-		icon = GFX_Focus_colonial_empire_ENG
-		x = 17
-		y = 2
-		cost = 70
-
-		ai_will_do = {
-			factor = 40
-		}
-		prerequisite = { focus = ENG_focus_peel_commission }
-		mutually_exclusive = { focus = ENG_focus_india_regional_recruitment }
-		search_filters = { FOCUS_FILTER_MILITARY }
-		search_filters = { FOCUS_FILTER_ALTHISTORY }
-
-		completion_reward = {
-			RAJ = { add_ideas = ENG_idea_RAJ_army_european }
-			add_political_power = -50
-			custom_effect_tooltip = eoanb_tt_focus_ENG_india_european_recruitment
-			hidden_effect = {
-				RAJ = {
-					add_to_variable = {
-						var = ENG_RAJ_revolt_risk
-						value = 2
-					}
-				}
-			}
-		}
-	}
-
-	focus = {
-		id = ENG_focus_homogenous_regiments
-		icon = GFX_focus_generic_little_entente
-		x = 17
-		y = 3
-		cost = 70
-
-		ai_will_do = {
-			factor = 40
-		}
-		prerequisite = { focus = ENG_focus_india_european_recruitment }
-		search_filters = { FOCUS_FILTER_MILITARY }
-
-		completion_reward = {
-			RAJ = {
-				swap_ideas = {
-					remove_idea = ENG_idea_RAJ_army_european
-					add_idea = ENG_idea_RAJ_army_european_2
-				}
-			}
-		}
-	}
-
-	focus = {
-		id = ENG_focus_india_european_law
-		icon = GFX_focus_generic_military_mission
-		x = 17
-		y = 4
-		cost = 70
-
-		ai_will_do = {
-			factor = 40
-		}
-		prerequisite = { focus = ENG_focus_homogenous_regiments }
-		search_filters = { FOCUS_FILTER_MILITARY }
-
-		completion_reward = {
-			RAJ = {
-				swap_ideas = {
-					remove_idea = ENG_idea_RAJ_army_european_2
-					add_idea = ENG_idea_RAJ_army_european_3
-				}
-			}
-			custom_effect_tooltip = eoanb_tt_focus_ENG_india_european_law
-			hidden_effect = {
-				RAJ = {
-					add_to_variable = {
-						var = ENG_RAJ_revolt_risk
-						value = 1
-					}
-				}
-			}
-		}
-	}
-
-	focus = {
-		id = ENG_focus_european_army_traditions_india
-		icon = GFX_goal_focus_valient_kingdom
-		x = 17
-		y = 5
-		cost = 70
-
-		ai_will_do = {
-			factor = 40
-		}
-		prerequisite = { focus = ENG_focus_india_european_law }
-		search_filters = { FOCUS_FILTER_MILITARY }
-
-		completion_reward = {
-			RAJ = {
-				swap_ideas = {
-					remove_idea = ENG_idea_RAJ_army_european_3
-					add_idea = ENG_idea_RAJ_army_european_4
-				}
-			}
-			custom_effect_tooltip = eoanb_tt_focus_ENG_european_army_traditions_india
-			hidden_effect = {
-				RAJ = {
-					add_to_variable = {
-						var = ENG_RAJ_revolt_risk
-						value = 1
-					}
-				}
-			}
-		}
-	}
-
-	focus = {
-		id = ENG_focus_oriental_uniforms_india
-		icon = GFX_Focus_Colonial_Troops
-		x = 16
-		y = 6
-		cost = 70
-
-		ai_will_do = {
-			factor = 40
-		}
-		prerequisite = { focus = ENG_focus_european_army_traditions_india focus = ENG_focus_respect_indian_culture }
-		search_filters = { FOCUS_FILTER_MILITARY }
-
-		completion_reward = {
-			custom_effect_tooltip = eoanb_tt_focus_ENG_RAJ_oriental_uniforms
-			hidden_effect = {
-				RAJ = {
-					set_technology = {
-						tech_infantry_raj_oriental_uniforms = 1
-					}
-				}
-			}
-		}
-	}
+	# 	completion_reward = {
+	# 		RAJ = {
+	# 			random_owned_controlled_state = {
+	# 				limit = {
+	# 					free_building_slots = {
+	# 						building = infrastructure
+	# 						size > 0
+	# 					}
+	# 					OR = {
+	# 						is_in_home_area = yes
+	# 						NOT = {
+	# 							owner = {
+	# 								any_owned_state = {
+	# 									free_building_slots = {
+	# 										building = infrastructure
+	# 										size > 0
+	# 									}
+	# 									is_in_home_area = yes
+	# 								}
+	# 							}
+	# 						}
+	# 					}
+	# 				}
+	# 				add_building_construction = {
+	# 					type = infrastructure
+	# 					level = 1
+	# 					instant_build = yes
+	# 				}
+	# 			}
+	# 			random_owned_controlled_state = {
+	# 				limit = {
+	# 					free_building_slots = {
+	# 						building = infrastructure
+	# 						size > 0
+	# 					}
+	# 					OR = {
+	# 						is_in_home_area = yes
+	# 						NOT = {
+	# 							owner = {
+	# 								any_owned_state = {
+	# 									free_building_slots = {
+	# 										building = infrastructure
+	# 										size > 0
+	# 									}
+	# 									is_in_home_area = yes
+	# 								}
+	# 							}
+	# 						}
+	# 					}
+	# 				}
+	# 				add_building_construction = {
+	# 					type = infrastructure
+	# 					level = 1
+	# 					instant_build = yes
+	# 				}
+	# 			}
+	# 			random_owned_controlled_state = {
+	# 				limit = {
+	# 					free_building_slots = {
+	# 						building = infrastructure
+	# 						size > 0
+	# 					}
+	# 					OR = {
+	# 						is_in_home_area = yes
+	# 						NOT = {
+	# 							owner = {
+	# 								any_owned_state = {
+	# 									free_building_slots = {
+	# 										building = infrastructure
+	# 										size > 0
+	# 									}
+	# 									is_in_home_area = yes
+	# 								}
+	# 							}
+	# 						}
+	# 					}
+	# 				}
+	# 				add_building_construction = {
+	# 					type = infrastructure
+	# 					level = 1
+	# 					instant_build = yes
+	# 				}
+	# 			}
+	# 		}
+	# 	}
+	# }
 
 	#------------------------------------------------------------------------------------------
 	# ARMY BRANCH
@@ -2708,9 +2560,9 @@ focus_tree = {
 					add_building_construction = { type = infrastructure level = 1 instant_build = yes }
 					set_temp_variable = { x_temp = 1 }
 					set_temp_variable = { financer_temp = ROOT }
-					set_temp_variable = { building_token = token:building_infrastructure }
+					set_temp_variable = { building_token = token:infrastructure }
 					set_temp_variable = { production_method_temp = -1 }
-					construct_x_industries = yes
+					add_x_industries = yes
 				}
 			}
 			else = {
@@ -2719,9 +2571,9 @@ focus_tree = {
 					add_building_construction = { type = infrastructure level = 1 instant_build = yes }
 					set_temp_variable = { x_temp = 1 }
 					set_temp_variable = { financer_temp = ROOT }
-					set_temp_variable = { building_token = token:building_infrastructure }
+					set_temp_variable = { building_token = token:infrastructure }
 					set_temp_variable = { production_method_temp = -1 }
-					construct_x_industries = yes
+					add_x_industries = yes
 				}
 			}
 			#126 = { add_manpower = -20000 }

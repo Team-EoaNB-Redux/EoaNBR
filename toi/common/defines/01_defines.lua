@@ -41,19 +41,21 @@ NDefines.NProduction.CONVOY_MAX_NAV_FACTORIES_PER_LINE = 18
 NDefines.NProduction.CAPITAL_SHIP_MAX_NAV_FACTORIES_PER_LINE = 6
 NDefines.NProduction.MAX_MIL_FACTORIES_PER_LINE = 180
 NDefines.NProduction.RAILWAY_GUN_MAX_MIL_FACTORIES_PER_LINE = 6
-NDefines.NProduction.BASE_FACTORY_SPEED_MIL = 2				-- vanilla 5 Base factory speed multiplier (how much hoi3 style IC each factory gives). --4.5
+NDefines.NProduction.BASE_FACTORY_SPEED = 2.5				-- vanilla 5 Base factory speed multiplier (how much hoi3 style IC each factory gives). --4.5
 NDefines.NProduction.BASE_FACTORY_SPEED_MIL = 4       -- vanilla 4.5
-NDefines.NProduction.BASE_FACTORY_SPEED_NAV = 3      -- vanilla 2.5
+NDefines.NProduction.BASE_FACTORY_SPEED_NAV = 5      -- vanilla 2.5
 NDefines.NProduction.ANNEX_FUEL_RATIO = 0.5	-- How much fuel will be transferred on annexation
 NDefines.NProduction.MIN_POSSIBLE_TRAINING_MANPOWER = 5000	-- How many deployment lines minimum can be training --100k
 NDefines.NProduction.CAPITULATE_FUEL_RATIO = 0.25 -- How much fuel will be transferred on capitulation --.5
 NDefines.NProduction.PRODUCTION_RESOURCE_LACK_PENALTY = -0.4			-- Penalty decrease while lack of resource per factory --0.05
 NDefines.NProduction.CONVERSION_SPEED_BONUS = 0.5							-- Modifier to the production speed when converting equipment --0
+NDefines.NProduction.MINIMUM_NUMBER_OF_FACTORIES_TAKEN_BY_CONSUMER_GOODS_VALUE = 0		-- The minimum number of factories we have to put on consumer goods, by value. --was 1
+NDefines.NProduction.MINIMUM_NUMBER_OF_FACTORIES_TAKEN_BY_CONSUMER_GOODS_PERCENT = 0	-- The minimum number of factories we have to put on consumer goods, in percent. -- was 0.1
 
 NDefines.NTechnology.BASE_TECH_COST = 2000 -- 100
 NDefines.NTechnology.MIN_RESEARCH_SPEED = 0.2						-- research speed can't go below this value
 
-NDefines.NPolitics.BASE_POLITICAL_POWER_INCREASE = 1.0
+NDefines.NPolitics.BASE_POLITICAL_POWER_INCREASE = 1.5
 
 NDefines.NBuildings.MAX_SHARED_SLOTS = 81 -- 25
 NDefines.NBuildings.SUPPLY_ROUTE_RESOURCE_BONUS = 0 -- Needs to be 0 for eco calculations to work

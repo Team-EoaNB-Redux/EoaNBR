@@ -567,20 +567,11 @@
                     add_to_temp_variable = { upper_income_earnings = soldiers_earnings }
                 }
             #
-            for_each_loop = {
-                array = buildings
-                index = sp_i
-                value = sp_token
-                if = {
-                    limit = {
-                        check_variable = { sp_token = token:building_civilian_industry }
-                    }
-                    add_to_variable = { PREV.consumer_goods_earnings = expenses@var:sp_token }
-                }
-            }
+
+            add_to_variable = { PREV.consumer_goods_earnings = revenue@token:industrial_complex }
+            add_to_variable = { PREV.consumer_goods_earnings = revenue@token:arms_factory }
+            add_to_variable = { PREV.consumer_goods_earnings = revenue@token:dockyard }
         }
-        multiply_variable = { consumer_goods_earnings = modifier@consumer_goods_factor }
-        multiply_variable = { consumer_goods_earnings = 3 }
         set_variable = { public_enterprise_revenue = consumer_goods_earnings }
 
         set_variable = { income_tax_upper_strata_revenue = upper_income_earnings }
@@ -1003,6 +994,9 @@
                     add_to_variable = { PREV.construction_spending = retooling_cost@var:sp_token }
                 }
             }
+            add_to_variable = { PREV.military_production_payroll_spending = expenses@token:arms_factory }
+            add_to_variable = { PREV.military_production_payroll_spending = expenses@token:dockyard }
+            add_to_variable = { PREV.public_enterprise_payroll_spending = expenses@token:industrial_complex }
         }
         #divide_variable = { military_production_payroll_spending = modifier@bureaucratic_efficiency_factor }
         #divide_variable = { public_enterprise_payroll_spending = modifier@bureaucratic_efficiency_factor }
@@ -1025,8 +1019,11 @@
         divide_variable = { construction_spending = modifier@bureaucratic_efficiency_factor }
 
         #Military Payroll
-        set_variable = { military_payroll_spending = military_manpower_k }
+        set_variable = { military_payroll_spending = deployed_army_manpower_k }
+        add_to_variable = { military_payroll_spending = deployed_navy_manpower_k }
+        add_to_variable = { military_payroll_spending = deployed_airforce_manpower_k }
         multiply_variable = { military_payroll_spending = pops_earnings_avg }
+        divide_variable = { military_payroll_spending = 2 }
         divide_variable = { military_payroll_spending = global.pops_workforce_participation }
         divide_variable = { military_payroll_spending = modifier@bureaucratic_efficiency_factor }
 
@@ -1036,12 +1033,15 @@
 
         #Military Production
             set_variable = { military_production_resources_spending = 0 }
+            set_temp_variable = { modifier_temp = modifier@military_production_cost_factor }
+            add_to_temp_variable = { modifier_temp = 1 }
             for_each_loop = {
                 array = global.resource_token_array
                 value = r_type
 
                 set_temp_variable = { spending_temp = resource_consumed@var:r_type }
                 multiply_temp_variable = { spending_temp = price@var:r_type }
+                multiply_temp_variable = { spending_temp = modifier_temp }
                 add_to_variable = { military_production_resources_spending = spending_temp }
             }
             divide_variable = { military_production_resources_spending = modifier@bureaucratic_efficiency_factor }
@@ -1062,36 +1062,38 @@
         add_to_variable = { other_spending = modifier_spending }
 
         #Military
-            set_variable = { military_spending@token:resource_food = 0 }
-            set_variable = { military_spending@token:resource_consumer_goods = 0 }
-            set_variable = { military_spending@token:resource_luxury_goods = 0 }
-            set_variable = { military_spending@token:resource_industrial_goods = 0 }
-
             set_variable = { military_army_spending = 0 }
             set_variable = { military_navy_spending = 0 }
             for_each_loop = {
-                array = global.resource_token_array
-                value = r_token
+                array = global.unit_types
+                value = unit_type_temp
 
-                set_temp_variable = { cost_temp = military_army_demand@var:r_token }
-                multiply_temp_variable = { cost_temp = price@var:r_token }
-                add_to_variable = { military_army_spending = cost_temp }
-                add_to_variable = { military_spending@var:r_token = cost_temp }
+                set_variable = { military_spending@var:unit_type_temp = military_cost@var:unit_type_temp }
+                multiply_variable = { military_spending@var:unit_type_temp = military_spending_percentage }
+                divide_variable = { military_spending@var:unit_type_temp = 100 }
+                add_to_variable = { military_army_spending = military_spending@var:unit_type_temp }
 
-                set_temp_variable = { cost_temp = military_navy_demand@var:r_token }
-                multiply_temp_variable = { cost_temp = price@var:r_token }
-                add_to_variable = { military_navy_spending = cost_temp }
-                add_to_variable = { military_spending@var:r_token = cost_temp }
+                set_variable = { military_spending_per@var:unit_type_temp = military_cost_per@var:unit_type_temp }
+                multiply_variable = { military_spending_per@var:unit_type_temp = military_spending_percentage }
+                divide_variable = { military_spending_per@var:unit_type_temp = 100 }
+            }
+            for_each_loop = {
+                array = global.ship_types
+                value = unit_type_temp
 
-                set_temp_variable = { cost_temp = military_airforce_demand@var:r_token }
-                multiply_temp_variable = { cost_temp = price@var:r_token }
-                add_to_variable = { military_airforce_spending = cost_temp }
-                add_to_variable = { military_spending@var:r_token = cost_temp }
+                set_variable = { military_spending@var:unit_type_temp = military_cost@var:unit_type_temp }
+                multiply_variable = { military_spending@var:unit_type_temp = military_spending_percentage }
+                divide_variable = { military_spending@var:unit_type_temp = 100 }
+                add_to_variable = { military_navy_spending = military_spending@var:unit_type_temp }
+                
+                set_variable = { military_spending_per@var:unit_type_temp = military_cost_per@var:unit_type_temp }
+                multiply_variable = { military_spending_per@var:unit_type_temp = military_spending_percentage }
+                divide_variable = { military_spending_per@var:unit_type_temp = 100 }
             }
             
-            divide_variable = { military_army_spending = modifier@bureaucratic_efficiency_factor }
-            divide_variable = { military_navy_spending = modifier@bureaucratic_efficiency_factor }
-            divide_variable = { military_airforce_spending = modifier@bureaucratic_efficiency_factor }
+            # divide_variable = { military_army_spending = modifier@bureaucratic_efficiency_factor } - Already done
+            # divide_variable = { military_navy_spending = modifier@bureaucratic_efficiency_factor }
+            # divide_variable = { military_airforce_spending = modifier@bureaucratic_efficiency_factor }
 
             set_variable = { military_spending = military_army_spending }
             add_to_variable = { military_spending = military_navy_spending }

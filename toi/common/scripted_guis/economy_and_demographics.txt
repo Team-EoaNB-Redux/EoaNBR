@@ -228,13 +228,20 @@ scripted_gui = {
 			}
 
 			building_increase_size_button_click_enabled = {
-				set_temp_variable = { building_token = var:v }
-				can_build_building = yes
+				set_temp_variable = { industry_token = var:v }
+				can_build_industry = yes
 				is_fully_controlled_by = ROOT
 
+				OR = {
+					check_variable = { construction_financier@var:industry_token = ROOT }
+					check_variable = { construction@var:industry_token = 0 }
+				}
+
 				# Has enough starting capital
-					set_temp_variable = { pm_temp = controller:latest_production_method@var:v }
-					set_temp_variable = { am_temp = controller:latest_automation_method@var:v }
+					if = { limit = { has_variable = production_method@var:industry_token } set_temp_variable = { pm_temp = production_method@var:industry_token } }
+					else = { set_temp_variable = { pm_temp = controller:latest_production_method@var:v } }
+					if = { limit = { has_variable = automation_method@var:industry_token } set_temp_variable = { am_temp = automation_method@var:industry_token } }
+					else = { set_temp_variable = { am_temp = controller:latest_automation_method@var:v } }
 					get_construction_cost = yes
 
 					multiply_temp_variable = { total_construction_cost_temp = global.start_construction_cost_multiplier }
@@ -294,13 +301,20 @@ scripted_gui = {
 			}
 
 			railway_increase_size_button_click_enabled = {
-				set_temp_variable = { building_token = token:railway }
-				can_build_building = yes
+				set_temp_variable = { industry_token = token:railway }
+				can_build_industry = yes
 				is_fully_controlled_by = ROOT
 
+				OR = {
+					check_variable = { construction_financier@var:industry_token = ROOT }
+					check_variable = { construction@var:industry_token = 0 }
+				}
+
 				# Has enough starting capital
-					set_temp_variable = { pm_temp = controller:latest_production_method@token:railway }
-					set_temp_variable = { am_temp = controller:latest_automation_method@token:railway }
+					if = { limit = { has_variable = production_method@token:railway } set_temp_variable = { pm_temp = production_method@token:railway } }
+					else = { set_temp_variable = { pm_temp = controller:latest_production_method@var:v } }
+					if = { limit = { has_variable = automation_method@token:railway } set_temp_variable = { am_temp = automation_method@token:railway } }
+					else = { set_temp_variable = { am_temp = controller:latest_automation_method@var:v } }
 					get_construction_cost = yes
 
 					multiply_temp_variable = { total_construction_cost_temp = global.start_construction_cost_multiplier }
@@ -333,14 +347,21 @@ scripted_gui = {
 			}
 
 			port_increase_size_button_click_enabled = {
-				set_temp_variable = { building_token = token:port }
-				can_build_building = yes
+				set_temp_variable = { industry_token = token:port }
+				can_build_industry = yes
 				is_coastal = yes
 				is_fully_controlled_by = ROOT
 
+				OR = {
+					check_variable = { construction_financier@var:industry_token = ROOT }
+					check_variable = { construction@var:industry_token = 0 }
+				}
+
 				# Has enough starting capital
-					set_temp_variable = { pm_temp = controller:latest_production_method@token:port }
-					set_temp_variable = { am_temp = controller:latest_automation_method@token:port }
+					if = { limit = { has_variable = production_method@token:port } set_temp_variable = { pm_temp = production_method@token:port } }
+					else = { set_temp_variable = { pm_temp = controller:latest_production_method@var:v } }
+					if = { limit = { has_variable = automation_method@token:port } set_temp_variable = { am_temp = automation_method@token:port } }
+					else = { set_temp_variable = { am_temp = controller:latest_automation_method@var:v } }
 					get_construction_cost = yes
 
 					multiply_temp_variable = { total_construction_cost_temp = global.start_construction_cost_multiplier }
@@ -411,15 +432,17 @@ scripted_gui = {
 				set_temp_variable = { x_temp = 1 }
 				set_temp_variable = { financer_temp = ROOT }
 				set_temp_variable = { industry_token = v }
-				set_temp_variable = { production_method_temp = controller:latest_production_method@var:v }
-				set_temp_variable = { automation_method_temp = controller:latest_automation_method@var:v }
+				if = { limit = { has_variable = production_method@var:industry_token } set_temp_variable = { production_method_temp = production_method@var:industry_token } }
+				else = { set_temp_variable = { production_method_temp = controller:latest_production_method@var:v } }
+				if = { limit = { has_variable = automation_method@var:industry_token } set_temp_variable = { automation_method_temp = automation_method@var:industry_token } }
+				else = { set_temp_variable = { automation_method_temp = controller:latest_automation_method@var:v } }
 				construct_x_industries = yes
 
 				ROOT = { budget_update = yes }
 			}
 			building_decrease_size_button_click = {
 				subtract_from_variable = { construction@var:v = 1 }
-				if = { 
+				if = {
 					limit = {
 						check_variable = { construction@var:v = 0 }
 						check_variable = { size@var:v = 0 }
@@ -537,15 +560,17 @@ scripted_gui = {
 				set_temp_variable = { x_temp = 1 }
 				set_temp_variable = { financer_temp = ROOT }
 				set_temp_variable = { industry_token = token:railway }
-				set_temp_variable = { production_method_temp = controller:latest_production_method@token:railway }
-				set_temp_variable = { automation_method_temp = controller:latest_automation_method@token:railway }
+				if = { limit = { has_variable = production_method@token:railway } set_temp_variable = { production_method_temp = production_method@token:railway } }
+				else = { set_temp_variable = { production_method_temp = controller:latest_production_method@var:v } }
+				if = { limit = { has_variable = automation_method@token:railway } set_temp_variable = { automation_method_temp = automation_method@token:railway } }
+				else = { set_temp_variable = { automation_method_temp = controller:latest_automation_method@var:v } }
 				construct_x_industries = yes
 
 				ROOT = { budget_update = yes }
 			}
 			railway_decrease_size_button_click = {
 				subtract_from_variable = { construction@token:railway = 1 }
-				if = { 
+				if = {
 					limit = {
 						check_variable = { construction@token:railway = 0 }
 						check_variable = { size@token:railway = 0 }
@@ -602,15 +627,17 @@ scripted_gui = {
 				set_temp_variable = { x_temp = 1 }
 				set_temp_variable = { financer_temp = ROOT }
 				set_temp_variable = { industry_token = token:port }
-				set_temp_variable = { production_method_temp = controller:latest_production_method@token:port }
-				set_temp_variable = { automation_method_temp = controller:latest_automation_method@token:port }
+				if = { limit = { has_variable = production_method@token:port } set_temp_variable = { production_method_temp = production_method@token:port } }
+				else = { set_temp_variable = { production_method_temp = controller:latest_production_method@var:v } }
+				if = { limit = { has_variable = automation_method@token:port } set_temp_variable = { automation_method_temp = automation_method@token:port } }
+				else = { set_temp_variable = { automation_method_temp = controller:latest_automation_method@var:v } }
 				construct_x_industries = yes
 
 				ROOT = { budget_update = yes }
 			}
 			port_decrease_size_button_click = {
 				subtract_from_variable = { construction@token:port = 1 }
-				if = { 
+				if = {
 					limit = {
 						check_variable = { construction@token:port = 0 }
 						check_variable = { size@token:port = 0 }
@@ -909,7 +936,7 @@ scripted_gui = {
 			construction_entry_background_click_enabled = {
 				set_temp_variable = { industry_token = construction_show^i }
 
-				can_build_building = yes
+				can_build_industry = yes
 
 				# Has enough starting capital
 					set_temp_variable = { pm_temp = controller:latest_production_method@var:v }
@@ -985,7 +1012,7 @@ scripted_gui = {
 
 		properties = {
 			construction_entry_resource = {
-				image = "[GetBuildingIcon]"
+				image = "[GetIconFromV]"
 			}
 		}
 	}
@@ -1393,7 +1420,7 @@ scripted_gui = {
 			trade_resource_price_bar_positive = {
 				frame = resource_list_right_price_bar_array^i
 			}
-			
+
 			trade_resource_price_icon = {
 				image = "[GetCurrencyIcon]"
 			}
@@ -3291,11 +3318,17 @@ scripted_gui = {
 			}
 		}
 	}
-	
+
 	military_production_tab_budget_gui = {
 		window_name = "military_production_tab_budget_container"
 		context_type = player_context
 		parent_window_token = production_tab
+
+		effects = {
+			prod_budget_button_click = {
+				spending_update = yes
+			}
+		}
 
 		properties = {
 			military_production_icon = {
@@ -3323,11 +3356,15 @@ scripted_gui = {
 				}
 			}
 			fund_all_opportunities_button_click_enabled = {
+				check_variable = { investment_fund_spending < investment_fund_target_spending }
+
 				check_variable = { treasury > investment_opportunity_fund_all_cost }
 				check_variable = { investment_opportunity_fund_all_cost > 0 }
 				check_variable = { investment_opportunities^num > 0 }
 			}
 			fund_opportunity_button_click_enabled = {
+				check_variable = { investment_fund_spending < investment_fund_target_spending }
+
 				set_temp_variable = { cost_temp = investment_opportunity_cost@var:v }
 				subtract_from_temp_variable = { cost_temp = investment_opportunity_investment@var:v }
 				check_variable = { treasury > cost_temp }
@@ -3344,13 +3381,13 @@ scripted_gui = {
 				subtract_from_variable = { treasury = investment_opportunity_fund_all_cost }
 				for_each_loop = {
 					array = investment_opportunities
-					value = state_temp
+					value = io_num_temp
 					index = ii
 					if = {
 						limit = {
-							check_variable = { investment_opportunity_investment@var:state_temp < investment_opportunity_cost@var:state_temp }
+							check_variable = { investment_opportunity_investment@var:io_num_temp < investment_opportunity_cost@var:io_num_temp }
 						}
-						set_variable = { investment_opportunity_investment@var:state_temp = investment_opportunity_cost@var:state_temp }
+						set_variable = { investment_opportunity_investment@var:io_num_temp = investment_opportunity_cost@var:io_num_temp }
 					}
 				}
 				set_temp_variable = { i_temp = 0 }
@@ -3358,7 +3395,7 @@ scripted_gui = {
 					limit = {
 						check_variable = { i_temp < investment_opportunities_cap }
 					}
-					set_temp_variable = { state_temp = investment_opportunities^0 }
+					set_temp_variable = { io_num_temp = investment_opportunities^0 }
 					evaluate_investment_opportunity = yes
 
 					add_to_temp_variable = { i_temp = 1 }
@@ -3372,7 +3409,7 @@ scripted_gui = {
 				subtract_from_variable = { treasury = cost_temp }
 				set_variable = { investment_opportunity_investment@var:v = investment_opportunity_cost@var:v }
 
-				set_temp_variable = { state_temp = v }
+				set_temp_variable = { io_num_temp = v }
 				evaluate_investment_opportunity = yes
 			}
 			close_button_click = {
@@ -3424,7 +3461,7 @@ scripted_gui = {
 
 	}
 
-	
+
 	send_credit_gift_gui={
 		context_type = diplomatic_action
 		window_name = "send_credit_gift_key_gui"
@@ -3435,22 +3472,44 @@ scripted_gui = {
 		}
 		effects = {
 			increase_credits_btn_click = {
-				ROOT={
-					subtract_from_variable={
-						treasury = 100
+				ROOT = {
+					subtract_from_variable = { treasury = 100 }
+					add_to_variable = { temp_credits_to_send = 100 }
+				}
+			}
+			increase_credits_btn_shift_click = {
+				ROOT = {
+					if = {
+						limit = {
+							check_variable = { treasury > 1000 }
+						}
+						subtract_from_variable = { treasury = 1000 }
+						add_to_variable = { temp_credits_to_send = 1000 }
 					}
-					add_to_variable={
-						temp_credits_to_send = 100
+					else = {
+						subtract_from_variable = { treasury = 100 }
+						add_to_variable = { temp_credits_to_send = 100 }
 					}
 				}
 			}
 			decrease_credits_btn_click = {
-				ROOT={
-					subtract_from_variable={
-						temp_credits_to_send = 100
+				ROOT = {
+					subtract_from_variable = { temp_credits_to_send = 100 }
+					add_to_variable = { treasury = 100 }
+				}
+			}
+			decrease_credits_btn_shift_click = {
+				ROOT = {
+					if = {
+						limit = {
+							check_variable = { temp_credits_to_send > 1000 }
+						}
+						subtract_from_variable = { temp_credits_to_send = 1000 }
+						add_to_variable = { treasury = 1000 }
 					}
-					add_to_variable={
-						treasury = 100
+					else = {
+						add_to_variable = { treasury = temp_credits_to_send }
+						set_variable = { temp_credits_to_send = 0 }
 					}
 				}
 			}

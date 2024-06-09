@@ -1063,10 +1063,6 @@
 
 		set_variable = { pops_unemployed_percentage = pops_unemployed }
 		divide_variable = { pops_unemployed_percentage = pops_workforce }
-
-		set_variable = { available_workforce = pops_unemployed }
-		add_to_variable = { available_workforce = employed@token:building_subsistence_farm }
-		add_to_variable = { available_workforce = employed@token:building_rice_paddy }
 		
 		set_variable = { excess_workforce = pops_workforce }
 		subtract_from_variable = { excess_workforce = non_subs_jobs_buildings }
@@ -1114,6 +1110,18 @@
 		set_variable = { aristocrats_jobs = 0 }
 		set_variable = { capitalists_dividends = 0 }
 		set_variable = { aristocrats_dividends = 0 }
+
+		set_variable = { total_industry_size = 0 }
+		for_each_loop = {
+			array = buildings
+			value = pops_bld_token
+			add_to_variable = { total_industry_size = size@var:pops_bld_token }
+		}
+		add_to_variable = { total_industry_size = size@token:railway }
+		add_to_variable = { total_industry_size = size@token:port }
+		add_to_variable = { total_industry_size = size@token:industrial_complex }
+		add_to_variable = { total_industry_size = size@token:arms_factory }
+		add_to_variable = { total_industry_size = size@token:dockyard }
 
 		#Industries
 		for_each_loop = {
@@ -1364,7 +1372,7 @@
 		}
 
 		set_variable = { peasants_workforce_balance = peasants_workforce }
-		subtract_from_variable = { peasants_workforce_balance = peasants_jobs_available }
+		# subtract_from_variable = { peasants_workforce_balance = peasants_jobs_available }
 		set_variable = { laborers_workforce_balance = laborers_workforce }
 		subtract_from_variable = { laborers_workforce_balance = laborers_jobs_available }
 		set_variable = { workers_workforce_balance = workers_workforce }
@@ -1374,13 +1382,40 @@
 		set_variable = { specialists_workforce_balance = specialists_workforce }
 		subtract_from_variable = { specialists_workforce_balance = specialists_jobs_available }
 		
-		set_variable = { jobs_available = peasants_jobs_available }
-		add_to_variable = { jobs_available = laborers_jobs_available }
+		set_variable = { jobs_available = laborers_jobs_available }
 		add_to_variable = { jobs_available = workers_jobs_available }
 		add_to_variable = { jobs_available = professionals_jobs_available }
 		add_to_variable = { jobs_available = specialists_jobs_available }
 		add_to_variable = { jobs_available = capitalists_jobs }
 		add_to_variable = { jobs_available = aristocrats_jobs }
+		
+		set_variable = { jobs = slaves_jobs }
+		add_to_variable = { jobs = laborers_jobs }
+		add_to_variable = { jobs = workers_jobs }
+		add_to_variable = { jobs = professionals_jobs }
+		add_to_variable = { jobs = specialists_jobs }
+		add_to_variable = { jobs = bureaucrats_jobs }
+		add_to_variable = { jobs = soldiers_jobs }
+		add_to_variable = { jobs = capitalists_jobs }
+		add_to_variable = { jobs = aristocrats_jobs }
+
+		set_variable = { available_workforce = pops_workforce }
+		subtract_from_variable = { available_workforce = jobs_available }
+		
+		set_variable = { net_workforce = pops_workforce }
+		add_to_variable = { net_workforce = peasants_jobs }
+		subtract_from_variable = { net_workforce = jobs }
+		
+		
+		set_variable = { employed = slaves_employed }
+		add_to_variable = { employed = laborers_employed }
+		add_to_variable = { employed = workers_employed }
+		add_to_variable = { employed = professionals_employed }
+		add_to_variable = { employed = specialists_employed }
+		add_to_variable = { employed = bureaucrats_employed }
+		add_to_variable = { employed = soldiers_employed }
+		add_to_variable = { employed = capitalists_employed }
+		add_to_variable = { employed = aristocrats_employed }
 	}
 
 	calculate_pop_needs = {
@@ -2415,6 +2450,7 @@
 
 			set_temp_variable = { stat_temp = pops_sol }
 			multiply_temp_variable = { stat_temp = pops }
+			divide_temp_variable = { stat_temp = 1000 }
 			add_to_variable = { PREV.pops_sol = stat_temp }
 
 			add_to_variable = { PREV.pops_earnings = pops_earnings }
@@ -2424,9 +2460,11 @@
 			add_to_variable = { PREV.aristocrats_workforce = aristocrats_workforce }
 			add_to_variable = { PREV.aristocrats_dividends = aristocrats_dividends }
 		}
+		set_temp_variable = { pops_temp = pops }
+		divide_temp_variable = { pops_temp = 1000 }
 
-		divide_variable = { pops_sol = pops }
-		divide_variable = { pops_col = pops }
+		divide_variable = { pops_sol = pops_temp }
+		divide_variable = { pops_col = pops_temp }
 
 		set_variable = { pops_earnings_avg = pops_earnings }
 		divide_variable = { pops_earnings_avg = pops }
@@ -4305,9 +4343,16 @@
 	}
 	set_debt = {
 		# x_temp
+		# country_temp
 		# Sets the debt to x_temp (thousands)
 		
-		subtract_from_temp_variable = { x_temp = national_debt_k }
+		if = {
+			limit = { check_variable = { country_temp = 0 } }
+			subtract_from_temp_variable = { x_temp = debt_to_bank_k@THIS }
+		}
+		else = {
+			subtract_from_temp_variable = { x_temp = debt_to_bank_k@var:country_temp }
+		}
 		add_debt = yes
 	}
 	add_debt_to_gdp = {
@@ -4325,6 +4370,7 @@
 		#INPUT:
 			#x_temp - Amount of money to borrow in thousands.
 			#country_temp - Which country to specifically borrow from, set to 0 to borrow money from any country
+			#ignore_limits_temp - Ignores borrowing limits
 			
 		if = {
 			limit = {
@@ -4350,6 +4396,7 @@
 			if = {
 				limit = {
 					check_variable = { borrow_temp_k > country_temp:national_bank_amount_left_k }
+					check_variable = { ignore_limits_temp = 0 }
 				}
 				set_temp_variable = { borrow_temp_k = country_temp:national_bank_amount_left_k }
 			}
@@ -4402,6 +4449,8 @@
 		else = {
 			set_temp_variable = { borrow_temp = 0 }
 		}
+		set_temp_variable = { ignore_limits_temp = 0 }
+		set_temp_variable = { country_temp = 0 }
 	}
 	remove_debt = {
 		#Scope: Country
@@ -4411,16 +4460,10 @@
 			#country_temp - Which country to specifically repay to, set to 0 to repay debts owed to any country
 			#			  - If the repay amount is higher than the owed amount, only the owed amount is payed. The excess is not payed out further
 
+		set_temp_variable = { debt_repayed_k = 0 }
 		if = {
 			limit = {
 				check_variable = { x_temp > 0 }
-			}
-
-			if = {
-				limit = {
-					check_variable = { country_temp = 0 }
-				}
-				set_temp_variable = { country_temp = THIS }
 			}
 
 			#log = "Country: [?country_temp.GetName]"
@@ -4431,55 +4474,83 @@
 				value = repay_temp_k
 				tooltip = debt_change_positive_tooltip
 			}
+
 			if = {
 				limit = {
-					check_variable = { repay_temp_k > debt_to_bank_k@var:country_temp }
+					check_variable = { country_temp = 0 }
 				}
-				set_temp_variable = { repay_temp_k = debt_to_bank_k@var:country_temp }
-			}
-			#log = "Repay Amount: [?repay_temp_k]K"
-			
-			if = {
-				limit = {
-					check_variable = { repay_temp_k < 0 }
+				set_temp_variable = { country_temp = THIS }
+				remove_debt_internal = yes
+				add_to_temp_variable = { debt_repayed_k = repay_temp_k }
+
+				set_temp_variable = { bank_temp = 0 }
+				while_loop_effect = {
+					limit = {
+						check_variable = { debt_repayed_k < x_temp }
+						check_variable = { debt_to_bank_country^num > 0 }
+					}
+					set_temp_variable = { repay_temp_k = x_temp }
+					subtract_from_temp_variable = { repay_temp_k = debt_repayed_k }
+					set_temp_variable = { country_temp = debt_to_bank_country^0 }
+					remove_debt_internal = yes
+					add_to_temp_variable = { debt_repayed_k = repay_temp_k }
 				}
-				set_temp_variable = { repay_temp_k = 0 }
-				set_temp_variable = { repay_temp = 0 }
 			}
 			else = {
-				set_temp_variable = { repay_temp = repay_temp_k }
-				multiply_temp_variable = { repay_temp = 1000 }
-
-				if = {
-					limit = {
-						check_variable = { repay_temp_k < debt_to_bank_k@var:country_temp }
-					}
-					subtract_from_variable = { debt_to_bank_k@var:country_temp = repay_temp_k }
-					subtract_from_variable = { country_temp:money_lent_k@THIS = repay_temp_k }
-				}
-				else = {
-					remove_from_array = { array = debt_to_bank_country value = country_temp }
-					remove_from_array = { array = country_temp:money_lent_country value = THIS }
-					clear_variable = debt_to_bank_k@var:country_temp
-					clear_variable = country_temp:money_lent_k@THIS
-				}
-				#log = "Debt to Bank K ([THIS.GetName]): [?debt_to_bank_k@var:country_temp]K"
-				#log = "Money Lent K ([?country_temp.GetName]): [?country_temp:money_lent_k@THIS]K"
-
-				if = {
-					limit = {
-						NOT = { check_variable = { country_temp = THIS } }
-					}
-					var:country_temp = {
-						national_debt_update = yes
-					}
-				}
+				remove_debt_internal = yes
+				add_to_temp_variable = { debt_repayed_k = repay_temp_k }
 			}
+
 
 			national_debt_update = yes
 		}
+		set_temp_variable = { repay_temp = debt_repayed_k }
+		multiply_temp_variable = { repay_temp = 1000 }
+		set_temp_variable = { country_temp = 0 }
+	}
+	remove_debt_internal = {
+		# Takes in repay_temp_k and country_temp and removes that amount of money from that.
+		# Outputs repay_temp_k which is the amount of debt actually repaid
+
+		if = {
+			limit = {
+				check_variable = { repay_temp_k > debt_to_bank_k@var:country_temp }
+			}
+			set_temp_variable = { repay_temp_k = debt_to_bank_k@var:country_temp }
+		}
+		#log = "Repay Amount: [?repay_temp_k]K"
+		
+		if = {
+			limit = {
+				check_variable = { repay_temp_k < 0 }
+			}
+			set_temp_variable = { repay_temp_k = 0 }
+		}
 		else = {
-			set_temp_variable = { repay_temp = 0 }
+			if = {
+				limit = {
+					check_variable = { repay_temp_k < debt_to_bank_k@var:country_temp }
+				}
+				subtract_from_variable = { debt_to_bank_k@var:country_temp = repay_temp_k }
+				subtract_from_variable = { country_temp:money_lent_k@THIS = repay_temp_k }
+			}
+			else = {
+				remove_from_array = { array = debt_to_bank_country value = country_temp }
+				remove_from_array = { array = country_temp:money_lent_country value = THIS }
+				clear_variable = debt_to_bank_k@var:country_temp
+				clear_variable = country_temp:money_lent_k@THIS
+			}
+			#log = "Debt to Bank K ([THIS.GetName]): [?debt_to_bank_k@var:country_temp]K"
+			#log = "Money Lent K ([?country_temp.GetName]): [?country_temp:money_lent_k@THIS]K"
+
+			if = {
+				limit = {
+					NOT = { check_variable = { country_temp = THIS } }
+				}
+				var:country_temp = {
+					national_debt_update = yes
+				}
+			}
 		}
 	}
 	borrow_money = {
@@ -4543,7 +4614,6 @@
 
 #Statistics
 	battalion_count_update = {
-		manpower_count_update = yes
 		# Land:
 		#	Infantry
 		#	Militia
@@ -4573,7 +4643,6 @@
 		#add_to_variable = { infantry_battalions = num_battalions_with_type@bicycle_infantry }
 		add_to_variable = { infantry_battalions = num_battalions_with_type@feudal_infantry }
 		add_to_variable = { infantry_battalions = num_battalions_with_type@line_infantry }
-		add_to_variable = { infantry_battalions = num_battalions_with_type@redcoat_infantry }
 		add_to_variable = { infantry_battalions = num_battalions_with_type@guard_infantry }
 		add_to_variable = { infantry_battalions = num_battalions_with_type@great_war_infantry }
 		add_to_variable = { infantry_battalions = num_battalions_with_type@light_infantry }
@@ -4588,7 +4657,6 @@
 
 		set_variable = { militia_battalions = 0 }
 		#add_to_variable = { militia_battalions = num_battalions_with_type@state_militia_infantry }
-		add_to_variable = { militia_battalions = num_battalions_with_type@colonial_militia_infantry }
 		#add_to_variable = { militia_battalions = num_battalions_with_type@dutch_colonial_militia_infantry }
 		add_to_variable = { militia_battalions = num_battalions_with_type@irregular_infantry }
 		add_to_variable = { militia_battalions = num_battalions_with_type@armed_peasants }
@@ -4731,8 +4799,6 @@
 		#add_to_variable = { infantry_battalions_weighted = num_battalions_with_type@bicycle_infantry }
 		add_to_variable = { infantry_battalions_weighted = num_battalions_with_type@feudal_infantry }
 		add_to_variable = { infantry_battalions_weighted = num_battalions_with_type@line_infantry }
-		add_to_variable = { infantry_battalions_weighted = num_battalions_with_type@redcoat_infantry }
-		add_to_variable = { infantry_battalions_weighted = num_battalions_with_type@redcoat_infantry }
 		add_to_variable = { infantry_battalions_weighted = num_battalions_with_type@guard_infantry }
 		add_to_variable = { infantry_battalions_weighted = num_battalions_with_type@guard_infantry }
 		add_to_variable = { infantry_battalions_weighted = num_battalions_with_type@great_war_infantry }
@@ -4758,7 +4824,6 @@
 
 		set_variable = { militia_battalions_weighted = 0 }
 		#add_to_variable = { militia_battalions_weighted = num_battalions_with_type@state_militia_infantry }
-		add_to_variable = { militia_battalions_weighted = num_battalions_with_type@colonial_militia_infantry }
 		#add_to_variable = { militia_battalions_weighted = num_battalions_with_type@dutch_colonial_militia_infantry }
 		add_to_variable = { militia_battalions_weighted = num_battalions_with_type@irregular_infantry }
 		add_to_variable = { militia_battalions_weighted = num_battalions_with_type@armed_peasants }
@@ -5180,10 +5245,6 @@
 			multiply_temp_variable = { manpower_temp = 1.0 }
 			add_to_variable = { army_manpower_k = manpower_temp }
 			
-			set_temp_variable = { manpower_temp = num_battalions_with_type@colonial_militia_infantry }
-			multiply_temp_variable = { manpower_temp = 1.0 }
-			add_to_variable = { army_manpower_k = manpower_temp }
-			
 			set_temp_variable = { manpower_temp = num_battalions_with_type@irregular_infantry }
 			multiply_temp_variable = { manpower_temp = 1.0 }
 			add_to_variable = { army_manpower_k = manpower_temp }
@@ -5193,10 +5254,6 @@
 			add_to_variable = { army_manpower_k = manpower_temp }
 			
 			set_temp_variable = { manpower_temp = num_battalions_with_type@line_infantry }
-			multiply_temp_variable = { manpower_temp = 1.0 }
-			add_to_variable = { army_manpower_k = manpower_temp }
-			
-			set_temp_variable = { manpower_temp = num_battalions_with_type@redcoat_infantry }
 			multiply_temp_variable = { manpower_temp = 1.0 }
 			add_to_variable = { army_manpower_k = manpower_temp }
 			
@@ -5656,10 +5713,32 @@
 		multiply_temp_variable = { shp_tmp = controller:price_shipping_capacity }
 		add_to_variable = { gdp_amount = shp_tmp }
 
+		# Special
+		set_temp_variable = { gdp_temp = productivity@industrial_complex }
+		multiply_temp_variable = { gdp_temp = payroll_multiplier@industrial_complex }
+		multiply_temp_variable = { gdp_temp = production_percentage@industrial_complex }
+		divide_temp_variable = { gdp_temp = 100 }
+		multiply_temp_variable = { gdp_temp = size@industrial_complex }
+		add_to_variable = { gdp_amount = gdp_temp }
+		
+		set_temp_variable = { gdp_temp = productivity@arms_factory }
+		multiply_temp_variable = { gdp_temp = payroll_multiplier@arms_factory }
+		multiply_temp_variable = { gdp_temp = production_percentage@arms_factory }
+		divide_temp_variable = { gdp_temp = 100 }
+		multiply_temp_variable = { gdp_temp = size@arms_factory }
+		add_to_variable = { gdp_amount = gdp_temp }
+		
+		set_temp_variable = { gdp_temp = productivity@dockyard }
+		multiply_temp_variable = { gdp_temp = payroll_multiplier@dockyard }
+		multiply_temp_variable = { gdp_temp = production_percentage@dockyard }
+		divide_temp_variable = { gdp_temp = 100 }
+		multiply_temp_variable = { gdp_temp = size@dockyard }
+		add_to_variable = { gdp_amount = gdp_temp }
+
+
+		# GDP per Capita
 		set_variable = { gdp_per_capita = gdp_amount }
 		divide_variable = { gdp_per_capita = pops }
-
-
 		if = {
 			limit = {
 				check_variable = { gdp_per_capita > global.highest_state_gdp_c }

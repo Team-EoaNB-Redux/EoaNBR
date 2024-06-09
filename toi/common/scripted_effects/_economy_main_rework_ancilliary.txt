@@ -11,8 +11,40 @@ economy_count_iron_mines_effect = {
 		add_to_temp_variable = { x_temp = resource@iron }
 		log = "[THIS.getName] has [?THIS.resource@iron]"
 	}
-	
+
 	log = "[?x_temp] total iron mines"
+}
+
+economy_count_coal_mines_effect = {
+	set_temp_variable = { x_temp = 0 }
+	every_owned_state = {
+		limit = {
+			# has_variable = a
+			has_resources_amount = {
+				resource = coal
+				amount > 0
+			}
+		}
+		add_to_temp_variable = { x_temp = resource@coal }
+		log = "[THIS.getName] has [?THIS.resource@coal]"
+	}
+
+	log = "[?x_temp] total coal mines"
+}
+
+economy_count_textile_mill_effect = {
+	set_temp_variable = { x_temp = 0 }
+	every_owned_state = {
+		limit = {
+			check_variable = {
+				size@token:textile_mill > 0
+			}
+		}
+		add_to_temp_variable = { x_temp = size@token:textile_mill }
+		log = "[THIS.getName] has [?size@token:textile_mill]"
+	}
+
+	log = "[?x_temp] total textile mills"
 }
 
 economy_count_tooling_workshops_effect = {
@@ -28,11 +60,86 @@ economy_count_tooling_workshops_effect = {
 		add_to_temp_variable = { x_temp = size@token:tooling_workshop }
 		log = "[THIS.getName] has [?size@token:tooling_workshop]"
 	}
-	
-	log = "[?x_temp] total tooling workshops\n"
+
+	log = "[?x_temp] total tooling workshops"
 }
 
 economy_count_steel_foundry_effect = {
+	set_temp_variable = { x_temp = 0 }
+	every_owned_state = {
+		limit = {
+			check_variable = {
+				size@token:steel_foundry > 0
+			}
+			# has_resources_amount = {
+			# 	resource = iron
+			# 	amount > 0
+			# }
+		}
+		add_to_temp_variable = { x_temp = size@token:steel_foundry }
+		log = "[THIS.getName] has [?size@token:steel_foundry]"
+	}
+
+	log = "[?x_temp] total steel foundries"
+}
+
+economy_count_steel_foundry_global_effect = {
+	set_temp_variable = { x_temp = 0 }
+	set_temp_variable = { y_temp = 0 }
+	every_country = {
+		limit = {
+			any_owned_state = {
+				check_variable = {
+					size@token:steel_foundry > 0
+				}
+			}
+		}
+		every_owned_state = {
+			limit = {
+				check_variable = {
+					size@token:steel_foundry > 0
+				}
+				# has_resources_amount = {
+				# 	resource = iron
+				# 	amount > 0
+				# }
+			}
+			# set_temp_variable = { x_temp = 0 }
+			log = "[THIS.getName] has [?size@token:steel_foundry]"
+			add_to_temp_variable = { x_temp = size@token:steel_foundry }
+			add_to_temp_variable = { y_temp = size@token:steel_foundry }
+		}
+
+		log = "[?x_temp] total steel foundries in [THIS.getName]"
+		set_temp_variable = { x_temp = 0 }
+	}
+	log = "[?y_temp] total steel foundries in world"
+}
+
+economy_count_steel_portion_global_effect = {
+	# Doing by country only
+	set_temp_variable = { steel_total_temp = 0 }
+	every_country = {
+		limit = {
+			check_variable = { production@token:steel > 0 }
+		}
+		add_to_temp_variable = { steel_total_temp = production@token:steel }
+	}
+	every_country = {
+		limit = {
+			check_variable = { production@token:steel > 0 }
+		}
+
+		set_temp_variable = { percent_temp = production@token:steel }
+		multiply_temp_variable = { percent_temp = 100 }
+		divide_temp_variable = { percent_temp = steel_total_temp }
+
+		log = "[THIS.GetName]: Producing [?production@token:steel|1G] Steel ( [?percent_temp|2Y]% )"
+	}
+	log = "[?steel_total_temp] total steel in world"
+}
+
+economy_count_textile_mill_effect = {
 	set_temp_variable = { x_temp = 0 }
 	every_owned_state = {
 		# limit = {
@@ -42,9 +149,27 @@ economy_count_steel_foundry_effect = {
 		# 	# 	amount > 0
 		# 	# }
 		# }
-		add_to_temp_variable = { x_temp = size@token:steel_foundry }
-		log = "[THIS.getName] has [?size@token:steel_foundry]"
+		add_to_temp_variable = { x_temp = size@token:textile_mill }
+		log = "[THIS.getName] has [?size@token:textile_mill]"
 	}
-	
-	log = "[?x_temp] total steel foundries\n"
+
+	log = "[?x_temp] total textile mills"
+}
+
+economy_count_mechanical_works_effect = {
+	set_temp_variable = { x_temp = 0 }
+	every_owned_state = {
+		limit = {
+			check_variable = {
+				size@token:mechanical_works > 0
+			}
+			# has_resources_amount = {
+			# 	resource = iron
+			# 	amount > 0
+			# }
+		}
+		add_to_temp_variable = { x_temp = size@token:mechanical_works }
+		log = "[THIS.getName] has [?size@token:mechanical_works]"
+	}
+	log = "[?x_temp] total mechanical works"
 }

@@ -20,6 +20,20 @@ shared_focus = {
 
 				USAROD_Reconstruction_Setup = yes
 			}
+			if = {
+				limit = {
+					tag = USA
+					has_completed_focus = USA_focus_morrill_tariff
+					NOT = { has_idea = USA_Revenue_Act_Of_1864 }
+				}
+				add_ideas = USA_idea_legacy_tax_law
+				if = {
+					limit = {
+						NOT = { has_idea = USA_idea_morill_tariff_law }
+					}
+					add_ideas = USA_idea_morill_tariff_law
+				}
+			}
 		}
 	}
 }
@@ -28,6 +42,9 @@ shared_focus = {
 	icon = GFX_focus_usa_demobilization
 	cost = 14
 	prerequisite = { focus = USA_begin_reconstruction }
+	bypass = {
+		has_country_flag = USARECON_Southern_Reconstruction_Over
+	}
 	relative_position_id = USA_begin_reconstruction
 	x = 0
 	y = 1
@@ -80,15 +97,14 @@ shared_focus = {
 			}
 		}
 	}
+	bypass = {
+		has_country_flag = USARECON_Southern_Reconstruction_Over
+	}
 	prerequisite = { focus = USA_demobilize_the_military }
 	relative_position_id = USA_demobilize_the_military
 	x = -12
 	y = 1
 	completion_reward = {
-		set_variable = { USARECON_southern_resistance = 70 }
-		set_variable = { USARECON_kkk_presence = 0 }
-		set_variable = { USARECON_federal_troop_count = 20000 }
-		set_variable = { USARECON_freedmens_wellbeing = 10 }
 		unlock_decision_category_tooltip = USA_reconstruction_in_the_south
 	}
 }
@@ -110,7 +126,11 @@ shared_focus = {
 				has_government = chauvinist_populism
 				has_government = radical_democracy
 			}
+			has_completed_focus = USA_the_south_reconstructed
 		}
+	}
+	bypass = {
+		has_country_flag = USARECON_Southern_Reconstruction_Over
 	}
 	prerequisite = { focus = USA_rebuild_the_south }
 	mutually_exclusive = { focus = USA_southern_restoration }
@@ -118,7 +138,7 @@ shared_focus = {
 	x = -2
 	y = 1
 	completion_reward = {
-		USARECON_increase_freedmens_wellbeing_10 = yes
+		USARECON_increase_freedmens_wellbeing_5 = yes
 		USARECON_increase_southern_unrest_20 = yes
 		add_timed_idea = {
 			idea = USA_radical_reconstruction_1
@@ -131,24 +151,41 @@ shared_focus = {
 	icon = GFX_Focus_Elite_Arrested
 	cost = 70
 	prerequisite = { focus = USA_radical_rebuilding }
+	available = {
+		NOT = {
+			has_completed_focus = USA_the_south_reconstructed
+		}
+	}
+	bypass = {
+		has_country_flag = USARECON_Southern_Reconstruction_Over
+	}
 	relative_position_id = USA_radical_rebuilding
 	x = -1
 	y = 1
 	completion_reward = {
-		USARECON_increase_freedmens_wellbeing_15 = yes
+		USARECON_increase_freedmens_wellbeing_10 = yes
+		USARECON_increase_southern_unrest_10 = yes
 		custom_effect_tooltip = all_states_remove_cotton_building_1_tt
 		hidden_effect = {
 			every_owned_state = {
 				set_temp_variable = { industry_token = token:cotton_plantation }
-				deconstruct_x_industries = yes
+				remove_x_industries = yes
 			}
 			every_subject_country = {
 				limit = {
 					has_autonomy_state = autonomy_unintegrated_seceded_state
 				}
 				set_temp_variable = { industry_token = token:cotton_plantation }
-				deconstruct_x_industries = yes
+				remove_x_industries = yes
 			}
+		}
+		add_popularity = {
+			ideology = social_egalitarianism
+			popularity = 0.01
+		}
+		add_popularity = {
+			ideology = centrism
+			popularity = 0.01
 		}
 	}
 }
@@ -157,11 +194,19 @@ shared_focus = {
 	icon = GFX_Focus_Reform_Economy
 	cost = 70
 	prerequisite = { focus = USA_demolish_plantations }
+	available = {
+		NOT = {
+			has_completed_focus = USA_the_south_reconstructed
+		}
+	}
+	bypass = {
+		has_country_flag = USARECON_Southern_Reconstruction_Over
+	}
 	relative_position_id = USA_demolish_plantations
 	x = 0
 	y = 1
 	completion_reward = {
-		USARECON_increase_freedmens_wellbeing_20 = yes
+		USARECON_increase_freedmens_wellbeing_15 = yes
 		USARECON_increase_southern_unrest_10 = yes
 	}
 }
@@ -170,6 +215,14 @@ shared_focus = {
 	icon = GFX_Focus_industrial_rail_connections
 	cost = 70
 	prerequisite = { focus = USA_radical_rebuilding }
+	available = {
+		NOT = {
+			has_completed_focus = USA_the_south_reconstructed
+		}
+	}
+	bypass = {
+		has_country_flag = USARECON_Southern_Reconstruction_Over
+	}
 	relative_position_id = USA_radical_rebuilding
 	x = 1
 	y = 1
@@ -362,6 +415,14 @@ shared_focus = {
 	icon = GFX_Focus_Naval_Industry_Profits
 	cost = 70
 	prerequisite = { focus = USA_repair_and_modernize_southern_railways }
+	available = {
+		NOT = {
+			has_completed_focus = USA_the_south_reconstructed
+		}
+	}
+	bypass = {
+		has_country_flag = USARECON_Southern_Reconstruction_Over
+	}
 	relative_position_id = USA_repair_and_modernize_southern_railways
 	x = 0
 	y = 1
@@ -391,12 +452,28 @@ shared_focus = {
 	prerequisite = { focus = USA_codify_special_field_orders_no_15 }
 	prerequisite = { focus = USA_southern_ports }
 	relative_position_id = USA_radical_rebuilding
+	available = {
+		NOT = {
+			has_completed_focus = USA_the_south_reconstructed
+		}
+	}
+	bypass = {
+		has_country_flag = USARECON_Southern_Reconstruction_Over
+	}
 	x = 0
 	y = 3
 	completion_reward = {
 		swap_ideas = {
 			remove_idea = USA_radical_reconstruction_1
 			add_idea = USA_radical_reconstruction_2
+		}
+		add_popularity = {
+			ideology = social_egalitarianism
+			popularity = 0.01
+		}
+		add_popularity = {
+			ideology = centrism
+			popularity = 0.01
 		}
 	}
 }
@@ -405,6 +482,14 @@ shared_focus = {
 	icon = GFX_Focus_production_of_goods
 	cost = 70
 	prerequisite = { focus = USA_hamiltonianize_the_south }
+	available = {
+		NOT = {
+			has_completed_focus = USA_the_south_reconstructed
+		}
+	}
+	bypass = {
+		has_country_flag = USARECON_Southern_Reconstruction_Over
+	}
 	relative_position_id = USA_hamiltonianize_the_south
 	x = -1
 	y = 1
@@ -591,6 +676,14 @@ shared_focus = {
 				}
 			}
 		}
+		add_popularity = {
+			ideology = social_egalitarianism
+			popularity = 0.01
+		}
+		add_popularity = {
+			ideology = centrism
+			popularity = 0.01
+		}
 	}
 }
 shared_focus = {
@@ -598,12 +691,28 @@ shared_focus = {
 	icon = GFX_Focus_social_reforms
 	cost = 70
 	prerequisite = { focus = USA_hamiltonianize_the_south }
+	available = {
+		NOT = {
+			has_completed_focus = USA_the_south_reconstructed
+		}
+	}
+	bypass = {
+		has_country_flag = USARECON_Southern_Reconstruction_Over
+	}
 	relative_position_id = USA_hamiltonianize_the_south
 	x = 1
 	y = 1
 	completion_reward = {
-		USARECON_increase_freedmens_wellbeing_20 = yes
+		USARECON_increase_freedmens_wellbeing_15 = yes
 		USARECON_increase_southern_unrest_20 = yes
+		add_popularity = {
+			ideology = social_egalitarianism
+			popularity = 0.025
+		}
+		add_popularity = {
+			ideology = centrism
+			popularity = 0.025
+		}
 	}
 }
 shared_focus = {
@@ -613,7 +722,11 @@ shared_focus = {
 	available = {
 		NOT = {
 			has_idea = USA_southern_factory_investments
+			has_completed_focus = USA_the_south_reconstructed
 		}
+	}
+	bypass = {
+		has_country_flag = USARECON_Southern_Reconstruction_Over
 	}
 	prerequisite = { focus = USA_build_southern_factories }
 	prerequisite = { focus = USA_uplift_freedmen }
@@ -624,6 +737,14 @@ shared_focus = {
 		swap_ideas = {
 			remove_idea = USA_radical_reconstruction_2
 			add_idea = USA_radical_reconstruction_3
+		}
+		add_popularity = {
+			ideology = social_egalitarianism
+			popularity = 0.01
+		}
+		add_popularity = {
+			ideology = centrism
+			popularity = 0.01
 		}
 	}
 }
@@ -638,6 +759,9 @@ shared_focus = {
 			has_government = vanguard_communism
 			has_government = anarchism
 		}
+	}
+	bypass = {
+		has_country_flag = USARECON_Southern_Reconstruction_Over
 	}
 	prerequisite = { focus = USA_rebuild_the_south }
 	mutually_exclusive = { focus = USA_radical_rebuilding }
@@ -655,6 +779,9 @@ shared_focus = {
 	icon = GFX_Focus_Agriculture_field_question
 	cost = 35
 	prerequisite = { focus = USA_southern_restoration }
+	bypass = {
+		has_country_flag = USARECON_Southern_Reconstruction_Over
+	}
 	relative_position_id = USA_southern_restoration
 	x = -1
 	y = 1
@@ -671,6 +798,9 @@ shared_focus = {
 	icon = GFX_Focus_Agriculture_cotton
 	cost = 35
 	prerequisite = { focus = USA_dealing_with_troubled_plantations }
+	bypass = {
+		has_country_flag = USARECON_Southern_Reconstruction_Over
+	}
 	relative_position_id = USA_dealing_with_troubled_plantations
 	x = 0
 	y = 1
@@ -684,6 +814,9 @@ shared_focus = {
 	icon = GFX_Focus_economic_control
 	cost = 35
 	prerequisite = { focus = USA_southern_restoration }
+	bypass = {
+		has_country_flag = USARECON_Southern_Reconstruction_Over
+	}
 	relative_position_id = USA_southern_restoration
 	x = 1
 	y = 1
@@ -699,6 +832,9 @@ shared_focus = {
 	icon = GFX_Goal_ship_of_the_line_focus
 	cost = 35
 	prerequisite = { focus = USA_repair_southern_infrastructure }
+	bypass = {
+		has_country_flag = USARECON_Southern_Reconstruction_Over
+	}
 	relative_position_id = USA_repair_southern_infrastructure
 	x = 0
 	y = 1
@@ -727,6 +863,9 @@ shared_focus = {
 	cost = 35
 	prerequisite = { focus = USA_begin_restarting_cotton_production }
 	prerequisite = { focus = USA_cotton_barges }
+	bypass = {
+		has_country_flag = USARECON_Southern_Reconstruction_Over
+	}
 	relative_position_id = USA_southern_restoration
 	x = 0
 	y = 3
@@ -746,6 +885,9 @@ shared_focus = {
 			has_idea = USA_southern_farm_investments
 		}
 	}
+	bypass = {
+		has_country_flag = USARECON_Southern_Reconstruction_Over
+	}
 	prerequisite = { focus = USA_old_times_ever_not_forgotten }
 	relative_position_id = USA_old_times_ever_not_forgotten
 	x = -1
@@ -763,31 +905,31 @@ shared_focus = {
 				25 = {
 					362 = {
 						set_temp_variable = { industry_token = token:cotton_plantation }
-						construct_x_industries = yes
+						add_x_industries = yes
 					}
 				}
 				25 = {
 					363 = {
 						set_temp_variable = { industry_token = token:cotton_plantation }
-						construct_x_industries = yes
+						add_x_industries = yes
 					}
 				}
 				25 = {
 					364 = {
 						set_temp_variable = { industry_token = token:cotton_plantation }
-						construct_x_industries = yes
+						add_x_industries = yes
 					}
 				}
 				25 = {
 					368 = {
 						set_temp_variable = { industry_token = token:cotton_plantation }
-						construct_x_industries = yes
+						add_x_industries = yes
 					}
 				}
 				25 = {
 					369 = {
 						set_temp_variable = { industry_token = token:cotton_plantation }
-						construct_x_industries = yes
+						add_x_industries = yes
 					}
 				}
 			}
@@ -795,31 +937,31 @@ shared_focus = {
 				25 = {
 					365 = {
 						set_temp_variable = { industry_token = token:cotton_plantation }
-						construct_x_industries = yes
+						add_x_industries = yes
 					}
 				}
 				25 = {
 					366 = {
 						set_temp_variable = { industry_token = token:cotton_plantation }
-						construct_x_industries = yes
+						add_x_industries = yes
 					}
 				}
 				25 = {
 					367 = {
 						set_temp_variable = { industry_token = token:cotton_plantation }
-						construct_x_industries = yes
+						add_x_industries = yes
 					}
 				}
 				25 = {
 					370 = {
 						set_temp_variable = { industry_token = token:cotton_plantation }
-						construct_x_industries = yes
+						add_x_industries = yes
 					}
 				}
 				25 = {
 					1211 = {
 						set_temp_variable = { industry_token = token:cotton_plantation }
-						construct_x_industries = yes
+						add_x_industries = yes
 					}
 				}
 			}
@@ -827,31 +969,31 @@ shared_focus = {
 				25 = {
 					371 = {
 						set_temp_variable = { industry_token = token:cotton_plantation }
-						construct_x_industries = yes
+						add_x_industries = yes
 					}
 				}
 				25 = {
 					372 = {
 						set_temp_variable = { industry_token = token:cotton_plantation }
-						construct_x_industries = yes
+						add_x_industries = yes
 					}
 				}
 				25 = {
 					1306 = {
 						set_temp_variable = { industry_token = token:cotton_plantation }
-						construct_x_industries = yes
+						add_x_industries = yes
 					}
 				}
 				25 = {
 					375 = {
 						set_temp_variable = { industry_token = token:cotton_plantation }
-						construct_x_industries = yes
+						add_x_industries = yes
 					}
 				}
 				25 = {
 					1304 = {
 						set_temp_variable = { industry_token = token:cotton_plantation }
-						construct_x_industries = yes
+						add_x_industries = yes
 					}
 				}
 			}
@@ -866,6 +1008,9 @@ shared_focus = {
 		NOT = {
 			has_idea = USA_southern_farm_investments
 		}
+	}
+	bypass = {
+		has_country_flag = USARECON_Southern_Reconstruction_Over
 	}
 	prerequisite = { focus = USA_old_times_ever_not_forgotten }
 	relative_position_id = USA_old_times_ever_not_forgotten
@@ -1047,6 +1192,9 @@ shared_focus = {
 			has_idea = USA_southern_farm_investments
 		}
 	}
+	bypass = {
+		has_country_flag = USARECON_Southern_Reconstruction_Over
+	}
 	prerequisite = { focus = USA_cottons_back_on_the_menu }
 	prerequisite = { focus = USA_expand_southern_agriculture }
 	relative_position_id = USA_old_times_ever_not_forgotten
@@ -1064,7 +1212,7 @@ shared_focus = {
 	icon = GFX_focus_usa_reconstruction_over
 	cost = 35
 	available = {
-		date > 1877.3.4
+		date < 1877.3.4
 		if = {
 			limit = {
 				has_focus_tree = usa_lincoln_reconstruction_ft
@@ -1126,6 +1274,9 @@ shared_focus = {
 			is_owned_by = ROOT
 		}
 	}
+	bypass = {
+		has_country_flag = USARECON_Southern_Reconstruction_Over
+	}
 	prerequisite = {
 		focus = USA_southern_industrial_revolution
 		focus = USA_southern_economy_restored
@@ -1137,18 +1288,87 @@ shared_focus = {
 		custom_effect_tooltip = USA_the_south_reconstructed_tt
 		if = {
 			limit = {
-				check_variable = { USARECON_freedmens_wellbeing > 35 }
-			}
-			add_ideas = limited_equality
-		}
-		else_if = {
-			limit = {
 				check_variable = { USARECON_freedmens_wellbeing > 70 }
 			}
 			add_ideas = full_equality
+			set_country_flag = usa_afro_american_political_clout_high # Freedmen have more political power in the South, making it a stronger base of support for the Republicans
+			if = {
+				limit = {
+					has_completed_focus = USA_sign_wade_davis_bill
+				}
+				add_popularity = {
+					ideology = social_egalitarianism
+					popularity = 0.10
+				}
+				add_popularity = {
+					ideology = centrism
+					popularity = 0.10
+				}
+			}
+			else = {
+				add_popularity = {
+					ideology = social_egalitarianism
+					popularity = 0.05
+				}
+				add_popularity = {
+					ideology = centrism
+					popularity = 0.05
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				check_variable = { USARECON_freedmens_wellbeing > 35 }
+			}
+			add_ideas = limited_equality
+			set_country_flag = usa_afro_american_political_clout_low # read next option
+			if = {
+				limit = {
+					has_completed_focus = USA_sign_wade_davis_bill
+				}
+				add_popularity = {
+					ideology = social_egalitarianism
+					popularity = 0.05
+				}
+				add_popularity = {
+					ideology = centrism
+					popularity = 0.05
+				}
+			}
+			else = {
+				add_popularity = {
+					ideology = social_egalitarianism
+					popularity = 0.01
+				}
+				add_popularity = {
+					ideology = centrism
+					popularity = 0.01
+				}
+			}
 		}
 		else = {
 			add_ideas = segregation
+			add_popularity = {
+				ideology = traditional_conservatism
+				popularity = 0.05
+			}
+			add_popularity = {
+				ideology = radical_democracy
+				popularity = 0.05
+			}
+			if = {
+				limit = {
+					has_completed_focus = USA_sign_wade_davis_bill
+				}
+				add_popularity = {
+					ideology = social_egalitarianism
+					popularity = 0.05
+				}
+				add_popularity = {
+					ideology = centrism
+					popularity = 0.05
+				}
+			}
 		}
 	}
 }
@@ -1157,10 +1377,13 @@ shared_focus = {
 	icon = GFX_focus_usa_reconstruction_over
 	cost = 35
 	available = {
-		date > 1877.3.4
+		date < 1877.3.4
 		NOT = {
 			has_idea = USA_industrialization_effort_3
 		}
+	}
+	bypass = {
+		has_country_flag = USARECON_Southern_Reconstruction_Over
 	}
 	prerequisite = { focus = USA_the_south_reconstructed }
 	prerequisite = { focus = USA_the_north_reconstructed }
@@ -1169,6 +1392,7 @@ shared_focus = {
 	y = 10
 	completion_reward = {
 		remove_ideas = USA_reconstruction_idea
+		set_country_flag = USARECON_Southern_Reconstruction_Over
 	}
 }
 shared_focus = {
@@ -1223,6 +1447,9 @@ shared_focus = {
 			}
 		}
 	}
+	bypass = {
+		has_country_flag = USARECON_Southern_Reconstruction_Over
+	}
 	prerequisite = { focus = USA_demobilize_the_military }
 	relative_position_id = USA_demobilize_the_military
 	x = 12
@@ -1237,6 +1464,9 @@ shared_focus = {
 	cost = 35
 	mutually_exclusive = { focus = USA_expand_the_peculiar_institution }
 	prerequisite = { focus = USA_rebuild_the_north }
+	bypass = {
+		has_country_flag = USARECON_Southern_Reconstruction_Over
+	}
 	relative_position_id = USA_rebuild_the_north
 	x = -2
 	y = 1
@@ -1252,6 +1482,9 @@ shared_focus = {
 	icon = GFX_goal_generic_construct_infrastructure
 	cost = 35
 	prerequisite = { focus = USA_northern_industry }
+	bypass = {
+		has_country_flag = USARECON_Southern_Reconstruction_Over
+	}
 	relative_position_id = USA_northern_industry
 	x = -1
 	y = 1
@@ -1305,6 +1538,9 @@ shared_focus = {
 	icon = GFX_focus_generic_land_reclamation
 	cost = 35
 	prerequisite = { focus = USA_invest_in_the_great_lakes }
+	bypass = {
+		has_country_flag = USARECON_Southern_Reconstruction_Over
+	}
 	relative_position_id = USA_invest_in_the_great_lakes
 	x = 0
 	y = 1
@@ -1344,6 +1580,9 @@ shared_focus = {
 	icon = GFX_Focus_coal_mines
 	cost = 35
 	prerequisite = { focus = USA_northern_industry }
+	bypass = {
+		has_country_flag = USARECON_Southern_Reconstruction_Over
+	}
 	relative_position_id = USA_northern_industry
 	x = 1
 	y = 1
@@ -1367,6 +1606,9 @@ shared_focus = {
 	icon = GFX_Focus_Production_Iron
 	cost = 35
 	prerequisite = { focus = USA_fuel_for_the_train }
+	bypass = {
+		has_country_flag = USARECON_Southern_Reconstruction_Over
+	}
 	relative_position_id = USA_fuel_for_the_train
 	x = 0
 	y = 1
@@ -1379,7 +1621,7 @@ shared_focus = {
 			}
 			360 = {
 				set_temp_variable = { industry_token = token:steel_foundry }
-				construct_x_industries = yes
+				add_x_industries = yes
 			}
 		}
 		else = {
@@ -1388,7 +1630,7 @@ shared_focus = {
 					has_state_category = urban
 				}
 				set_temp_variable = { industry_token = token:steel_foundry }
-				construct_x_industries = yes
+				add_x_industries = yes
 			}
 		}
 	}
@@ -1399,6 +1641,9 @@ shared_focus = {
 	cost = 35
 	prerequisite = { focus = USA_connect_the_banks_of_the_mississippi }
 	prerequisite = { focus = USA_edgar_thomson_steel_works }
+	bypass = {
+		has_country_flag = USARECON_Southern_Reconstruction_Over
+	}
 	relative_position_id = USA_northern_industry
 	x = 0
 	y = 3
@@ -1419,6 +1664,9 @@ shared_focus = {
 		}
 	}
 	prerequisite = { focus = USA_fire_the_train_of_progress }
+	bypass = {
+		has_country_flag = USARECON_Southern_Reconstruction_Over
+	}
 	relative_position_id = USA_fire_the_train_of_progress
 	x = -1
 	y = 1
@@ -1645,6 +1893,9 @@ shared_focus = {
 		}
 	}
 	prerequisite = { focus = USA_fire_the_train_of_progress }
+	bypass = {
+		has_country_flag = USARECON_Southern_Reconstruction_Over
+	}
 	relative_position_id = USA_fire_the_train_of_progress
 	cost = 35
 	x = 1
@@ -1769,6 +2020,9 @@ shared_focus = {
 	}
 	prerequisite = { focus = USA_expand_northern_factories }
 	prerequisite = { focus = USA_invest_in_the_west }
+	bypass = {
+		has_country_flag = USARECON_Southern_Reconstruction_Over
+	}
 	relative_position_id = USA_fire_the_train_of_progress
 	x = 0
 	y = 2
@@ -1790,6 +2044,9 @@ shared_focus = {
 			has_government = radical_democracy
 		}
 	}
+	bypass = {
+		has_country_flag = USARECON_Southern_Reconstruction_Over
+	}
 	prerequisite = { focus = USA_rebuild_the_north }
 	relative_position_id = USA_rebuild_the_north
 	x = 2
@@ -1803,6 +2060,9 @@ shared_focus = {
 	icon = GFX_Focus_Production_Fabric
 	cost = 35
 	prerequisite = { focus = USA_expand_the_peculiar_institution }
+	bypass = {
+		has_country_flag = USARECON_Southern_Reconstruction_Over
+	}
 	relative_position_id = USA_expand_the_peculiar_institution
 	x = -1
 	y = 1
@@ -1811,19 +2071,19 @@ shared_focus = {
 			34 = {
 				358 = {
 					set_temp_variable = { industry_token = token:textile_mill }
-					construct_x_industries = yes
+					add_x_industries = yes
 				}
 			}
 			33 = {
 				360 = {
 					set_temp_variable = { industry_token = token:textile_mill }
-					construct_x_industries = yes
+					add_x_industries = yes
 				}
 			}
 			33 = {
 				261 = {
 					set_temp_variable = { industry_token = token:textile_mill }
-					construct_x_industries = yes
+					add_x_industries = yes
 				}
 			}
 		}
@@ -1831,19 +2091,19 @@ shared_focus = {
 			34 = {
 				396 = {
 					set_temp_variable = { industry_token = token:textile_mill }
-					construct_x_industries = yes
+					add_x_industries = yes
 				}
 			}
 			33 = {
 				393 = {
 					set_temp_variable = { industry_token = token:textile_mill }
-					construct_x_industries = yes
+					add_x_industries = yes
 				}
 			}
 			33 = {
 				1358 = {
 					set_temp_variable = { industry_token = token:textile_mill }
-					construct_x_industries = yes
+					add_x_industries = yes
 				}
 			}
 		}
@@ -1854,6 +2114,9 @@ shared_focus = {
 	icon = GFX_focus_generic_land_reclamation
 	cost = 35
 	prerequisite = { focus = USA_great_lake_textile_mills }
+	bypass = {
+		has_country_flag = USARECON_Southern_Reconstruction_Over
+	}
 	relative_position_id = USA_great_lake_textile_mills
 	x = 0
 	y = 1
@@ -1862,13 +2125,13 @@ shared_focus = {
 			50 = {
 				394 = {
 					set_temp_variable = { industry_token = token:cotton_plantation }
-					construct_x_industries = yes
+					add_x_industries = yes
 				}
 			}
 			50 = {
 				395 = {
 					set_temp_variable = { industry_token = token:cotton_plantation }
-					construct_x_industries = yes
+					add_x_industries = yes
 				}
 			}
 		}
@@ -1876,13 +2139,13 @@ shared_focus = {
 			50 = {
 				392 = {
 					set_temp_variable = { industry_token = token:cotton_plantation }
-					construct_x_industries = yes
+					add_x_industries = yes
 				}
 			}
 			50 = {
 				391 = {
 					set_temp_variable = { industry_token = token:cotton_plantation }
-					construct_x_industries = yes
+					add_x_industries = yes
 				}
 			}
 		}
@@ -1893,6 +2156,9 @@ shared_focus = {
 	icon = GFX_Focus_coal_mines
 	cost = 35
 	prerequisite = { focus = USA_expand_the_peculiar_institution }
+	bypass = {
+		has_country_flag = USARECON_Southern_Reconstruction_Over
+	}
 	relative_position_id = USA_expand_the_peculiar_institution
 	x = 1
 	y = 1
@@ -1916,15 +2182,18 @@ shared_focus = {
 	icon = GFX_Focus_Slaves
 	cost = 35
 	prerequisite = { focus = USA_fuel_for_the_mills }
+	bypass = {
+		has_country_flag = USARECON_Southern_Reconstruction_Over
+	}
 	relative_position_id = USA_fuel_for_the_mills
 	x = 0
 	y = 1
 	completion_reward = {
 		361 = {
 			set_temp_variable = { industry_token = token:cotton_plantation }
-			construct_x_industries = yes
+			add_x_industries = yes
 			set_temp_variable = { industry_token = token:cotton_plantation }
-			construct_x_industries = yes
+			add_x_industries = yes
 		}
 	}
 }
@@ -1934,6 +2203,9 @@ shared_focus = {
 	cost = 35
 	prerequisite = { focus = USA_plantations_on_the_mississippi }
 	prerequisite = { focus = USA_expand_maryland_plantations }
+	bypass = {
+		has_country_flag = USARECON_Southern_Reconstruction_Over
+	}
 	relative_position_id = USA_expand_the_peculiar_institution
 	x = 0
 	y = 3
@@ -1949,6 +2221,9 @@ shared_focus = {
 	icon = GFX_Focus_agricultural_economy
 	cost = 35
 	prerequisite = { focus = USA_tradition_and_order }
+	bypass = {
+		has_country_flag = USARECON_Southern_Reconstruction_Over
+	}
 	relative_position_id = USA_tradition_and_order
 	x = -1
 	y = 1
@@ -2142,6 +2417,9 @@ shared_focus = {
 	icon = GFX_Focus_Resource_Cotton
 	cost = 35
 	prerequisite = { focus = USA_tradition_and_order }
+	bypass = {
+		has_country_flag = USARECON_Southern_Reconstruction_Over
+	}
 	relative_position_id = USA_tradition_and_order
 	x = 1
 	y = 1
@@ -2150,19 +2428,19 @@ shared_focus = {
 			34 = {
 				961 = {
 					set_temp_variable = { industry_token = token:cotton_plantation }
-					construct_x_industries = yes
+					add_x_industries = yes
 				}
 			}
 			33 = {
 				960 = {
 					set_temp_variable = { industry_token = token:cotton_plantation }
-					construct_x_industries = yes
+					add_x_industries = yes
 				}
 			}
 			33 = {
 				959 = {
 					set_temp_variable = { industry_token = token:cotton_plantation }
-					construct_x_industries = yes
+					add_x_industries = yes
 				}
 			}
 		}
@@ -2170,19 +2448,19 @@ shared_focus = {
 			34 = {
 				357 = {
 					set_temp_variable = { industry_token = token:cotton_plantation }
-					construct_x_industries = yes
+					add_x_industries = yes
 				}
 			}
 			33 = {
 				958 = {
 					set_temp_variable = { industry_token = token:cotton_plantation }
-					construct_x_industries = yes
+					add_x_industries = yes
 				}
 			}
 			33 = {
 				1031 = {
 					set_temp_variable = { industry_token = token:cotton_plantation }
-					construct_x_industries = yes
+					add_x_industries = yes
 				}
 			}
 		}
@@ -2190,19 +2468,19 @@ shared_focus = {
 			34 = {
 				358 = {
 					set_temp_variable = { industry_token = token:cotton_plantation }
-					construct_x_industries = yes
+					add_x_industries = yes
 				}
 			}
 			33 = {
 				954 = {
 					set_temp_variable = { industry_token = token:cotton_plantation }
-					construct_x_industries = yes
+					add_x_industries = yes
 				}
 			}
 			33 = {
 				359 = {
 					set_temp_variable = { industry_token = token:cotton_plantation }
-					construct_x_industries = yes
+					add_x_industries = yes
 				}
 			}
 		}
@@ -2210,19 +2488,19 @@ shared_focus = {
 			34 = {
 				1385 = {
 					set_temp_variable = { industry_token = token:cotton_plantation }
-					construct_x_industries = yes
+					add_x_industries = yes
 				}
 			}
 			33 = {
 				360 = {
 					set_temp_variable = { industry_token = token:cotton_plantation }
-					construct_x_industries = yes
+					add_x_industries = yes
 				}
 			}
 			33 = {
 				261 = {
 					set_temp_variable = { industry_token = token:cotton_plantation }
-					construct_x_industries = yes
+					add_x_industries = yes
 				}
 			}
 		}
@@ -2230,19 +2508,19 @@ shared_focus = {
 			34 = {
 				393 = {
 					set_temp_variable = { industry_token = token:cotton_plantation }
-					construct_x_industries = yes
+					add_x_industries = yes
 				}
 			}
 			33 = {
 				1358 = {
 					set_temp_variable = { industry_token = token:cotton_plantation }
-					construct_x_industries = yes
+					add_x_industries = yes
 				}
 			}
 			33 = {
 				396 = {
 					set_temp_variable = { industry_token = token:cotton_plantation }
-					construct_x_industries = yes
+					add_x_industries = yes
 				}
 			}
 		}
@@ -2250,19 +2528,19 @@ shared_focus = {
 			34 = {
 				394 = {
 					set_temp_variable = { industry_token = token:cotton_plantation }
-					construct_x_industries = yes
+					add_x_industries = yes
 				}
 			}
 			33 = {
 				395 = {
 					set_temp_variable = { industry_token = token:cotton_plantation }
-					construct_x_industries = yes
+					add_x_industries = yes
 				}
 			}
 			33 = {
 				391 = {
 					set_temp_variable = { industry_token = token:cotton_plantation }
-					construct_x_industries = yes
+					add_x_industries = yes
 				}
 			}
 		}
@@ -2270,19 +2548,19 @@ shared_focus = {
 			34 = {
 				392 = {
 					set_temp_variable = { industry_token = token:cotton_plantation }
-					construct_x_industries = yes
+					add_x_industries = yes
 				}
 			}
 			33 = {
 				384 = {
 					set_temp_variable = { industry_token = token:cotton_plantation }
-					construct_x_industries = yes
+					add_x_industries = yes
 				}
 			}
 			33 = {
 				383 = {
 					set_temp_variable = { industry_token = token:cotton_plantation }
-					construct_x_industries = yes
+					add_x_industries = yes
 				}
 			}
 		}
@@ -2294,6 +2572,9 @@ shared_focus = {
 	cost = 35
 	prerequisite = { focus = USA_expand_northern_agriculture }
 	prerequisite = { focus = USA_northern_plantations }
+	bypass = {
+		has_country_flag = USARECON_Southern_Reconstruction_Over
+	}
 	relative_position_id = USA_tradition_and_order
 	x = 0
 	y = 2
@@ -2311,6 +2592,12 @@ shared_focus = {
 	prerequisite = {
 		focus = USA_steam_along_westward
 		focus = USA_cottonbasket_of_the_world
+	}
+	available = {
+		date < 1877.3.4
+	}
+	bypass = {
+		has_country_flag = USARECON_Southern_Reconstruction_Over
 	}
 	relative_position_id = USA_rebuild_the_north
 	x = 0
@@ -2570,8 +2857,8 @@ shared_focus = {
 			has_global_flag = ACW_American_Civil_War_Happened
 		}
 	}
-	x = 10
-	y = 11
+	x = 80
+	y = 0
 	search_filters = { FOCUS_FILTER_HISTORICAL }
 	completion_reward = {
 		add_political_power = 50
@@ -3771,7 +4058,7 @@ shared_focus = {
 	y = 3
 	search_filters = { FOCUS_FILTER_HISTORICAL }
 	completion_reward = {
-		#MEX = { country_event = { id = usa.60 } }
+		MEX = { country_event = { id = usa.60 } }
 	}
 }
 shared_focus = {
@@ -3983,9 +4270,9 @@ shared_focus = {
 	}
 }
 shared_focus = {
-	id = USA_the_european_on_an_american_throne
+	id = USA_gilded_the_european_on_an_american_throne
 	icon = GFX_focus_mxe_imperial_throne
-	cost = 40
+	cost = 49
 	relative_position_id = USA_gilded_bless_the_globe_and_rule_the_sea
 	prerequisite = { focus = USA_gilded_bless_the_globe_and_rule_the_sea }
 	available = {
@@ -3996,12 +4283,579 @@ shared_focus = {
 					capital_scope  = { is_on_continent = europe }
 				}
 			}
+			AND = {
+				country_exists = MEC
+				MEC = {
+					overlord = {
+						capital_scope  = { is_on_continent = europe }
+					}
+				}
+			}
 		}
 	}
 	x = -6
 	y = 1
 	completion_reward = {
-
+		add_war_support = 0.05
+		if = { # Union de la Corona
+			limit = {
+				AND = {
+					country_exists = MEC
+					MEC = {
+						overlord = {
+							capital_scope  = { is_on_continent = europe }
+						}
+					}
+				}
+			}
+			add_to_variable = {
+				SPR_USA_american_tension = 1
+				tooltip = SPR_tension_increase_effect_tooltip
+			}
+		}
+	}
+}
+shared_focus = {
+	id = USA_gilded_exercise_on_southern_border
+	icon = placeholder
+	cost = 21
+	relative_position_id = USA_gilded_the_european_on_an_american_throne
+	prerequisite = { focus = USA_gilded_the_european_on_an_american_throne }
+	x = 0
+	y = 1
+	completion_reward = {
+		army_experience = 25
+		if = { # Union de la Corona
+			limit = {
+				AND = {
+					country_exists = MEC
+					MEC = {
+						overlord = {
+							capital_scope  = { is_on_continent = europe }
+						}
+					}
+				}
+			}
+			add_to_variable = {
+				SPR_USA_american_tension = 3
+				tooltip = SPR_tension_increase_effect_tooltip
+			}
+		}
+	}
+}
+shared_focus = {
+	id = USA_gilded_military_aid_to_mexican_liberals
+	icon = placeholder
+	cost = 49
+	relative_position_id = USA_gilded_exercise_on_southern_border
+	available = {
+		has_equipment = {
+			infantry_equipment > 999
+		}
+	}
+	prerequisite = { focus = USA_gilded_exercise_on_southern_border }
+	x = -2
+	y = 1
+	completion_reward = {
+		# Unlock decisions to militarily assist the Mexican liberals with an escalation mechanic
+		if = {
+			limit = {
+				MEX = {
+					AND = {
+						exists = yes
+						has_government = centrism 
+					}
+				}
+			}
+			country_event = usa_diplomacy.15
+		}
+		if = {
+			limit = {
+				MEC = {
+					exists = yes
+				}
+			}
+			add_equipment_to_stockpile = {
+				type = infantry_equipment
+				amount = -1000
+				producer = USA
+			}
+			MEC = {
+				every_controlled_state = {
+					add_resistance = 30
+				}
+			}
+		}
+		if = {
+			limit = {
+				MXE = {
+					exists = yes
+				}
+			}
+			add_equipment_to_stockpile = {
+				type = infantry_equipment
+				amount = -1000
+				producer = USA
+			}
+			MXE = {
+				every_controlled_state = {
+					add_resistance = 30
+				}
+			}
+		}
+	}
+}
+shared_focus = {
+	id = USA_gilded_reestablish_army_of_observation
+	icon = placeholder
+	cost = 49
+	relative_position_id = USA_gilded_exercise_on_southern_border
+	available = {
+		OR = {
+			owns_state = 482
+			owns_state = 483
+		}
+	}
+	prerequisite = { focus = USA_gilded_exercise_on_southern_border }
+	x = 2
+	y = 1
+	completion_reward = {
+		if = { # Union de la Corona
+			limit = {
+				AND = {
+					country_exists = MEC
+					MEC = {
+						overlord = {
+							capital_scope  = { is_on_continent = europe }
+						}
+					}
+				}
+			}
+			add_to_variable = {
+				SPR_USA_american_tension = 2
+				tooltip = SPR_tension_increase_effect_tooltip
+			}
+		}
+	}
+}
+shared_focus = {
+	id = USA_gilded_diplomatic_support_for_mexican_liberals
+	icon = placeholder
+	cost = 49
+	relative_position_id = USA_gilded_exercise_on_southern_border
+	prerequisite = { focus = USA_gilded_exercise_on_southern_border }
+	x = 0
+	y = 1
+	completion_reward = {
+		if = {
+			limit = {
+				MEX = {
+					exists = yes
+					OR = {
+						has_government = centrism
+						has_government = social_egalitarianism
+					}
+					is_subject = no
+				}
+			}
+			MEX = {
+				add_opinion_modifier = {
+					target = USA
+					modifier = usa_diplo_support_for_mexican_libs_positive
+				}
+			}
+			every_other_country = {
+				limit = {
+					has_war_with = MEX
+				}
+				add_opinion_modifier = {
+					target = USA
+					modifier = usa_diplo_support_for_mexican_libs_negative
+				}
+			}
+		}
+		if = { # Union de la Corona
+			limit = {
+				AND = {
+					country_exists = MEC
+					MEC = {
+						overlord = {
+							capital_scope  = { is_on_continent = europe }
+						}
+					}
+				}
+			}
+			add_to_variable = {
+				SPR_USA_american_tension = 1
+				tooltip = SPR_tension_increase_effect_tooltip
+			}
+		}
+	}
+}
+shared_focus = {
+	id = USA_gilded_meet_with_mexican_president
+	icon = placeholder
+	cost = 49
+	relative_position_id = USA_gilded_diplomatic_support_for_mexican_liberals
+	prerequisite = { focus = USA_gilded_military_aid_to_mexican_liberals }
+	prerequisite = { focus = USA_gilded_diplomatic_support_for_mexican_liberals }
+	x = -1
+	y = 1
+	completion_reward = {
+		if = {
+			limit = {
+				MEX = {
+					AND = {
+						exists = yes
+						has_government = centrism 
+					}
+				}
+			}
+			country_event = usa_diplomacy.25
+		}
+		else = {
+			country_event = usa_diplomacy.24
+		}
+	}
+}
+shared_focus = {
+	id = USA_gilded_mobilize_on_the_border
+	icon = placeholder
+	cost = 49
+	relative_position_id = USA_gilded_diplomatic_support_for_mexican_liberals
+	prerequisite = { focus = USA_gilded_reestablish_army_of_observation }
+	prerequisite = { focus = USA_gilded_diplomatic_support_for_mexican_liberals }
+	x = 1
+	y = 1
+	completion_reward = {
+		if = { # Union de la Corona
+			limit = {
+				AND = {
+					country_exists = MEC
+					MEC = {
+						overlord = {
+							capital_scope  = { is_on_continent = europe }
+						}
+					}
+				}
+			}
+			add_to_variable = {
+				SPR_USA_american_tension = 3
+				tooltip = SPR_tension_increase_effect_tooltip
+			}
+		}
+	}
+}
+shared_focus = {
+	id = USA_gilded_reaffirm_the_monroe_doctrine
+	icon = placeholder
+	cost = 49
+	relative_position_id = USA_gilded_diplomatic_support_for_mexican_liberals
+	prerequisite = {
+		focus = USA_gilded_meet_with_mexican_president
+		focus = USA_gilded_mobilize_on_the_border
+	}
+	x = 0
+	y = 2
+	completion_reward = {
+		every_other_country = {
+			limit = {
+				AND = {
+					capital_scope = {
+						OR = {
+							is_on_continent = north_america
+							is_on_continent = south_america
+						}
+					}
+					NOT = {
+						AND = {
+							is_subject = yes
+							overlord = {
+								capital_scope = {
+									NOT = {
+										OR = {
+											is_on_continent = north_america
+											is_on_continent = south_america
+										}
+									}
+								}
+							}
+						}
+						overlord = {
+							original_tag = ROOT
+						}
+						original_tag = NEZ
+						original_tag = SHO
+						original_tag = BFT
+						original_tag = CRW
+						original_tag = SIX
+						original_tag = CHY
+						original_tag = COM
+						original_tag = NAV
+						original_tag = APA
+					}
+				}
+			}
+			add_opinion_modifier = {
+				target = USA
+				modifier = usa_reaffirmed_monroe_doctrine
+			}
+			reverse_add_opinion_modifier = {
+				target = USA
+				modifier = usa_reaffirmed_monroe_doctrine
+			}
+		}
+		if = { # Union de la Corona
+			limit = {
+				AND = {
+					country_exists = MEC
+					MEC = {
+						overlord = {
+							capital_scope  = { is_on_continent = europe }
+						}
+					}
+				}
+			}
+			add_to_variable = {
+				SPR_USA_american_tension = 5
+				tooltip = SPR_tension_increase_effect_tooltip
+			}
+		}
+	}
+}
+shared_focus = {
+	id = USA_gilded_joint_mexican_american_military_committee
+	icon = placeholder
+	cost = 49
+	relative_position_id = USA_gilded_reaffirm_the_monroe_doctrine
+	available = {
+		MEX = {
+			has_opinion = {
+				target = USA
+				value > 49
+			}
+			OR = {
+				has_war_with = MEC
+				has_war_with = MXE
+				any_country = {
+					limit = {
+						capital_scope = {
+							is_on_continent = europe
+						}
+					}
+					has_war_with = MEX
+				}
+			}
+		}
+	}
+	prerequisite = { focus = USA_gilded_reaffirm_the_monroe_doctrine }
+	x = -1
+	y = 1
+	completion_reward = {
+		army_experience = 15
+		add_timed_idea = {
+			idea = USA_idea_joint_mexican_american_military_committee
+			days = 3650
+		}
+		MEX = {
+			army_experience = 15
+			add_timed_idea = {
+				idea = USA_idea_joint_mexican_american_military_committee
+				days = 3650
+			}
+		}
+	}
+}
+shared_focus = {
+	id = USA_gilded_formalize_alliance_with_mexico
+	icon = placeholder
+	cost = 49
+	relative_position_id = USA_gilded_joint_mexican_american_military_committee
+	available = {
+		MEX = {
+			has_opinion = {
+				target = USA
+				value > 49
+			}
+		}
+	}
+	prerequisite = { focus = USA_gilded_joint_mexican_american_military_committee }
+	x = 0
+	y = 1
+	completion_reward = {
+		
+	}
+}
+shared_focus = {
+	id = USA_gilded_prepare_to_invade_mexico
+	icon = placeholder
+	cost = 35
+	relative_position_id = USA_gilded_reaffirm_the_monroe_doctrine
+	available = {
+		MEX = {
+			OR = {
+				exists = no
+				AND = {
+					is_subject = yes
+					overlord = {
+						capital_scope = {
+							NOT = {
+								OR = {
+									is_on_continent = north_america
+									is_on_continent = south_america
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	prerequisite = { focus = USA_gilded_reaffirm_the_monroe_doctrine }
+	x = 1
+	y = 1
+	completion_reward = {
+		add_war_support = 0.025
+		if = { # Union de la Corona
+			limit = {
+				AND = {
+					country_exists = MEC
+					MEC = {
+						overlord = {
+							capital_scope  = { is_on_continent = europe }
+						}
+					}
+				}
+			}
+			add_to_variable = {
+				SPR_USA_american_tension = 5
+				tooltip = SPR_tension_increase_effect_tooltip
+			}
+		}
+	}
+}
+shared_focus = {
+	id = USA_gilded_probe_southern_defenses
+	icon = placeholder
+	cost = 35
+	relative_position_id = USA_gilded_prepare_to_invade_mexico
+	available = {
+		MEX = {
+			OR = {
+				exists = no
+				AND = {
+					is_subject = yes
+					overlord = {
+						capital_scope = {
+							NOT = {
+								OR = {
+									is_on_continent = north_america
+									is_on_continent = south_america
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	prerequisite = { focus = USA_gilded_prepare_to_invade_mexico }
+	x = 0
+	y = 1
+	completion_reward = {
+		if = {
+			limit = {
+				owns_state = 482
+			}
+			start_border_war = {
+				change_state_after_war = no
+				attacker = {
+					state = 482
+					num_provinces = 2
+					on_win = usa_diplomacy.20
+					on_lose = usa_diplomacy.21
+					on_cancel = usa_diplomacy.21
+				}	
+				defender = {
+					state = 480
+					num_provinces = 2
+					on_win = usa_diplomacy.23
+					on_lose = usa_diplomacy.22
+					on_cancel = usa_diplomacy.23
+				}
+			}
+		}
+		else = {
+			start_border_war = {
+				change_state_after_war = no
+				attacker = {
+					state = 1304
+					num_provinces = 2
+					on_win = usa_diplomacy.20
+					on_lose = usa_diplomacy.21
+					on_cancel = usa_diplomacy.21
+				}	
+				defender = {
+					state = 480
+					num_provinces = 2
+					on_win = usa_diplomacy.21
+					on_lose = usa_diplomacy.20
+					on_cancel = usa_diplomacy.21
+				}
+			}
+		}
+		if = { # Union de la Corona
+			limit = {
+				AND = {
+					country_exists = MEC
+					MEC = {
+						overlord = {
+							capital_scope  = { is_on_continent = europe }
+						}
+					}
+				}
+			}
+			add_to_variable = {
+				SPR_USA_american_tension = 5
+				tooltip = SPR_tension_increase_effect_tooltip
+			}
+		}
+	}
+}
+shared_focus = {
+	id = USA_gilded_send_the_word_across_the_rio_grande
+	icon = placeholder
+	cost = 49
+	relative_position_id = USA_gilded_reaffirm_the_monroe_doctrine
+	# available = { check_variable = { usa_mexico_escalation > 90 } }
+	available = {
+		OR = {
+			country_exists = MEC
+		}
+	}
+	prerequisite = {
+		focus = USA_gilded_formalize_alliance_with_mexico
+		focus = USA_gilded_probe_southern_defenses
+	}
+	x = 0
+	y = 3
+	completion_reward = {
+		if = {
+			limit = {
+				AND = {
+					country_exists = MEC
+					MEC = {
+						overlord = {
+							capital_scope  = { is_on_continent = europe }
+						}
+					}
+				}
+			}
+			declare_war_on = {
+                target = MEC
+                type = liberate_wargoal
+            }
+		}
 	}
 }
 shared_focus = {
@@ -4219,12 +5073,15 @@ shared_focus = {
 	id = USA_gilded_santo_domingo_forward_operating_base
 	icon = placeholder
 	cost = 40
+	available = {
+		owns_state = 1318
+	}
 	relative_position_id = USA_gilded_assert_our_position_in_the_caribbean
 	prerequisite = { focus = USA_gilded_assert_our_position_in_the_caribbean }
 	x = -2
 	y = 1
 	completion_reward = {
-
+		
 	}
 }
 shared_focus = {
@@ -4360,7 +5217,10 @@ shared_focus = {
 	icon = placeholder
 	cost = 40
 	relative_position_id = USA_gilded_bless_the_globe_and_rule_the_sea
-	prerequisite = { focus = USA_gilded_to_hell_with_spain }
+	prerequisite = {
+		focus = USA_gilded_send_the_word_across_the_rio_grande
+		focus = USA_gilded_to_hell_with_spain
+	}
 	prerequisite = { focus = USA_gilded_columbia_gem_of_the_ocean }
 	x = 0
 	y = 9

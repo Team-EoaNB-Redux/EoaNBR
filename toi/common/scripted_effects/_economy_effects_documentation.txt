@@ -133,7 +133,6 @@
 				}
 				hidden_effect = {
 					construct_x_industries_no_update = yes
-					reload_industries_array = yes
 					var:controller = {
 						var:market_leader = {
 							market_update = yes
@@ -144,7 +143,6 @@
 						}
 					}
 				}
-				refresh_construction_list = yes
 			}
 			set_temp_variable = { x_temp = 0 }
 			set_temp_variable = { financer_temp = 0 }
@@ -155,146 +153,159 @@
 			
 		}
 
-		# Removes X buildings from the state. Does NOT allow removal of Rice Paddies/Subsistence Farms. Negative values do NOT work. Any building which reaches size 0 will be removed from the state.
+		# Removes x_temp buildings under construction. If there are no buildings under construction, then (unless the no_removal_temp var is set) this will function like remove_x_industries
 		deconstruct_x_industries = {
-			round_temp_variable = x_temp
 
+		}
+
+		# Adds x number of the given industry type in the state. If provided a production/automation method that is too advanced (that you don't have tech for) 
+		# or the building doesn't support, then it will auto adjust.
+		# Negative values do NOT work. Will not do anything if given an invalid industry token for the state.
+		# Does NOT cost anything. financier_temp will simply end up being the owner
+		add_x_industries = {
+			# x_temp 
+			# financer_temp
+			# industry_token
+			# production_method_temp
+			# automation_method_temp
+			# no_cost_temp
+
+
+			round_temp_variable = x_temp
 			if = {
 				limit = {
 					check_variable = { x_temp = 0 }
 				}
 				set_temp_variable = { x_temp = 1 }
 			}
-			custom_effect_tooltip = deconstruct_x_industries_tt
+
+			custom_effect_tooltip = add_x_industries_tt
 
 			if = {
 				limit = {
-					is_in_array = { global.building_token_array = building_token }
-					NOT = { check_variable = { building_token = token:building_rice_paddy } }
-					NOT = { check_variable = { building_token = token:building_subsistence_farm } }
+					NOT = { is_in_array = { controller:building_unlocked_pms@var:industry_token = production_method_temp } }
+				}
+				set_temp_variable = { production_method_temp = controller:latest_production_method@var:industry_token }
+			}
+			if = {
+				limit = {
+					NOT = { is_in_array = { controller:building_unlocked_ams@var:industry_token = automation_method_temp } }
+				}
+				set_temp_variable = { automation_method_temp = controller:latest_automation_method@var:industry_token }
+			}
+
+			if = {
+				limit = {
+					is_in_array = { global.industry_token_array = industry_token }
+					NOT = { check_variable = { global.building_unexpandable@var:industry_token = 1 } }
+					check_variable = { x_temp > 0 }
+					can_build_industry = yes
+				}
+				hidden_effect = {
+					add_to_variable = { size@var:industry_token = x_temp }
+
+					#Add building to array if it doesn't exist yet
+					if = {
+						limit = {
+							NOT = { is_in_array = { industries = industry_token } }
+						}
+						add_to_array = { industries = industry_token }
+						set_variable = { production_method@var:industry_token = production_method_temp }
+						set_variable = { automation_method@var:industry_token = automation_method_temp }
+					}
+					refresh_construction_list = yes
+					reload_industries_array = yes
+
+					var:controller = {
+						var:market_leader = {
+							market_update = yes
+						}
+						every_controlled_state = {
+							industries_update = yes
+							pops_update = yes
+						}
+					}
+					add_to_variable = { update_state_econ_window = 1 }
+				}
+			}
+			set_temp_variable = { x_temp = 0 }
+			set_temp_variable = { financer_temp = 0 }
+			set_temp_variable = { industry_token = 0 }
+			set_temp_variable = { production_method_temp = 0 }
+			set_temp_variable = { automation_method_temp = 0 }
+			set_temp_variable = { no_cost_temp = 0 }
+		}
+
+		# Removes X buildings from the state. Negative values do NOT work. Any building which reaches size 0 will be removed from the state.
+		remove_x_industries = {
+			round_temp_variable = x_temp
+			if = {
+				limit = {
+					check_variable = { x_temp = 0 }
+				}
+				set_temp_variable = { x_temp = 1 }
+			}
+			custom_effect_tooltip = remove_x_industries_tt
+
+			if = {
+				limit = {
+					is_in_array = { global.building_token_array = industry_token }
 					check_variable = { x_temp > 0 }
 				}
 				if = {
 					limit = {
-						check_variable = { x_temp > size@var:building_token }
+						check_variable = { x_temp > size@var:industry_token }
 					}
-					set_variable = { size@var:building_token = 0 }
+					set_variable = { size@var:industry_token = 0 }
 				}
 				else = {
-					subtract_from_variable = { size@var:building_token = x_temp }
+					subtract_from_variable = { size@var:industry_token = x_temp }
 				}
 
 				if = { #Keeping the Building
 					limit = {
-						check_variable = { size@var:building_token > 0 }
-					}
-					set_temp_variable = { emp_temp = employed@var:building_token }
-					set_temp_variable = { bu_token = building_token }
-					building_update_workforce = yes
-					if = {
-						limit = {
-							check_variable = { employed@var:building_token > 1000 }
-						}
-						divide_temp_variable = { emp_temp = jobs@var:building_token }
-						multiply_temp_variable = { emp_temp = 100 }
-					}
-					else = {
-						multiply_temp_variable = { emp_temp = 100 }
-						divide_temp_variable = { emp_temp = jobs@var:building_token }
-					}
-					
-					set_variable = { peasants_employed@var:building_token = peasants_jobs@var:building_token }
-					set_variable = { laborers_employed@var:building_token = laborers_jobs@var:building_token }
-					set_variable = { workers_employed@var:building_token = workers_jobs@var:building_token }
-					set_variable = { professionals_employed@var:building_token = professionals_jobs@var:building_token }
-					set_variable = { specialists_employed@var:building_token = specialists_jobs@var:building_token }
-					set_variable = { aristocrats_employed@var:building_token = aristocrats_jobs@var:building_token }
-					set_variable = { capitalists_employed@var:building_token = capitalists_jobs@var:building_token }
-					if = {
-						limit = {
-							check_variable = { emp_temp < 100 }
-							check_variable = { jobs@var:building_token > 1000 }
-						}
-						divide_variable = { peasants_employed@var:building_token = 100 }
-						divide_variable = { laborers_employed@var:building_token = 100 }
-						divide_variable = { workers_employed@var:building_token = 100 }
-						divide_variable = { professionals_employed@var:building_token = 100 }
-						divide_variable = { specialists_employed@var:building_token = 100 }
-						divide_variable = { aristocrats_employed@var:building_token = 100 }
-						divide_variable = { capitalists_employed@var:building_token = 100 }
-
-						multiply_variable = { peasants_employed@var:building_token = emp_temp }
-						multiply_variable = { laborers_employed@var:building_token = emp_temp }
-						multiply_variable = { workers_employed@var:building_token = emp_temp }
-						multiply_variable = { professionals_employed@var:building_token = emp_temp }
-						multiply_variable = { specialists_employed@var:building_token = emp_temp }
-						multiply_variable = { aristocrats_employed@var:building_token = emp_temp }
-						multiply_variable = { capitalists_employed@var:building_token = emp_temp }
-					}
-					else_if = {
-						limit = {
-							check_variable = { emp_temp < 100 }
-						}
-						multiply_variable = { peasants_employed@var:building_token = emp_temp }
-						multiply_variable = { laborers_employed@var:building_token = emp_temp }
-						multiply_variable = { workers_employed@var:building_token = emp_temp }
-						multiply_variable = { professionals_employed@var:building_token = emp_temp }
-						multiply_variable = { specialists_employed@var:building_token = emp_temp }
-						multiply_variable = { aristocrats_employed@var:building_token = emp_temp }
-						multiply_variable = { capitalists_employed@var:building_token = emp_temp }
-
-						divide_variable = { peasants_employed@var:building_token = 100 }
-						divide_variable = { laborers_employed@var:building_token = 100 }
-						divide_variable = { workers_employed@var:building_token = 100 }
-						divide_variable = { professionals_employed@var:building_token = 100 }
-						divide_variable = { specialists_employed@var:building_token = 100 }
-						divide_variable = { aristocrats_employed@var:building_token = 100 }
-						divide_variable = { capitalists_employed@var:building_token = 100 }
+						check_variable = { size@var:industry_token > 0 }
 					}
 				}
 				else = { #Removing the Building
-					set_variable = { peasants_employed@var:building_token = 0 }
-					set_variable = { laborers_employed@var:building_token = 0 }
-					set_variable = { workers_employed@var:building_token = 0 }
-					set_variable = { professionals_employed@var:building_token = 0 }
-					set_variable = { specialists_employed@var:building_token = 0 }
-					set_variable = { aristocrats_employed@var:building_token = 0 }
-					set_variable = { capitalists_employed@var:building_token = 0 }
+					set_temp_variable = { bu_token = industry_token }
+					industry_update = yes
 
-					set_variable = { money@var:building_token = 0 }
-
-					set_temp_variable = { bu_token = building_token }
-					#building_update = yes
-
-					remove_from_array = { buildings = building_token }
-					if = {
-						limit = {
-							is_in_array = { urban_buildings = building_token }
-						}
-						remove_from_array = { urban_buildings = building_token }
-					}
-					else_if = {
-						limit = {
-							is_in_array = { rural_buildings = building_token }
-						}
-						remove_from_array = { rural_buildings = building_token }
-					}
-				
-					refresh_construction_list = yes
+					remove_from_array = { buildings = industry_token }
+					remove_from_array = { industries = industry_token }
 				}
 				
-				#buildings_update = yes
+				industries_update = yes
 				if = {
 					limit = {
-						check_variable = { money@var:building_token > money_limit@var:building_token }
+						check_variable = { money@var:industry_token > money_limit@var:industry_token }
 					}
-					set_variable = { money@var:building_token = money_limit@var:building_token }
+					set_variable = { money@var:industry_token = money_limit@var:industry_token }
 				}
+
+				industries_update_workforce = yes
+				pops_workforce_update = yes
+				industries_update = yes
+
+				refresh_construction_list = yes
+				reload_industries_array = yes
+
+				var:controller = {
+					var:market_leader = {
+						market_update = yes
+					}
+					every_controlled_state = {
+						industries_update = yes
+						pops_update = yes
+					}
+				}
+				add_to_variable = { update_state_econ_window = 1 }
+
 				set_temp_variable = { bu_token = 0 }
 			}
 			
 			set_temp_variable = { x_temp = 0 }
-			set_temp_variable = { building_token = 0 }
+			set_temp_variable = { industry_token = 0 }
 		}
 
 
