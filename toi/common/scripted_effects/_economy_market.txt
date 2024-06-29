@@ -279,6 +279,12 @@
 			value = r_type
 
 			set_temp_variable = { amount_temp = resource_consumed@var:r_type }
+			if = {
+				limit = {
+					check_variable = { resource@var:r_type < 0 }
+				}
+				subtract_from_temp_variable = { amount_temp = resource@var:r_type }
+			}
 			multiply_temp_variable = { amount_temp = modifier_temp }
 			add_to_variable = { local_need@var:r_type = amount_temp }
 			#set_variable = { balance@var:r_type = resource@var:r_type }
@@ -505,25 +511,23 @@
 					limit = {
 						check_variable = { d_temp > 0.0 }
 					}
-					set_temp_variable = { grp_sd = s_temp }
-					divide_temp_variable = { grp_sd = d_temp }
-
-					set_temp_variable = { grp_multiplier = 3 }
-					subtract_from_temp_variable = { grp_multiplier = grp_sd }
-					divide_temp_variable = { grp_multiplier = 2 }
+					set_temp_variable = { grp_multiplier = s_temp }
+					divide_temp_variable = { grp_multiplier = d_temp }
+					multiply_temp_variable = { grp_multiplier = 3 }
+					subtract_from_temp_variable = { grp_multiplier = 2 }
 
 					if = {
 						limit = {
-							check_variable = { grp_multiplier < 0.25 }
+							check_variable = { grp_multiplier > 4.0 }
 						}
-						set_temp_variable = { grp_multiplier = 0.25 }
+						set_temp_variable = { grp_multiplier = 4.0 }
 					}
 				}
 				else = {
-					set_temp_variable = { grp_multiplier = 0.25 }
+					set_temp_variable = { grp_multiplier = 4.0 }
 				}
 
-				multiply_temp_variable = { p_return_temp = grp_multiplier } #P = B * ((3 - S/D) / 2)
+				divide_temp_variable = { p_return_temp = grp_multiplier } # P = B / (3 * S/D - 2)
 			}
 			else_if = {
 				limit = {
@@ -534,22 +538,23 @@
 						check_variable = { s_temp > 0.0 }
 					}
 					set_temp_variable = { grp_multiplier = d_temp }
+					subtract_from_temp_variable = { grp_multiplier = s_temp }
 					divide_temp_variable = { grp_multiplier = s_temp }
+					multiply_temp_variable = { grp_multiplier = 3 }
 					add_to_temp_variable = { grp_multiplier = 1 }
-					divide_temp_variable = { grp_multiplier = 2 }
 
 					if = {
 						limit = {
-							check_variable = { grp_multiplier > 2.0 }
+							check_variable = { grp_multiplier > 4.0 }
 						}
-						set_temp_variable = { grp_multiplier = 2.0 }
+						set_temp_variable = { grp_multiplier = 4.0 }
 					}
 				}
 				else = {
-					set_temp_variable = { grp_multiplier = 2.0 }
+					set_temp_variable = { grp_multiplier = 4.0 }
 				}
 
-				multiply_temp_variable = { p_return_temp = grp_multiplier } #P = B * ( (D/S + 1) / 2)
+				multiply_temp_variable = { p_return_temp = grp_multiplier } # P = B * ( 3*(D-S) / S + 1 )
 			}
 		}
 		else_if = {
@@ -1809,7 +1814,7 @@
 					}
 					set_temp_variable = { right_bar_temp = global_market_price_compared_to_base@var:vv }
 					multiply_temp_variable = { right_bar_temp = 100 }
-					divide_temp_variable = { right_bar_temp = 1 }
+					divide_temp_variable = { right_bar_temp = 3 }
 					
 					set_temp_variable = { left_bar_temp = 100 }
 				}
@@ -1865,7 +1870,7 @@
 					}
 					set_temp_variable = { right_bar_temp = selected_market:price_compared_to_base@var:vv }
 					multiply_temp_variable = { right_bar_temp = 100 }
-					divide_temp_variable = { right_bar_temp = 1 }
+					divide_temp_variable = { right_bar_temp = 3 }
 					
 					set_temp_variable = { left_bar_temp = 100 }
 				}
@@ -2453,6 +2458,29 @@
 				set_temp_variable = { no_update_temp = 1 }
 				add_trade = yes
 			}
+			else_if = {
+				limit = {
+					check_variable = { trade_ai@var:resource_temp = 0 }
+					NOT = { is_in_array = { global.non_tradeable_resources = resource_temp } }
+					
+					check_variable = { offers@var:resource_temp = 0 }
+					NOT = { is_in_array = { trade_routes = resource_temp } }
+
+					OR = {
+						AND = {
+							check_variable = { supply@var:resource_temp > 0 }
+							check_variable = { demand@var:resource_temp = 0 }
+						}
+						AND = {
+							check_variable = { supply@var:resource_temp = 0 }
+							check_variable = { demand@var:resource_temp > 0 }
+						}
+					}
+				}
+
+				set_temp_variable = { no_update_temp = 1 }
+				add_trade = yes
+			}
 		}
 
 		for_each_loop = { # Optimize & Evaluate Routes
@@ -2483,6 +2511,52 @@
 				}
 
 				trade_ai_evaluate_route = yes
+			}
+
+			if = { # Minimum trade - sets trade to resource consumption (for military production)
+				limit = {
+					check_variable = { trade_ai@var:resource_temp = 0 }
+					NOT = { is_in_array = { global.non_tradeable_resources = resource_temp } }
+				}
+				set_temp_variable = { amount_temp = resource_consumed@var:resource_temp }
+				if = { limit = { check_variable = { resource@var:resource_temp < 0 } } subtract_from_temp_variable = { amount_temp = resource_consumed@var:resource_temp } }
+				subtract_from_temp_variable = { amount_temp = supply@var:resource_temp }
+
+				if = {
+					limit = {
+						check_variable = { amount_temp > 0 }
+						check_variable = { amount_temp < offers@var:resource_temp }
+					}
+					set_temp_variable = { no_update_temp = 1 }
+					set_trade = yes
+				}
+			}
+			
+			if = { # Minimum trade - sets exports to 1 (for 0 demand but any supply)
+				limit = {
+					check_variable = { trade_ai@var:resource_temp = 0 }
+					NOT = { is_in_array = { global.non_tradeable_resources = resource_temp } }
+
+					check_variable = { offers@var:resource_temp = 0 }
+					check_variable = { supply@var:resource_temp > 0 }
+					check_variable = { demand@var:resource_temp = 0 }
+				}
+				set_temp_variable = { amount_temp = -1 }
+				set_temp_variable = { no_update_temp = 1 }
+				set_trade = yes
+			}
+			if = { # Minimum trade - sets imports to 1 (for 0 supply but any demand)
+				limit = {
+					check_variable = { trade_ai@var:resource_temp = 0 }
+					NOT = { is_in_array = { global.non_tradeable_resources = resource_temp } }
+
+					check_variable = { offers@var:resource_temp = 0 }
+					check_variable = { supply@var:resource_temp = 0 }
+					check_variable = { demand@var:resource_temp > 0 }
+				}
+				set_temp_variable = { amount_temp = 1 }
+				set_temp_variable = { no_update_temp = 1 }
+				set_trade = yes
 			}
 		}
 		
