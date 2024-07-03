@@ -4205,11 +4205,17 @@
 			multiply_variable = { national_bank_interest_from_scarcity = global.loan_scarcity_rate }
 
 
-			set_variable = { domestic_interest_rate = global.credit_rating_BB_base_interest_rate } # TODO - 4.0%
-			add_to_variable = { domestic_interest_rate = national_bank_interest_from_scarcity } # Up to 5.0%
+			set_variable = { domestic_interest_rate = global.default_interest_rate } # TODO - 8.0%
+			add_to_variable = { domestic_interest_rate = national_bank_interest_from_scarcity } # Up to 10.0%
 			if = {
 				limit = {
 					is_great_power = yes
+				}
+				subtract_from_variable = { domestic_interest_rate = 2 }
+			}
+			else_if = {
+				limit = {
+					is_secondary_power = yes
 				}
 				subtract_from_variable = { domestic_interest_rate = 1 }
 			}
@@ -4221,11 +4227,17 @@
 			add_to_temp_variable = { modifier_temp = 1 }
 			multiply_variable = { domestic_interest_rate = modifier_temp }
 
-			set_variable = { foreign_interest_rate = global.credit_rating_BB_base_interest_rate } # TODO - 4.0%
+			set_variable = { foreign_interest_rate = global.default_interest_rate } # TODO - 8.0%
 			add_to_variable = { foreign_interest_rate = global.base_international_interest_rate } # 2.0%
 			if = {
 				limit = {
 					is_great_power = yes
+				}
+				subtract_from_variable = { foreign_interest_rate = 2 }
+			}
+			else_if = {
+				limit = {
+					is_secondary_power = yes
 				}
 				subtract_from_variable = { foreign_interest_rate = 1 }
 			}
@@ -4236,6 +4248,14 @@
 			add_to_temp_variable = { modifier_temp = modifier@foreign_interest_rate_factor }
 			add_to_temp_variable = { modifier_temp = 1 }
 			multiply_variable = { domestic_interest_rate = modifier_temp }
+			
+			if = { # 1st rank GP gets 10% cheaper debt (factor)
+				limit = {
+					check_variable = { score_array_position_var = 1 }
+				}
+				multiply_variable = { domestic_interest_rate = 0.9 }
+				multiply_variable = { foreign_interest_rate = 0.9 }
+			}
 		#
 
 		#Money owed to foreign countries & interest
