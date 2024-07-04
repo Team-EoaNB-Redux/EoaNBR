@@ -4357,8 +4357,17 @@
 
 		multiply_temp_variable = { x_temp = 0.12 }
 		add_to_temp_variable = { x_temp = 0.001 } # dunno why this is needed to make it exactly the percentage you give it, but apparently it is
-		multiply_temp_variable = { x_temp = gdp_amount }
-		divide_temp_variable = { x_temp = 1000 }
+		if = {
+			limit = {
+				check_variable = { x_temp > 1 }
+			}
+			divide_temp_variable = { x_temp = 1000 }
+			multiply_temp_variable = { x_temp = gdp_amount }
+		}
+		else = {
+			multiply_temp_variable = { x_temp = gdp_amount }
+			divide_temp_variable = { x_temp = 1000 }
+		}
 		set_debt = yes
 	}
 	set_debt = {
@@ -5791,12 +5800,16 @@
 				check_variable = { market_countries^num > 1 }
 			}
 			set_variable = { market_gdp = 0 }
+			set_variable = { market_pops = 0 }
 			set_temp_variable = { home_temp = THIS }
 			for_each_scope_loop = {
 				array = market_countries
 				country_calc_gdp = yes
 				add_to_variable = { home_temp:market_gdp = gdp_amount }
+				add_to_variable = { home_temp:market_pops = pops }
 			}
+			set_variable = { market_gdp_per_capita = market_gdp }
+			divide_variable = { market_gdp_per_capita = market_pops }
 		}
 		else_if = {
 			limit = {
