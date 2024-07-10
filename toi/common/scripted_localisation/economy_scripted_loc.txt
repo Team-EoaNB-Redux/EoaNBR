@@ -305,16 +305,46 @@ defined_text = {
 			localization_key = yellow_loc
 		}
 	}
+	defined_text = { # GetNegativeColor - amount_temp
+		name = GetNegativeColor
+		text = {
+			trigger = {
+				check_variable = { amount_temp > 0 }
+			}
+			localization_key = red_loc
+		}
+		text = {
+			trigger = {
+				check_variable = { amount_temp < 0 }
+			}
+			localization_key = green_loc
+		}
+		text = {
+			localization_key = yellow_loc
+		}
+	}
 	defined_text = { # GetPositiveAdjustedAmount - amount_temp
 		name = GetPositiveAdjustedAmount
 		text = {
 			localization_key = "[GetPositiveColor][GetAdjustedAmount]"
 		}
 	}
+	defined_text = { # GetNegativeAdjustedAmount - amount_temp
+		name = GetNegativeAdjustedAmount
+		text = {
+			localization_key = "[GetNegativeColor][GetAdjustedAmount]"
+		}
+	}
 	defined_text = { # GetIconFromV - v
 		name = GetIconFromV
 		text = {
 			localization_key = "GFX_[?v.GetTokenKey]"
+		}
+	}
+	defined_text = { # GetTextIconFromV - v
+		name = GetTextIconFromV
+		text = {
+			localization_key = "GFX_[?v.GetTokenKey]_texticon"
 		}
 	}
 	defined_text = { # GetEmploymentIconFromPercent - percent_temp, 0-100
@@ -6422,7 +6452,7 @@ defined_text = {
 					name = GetResourceListBackground
 					text = {
 						trigger = {
-							is_in_array = { global.non_tradeable_resources = v }
+							is_in_array = { global.non_tradeable_resources = resource_temp }
 						}
 						localization_key = "GFX_trade_resource_background"
 					}
@@ -6432,10 +6462,10 @@ defined_text = {
 								limit = {
 									check_variable = { selected_market = 0 }
 								}
-								check_variable = { global_market_balance@var:v > 0 }
+								check_variable = { global_market_balance@var:resource_temp > 0 }
 							}
 							else = {
-								check_variable = { balance@var:v > 0 }
+								check_variable = { balance@var:resource_temp > 0 }
 							}
 						}
 						localization_key = "GFX_trade_resource_background_green"
@@ -6449,7 +6479,7 @@ defined_text = {
 				defined_text = {
 					name = GetResourceListIcon
 					text = {
-						localization_key = "GFX_[?v.GetTokenKey]"
+						localization_key = "GFX_[?resource_temp.GetTokenKey]"
 					}
 				}
 			#
@@ -6457,84 +6487,210 @@ defined_text = {
 				defined_text = {
 					name = GetResourceListTextIcon
 					text = {
-						localization_key = "GFX_[?v.GetTokenKey]_texticon"
+						localization_key = "GFX_[?resource_temp.GetTokenKey]_texticon"
 					}
 				}
 			#
-			#GetResourceListSupply
-				defined_text = {
-					name = GetResourceListSupply
-					text = {
-						trigger = {
-							if = {
-								limit = {
-									check_variable = { selected_market = 0 }
-								}
-								check_variable = { global_market_supply@var:v > 1000 }
-								set_temp_variable = { a_temp = global_market_supply@var:v }
-								divide_temp_variable = { a_temp = 1000 }
+			defined_text = { #GetResourceListSupply
+				name = GetResourceListSupply
+				text = {
+					trigger = {
+						if = {
+							limit = {
+								check_variable = { selected_market = 0 }
 							}
-							else = {
-								check_variable = { selected_market:supply@var:v > 1000 }
-								set_temp_variable = { a_temp = selected_market:supply@var:v }
-								divide_temp_variable = { a_temp = 1000 }
-							}
+							set_temp_variable = { amount_temp = global_market_supply@var:resource_temp }
 						}
-						localization_key = "[?a_temp|3]K"
-					}
-					text = {
-						trigger = {
-							if = {
-								limit = {
-									check_variable = { selected_market = 0 }
-								}
-								set_temp_variable = { b_temp = global_market_supply@var:v }
-							}
-							else = {
-								set_temp_variable = { b_temp = selected_market:supply@var:v }
-							}
+						else = {
+							set_temp_variable = { amount_temp = selected_market:supply@var:resource_temp }
 						}
-						localization_key = "[?b_temp|3]"
 					}
+					localization_key = "[GetAdjustedAmountNoSign]"
 				}
-			#
-			#GetResourceListDemand
-				defined_text = {
-					name = GetResourceListDemand
-					text = {
-						trigger = {
+			}
+			defined_text = { #GetResourceListSupplyProduction
+				name = GetResourceListSupplyProduction
+				text = {
+					trigger = {
+						if = {
+							limit = {
+								check_variable = { selected_market = 0 }
+							}
+							set_temp_variable = { amount_temp = global_market_supply@var:resource_temp }
+						}
+						else = {
+							set_temp_variable = { amount_temp = selected_market:production@var:resource_temp }
 							if = {
 								limit = {
-									check_variable = { selected_market = 0 }
+									check_variable = { amount_temp < 0 }
 								}
-								check_variable = { global_market_demand@var:v > 1000 }
-								set_temp_variable = { a_temp = global_market_demand@var:v }
-								divide_temp_variable = { a_temp = 1000 }
-							}
-							else = {
-								check_variable = { selected_market:demand@var:v > 1000 }
-								set_temp_variable = { a_temp = selected_market:demand@var:v }
-								divide_temp_variable = { a_temp = 1000 }
+								set_temp_variable = { amount_temp = 0 }
 							}
 						}
-						localization_key = "[?a_temp|3]K"
 					}
-					text = {
-						trigger= {
-							if = {
-								limit = {
-									check_variable = { selected_market = 0 }
-								}
-								set_temp_variable = { b_temp = global_market_demand@var:v }
-							}
-							else = {
-								set_temp_variable = { b_temp = selected_market:demand@var:v }
-							}
-						}
-						localization_key = "[?b_temp|3]"
-					}
+					localization_key = "[GetAdjustedAmountNoSign]"
 				}
-			#
+			}
+			defined_text = { #GetResourceListSupplyTradeLoc
+				name = GetResourceListSupplyTradeLoc
+				text = {
+					trigger = {
+						NOT = { check_variable = { selected_market = 0 } }
+						check_variable = { selected_market:trade@var:resource_temp > 0 }
+					}
+					localization_key = trade_resource_imports_loc_tooltip
+				}
+			}
+			defined_text = { #GetResourceListSupplyTrade
+				name = GetResourceListSupplyTrade
+				text = {
+					trigger = {
+						set_temp_variable = { amount_temp = selected_market:trade@var:resource_temp }
+					}
+					localization_key = "[GetAdjustedAmountNoSign]"
+				}
+			}
+			defined_text = { #GetResourceListSupplyStateList
+				name = GetResourceListSupplyStateList
+				text = {
+					trigger = {
+						clear_temp_array = param_array
+						clear_temp_array = percent_temp_array
+						clear_temp_array = number_temp_array
+						if = {
+							limit = {
+								check_variable = { selected_market = 0 }
+							}
+							set_temp_variable = { amount_temp = global_market_supply@var:resource_temp }
+							all_of = { 
+								array = selected_market:market_production_states value = val 
+								
+								add_to_temp_array = { param_array = val }
+							}
+						}
+						else = {
+							all_of = { 
+								array = selected_market:market_production_states@var:resource_temp value = val 
+								
+								add_to_temp_array = { param_array = val }
+								
+								set_temp_variable = { percentage_temp = val:production@var:resource_temp }
+								divide_temp_variable = { percentage_temp = selected_market:production@var:resource_temp }
+								add_to_temp_array = { percent_temp_array = percentage_temp }
+								
+								add_to_temp_array = { number_temp_array = val:production@var:resource_temp }
+							}
+						}
+						set_temp_variable = { param_infix = token:array_infix_newline }
+						set_temp_variable = { param_renderer = token:array_element_renderer_get_name_w_both }
+						set_temp_variable = { param_cutoff = 40 }
+						set_temp_variable = { color_temp = 1 }
+						# set_temp_variable = { param_cutoff_suffix = token:array_cutoff_suffix_none }
+					}
+					localization_key = "[RenderArray]"
+				}
+			}
+			
+			defined_text = { #GetResourceListDemand
+				name = GetResourceListDemand
+				text = {
+					trigger = {
+						if = {
+							limit = {
+								check_variable = { selected_market = 0 }
+							}
+							set_temp_variable = { amount_temp = global_market_demand@var:resource_temp }
+						}
+						else = {
+							set_temp_variable = { amount_temp = selected_market:demand@var:resource_temp }
+						}
+					}
+					localization_key = "[GetAdjustedAmountNoSign]"
+				}
+			}
+			defined_text = { #GetResourceListDemandConsumption
+				name = GetResourceListDemandConsumption
+				text = {
+					trigger = {
+						if = {
+							limit = {
+								check_variable = { selected_market = 0 }
+							}
+							set_temp_variable = { amount_temp = global_market_demand@var:resource_temp }
+						}
+						else = {
+							set_temp_variable = { amount_temp = selected_market:need@var:resource_temp }
+							if = {
+								limit = {
+									check_variable = { amount_temp < 0 }
+								}
+								set_temp_variable = { amount_temp = 0 }
+							}
+						}
+					}
+					localization_key = "[GetAdjustedAmountNoSign]"
+				}
+			}
+			defined_text = { #GetResourceListDemandTradeLoc
+				name = GetResourceListDemandTradeLoc
+				text = {
+					trigger = {
+						NOT = { check_variable = { selected_market = 0 } }
+						check_variable = { selected_market:trade@var:resource_temp < 0 }
+					}
+					localization_key = trade_resource_exports_loc_tooltip
+				}
+			}
+			defined_text = { #GetResourceListDemandTrade
+				name = GetResourceListDemandTrade
+				text = {
+					trigger = {
+						set_temp_variable = { amount_temp = selected_market:trade@var:resource_temp }
+						multiply_temp_variable = { amount_temp = -1 }
+					}
+					localization_key = "[GetAdjustedAmountNoSign]"
+				}
+			}
+			defined_text = { #GetResourceListDemandStateList
+				name = GetResourceListDemandStateList
+				text = {
+					trigger = {
+						clear_temp_array = param_array
+						clear_temp_array = percent_temp_array
+						clear_temp_array = number_temp_array
+						if = {
+							limit = {
+								check_variable = { selected_market = 0 }
+							}
+							set_temp_variable = { amount_temp = global_market_demand@var:resource_temp }
+							all_of = { 
+								array = selected_market:market_consumption_states value = val 
+								
+								add_to_temp_array = { param_array = val }
+							}
+						}
+						else = {
+							all_of = { 
+								array = selected_market:market_consumption_states@var:resource_temp value = val 
+								
+								add_to_temp_array = { param_array = val }
+								
+								set_temp_variable = { percentage_temp = val:demand@var:resource_temp }
+								divide_temp_variable = { percentage_temp = selected_market:need@var:resource_temp }
+								add_to_temp_array = { percent_temp_array = percentage_temp }
+								
+								add_to_temp_array = { number_temp_array = val:demand@var:resource_temp }
+							}
+						}
+						set_temp_variable = { param_infix = token:array_infix_newline }
+						set_temp_variable = { param_renderer = token:array_element_renderer_get_name_w_both }
+						set_temp_variable = { param_cutoff = 40 }
+						set_temp_variable = { color_temp = -1 }
+						# set_temp_variable = { param_cutoff_suffix = token:array_cutoff_suffix_none }
+					}
+					localization_key = "[RenderArray]"
+				}
+			}
 			#GetResourceListBalance
 				defined_text = {
 					name = GetResourceListBalance
@@ -6544,53 +6700,13 @@ defined_text = {
 								limit = {
 									check_variable = { selected_market = 0 }
 								}
-								check_variable = { global_market_balance@var:v > 1000 }
-								set_temp_variable = { ba_temp = global_market_balance@var:v }
-								divide_temp_variable = { ba_temp = 1000 }
-								set_temp_variable = { bb_temp = global_market_balance@var:v }
+								set_temp_variable = { amount_temp = global_market_balance@var:resource_temp }
 							}
 							else = {
-								check_variable = { selected_market:balance@var:v > 1000 }
-								set_temp_variable = { ba_temp = selected_market:balance@var:v }
-								divide_temp_variable = { ba_temp = 1000 }
-								set_temp_variable = { bb_temp = selected_market:balance@var:v }
+								set_temp_variable = { amount_temp = selected_market:balance@var:resource_temp }
 							}
 						}
-						localization_key = "[GetGreen]+[?ba_temp|3]K"
-					}
-					text = {
-						trigger = {
-							if = {
-								limit = {
-									check_variable = { selected_market = 0 }
-								}
-								set_temp_variable = { ba_temp = global_market_balance@var:v }
-								divide_temp_variable = { ba_temp = 1000 }
-								set_temp_variable = { bb_temp = global_market_balance@var:v }
-							}
-							else = {
-								set_temp_variable = { ba_temp = selected_market:balance@var:v }
-								divide_temp_variable = { ba_temp = 1000 }
-								set_temp_variable = { bb_temp = selected_market:balance@var:v }
-							}
-							check_variable = { bb_temp > 0 }
-						}
-						localization_key = "[GetGreen]+[?bb_temp|3]"
-					}
-					text = {
-						trigger = {
-							check_variable = { bb_temp < -1000 }
-						}
-						localization_key = "[GetRed][?ba_temp|3]K"
-					}
-					text = {
-						trigger = {
-							check_variable = { bb_temp < 0 }
-						}
-						localization_key = "[GetRed][?bb_temp|3]"
-					}
-					text = {
-						localization_key = "[GetYellow][?bb_temp|3]"
+						localization_key = "[GetPositiveAdjustedAmount]"
 					}
 				}
 			#
@@ -6603,68 +6719,13 @@ defined_text = {
 								limit = {
 									check_variable = { selected_market = 0 }
 								}
-								set_temp_variable = { a_temp = global_market_price@var:v }
+								set_temp_variable = { a_temp = global_market_price@var:resource_temp }
 							}
 							else = {
-								set_temp_variable = { a_temp = selected_market:price@var:v }
+								set_temp_variable = { a_temp = selected_market:price@var:resource_temp }
 							}
 						}
 						localization_key = "[?a_temp|3]"
-					}
-				}
-			#
-			#GetResourceListPriceIcon
-				defined_text = {
-					name = GetResourceListPriceIcon
-					text = {
-						trigger = {
-							if = {
-								limit = {
-									check_variable = { selected_market = 0 }
-								}
-								set_temp_variable = { selected_p = global_market_price@var:v }
-								divide_temp_variable = { selected_p = global.base_price@var:v }
-							}
-							else = {
-								set_temp_variable = { selected_p = selected_market:price@var:v }
-								divide_temp_variable = { selected_p = global.base_price@var:v }
-							}
-							check_variable = { selected_p < global.very_cheap_price }
-						}
-						localization_key = "GFX_price_very_cheap"
-					}
-					text = {
-						trigger = {
-							check_variable = { selected_p < global.cheap_price }
-						}
-						localization_key = "GFX_price_cheap"
-					}
-					text = {
-						trigger = {
-							check_variable = { selected_p < global.slightly_cheap_price }
-						}
-						localization_key = "GFX_price_slightly_cheap"
-					}
-					text = {
-						trigger = {
-							check_variable = { selected_p < global.slightly_expensive_price }
-						}
-						localization_key = "GFX_price_average"
-					}
-					text = {
-						trigger = {
-							check_variable = { selected_p < global.expensive_price }
-						}
-						localization_key = "GFX_price_slightly_expensive"
-					}
-					text = {
-						trigger = {
-							check_variable = { selected_p < global.very_expensive_price }
-						}
-						localization_key = "GFX_price_expensive"
-					}
-					text = {
-						localization_key = "GFX_price_very_expensive"
 					}
 				}
 			#
@@ -6677,10 +6738,10 @@ defined_text = {
 								limit = {
 									check_variable = { selected_market = 0 }
 								}
-								set_temp_variable = { a_temp = global_market_price_compared_to_base@var:v }
+								set_temp_variable = { a_temp = global_market_price_compared_to_base@var:resource_temp }
 							}
 							else = {
-								set_temp_variable = { a_temp = selected_market:price_compared_to_base@var:v }
+								set_temp_variable = { a_temp = selected_market:price_compared_to_base@var:resource_temp }
 							}
 						}
 						localization_key = "[?a_temp|-=%2]"
