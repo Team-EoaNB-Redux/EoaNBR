@@ -396,10 +396,110 @@ scripted_gui = {
 			industrial_complex_construction_icon_visible = {
 				NOT = { check_variable = { construction@token:industrial_complex = 0 } }
 			}
+			industrial_complex_increase_size_button_click_enabled = {				
+				set_temp_variable = { industry_token = token:industrial_complex }
+				can_build_industry = yes
+				is_fully_controlled_by = ROOT
+				free_building_slots = {
+					building = industrial_complex
+					size > 0
+					include_locked = no
+				}
+				check_variable = { construction@token:arms_factory = 0 }
+				check_variable = { construction@token:dockyard = 0 }
+
+				OR = {
+					check_variable = { construction_financier@var:industry_token = ROOT }
+					check_variable = { construction@var:industry_token = 0 }
+				}
+
+				# Has enough starting capital
+					set_temp_variable = { pm_temp = token:pm_industrial_complex }
+					set_temp_variable = { am_temp = token:pm_no_automation }
+					get_construction_cost = yes
+
+					multiply_temp_variable = { total_construction_cost_temp = global.start_construction_cost_multiplier }
+					divide_temp_variable = { total_construction_cost_temp = ROOT.modifier@government_investment_efficiency_factor }
+					NOT = { check_variable = { total_construction_cost_temp > ROOT.treasury } }
+				#
+			}
+			industrial_complex_increase_size_button_visible = {
+				check_variable = { construction@token:industrial_complex = 0 }
+			}
+			industrial_complex_decrease_size_button_visible = {
+				NOT = { check_variable = { construction@token:industrial_complex = 0 } }
+			}
 			arms_factory_construction_icon_visible = {
 				NOT = { check_variable = { construction@token:arms_factory = 0 } }
 			}
+			arms_factory_increase_size_button_click_enabled = {				
+				set_temp_variable = { industry_token = token:arms_factory }
+				can_build_industry = yes
+				is_fully_controlled_by = ROOT
+				free_building_slots = {
+					building = arms_factory
+					size > 0
+					include_locked = no
+				}
+				check_variable = { construction@token:industrial_complex = 0 }
+				check_variable = { construction@token:dockyard = 0 }
+
+				OR = {
+					check_variable = { construction_financier@var:industry_token = ROOT }
+					check_variable = { construction@var:industry_token = 0 }
+				}
+
+				# Has enough starting capital
+					set_temp_variable = { pm_temp = token:pm_arms_factory }
+					set_temp_variable = { am_temp = token:pm_no_automation }
+					get_construction_cost = yes
+
+					multiply_temp_variable = { total_construction_cost_temp = global.start_construction_cost_multiplier }
+					divide_temp_variable = { total_construction_cost_temp = ROOT.modifier@government_investment_efficiency_factor }
+					NOT = { check_variable = { total_construction_cost_temp > ROOT.treasury } }
+				#
+			}
+			arms_factory_increase_size_button_visible = {
+				check_variable = { construction@token:arms_factory = 0 }
+			}
+			arms_factory_decrease_size_button_visible = {
+				NOT = { check_variable = { construction@token:arms_factory = 0 } }
+			}
 			dockyard_construction_icon_visible = {
+				NOT = { check_variable = { construction@token:dockyard = 0 } }
+			}
+			dockyard_increase_size_button_click_enabled = {				
+				set_temp_variable = { industry_token = token:dockyard }
+				can_build_industry = yes
+				is_coastal = yes
+				is_fully_controlled_by = ROOT
+				free_building_slots = {
+					building = dockyard
+					size > 0
+					include_locked = no
+				}
+				check_variable = { construction@token:arms_factory = 0 }
+				check_variable = { construction@token:industrial_complex = 0 }
+
+				OR = {
+					check_variable = { construction_financier@var:industry_token = ROOT }
+					check_variable = { construction@var:industry_token = 0 }
+				}
+
+				# Has enough starting capital
+					set_temp_variable = { pm_temp = token:pm_dockyard }
+					set_temp_variable = { am_temp = token:pm_no_automation }
+					get_construction_cost = yes
+
+					multiply_temp_variable = { total_construction_cost_temp = global.start_construction_cost_multiplier }
+					divide_temp_variable = { total_construction_cost_temp = ROOT.modifier@government_investment_efficiency_factor }
+					NOT = { check_variable = { total_construction_cost_temp > ROOT.treasury } }
+				#
+			}
+			dockyard_increase_size_button_visible = {
+				check_variable = { construction@token:dockyard = 0 }
+			}
+			dockyard_decrease_size_button_visible = {
 				NOT = { check_variable = { construction@token:dockyard = 0 } }
 			}
 		}
@@ -689,6 +789,31 @@ scripted_gui = {
 						refresh_pm_list = yes
 					}
 				}
+			}
+			
+			industrial_complex_increase_size_button_click = {
+				set_temp_variable = { x_temp = 1 }
+				set_temp_variable = { financer_temp = ROOT }
+				set_temp_variable = { industry_token = token:industrial_complex }
+				set_temp_variable = { production_method_temp = token:pm_industrial_complex }
+				construct_x_industries = yes
+
+				ROOT = { budget_update = yes }
+			}
+			industrial_complex_decrease_size_button_click = {
+				subtract_from_variable = { construction@token:industrial_complex = 1 }
+				if = {
+					limit = {
+						check_variable = { construction@token:industrial_complex = 0 }
+						check_variable = { size@token:industrial_complex = 0 }
+					}
+					remove_from_array = { industries = v }
+					remove_from_array = { buildings = v }
+				}
+
+				ROOT = { budget_update = yes }
+				refresh_construction_list = yes
+				add_to_variable = { update_state_econ_window = 1 }
 			}
 
 			time_button_click = {
