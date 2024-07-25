@@ -706,6 +706,129 @@ country_event = {
 	}
 }
 
+###Frauenberg Affair 
+# if the luxemberg or spanish succession crisis fail to happen, forces the F-P war
+
+country_event = {
+	id = fraprswar.14
+	title = fraprswar.14.t
+	desc = fraprswar.14.d
+	picture = GFX_report_event_albanian_partisans
+
+	immediate = {
+		# log = "[THIS.GetTag]: firing = fraprswar.14"
+	}
+	trigger={
+		tag = FRA
+		date > 1871.9.17
+		not={has_global_flag = eoanb_flag_franco_prussian_war_ongoing}
+		not={has_global_flag = GER_Winner_of_FPW}
+		not={has_global_flag = FRA_Winner_of_FPW}
+		not={has_global_flag = eoanb_flag_luxembourg_crisis_escalated }
+		PRS={
+			OR = {
+				has_country_flag = eoanb_flag_won_7_weeks_war
+				has_country_flag = eoanb_flag_tied_7_weeks_war
+			}
+			not={has_country_flag = eoanb_flag_won_luxembourg_crisis}
+			not={has_country_flag = eoanb_flag_won_fra_prs_war}
+		}
+	}
+	
+	fire_only_once = yes
+    
+    is_triggered_only = yes #triggered in 1872 KDE
+	
+	option = {
+		name = fraprswar.14.a
+		# log = "option:		name = fraprswar.14.a"
+		ai_chance = { factor = 100 }
+		PRS={country_event = {id = fraprswar.15 days = 1}}
+	}
+}
+
+country_event = {
+	id = fraprswar.15
+	title = fraprswar.15.t
+	desc = fraprswar.15.d
+	picture = GFX_report_event_generic_sign_treaty2
+
+	immediate = {
+		# log = "[THIS.GetTag]: firing = fraprswar.9"
+	}
+	
+	is_triggered_only = yes
+	
+	option = {
+		name = fraprswar.15.a
+		# log = "option:		name = fraprswar.9.a"
+		ai_chance = { factor = 100 }
+		FRA = { country_event = { days = 1 id = fraprswar.16 } }
+	}
+	
+}
+
+country_event = {
+	id = fraprswar.16
+	title = fraprswar.16.t
+	desc = fraprswar.16.d
+	picture = GFX_report_event_generic_sign_treaty2
+
+	immediate = {
+		# log = "[THIS.GetTag]: firing = fraprswar.9"
+	}
+	
+	is_triggered_only = yes
+	
+	option = {
+		name = fraprswar.16.a
+		# log = "option:		name = fraprswar.9.a"
+		ai_chance = { factor = 100 }
+		hidden_effect = {
+			set_global_flag = eoanb_flag_franco_prussian_war_ongoing
+		}
+		declare_war_on = { target = PRS type = wargoal_franco_prussian_war }
+		if = {
+			limit = {
+				is_historical_focus_on = yes
+			}
+			PRS = { add_ideas = PRS_idea_fp_mil_boost }
+		}
+		else_if = {
+			limit = {
+				is_historical_focus_on = no
+			}
+			random_list = {
+				50 = {
+					PRS = { add_ideas = PRS_idea_fp_mil_boost }
+				}
+				50 = {
+					#
+				}
+			}
+		}
+		hidden_effect = {
+			add_named_threat = { 
+				threat = 5 
+				name = eoanb_threat_fp_war
+			}
+			if = {
+				limit = {
+					is_historical_focus_on = yes
+					PRS = { is_ai = yes }
+					FRA = { is_ai = yes }
+				}
+				PRS = { add_ideas = hidden_idea_historical_PRS_victory }
+			}
+			news_event = news.10
+			BAV = { country_event = { days = 1 id = fraprswar.12 } }
+			BAD = { country_event = { days = 1 id = fraprswar.12 } }
+			WUR = { country_event = { days = 1 id = fraprswar.12 } }
+			HSD = { country_event = { days = 1 id = fraprswar.12 } }
+		}
+	}
+	
+}
 
 ################################################################################################################
 #                          FRENCH IMPERIAL VICTORY ALT HISTORICAL SCENARIO
