@@ -14,6 +14,14 @@ focus_tree = {
 			date > 1867.1.1
 		}
 		modifier = {
+			add = 2
+			OR={
+				has_country_flag = CSA_toombs_elected
+				has_country_flag = CSA_breckinridge_elected
+				has_country_flag = CSA_lee_elected
+			}
+		}
+		modifier = {
 			add = -11
 			has_cosmetic_tag = CSA_kkk
 		}
@@ -73,6 +81,12 @@ focus_tree = {
 		}
 		completion_reward = {
 			add_political_power = 20
+			if={
+				limit={
+					has_idea = CSA_unionist_thugs
+				}
+				remove_ideas = {CSA_unionist_thugs}
+			}
 		}
 	}
 	focus = {
@@ -90,6 +104,12 @@ focus_tree = {
 		}
 		completion_reward = {
 			add_political_power = 20
+			if={
+				limit={
+					has_idea = CSA_unionist_thugs
+				}
+				remove_ideas = {CSA_unionist_thugs}
+			}
 		}
 	}
 	focus = {
@@ -187,7 +207,7 @@ focus_tree = {
 
 	focus = {
 		id = CSA_postwar_toombs_plan
-		icon = GFX_focus_generic_self_management
+		icon = GFX_focus_csa_robert_toombs
 		cost = 50
 		relative_position_id = CSA_postwar_true_southerners
 		x = -2
@@ -336,7 +356,7 @@ focus_tree = {
 	}
 	focus = {
 		id = CSA_postwar_breckinridges_plan
-		icon = GFX_focus_generic_self_management
+		icon = GFX_focus_csa_john_breckinridge
 		cost = 50
 		relative_position_id = CSA_postwar_true_southerners
 		x = 6
@@ -381,6 +401,7 @@ focus_tree = {
 		
 		completion_reward = {
 			add_political_power = 20
+			add_war_support = 0.05
 		}
 	}
 	focus = {
@@ -418,6 +439,14 @@ focus_tree = {
 					has_war = no
 					owns_state = 482
 					owns_state = 483
+					OR={
+						is_subject = no
+						is_subject_of = ROOT
+						AND={
+							is_subject_of = SPR
+							has_completed_focus = CSA_postwar_open_diplomacy_SPR
+						}
+					}
 				}
 			}
 			has_war = no
@@ -483,6 +512,9 @@ focus_tree = {
 		y = 2
 		prerequisite = {
 			focus = CSA_postwar_international_recognition_mexico_purchase
+		}
+		available={
+			has_country_flag = CSA_mexico_refused_purchase
 		}
 		completion_reward = {
 		}
@@ -672,6 +704,26 @@ focus_tree = {
 					}
 				}
 			}
+			else_if={
+				limit={
+					OR={
+						DOM={
+							controls_state = 1350
+							is_subject_of = SPR
+						}
+						SPC={
+							controls_state = 1350
+							is_subject_of = SPR
+						}
+					}
+				}
+				1350={
+					owner={
+						set_temp_variable = {x_temp = 10000}
+						add_treasury = yes
+					}
+				}
+			}
 		}
 	}
 	focus = {
@@ -683,6 +735,7 @@ focus_tree = {
 		y = 1
 		prerequisite = {
 			focus = CSA_postwar_looking_to_cuba
+			focus = CSA_postwar_looking_to_mexico
 		}
 		completion_reward = {
 			SPR = {
@@ -1016,6 +1069,9 @@ focus_tree = {
 			focus = CSA_postwar_the_fallout_of_walker
 		}
 		completion_reward = {
+			event_target:USA_william_walker_target = {
+				country_event = csa.54
+			}
 		}
 	}
 	focus = {
@@ -1063,6 +1119,7 @@ focus_tree = {
 			focus = CSA_postwar_pursue_central_america
 		}
 		completion_reward = {
+			add_manpower = 1500
 		}
 	}
 	focus = {
@@ -1076,6 +1133,24 @@ focus_tree = {
 			focus = CSA_postwar_pursue_central_america
 		}
 		completion_reward = {
+			every_country={
+				limit={
+					or={
+						tag = NIC
+						tag = COS
+						tag = GUA
+						tag = ELS
+						tag = HON
+						tag = BLZ
+					}
+					exists = yes
+				}
+				add_popularity = {
+					ideology = radical_democracy
+					popularity = 0.025
+				}
+				add_stability = -0.025
+			}
 		}
 	}
 	focus = {
@@ -1165,7 +1240,7 @@ focus_tree = {
 			focus = CSA_postwar_revist_notion_rights
 		}
 		completion_reward = {
-			add_political_power = 20
+			add_stability = -0.15
 		}
 	}
 	focus = {
@@ -1179,7 +1254,7 @@ focus_tree = {
 			focus = CSA_postwar_revoke_religious_freedom
 		}
 		completion_reward = {
-			add_political_power = 20
+			add_ideas = {state_religion}
 		}
 	}
 	focus = {
@@ -1215,7 +1290,7 @@ focus_tree = {
 	}
 	focus = {
 		id = CSA_postwar_duty_to_enslave_weak
-		icon = GFX_focus_generic_self_management
+		icon = GFX_Focus_Arrest_Opposants
 		cost = 50
 		relative_position_id = CSA_postwar_slavery_brings_civilization
 		x = 1
@@ -1229,7 +1304,7 @@ focus_tree = {
 	}
 	focus = {
 		id = CSA_postwar_abolish_natural_liberty
-		icon = GFX_focus_generic_self_management
+		icon = GFX_Focus_Arrest_Opposants
 		cost = 50
 		relative_position_id = CSA_postwar_slavery_brings_civilization
 		x = -1
@@ -1238,6 +1313,11 @@ focus_tree = {
 			focus = CSA_postwar_slavery_brings_civilization
 		}
 		completion_reward = {
+			subtract_from_variable = {
+				tooltip = CSA_coloured_unrest_increase_by
+				var = CSA_coloured_opinion
+				value = 2
+			}
 			add_political_power = 20
 		}
 	}
@@ -1328,7 +1408,12 @@ focus_tree = {
 			focus = CSA_postwar_power_of_planters
 		}
 		completion_reward = {
-			add_political_power = 20
+			army_experience = 15
+			add_to_variable = {
+				tooltip = CSA_planter_opinion_increase_tt
+				var = CSA_planter_opinion
+				value = 2
+			}
 		}
 	}
 	focus = {
@@ -1374,6 +1459,11 @@ focus_tree = {
 		}
 		completion_reward = {
 			add_political_power = 20
+			subtract_from_variable = {
+				tooltip = CSA_planter_opinion_decrease_tt
+				var = CSA_planter_opinion
+				value = 5
+			}
 		}
 	}
 	focus = {
@@ -1401,7 +1491,19 @@ focus_tree = {
 			focus = CSA_postwar_encouraging_industries
 		}
 		completion_reward = {
-			add_political_power = 20
+			add_to_variable = { 
+				tooltip = NA_B_working_class_organization_increase_tt
+				var = ROOT.NA_B_idea_working_class_organization_score_var@ROOT 
+				value = 5
+			}
+			add_to_variable = { 
+				tooltip = NA_B_working_class_exploitation_decreased_tt
+				var = ROOT.NA_B_idea_working_class_exploitation_score_var@ROOT 
+				value = 3
+			}
+			hidden_effect={
+				country_event = NA_B_idea_working_class_exploitation_calculator.1
+			}
 		}
 	}
 	focus = {
@@ -1420,7 +1522,7 @@ focus_tree = {
 	}
 	focus = {
 		id = CSA_postwar_slaves_field
-		icon = GFX_focus_generic_self_management
+		icon = GFX_focus_csa_slaves_field
 		cost = 50
 		relative_position_id = CSA_postwar_rights_duties_slavery
 		x = -1
@@ -1437,7 +1539,7 @@ focus_tree = {
 	}
 	focus = {
 		id = CSA_postwar_slaves_manufactories
-		icon = GFX_focus_generic_self_management
+		icon = GFX_focus_csa_slaves_manufactories
 		cost = 50
 		relative_position_id = CSA_postwar_rights_duties_slavery
 		x = 1
@@ -1449,7 +1551,11 @@ focus_tree = {
 			focus = CSA_postwar_rights_duties_slavery
 		}
 		completion_reward = {
-			add_political_power = 20
+			subtract_from_variable = { 
+				tooltip = NA_B_working_class_organization_decrease_tt
+				var = ROOT.NA_B_idea_working_class_organization_score_var@ROOT 
+				value = 3 
+			}
 		}
 	}
 	focus = {
@@ -1467,7 +1573,11 @@ focus_tree = {
 			focus = CSA_postwar_slaves_manufactories
 		}
 		completion_reward = {
-			add_political_power = 20
+			subtract_from_variable = {
+				tooltip = CSA_coloured_unrest_increase_by
+				var = CSA_coloured_opinion
+				value = 2
+			}
 		}
 	}
 	focus = {
@@ -1485,7 +1595,14 @@ focus_tree = {
 			focus = CSA_postwar_slaves_manufactories
 		}
 		completion_reward = {
-			add_political_power = 20
+			add_to_variable = { 
+				tooltip = NA_B_working_class_exploitation_increased_tt
+				var = ROOT.NA_B_idea_working_class_exploitation_score_var@ROOT 
+				value = 5
+			}
+			hidden_effect={
+				country_event = NA_B_idea_working_class_exploitation_calculator.1
+			}
 		}
 	}
 	focus = {
@@ -2038,7 +2155,7 @@ focus_tree = {
 	}
 	focus = {
 		id = CSA_postwar_international_recognition_comanche
-		icon = GFX_focus_generic_concessions
+		icon = GFX_focus_usa_diplomacy_recognize_comanche
 		cost = 50
 		relative_position_id = CSA_postwar_international_recognition_natives
 		x = -2
@@ -2144,7 +2261,7 @@ focus_tree = {
 	}
 	focus = {
 		id = CSA_postwar_international_recognition_apache
-		icon = GFX_goal_anschluss
+		icon = GFX_focus_usa_diplomacy_recognize_apache
 		cost = 50
 		relative_position_id = CSA_postwar_international_recognition_natives
 		x = 0
@@ -2203,7 +2320,7 @@ focus_tree = {
 	}
 	focus = {
 		id = CSA_postwar_international_recognition_navajo
-		icon = GFX_goal_anschluss
+		icon = GFX_focus_usa_diplomacy_recognize_navajo
 		cost = 50
 		relative_position_id = CSA_postwar_international_recognition_natives
 		x = 2
