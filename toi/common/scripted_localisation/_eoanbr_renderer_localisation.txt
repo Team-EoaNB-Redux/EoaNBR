@@ -13,19 +13,19 @@ defined_text = {
 			all_of = { array = test_array value = val add_to_temp_array = { param_array = val } }
       # Set options up for a comma-separated list of rounded integers
       set_temp_variable = { param_infix = token:array_infix_comma }
-      if = {
-        limit = { check_variable = { param_array^num = 2 } }
-        set_temp_variable = { param_last_infix = token:array_last_infix_and_no_oxford }
+      if = { 
+        limit = { check_variable = { param_array^num = 2 } } 
+        set_temp_variable = { param_last_infix = token:array_last_infix_and_no_oxford } 
       }
-      else = {
-        set_temp_variable = { param_last_infix = token:array_last_infix_and_oxford }
+      else = { 
+        set_temp_variable = { param_last_infix = token:array_last_infix_and_oxford } 
       }
       set_temp_variable = { param_renderer = token:array_element_renderer_int }
       # Cutoff at 4 for testing
       set_temp_variable = { param_cutoff = 4 }
       # set_temp_variable = { param_cutoff_suffix = token:array_cutoff_suffix_none }
 		}
-		localization_key = render_array
+		localization_key = render_array_loc_key
 	}
 }
 
@@ -36,7 +36,7 @@ defined_text = {
 # Be sure to set the define `NGame.MAX_SCRIPTED_LOC_RECURSION` to a value greater than the maximum list length you will be rendering!
 # If you do change that define, be sure to change the default value for `param_cutoff` in here!
 defined_text = {
-	name = RenderArray
+	name = render_array
 	text = {
 		trigger = {
 			check_variable = { param_array^num > 0 }
@@ -46,18 +46,18 @@ defined_text = {
 			set_temp_variable = { last_index = param_array^num }
 			subtract_from_temp_variable = { last_index = 1 }
       # If we haven't got a valid param_cutoff, use a default value.
-      if = {
+      if = { 
         limit = { check_variable = { param_cutoff?0 < 1 } }
         set_temp_variable = { param_cutoff = 25 } # Set this to about 5 less than the value of `NGame.MAX_SCRIPTED_LOC_RECURSION`, for safety.
       }
       # If we haven't got a valid param_cutoff_suffix, use the default, which is array_cutoff_suffix_ellipsis ("...").
       if = { limit = { check_variable = { param_cutoff_suffix?0 = 0 } } set_temp_variable = { param_cutoff_suffix = token:array_cutoff_suffix_ellipsis } }
 		}
-		localization_key = render_array_text
+		localization_key = render_array_inner_loc_key
 	}
 }
 
-### The meat of the array-rendering system: the recursive "loop" over `param_array`.
+### The meat of the array-rendering system: the recursive "loop" over `param_array`. 
 # Increments i, checks its bounds, and retrieves the appropriate value from param_array to call the renderer locs, then calls itself recursively.
 # Funnily enough, this is actually tail-recursive (the last "function" it calls before returning is itself),
 # which would make it subject to tail-call optimization (compiling down to an efficient loop) in a proper functional language.
@@ -66,19 +66,19 @@ defined_text = {
   name = render_array_inner
 	text = { # Loop case: increment i, then if it is within the array bounds, render the element at i and then call render_array_inner to continue.
 		trigger = {
-			add_to_temp_variable = { i = 1 }
-			AND = {
+			add_to_temp_variable = { i = 1 } 
+			AND = { 
         check_variable = { i < param_array^num }
         check_variable = { i < param_cutoff }
       }
       set_temp_variable = { v = param_array^i }
-		}
-		localization_key = render_array_inner_text
+		} 
+		localization_key = render_all_three_loc_key # Recurse!
 	}
   text = { # Cutoff case: when we have exceeded param_cutoff without reaching the end of the array, render the cutoff suffix and stop recursing.
     trigger = { check_variable = { i = param_cutoff } check_variable = { i < param_array^num }       log = "[?param_cutoff_suffix.GetTokenKey]"
-  }
-    localization_key = render_cutoff_text
+}
+    localization_key = param_cutoff_suffix_localized_loc_key
   }
   text = { # Base case: when we have reached the end of the array, stop recursing.
     localization_key = ""
@@ -98,11 +98,11 @@ defined_text = {
 			has_variable = param_last_infix
 			check_variable = { i = last_index?-1 }
 		}
-		localization_key = render_last_infix_text
+		localization_key = param_last_infix_localized_loc_key
 	}
 	text = { # If we have a custom infix defined, use it
 		trigger = { has_variable = param_infix }
-		localization_key = render_infix_text
+		localization_key = param_infix_localized_loc_key
 	}
 	text = { # Otherwise, fall back to a newline-separated list
 		localization_key = array_infix_newline
@@ -115,61 +115,61 @@ defined_text = {
 # by adding cases checking for the relevant custom renderer ideas, defined in the appropriate part of `common/ideas/EU_array_renderer.txt`.
 defined_text = {
 	name = render_array_element
-  text = {
+ 	text = {
     trigger = { check_variable = { param_renderer?0 = 0 } }
-		localization_key = render_v_iterate
+		localization_key = "[?v]"
 	}
-  text = {
+  	text = {
 		trigger = { check_variable = { param_renderer = token:array_element_renderer_token } }
-		localization_key = render_v_localized_key
+		localization_key = "[?v.GetTokenLocalizedKey]"
 	}
-  text = {
+  	text = {
 		trigger = { check_variable = { param_renderer = token:array_element_renderer_token_raw } }
-		localization_key = render_v_token_key
+		localization_key = "[?v.GetTokenKey]"
 	}
 	text = {
 		trigger = { check_variable = { param_renderer = token:array_element_renderer_get_name } }
-		localization_key = render_v_name
+		localization_key = "[?v.GetName]"
 	}
-  text = {
+  	text = {
 		trigger = { check_variable = { param_renderer = token:array_element_renderer_get_name_def } }
-		localization_key = render_v_name_def
+		localization_key = "[?v.GetNameDef]"
 	}
-  text = {
+  	text = {
 		trigger = { check_variable = { param_renderer = token:array_element_renderer_get_name_def_cap } }
-		localization_key = render_v_name_def_cap
+		localization_key = "[?v.GetNameDefCap]"
 	}
-  text = {
+  	text = {
 		trigger = { check_variable = { param_renderer = token:array_element_renderer_get_adjective } }
-		localization_key = render_v_adjective
+		localization_key = "[?v.GetAdjective]"
 	}
-  text = {
+  	text = {
 		trigger = { check_variable = { param_renderer = token:array_element_renderer_get_adjective_cap } }
-		localization_key = render_v_adjective_cap
+		localization_key = "[?v.GetAdjectiveCap]"
 	}
-  text = {
+  	text = {
 		trigger = { check_variable = { param_renderer = token:array_element_renderer_get_name_with_flag } }
-		localization_key = render_v_name_with_flag
+		localization_key = "[?v.GetNameWithFlag]"
 	}
-  text = {
+  	text = {
 		trigger = { check_variable = { param_renderer = token:array_element_renderer_get_flag } }
-		localization_key = render_v_flag
+		localization_key = "[?v.GetFlag]"
 	}
-  text = {
+  	text = {
 		trigger = { check_variable = { param_renderer = token:array_element_renderer_get_tag } }
-		localization_key = render_v_tag
-  }
-  text = {
+		localization_key = "[?v.GetTag]"
+	}
+  	text = {
 		trigger = { check_variable = { param_renderer = token:array_element_renderer_get_id } }
-		localization_key = render_v_id
+		localization_key = "[?v.GetID]"
 	}
-  text = {
+  	text = {
 		trigger = { check_variable = { param_renderer = token:array_element_renderer_int } }
-		localization_key = render_v_rounded
+		localization_key = element_renderer_int
 	}
-  text = {
+  	text = {
 		trigger = { check_variable = { param_renderer = token:array_element_renderer_numeric } }
-		localization_key = render_v_iterate
+		localization_key = "[?v]"
 	}
   ############################################
   ### DEFINE CUSTOM ELEMENT RENDERERS HERE ###
@@ -261,4 +261,7 @@ defined_text = {
 	}
   ####### END CUSTOM ELEMENT RENDERERS #######
   ############################################
+    text = {
+		localization_key = "[?v]"
+	}
 }
