@@ -71,6 +71,8 @@ _country_advance_time = {
     every_controlled_state = {
         r_update_modifiers_state_effects = yes # 0.38 secs
 
+        bank_reset_month = yes
+
         on_monthly_industries = yes # Money Accumulation & Factory Construction - nil secs
         on_monthly_pops = yes # Pop Finances & Growth - 0.2 secs
 
@@ -534,118 +536,262 @@ on_monthly_industries = {
     }
 }
 on_monthly_pops = {
-    #Finances
-        for_each_loop = {
-            array = global.pops_array
-            value = pop_token
-            
-            if = {
-                limit = {
-                    check_variable = { pops_workforce@var:pop_token > 0 }
-                }
-                set_temp_variable = { money_temp = pops_earnings@var:pop_token }
-                subtract_from_temp_variable = { money_temp = pops_spending@var:pop_token }
-                if = {
-                    limit = {
-                        check_variable = { money_temp > 0 }
-                    }
-                    #Put money in the bank
-                }
+    # Finances
+	for_each_loop = {
+		array = global.pops_array
+		value = pop_token
 
-                #Standard of Living Progress
-                set_temp_variable = { net_target_temp = pops_spending_target@var:pop_token }
-                subtract_from_temp_variable = { net_target_temp = pops_spending@var:pop_token }
-                divide_temp_variable = { net_target_temp = pops_needs_spending@var:pop_token }
-                multiply_temp_variable = { net_target_temp = 3 }
-                if = {
-                    limit = {
-                        OR = { 
-                            check_variable = { net_target_temp > 0.33 }
-                            check_variable = { net_target_temp < -0.33 }
-                        }
-                    }
-                    add_to_variable = { pops_sol_progress@var:pop_token = net_target_temp }
-                }
-                if = {
-                    limit = {
-                        check_variable = { pops_sol@var:pop_token = 1 }
-                        check_variable = { pops_sol_progress@var:pop_token < 0 }
-                    }
-                    set_variable = { pops_sol_progress@var:pop_token = 0 }
-                }
+		if = { limit = { check_variable = { pops_workforce@var:pop_token > 0 } }
 
-                #Standard of Living Changes
-                if = {
-                    limit = {
-                        check_variable = { pops_sol_progress@var:pop_token > 0.999 }
-                    }
-                    set_variable = { pops_sol_progress@var:pop_token = 0 }
-                    add_to_variable = { pops_sol@var:pop_token = 1 }
-                }
-                else_if = {
-                    limit = {
-                        check_variable = { pops_sol_progress@var:pop_token < -0.999 }
-                    }
-                    set_variable = { pops_sol_progress@var:pop_token = 0 }
-                    subtract_from_variable = { pops_sol@var:pop_token = 1 }
-                }
+			set_temp_variable = { current_pop_token = pop_token }
 
-                clamp_variable = { var = pops_sol@var:pop_token min = 1 max = 200 }
-            }
-            else = {
-                set_variable = { pops_sol_progress@var:pop_token = 0 }
-            }
-        }
-    #
+			# Calculates net balance after planned spending
+			pops_financial_surplus_calc = yes
 
-    # Population Growth
-        # Adds additional population from between months
-        set_temp_variable = { pop_growth_temp = state_population_k }
-        subtract_from_temp_variable = { pop_growth_temp = pops }
-        multiply_temp_variable = { pop_growth_temp = pops_workforce_participation }
-        add_to_variable = { pops_workforce@token:laborers = pop_growth_temp }
-        add_to_variable = { pops_workforce = pop_growth_temp }
-    #
+			# Automatic debt repayment
+			pops_debt_monthly_repayment = yes
 
-    # Peasant Adjustment
-        # If there's not enough jobs available, then laborers will become peasants
-            # If there aren't enough laborers, nothing happens
-        # If there's not enough workers for the jobs available, then peasants will become laborers
+			# Deposits or Withdraws from Savings depending on Savings Target
+			pops_handle_savings = yes
+
+			if = { limit = { check_variable = { net_money_temp > 0 } } 
+				# Use Surplus to Repay Debt
+				pops_handle_surplus = yes
+			}
+			else_if = { limit = { check_variable = { net_money_temp < 0 } }
+				# Attempts to Borrow the difference. 
+				# Anything not covered will lead to a reduction in spending.
+				pops_handle_deficit = yes
+			}
+
+			# Update SoL based on net position after financial adjustments
+			pops_update_standard_of_living = yes
+		}
+		else = {
+			set_variable = { pops_sol_progress@var:pop_token = 0 }
+		}
+	}
     
-        set_temp_variable = { pops_change_temp = arable_land_available }
-        divide_temp_variable = { pops_change_temp = 5 }
-        set_temp_variable = { base_wage_temp = base_wage }
-        divide_temp_variable = { base_wage_temp = 2 }
+	# Update bank after doing pops
+	bank_update = yes
 
-        set_temp_variable = { workforce_balance_temp = workforce_balance@token:laborers }
-        add_to_temp_variable = { workforce_balance_temp = workforce_balance@token:workers }
-        add_to_temp_variable = { workforce_balance_temp = workforce_balance@token:professionals }
-        add_to_temp_variable = { workforce_balance_temp = workforce_balance@token:specialists }
-        
-        if = {
-            limit = {
-                check_variable = { workforce_balance_temp < 0 }
-                check_variable = { pops_workforce@token:peasants > 0 }
-            }
-            clamp_temp_variable = { var = pops_change_temp min = 0 max = pops_workforce@token:peasants }
-            subtract_from_variable = { pops_workforce@token:peasants = pops_change_temp }
-            add_to_variable = { pops_workforce@token:laborers = pops_change_temp }
-        }
-        else_if = {
-            limit = {
-                check_variable = { workforce_balance_temp > 0 }
-                check_variable = { base_wage_temp < productivity@token:subsistence_farm }
-                OR = {
-                    check_variable = { peasants_marginal_land = 0 }
-                    check_variable = { pops_unemployed@token:laborers > 0 }
-                }
-            }
-            clamp_temp_variable = { var = pops_change_temp min = 0 max = workforce_balance_temp }
-            add_to_variable = { pops_workforce@token:peasants = pops_change_temp }
-            subtract_from_variable = { pops_workforce@token:laborers = pops_change_temp }
-        }
-    #
+	# Demographic Changes
+    pops_population_growth = yes
+
+	# Structural Pop Changes
+    pops_peasant_job_migration = yes
 }
+
+pops_population_growth = {
+	# Adds additional population from between months
+	set_temp_variable = { pop_growth_temp = state_population_k }
+	subtract_from_temp_variable = { pop_growth_temp = pops }
+	multiply_temp_variable = { pop_growth_temp = pops_workforce_participation }
+	add_to_variable = { pops_workforce@token:laborers = pop_growth_temp }
+	add_to_variable = { pops_workforce = pop_growth_temp }
+}
+pops_peasant_job_migration = {
+	# If there's not enough jobs available, then laborers will become peasants
+		# If there aren't enough laborers, nothing happens
+	# If there's not enough workers for the jobs available, then peasants will become laborers
+
+	set_temp_variable = { pops_change_temp = arable_land }
+	divide_temp_variable = { pops_change_temp = 10 }
+	set_temp_variable = { base_wage_temp = base_wage }
+	divide_temp_variable = { base_wage_temp = 2 }
+
+	set_temp_variable = { workforce_balance_temp = pops_workforce_balance@token:laborers }
+	add_to_temp_variable = { workforce_balance_temp = pops_workforce_balance@token:workers }
+	add_to_temp_variable = { workforce_balance_temp = pops_workforce_balance@token:professionals }
+	add_to_temp_variable = { workforce_balance_temp = pops_workforce_balance@token:specialists }
+	
+	if = {
+		limit = {
+			check_variable = { workforce_balance_temp < 0 }
+			check_variable = { pops_workforce@token:peasants > 0 }
+		}
+		clamp_temp_variable = { var = pops_change_temp min = 0 max = pops_workforce@token:peasants }
+		subtract_from_variable = { pops_workforce@token:peasants = pops_change_temp }
+		add_to_variable = { pops_workforce@token:laborers = pops_change_temp }
+	}
+	else_if = {
+		limit = {
+			check_variable = { workforce_balance_temp > 0 }
+			check_variable = { base_wage_temp < productivity@token:subsistence_farm }
+			OR = {
+				check_variable = { peasants_marginal_land = 0 }
+				check_variable = { pops_unemployed@token:laborers > 0 }
+			}
+		}
+		clamp_temp_variable = { var = pops_change_temp min = 0 max = workforce_balance_temp }
+		add_to_variable = { pops_workforce@token:peasants = pops_change_temp }
+		subtract_from_variable = { pops_workforce@token:laborers = pops_change_temp }
+	}
+}
+
+pops_financial_surplus_calc = {
+	# current_pop_token
+	# Outputs net_money_temp
+
+	set_temp_variable = { net_money_temp = pops_earnings@var:current_pop_token }
+	subtract_from_temp_variable = { net_money_temp = pops_spending@var:current_pop_token }
+}
+pops_debt_monthly_repayment = {
+	# current_pop_token
+	
+	# The normal monthly repayment
+	set_temp_variable = { x_temp = pops_debt_repayment_spending@var:current_pop_token }
+	multiply_temp_variable = { x_temp = 0.5 }
+
+	# Make repayment
+	divide_temp_variable = { x_temp = 1000 }
+	set_temp_variable = { target_type = 1 }
+	set_temp_variable = { target_temp = pop_token }
+	bank_repay_loan = yes
+	
+	# Amount is already accounted for in pops_spending, so no need for additional accounting
+}
+pops_handle_savings = {
+	# current_pop_token
+	# net_money_temp
+	
+	if = {
+		limit = { check_variable = { pops_savings@var:current_pop_token > pops_savings_target@var:current_pop_token } }
+		# Remove savings down to target
+		set_temp_variable = { x_temp = pops_savings@var:current_pop_token }
+		subtract_from_temp_variable = { x_temp = pops_savings_target@var:current_pop_token }
+		
+		set_temp_variable = { target_type = 1 }
+		set_temp_variable = { target_temp = current_pop_token }
+		set_temp_variable = { no_update_temp = 1 }
+		bank_withdraw_money = yes
+
+		add_to_temp_variable = { net_money_temp = withdraw_temp }
+	}
+	else = {
+		# Add savings up to target
+		set_temp_variable = { x_temp = pops_savings_target@var:current_pop_token }
+		subtract_from_temp_variable = { x_temp = pops_savings@var:current_pop_token }
+		clamp_temp_variable = { var = x_temp max = net_money_temp min = 0 }
+		subtract_from_temp_variable = { net_money_temp = x_temp }
+		
+		set_temp_variable = { target_type = 1 }
+		set_temp_variable = { target_temp = current_pop_token }
+		set_temp_variable = { no_update_temp = 1 }
+		bank_store_money = yes
+	}
+}
+pops_handle_surplus = {
+	# current_pop_token
+	# net_money_temp
+
+	# Modified value
+	set_temp_variable = { x_temp = net_money_temp }
+	multiply_temp_variable = { x_temp = 0.5 }
+	
+	# Make repayment
+	divide_temp_variable = { x_temp = 1000 }
+	set_temp_variable = { target_type = 1 }
+	set_temp_variable = { target_temp = current_pop_token }
+	bank_repay_loan = yes
+
+	# Remove amount repaid to net_money_temp for bookkeeping
+	set_temp_variable = { money_temp = repay_temp_k }
+	multiply_temp_variable = { money_temp = 1000 }
+	subtract_from_temp_variable = { net_money_temp = money_temp }
+}
+pops_handle_deficit = {
+	# current_pop_token
+	# net_money_temp
+
+	# Borrows money depending on the pop's debt spending ratio and debt spending limit
+	# Higher spending ratio compared to limit -> less borrowing 
+	set_temp_variable = { x_temp = net_money_temp }
+	divide_temp_variable = { x_temp = -1000 }
+
+	set_temp_variable = { excess_ratio = pops_debt_spending_ratio@var:current_pop_token }
+	divide_temp_variable = { excess_ratio = pops_debt_spending_limit@var:current_pop_token }
+	if = { limit = { check_variable = { excess_ratio > 4 } }
+		multiply_temp_variable = { x_temp = 0 }
+	}
+	else_if = { limit = { check_variable = { excess_ratio > 2 } }
+		multiply_temp_variable = { x_temp = 0.25 }
+	}
+	else_if = { limit = { check_variable = { excess_ratio > 1 } }
+		multiply_temp_variable = { x_temp = 0.5 }
+	}
+
+	# Borrow the money
+	set_temp_variable = { target_type = 1 }
+	set_temp_variable = { target_temp = current_pop_token }
+	set_temp_variable = { no_update_temp = 1 }
+	bank_loan_money = yes
+
+	# Add the actual borrowed amount back for accounting
+	set_temp_variable = { money_temp = borrow_temp_k }
+	multiply_temp_variable = { money_temp = 1000 }
+	add_to_temp_variable = { net_money_temp = money_temp }
+}
+pops_update_standard_of_living = {
+	# current_pop_token
+	# net_money_temp
+
+	# Standard of Living Progress
+
+	# Target Change = 3 * (Spending Target - Spending + Net Money) / Goods Spending
+	set_temp_variable = { net_target_temp = pops_spending_target@var:current_pop_token }
+	subtract_from_temp_variable = { net_target_temp = pops_spending@var:current_pop_token }
+	add_to_temp_variable = { net_target_temp = net_money_temp }
+	divide_temp_variable = { net_target_temp = pops_needs_spending@var:current_pop_token }
+	multiply_temp_variable = { net_target_temp = 3 }
+
+	set_temp_variable = { pops_sol_progress_temp = pops_sol_progress@var:current_pop_token }
+	set_temp_variable = { pops_sol_temp = pops_sol@var:current_pop_token }
+
+	if = {
+		limit = {
+			check_variable = { net_target_temp > 0.33 }
+		}
+		add_to_temp_variable = { pops_sol_progress_temp = net_target_temp }
+	}
+	else_if = {
+		limit = {
+			check_variable = { net_target_temp < -0.33 }
+		}
+		divide_temp_variable = { net_target_temp = 2 }
+		add_to_temp_variable = { pops_sol_progress_temp = net_target_temp }
+	}
+	if = {
+		limit = {
+			check_variable = { pops_sol_temp = 1 }
+			check_variable = { pops_sol_progress_temp < 0 }
+		}
+		set_temp_variable = { pops_sol_progress_temp = 0 }
+	}
+	clamp_temp_variable = { var = pops_sol_progress_temp min = -5 max = 5 }
+
+	#Standard of Living Changes
+	while_loop_effect = {
+		limit = {
+			check_variable = { pops_sol_progress_temp > 0.999 }
+		}
+		subtract_from_temp_variable = { pops_sol_progress_temp = 1 }
+		add_to_temp_variable = { pops_sol_temp = 1 }
+	}
+	while_loop_effect = {
+		limit = {
+			check_variable = { pops_sol_progress_temp < -0.999 }
+		}
+		add_to_temp_variable = { pops_sol_progress_temp = 1 }
+		subtract_from_temp_variable = { pops_sol_temp = 1 }
+	}
+
+	clamp_temp_variable = { var = pops_sol_temp min = 1 max = 200 }
+
+	set_variable = { pops_sol_progress@var:current_pop_token = pops_sol_progress_temp }
+	set_variable = { pops_sol@var:current_pop_token = pops_sol_temp }
+}
+
 
 # AI
     ai_budget = {

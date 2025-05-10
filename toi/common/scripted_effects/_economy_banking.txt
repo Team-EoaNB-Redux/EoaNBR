@@ -1,8 +1,10 @@
 
+## NOTE - THESE ARE INTERNAL EFFECTS AND SHOULD NOT BE USED IN CONTENT ##
+
 #   Pops can deposit money into a local bank
 #   Local banks then can loan out money to local pops or IO ventures
 
-# bank_deposits                 - Amount of money that has been deposited into the bank. Accumulation of pops_savings & building cash reserves
+# bank_reserves                 - Amount of money that has been deposited into the bank. Accumulation of pops_savings & building cash reserves
 
 # bank_credit_available_k       - Bank credit currently available to be loaned out
 # bank_credit_total_k           - Total bank credit 
@@ -12,10 +14,16 @@
 # bank_interest_from_scarcity   - Interest added from not having enough funds
 # bank_interest_rate            - End interest rate. Note this is the *base* interest rate. High risk borrowers have higher interest rates
 
+# bank_deposits                 - Money deposited last month
 # bank_withdrawals              - Money withdrawn last month
 # bank_interest                 - Money earned from interest
 
 # bank_status                   - Status of the bank. 0 - Insolvent, 1 - Critical, 2 - Distressed, 3 - Strained, 4 - Solvent
+
+bank_reset_month = {
+    set_variable = { bank_deposits = 0 }
+    set_variable = { bank_withdrawals = 0 }
+}
 
 bank_loan_money = {
     # target_type: 0 - govt, 1 - pops, 2 - investment fund, 3 - corporation
@@ -24,7 +32,11 @@ bank_loan_money = {
         # If investment fund - country tag
         # If corporation - state
         # If pops: pop token
-    # x_temp - amount to borrow, in thousands				
+    # x_temp - amount to borrow, in thousands
+    
+    # Output:
+    # borrow_temp_k - amount that ends up being borrowed
+
     if = {
         limit = {
             check_variable = { x_temp > 0 }
@@ -48,6 +60,51 @@ bank_loan_money = {
         }
     
 		set_temp_variable = { borrow_temp_k = x_temp }
+
+		set_temp_variable = { cw_temp = creditworthiness@var:target_temp }
+		set_temp_variable = { bank_creditworthiness_threshold = pops_creditworthiness }
+		set_temp_variable = { 2x_bank_creditworthiness_threshold = pops_creditworthiness }
+		multiply_temp_variable = { 2x_bank_creditworthiness_threshold = 2 }
+
+		if = {
+			limit = { check_variable = { bank_status = 0 } } # Failed
+            set_temp_variable = { borrow_temp_k = 0 }
+		}
+		else_if = {
+			limit = { check_variable = { bank_status = 0 } } # Critical - severe restrictions
+			if = {
+				limit = { check_variable = { cw_temp < bank_creditworthiness_threshold } }
+            	set_temp_variable = { borrow_temp_k = 0 }
+			}
+			else_if = {
+				limit = { check_variable = { cw_temp > 2x_bank_creditworthiness_threshold } }
+				limit = { check_variable = { cw_temp > 200 } }
+    			multiply_temp_variable = { borrow_temp_k = 0.25 }
+			}
+			else = {
+    			multiply_temp_variable = { borrow_temp_k = 0.25 }
+			}
+		}
+		else_if = {
+			limit = { check_variable = { bank_status = 1 } } # Restricted - moderate restrictions
+			if = {
+				limit = { check_variable = { cw_temp < bank_creditworthiness_threshold } }
+            	set_temp_variable = { borrow_temp_k = 0 }
+			}
+			else_if = {
+				limit = { check_variable = { cw_temp > 2x_bank_creditworthiness_threshold } }
+				limit = { check_variable = { cw_temp > 200 } }
+    			multiply_temp_variable = { borrow_temp_k = 0.5 }
+			}
+		}
+		else_if = {
+			limit = { check_variable = { bank_status = 2 } } # Stressed - mild restrictions
+			if = {
+				limit = { check_variable = { cw_temp < bank_creditworthiness_threshold } }
+            	multiply_temp_variable = { borrow_temp_k = 0.5 }
+			}
+		}
+
         if = {
             limit = {
                 check_variable = { borrow_temp_k > bank_credit_available_k }
@@ -88,8 +145,6 @@ bank_loan_money = {
             # Add debt to pops
             add_to_variable = { bank_lent_to_pops_k = borrow_temp_k }
             add_to_variable = { bank_lent_to_pops_k@var:target_temp = borrow_temp_k }
-
-            add_to_variable = { pops_debt_to_bank_k@var:target_temp = borrow_temp_k }
         }
         else_if = {
             limit = {
@@ -116,9 +171,6 @@ bank_loan_money = {
     else = {
         set_temp_variable = { borrow_temp_k = 0 }
     }
-    
-    # Output:
-    # borrow_temp_k - amount that ends up being borrowed
 }
 bank_repay_loan = {
     # target_type: 0 - govt, 1 - pops, 2 - investment fund, 3 - corporation
@@ -131,6 +183,61 @@ bank_repay_loan = {
 
     # Output:
     # repay_temp_k - amount that ends up being repaid
+
+	if = {
+		limit = {
+			check_variable = { x_temp > 0 }
+            OR = {
+                check_variable = { target_type = 0 }
+                check_variable = { target_type = 1 }
+                check_variable = { target_type = 2 }
+            }
+		}
+		
+        set_temp_variable = { repay_temp_k = x_temp }
+
+        if = {
+            limit = { check_variable = { target_type = 0 } }
+			
+			# Repaying the full amount or more removes the country/state from the lists
+			if = { limit = { check_variable = { bank_lent_to_countries_k@var:target_temp < repay_temp_k } } 
+				set_temp_variable = { repay_temp_k = bank_lent_to_countries_k@var:target_temp }
+				remove_from_array = { bank_lent_to_country_tag = target_temp }
+				remove_from_array = { target_temp:debt_to_state_id = THIS }
+			}
+
+            subtract_from_variable = { bank_lent_to_country_k@var:target_temp = repay_temp_k }
+            subtract_from_variable = { target_temp:debt_to_state_k@THIS = repay_temp_k }
+        }
+        else_if = {
+            limit = { check_variable = { target_type = 1 } }
+			
+			if = { limit = { check_variable = { bank_lent_to_pops_k@var:target_temp < repay_temp_k } } 
+				set_temp_variable = { repay_temp_k = bank_lent_to_pops_k@var:target_temp }
+			}
+
+            subtract_from_variable = { bank_lent_to_pops_k@var:target_temp = repay_temp_k }
+            subtract_from_variable = { bank_lent_to_pops_k = repay_temp_k }
+        }
+        else_if = {
+            limit = { check_variable = { target_type = 2 } }
+			
+			# Repaying the full amount or more removes the country/state from the lists
+			if = { limit = { check_variable = { bank_lent_to_if_k@var:target_temp < repay_temp_k } } 
+				set_temp_variable = { repay_temp_k = bank_lent_to_if_k@var:target_temp }
+				remove_from_array = { bank_lent_to_if_tag = target_temp }
+				remove_from_array = { target_temp:investment_fund_debt_to_state_id = THIS }
+			}
+
+            subtract_from_variable = { bank_lent_to_if_k@var:target_temp = repay_temp_k }
+            subtract_from_variable = { target_temp:investment_fund_debt_to_state_k@THIS = repay_temp_k }
+        }
+
+        bank_update = yes
+	}
+	else = {
+		set_temp_variable = { repay_temp_k = 0 }
+	}
 }
 
 bank_store_money = {
@@ -139,18 +246,27 @@ bank_store_money = {
     # target_temp
         # If pops: pop token
         # otherwise, irrelevant
-    
+    # no_update_temp
+	
     if = {
         limit = {
             check_variable = { x_temp > 0 }
             check_variable = { target_type = 1 }
-            check_variable = { NOT = { target_temp = 0 } }
+            NOT = { check_variable = { target_temp = 0 } }
         }
         add_to_variable = { pops_savings = x_temp }
         add_to_variable = { pops_savings@var:target_temp = x_temp }
+        add_to_variable = { bank_deposits = x_temp }
 
-        bank_update = yes
+        if = { limit = { check_variable = { no_update_temp = 0 } }
+            bank_update = yes
+        }
     }
+
+    set_temp_variable = { x_temp = 0 }
+    set_temp_variable = { target_type = 0 }
+    set_temp_variable = { target_temp = 0 }
+    set_temp_variable = { no_update_temp = 0 }
 }
 bank_withdraw_money = {
     # x_temp
@@ -158,7 +274,8 @@ bank_withdraw_money = {
     # target_temp
         # If pops: pop token
         # otherwise, irrelevant
-    
+    # no_update_temp
+
     # Output: withdraw_temp
 
     set_temp_variable = { withdraw_temp = 0 }
@@ -168,48 +285,71 @@ bank_withdraw_money = {
             check_variable = { target_type = 1 }
         }
         
-        if = { limit = { check_variable = { pops_savings@var:target_temp < x_temp } set_temp_variable = { x_temp = pops_savings@var:target_temp } } }
+        if = { limit = { check_variable = { pops_savings@var:target_temp < x_temp } } set_temp_variable = { x_temp = pops_savings@var:target_temp } }
         
         set_temp_variable = { withdraw_temp = x_temp }
 
         subtract_from_variable = { pops_savings = x_temp }
         subtract_from_variable = { pops_savings@var:target_temp = x_temp }
+        add_to_variable = { bank_withdrawals = x_temp }
         
-        bank_update = yes
+        if = { limit = { check_variable = { no_update_temp = 0 } }
+            bank_update = yes
+        }
     }
+
+    set_temp_variable = { x_temp = 0 }
+    set_temp_variable = { target_type = 0 }
+    set_temp_variable = { target_temp = 0 }
+    set_temp_variable = { no_update_temp = 0 }
 }
 
 bank_update = {
+	# Establishes the amount of reserves the bank has on hand
+	bank_update_reserves = yes
+
+	# Calculate Reserve Ratio & Total Credit
+	bank_update_credit = yes
+	
+	# Calculates Money Lent Out & What's Left
+	bank_update_loans = yes
+
+	# Calculates Interest Rate & Panic Rates
+	bank_update_interest_rate = yes
+
+	# Calculates Amount of Interest Paid to Bank
+	bank_update_interest_income = yes
+
+	# Updates Status of the Bank
+	# Influences bank operations like lending
+	bank_update_status = yes
+}
+
+bank_update_reserves = {
     # Bank Deposits
-    set_variable = { bank_deposits = pops_savings }
+    set_variable = { bank_reserves = pops_savings }
     for_each_loop = {
         array = industries
         value = industry_token
 
-        add_to_variable = { bank_deposits = money@var:industry_token }
+        add_to_variable = { bank_reserves = money@var:industry_token }
     }
 
     # Bank Reserves
-    set_variable = { bank_reserves_k = bank_deposits }
+    set_variable = { bank_reserves_k = bank_reserves }
     divide_variable = { bank_reserves_k = 1000 }
     add_to_variable = { bank_reserves_k = bank_central_bank_loan_k }
-
+}
+bank_update_credit = {
     # Reserve Ratio
     set_temp_variable = { reserve_ratio_modifier_temp = controller:modifier@reserve_ratio_modifier }
     if = { limit = { check_variable = { reserve_ratio_modifier_temp < 0.01 } } reserve_ratio_modifier_temp = 0.01 }
 
     # Total Credit
     set_variable = { bank_credit_total_k = bank_reserves_k }
-    if = {
-        limit = { check_variable = { bank_credit_total_k < 100 } }
-        multiply_variable = { bank_credit_total_k = 100 }
-        divide_variable = { bank_credit_total_k = reserve_ratio_modifier_temp }
-    }
-    else = {
-        divide_variable = { bank_credit_total_k = reserve_ratio_modifier_temp }
-        multiply_variable = { bank_credit_total_k = 100 }
-    }
-
+    divide_variable = { bank_credit_total_k = reserve_ratio_modifier_temp }
+}
+bank_update_loans = {
     # Amount Lent Out
     set_variable = { bank_lent_to_countries_k = 0 }
     set_variable = { bank_lent_to_ifs_k = 0 }
@@ -228,6 +368,9 @@ bank_update = {
     add_to_variable = { bank_lent_out_k = bank_lent_to_countries_k }
     add_to_variable = { bank_lent_out_k = bank_lent_to_ifs_k }
 
+	set_variable = { bank_lent_out_portion = bank_lent_out_k }
+	divide_variable = { bank_lent_out_portion = bank_credit_total_k }
+
     # Amount Available
     set_variable = { bank_credit_available_k = bank_credit_total_k }
     subtract_from_variable = { bank_credit_available_k = bank_lent_out_k }
@@ -235,7 +378,8 @@ bank_update = {
     # Fluid cash left
     set_variable = { bank_reserves_fluid_k = bank_credit_available_k }
     multiply_variable = { bank_reserves_fluid_k = reserve_ratio_modifier_temp }
-
+}
+bank_update_interest_rate = {
     # Interest Rate
     if = {
         limit = {
@@ -244,14 +388,29 @@ bank_update = {
         set_variable = { bank_interest_from_scarcity = 1 }
     }
     else = {
-        set_variable = { bank_interest_from_scarcity = bank_credit_available_k }
-        divide_variable = { bank_interest_from_scarcity = bank_credit_total_k }
+        set_variable = { bank_interest_from_scarcity = bank_lent_out_portion }
     }
     multiply_variable = { bank_interest_from_scarcity = global.loan_scarcity_rate }
     
     set_variable = { bank_interest_rate = controller:central_bank_interest_rate }     # TODO - central bank stuff
     add_to_variable = { bank_interest_rate = bank_interest_from_scarcity }
-
+	
+	# Apply panic premium if bank_lent_out_portion > 0.9
+	if = {
+		limit = {
+			check_variable = { bank_lent_out_portion > 0.9 }
+		}
+		set_temp_variable = { panic_temp = bank_lent_out_portion }
+		subtract_from_temp_variable = { panic_temp = 0.9 }    # (x - 0.9)
+		multiply_temp_variable = { panic_temp = 10 }          # * 10
+		set_temp_variable = { panic_temp_sq = panic_temp }
+		multiply_temp_variable = { panic_temp_sq = panic_temp }    # ^2
+		multiply_temp_variable = { panic_temp = panic_temp_sq }    # ^3
+		multiply_temp_variable = { panic_temp = 40.0 }
+		add_to_variable = { bank_interest_rate = panic_temp }
+	}
+}
+bank_update_interest_income = {
     # Bank Interest Gained
     set_variable = { bank_interest_countries = 0 }
     set_variable = { bank_interest_pops = 0 }
@@ -285,25 +444,93 @@ bank_update = {
         add_to_variable = { bank_interest_ifs = interest_temp }
     }
     
+	# Total Bank Interest
     set_variable = { bank_interest = bank_interest_countries }
     add_to_variable = { bank_interest = bank_interest_pops }
     add_to_variable = { bank_interest = bank_interest_ifs }
 
-    # Bank status - preliminary
-    if = {
-        limit = {
-            check_variable = { bank_credit_available_k < 0 }
-        }
-        set_variable = { bank_status = 0 }
-    }
-    else_if = {
-        limit = {
-            check_variable = { bank_credit_available_k = 0 }
-        }
-        set_variable = { bank_status = 1 }
-    }
-    else = {
-        set_variable = { bank_status = 4 }
-    }
+	# Dividends to Owners
+	set_variable = { bank_dividends = bank_interest }
+	multiply_variable = { bank_dividends = 0.8 }  # 80% goes to owners
 
+	# Return on Savings for Savers
+	set_variable = { bank_interest_paid_to_savers = bank_interest }
+	multiply_variable = { bank_interest_paid_to_savers = 0.2 }  # 20% goes back to savers
+
+	set_variable = { bank_interest_return_rate = bank_interest_paid_to_savers }
+	multiply_variable = { bank_interest_return_rate = 100 }
+	divide_variable = { bank_interest_return_rate = pops_savings }
+}
+bank_update_status = {
+    # Bank status thresholds
+	set_temp_variable = { reserve_ratio_temp = reserve_ratio_modifier_temp }
+
+	set_temp_variable = { reserve_threshold_1 = 1 }
+	subtract_from_temp_variable = { reserve_threshold_1 = reserve_ratio_temp }
+
+	set_temp_variable = { reserve_threshold_2 = 1 }
+	multiply_temp_variable = { reserve_ratio_temp = 0.5 }
+	subtract_from_temp_variable = { reserve_threshold_2 = reserve_ratio_temp }
+
+	set_temp_variable = { reserve_threshold_3 = 1 }
+	multiply_temp_variable = { reserve_ratio_temp = 0.5 }
+	subtract_from_temp_variable = { reserve_threshold_3 = reserve_ratio_temp }
+
+	# Setting the Bank Status
+	if = {
+		limit = { check_variable = { bank_credit_available_k < 0 } }
+		set_variable = { bank_status = 0 } # Insolvent
+	}
+	else_if = {
+		limit = { check_variable = { bank_lent_out_portion > reserve_threshold_3 } }
+		set_variable = { bank_status = 1 } # Critical
+	}
+	else_if = {
+		limit = { check_variable = { bank_lent_out_portion > reserve_threshold_2 } }
+		set_variable = { bank_status = 2 } # Distressed
+	}
+	else_if = {
+		limit = { check_variable = { bank_lent_out_portion > reserve_threshold_1 } }
+		set_variable = { bank_status = 3 } # Strained
+	}
+	else = {
+		set_variable = { bank_status = 4 } # Solvent
+	}
+}
+
+calculate_creditworthiness = {
+	# income_temp
+	# debt_temp
+	# debt_spending_temp
+	# savings_temp
+
+	# Outputs: creditworthiness_temp
+	
+	# Start with 100 base
+	set_temp_variable = { creditworthiness_temp = 100 }
+
+	# +2 * (savings / income)
+	set_temp_variable = { cw_add = savings_temp }
+	divide_temp_variable = { cw_add = income_temp }
+	multiply_temp_variable = { cw_add = 2 }
+	add_to_temp_variable = { creditworthiness_temp = cw_add }
+
+	# -2 * (debt / income)
+	set_temp_variable = { cw_sub = debt_temp }
+	divide_temp_variable = { cw_sub = income_temp }
+	multiply_temp_variable = { cw_sub = 2 }
+	subtract_from_temp_variable = { creditworthiness_temp = cw_sub }
+
+	# -200 * (debt_spending / income)
+	set_temp_variable = { cw_sub = debt_spending_temp }
+	divide_temp_variable = { cw_sub = income_temp }
+	multiply_temp_variable = { cw_sub = 200 }
+	subtract_from_temp_variable = { creditworthiness_temp = cw_sub }
+
+	# Clamp to bounds
+	clamp_temp_variable = {
+		var = creditworthiness_temp
+		min = -500
+		max = 500
+	}
 }

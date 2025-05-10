@@ -1,42 +1,9 @@
 
 #Pops
 	pops_update = {
-		set_variable = { pops_workforce_percentage = global.pops_workforce_participation }
-		
-		set_variable = { pops = pops_workforce }
-		divide_variable = { pops = global.pops_workforce_participation }
-
-		# Reset to 0
-			set_variable = { pops_needs_spending = 0 }
-			set_variable = { pops_sol = 0 }
-			set_variable = { pops_income_tax_spending = 0 }
-			set_variable = { pops_corporate_tax_spending = 0 }
-			set_variable = { pops_sales_tax_spending = 0 }
-			set_variable = { pops_debt_interest_spending = 0 }
-			set_variable = { pops_spending_target = 0 }
-			set_variable = { pops_earnings = 0 }
-		#
-
+		pops_reset_core_variable = yes
 		pops_workforce_update = yes
-
-		set_temp_variable = { cons_conf_temp = controller:modifier@consumer_confidence_modifier }
-		divide_temp_variable = { cons_conf_temp = 100 }
-
-		set_temp_variable = { upper_earnings_limit = controller:pops_earnings_avg }
-		multiply_temp_variable = { upper_earnings_limit = 3 }
-		set_temp_variable = { lower_earnings_limit = controller:pops_earnings_avg }
-
-		set_temp_variable = { upper_income_multiplier = controller:income_tax_upper_strata_percentage_actual }
-		divide_temp_variable = { upper_income_multiplier = 100 }
-		set_temp_variable = { middle_income_multiplier = controller:income_tax_middle_strata_percentage_actual }
-		divide_temp_variable = { middle_income_multiplier = 100 }
-		set_temp_variable = { lower_income_multiplier = controller:income_tax_lower_strata_percentage_actual }
-		divide_temp_variable = { lower_income_multiplier = 100 }
-		set_temp_variable = { sales_tax_multiplier = controller:sales_tax_percentage_actual }
-		divide_temp_variable = { sales_tax_multiplier = 100 }
-		set_temp_variable = { corporate_tax_multiplier = controller:corporate_tax_percentage_actual }
-		divide_temp_variable = { corporate_tax_multiplier = 100 }
-
+		pops_prepare_contextual_multipliers = yes
 		pops_needs_update = yes
 
 		for_each_loop = {
@@ -47,128 +14,84 @@
 				limit = {
 					check_variable = { pops_workforce@var:pop_token > 0 }
 				}
-				# Total Amount
-				set_variable = { pops@var:pop_token = pops_workforce@var:pop_token }
-				divide_variable = { pops@var:pop_token = pops_workforce_percentage }
 
-				# Percentage
-				set_variable = { pops_percentage@var:pop_token = pops@var:pop_token }
-				divide_variable = { pops_percentage@var:pop_token = pops }
+				set_temp_variable = { current_pop_token = pop_token }
 
-				# Employment
-				set_variable = { pops_unemployed@var:pop_token = pops_workforce@var:pop_token }
-				subtract_from_variable = { pops_unemployed@var:pop_token = pops_employed@var:pop_token }
+				pops_process_workforce_status = yes
+				pops_calculate_earnings_and_investment = yes
+				pops_calculate_living_standards = yes
+				pops_calculate_taxation = yes
 
-				# Earnings
-				if = { 
-					limit = { check_variable = { pop_token = token:peasants } }
-					set_variable = { pops_earnings@var:pop_token = expenses_payroll@token:subsistence_farm }
-				}
-				else = {
-					set_variable = { pops_earnings@var:pop_token = pops_employed@var:pop_token }
-					multiply_variable = { pops_earnings@var:pop_token = global.wage_multiplier@var:pop_token }
-					multiply_variable = { pops_earnings@var:pop_token = base_wage }
-				}
+				pops_calculate_debt_servicing = yes
+				pops_calculate_credit_metrics = yes
 
-				if = {
-					limit = { 
-						OR = { 
-							check_variable = { pop_token = token:aristocrats } 
-							check_variable = { pop_token = token:capitalists } 
-						} 
-					}
-					add_to_variable = { pops_earnings@var:pop_token = pops_dividends@var:pop_token }
+				pops_update_confidence = yes
+				pops_calculate_spending_targets = yes
+				pops_calculate_savings_targets = yes
 
-					if = {
-						limit = { check_variable = { pops_earnings@var:pop_token > 0 } }
-						if = { limit = { check_variable = { pop_token = token:aristocrats } }
-							set_variable = { pops_investment@var:pop_token = controller:modifier@aristocrats_investment_contribution_factor } 
-						}
-						if = { 
-							limit = { check_variable = { pop_token = token:capitalists } }
-							set_variable = { pops_investment@var:pop_token = controller:modifier@capitalists_investment_contribution_factor }
-						}
-						
-						clamp_variable = { var = pops_investment@var:pop_token max = 0.8 min = 0 }
-						multiply_variable = { pops_investment@var:pop_token = pops_earnings@var:pop_token }
-						subtract_from_variable = { pops_earnings@var:pop_token = pops_investment@var:pop_token }
-					}
-				}
-				if = { limit = { check_variable = { pops_earnings@var:pop_token > 0 } } add_to_variable = { pops_earnings = pops_earnings@var:pop_token } }
-
-				# Cost of Living
-				set_variable = { pops_col@var:pop_token = pops_needs_spending@var:pop_token }
-				divide_variable = { pops_col@var:pop_token = pops_workforce@var:pop_token }
-
-				# Standard of Living
-				set_temp_variable = { sol_temp = pops_sol@var:pop_token }
-				multiply_temp_variable = { sol_temp = pops_workforce@var:pop_token }
-				add_to_variable = { pops_sol = sol_temp }
-
-				add_to_variable = { pops_needs_spending = pops_needs_spending@var:pop_token }
-				set_variable = { pops_spending@var:pop_token = pops_needs_spending@var:pop_token }
-				
-				# Income Tax
-				set_temp_variable = { avg_earnings_temp = pops_earnings@var:pop_token }
-				divide_temp_variable = { avg_earnings_temp = pops@var:pop_token }
-				set_variable = { pops_income_tax_spending = pops_earnings@var:pop_token }
-				if = {
-					limit = {
-						check_variable = { avg_earnings_temp < lower_earnings_limit }
-					}
-					multiply_variable = { pops_income_tax_spending@var:pop_token = lower_income_multiplier }
-				}
-				else_if = {
-					limit = {
-						check_variable = { avg_earnings_temp < upper_earnings_limit }
-					}
-					multiply_variable = { pops_income_tax_spending@var:pop_token = middle_income_multiplier }
-				}
-				else = {
-					multiply_variable = { pops_income_tax_spending@var:pop_token = upper_income_multiplier }
-				}
-				add_to_variable = { pops_spending@var:pop_token = pops_income_tax_spending@var:pop_token }
-				add_to_variable = { pops_income_tax_spending = pops_income_tax_spending@var:pop_token }
-
-				#Spending Target
-				set_variable = { pops_spending_target@var:pop_token = pops_earnings@var:pop_token }
-				subtract_from_variable = { pops_spending_target@var:pop_token = pops_income_tax_spending@var:pop_token }
-				multiply_variable = { pops_spending_target@var:pop_token = cons_conf_temp }
-				add_to_variable = { pops_spending_target = pops_spending_target@var:pop_token }
-				
-				#Sales Tax
-				set_variable = { pops_sales_tax_spending@var:pop_token = pops_needs_spending@var:pop_token }
-				multiply_variable = { pops_sales_tax_spending@var:pop_token = sales_tax_multiplier }
-				add_to_variable = { pops_spending@var:pop_token = pops_sales_tax_spending@var:pop_token }
-				add_to_variable = { pops_sales_tax_spending = pops_sales_tax_spending@var:pop_token }
-				
-				#Corporate Tax
-				if = {
-					limit = { check_variable = { pops_dividends@var:pop_token > 0 } }
-
-					set_variable = { pops_investment_tax@var:pop_token = pops_dividends@var:pop_token }
-					multiply_variable = { pops_investment_tax@var:pop_token = corporate_tax_multiplier }
-					if = { limit = { check_variable = { pops_investment_tax@var:pop_token > pops_dividends@var:pop_token } } set_variable = { pops_investment_tax@var:pop_token = pops_dividends@var:pop_token } }
-					if = { limit = { check_variable = { pops_investment_tax@var:pop_token < 0 } } set_variable = { pops_investment_tax@var:pop_token = 0 } }
-				}
-
-				#Interest
-				set_variable = { pops_debt_interest_spending@var:pop_token = bank_interest_rate }
-				add_to_variable = { pops_debt_interest_spending@var:pop_token = pops_credit_rating_interest@var:pop_token }
-				multiply_variable = { pops_debt_interest_spending@var:pop_token = pops_debt_to_bank_k@var:pop_token }
-				divide_variable = { pops_debt_interest_spending@var:pop_token = 1.2 }
-				add_to_variable = { pops_spending@var:pop_token = pops_debt_interest_spending@var:pop_token }
-				add_to_variable = { pops_debt_interest_spending = pops_debt_interest_spending@var:pop_token }
+				pops_add_to_state_totals = yes
 			}
 			else = {
-				set_variable = { pops_unemployed@var:pop_token = 0 }
-				set_variable = { pops_spending_target@var:pop_token = 0 }
-				set_variable = { pops_income_tax_spending@var:pop_token = 0 }
-				set_variable = { pops_sales_tax_spending@var:pop_token = 0 }
-				set_variable = { pops_debt_interest_spending@var:pop_token = 0 }
+				pops_clear_inactive_pop_data = yes
 			}
 		}
 
+		pops_compute_summary_metrics = yes
+	}
+
+	pops_reset_core_variable = {
+		set_variable = { pops_workforce_percentage = global.pops_workforce_participation }
+		
+		set_variable = { pops = pops_workforce }
+		divide_variable = { pops = global.pops_workforce_participation }
+
+		set_variable = { pops_sol = 0 }
+		set_variable = { pops_needs_spending = 0 }
+
+		set_variable = { pops_earnings = 0 }
+		set_variable = { pops_investment = 0 }
+		set_variable = { pops_spending_target = 0 }
+		set_variable = { pops_savings_target = 0 }
+		set_variable = { pops_creditworthiness = 0 }
+
+		set_variable = { pops_income_tax_spending = 0 }
+		#set_variable = { pops_corporate_tax_spending = 0 }
+		set_variable = { pops_sales_tax_spending = 0 }
+		set_variable = { pops_debt_interest_spending = 0 }
+		set_variable = { pops_debt_repayment_spending = 0 }
+	}
+	pops_prepare_contextual_multipliers = {
+		# Consumer Confidence Factor
+		set_temp_variable = { cons_conf_temp = controller:modifier@consumer_confidence_modifier }
+		divide_temp_variable = { cons_conf_temp = 100 }
+		clamp_temp_variable = { var = cons_conf_temp min = 0.2 max = 2 }
+		# Banking Confidence Factor
+		set_temp_variable = { bank_conf_temp = controller:modifier@banking_confidence_modifier }
+		divide_temp_variable = { bank_conf_temp = 100 }
+		clamp_temp_variable = { var = bank_conf_temp min = 0.0 max = 1 }
+
+		# Earnings Limit
+		set_temp_variable = { upper_earnings_limit = controller:pops_earnings_avg }
+		multiply_temp_variable = { upper_earnings_limit = 3 }
+		set_temp_variable = { lower_earnings_limit = controller:pops_earnings_avg }
+		
+		# Tax Brackets
+		set_temp_variable = { upper_income_multiplier = controller:income_tax_upper_strata_percentage_actual }
+		divide_temp_variable = { upper_income_multiplier = 100 }
+
+		set_temp_variable = { middle_income_multiplier = controller:income_tax_middle_strata_percentage_actual }
+		divide_temp_variable = { middle_income_multiplier = 100 }
+
+		set_temp_variable = { lower_income_multiplier = controller:income_tax_lower_strata_percentage_actual }
+		divide_temp_variable = { lower_income_multiplier = 100 }
+
+		set_temp_variable = { sales_tax_multiplier = controller:sales_tax_percentage_actual }
+		divide_temp_variable = { sales_tax_multiplier = 100 }
+
+		set_temp_variable = { corporate_tax_multiplier = controller:corporate_tax_percentage_actual }
+		divide_temp_variable = { corporate_tax_multiplier = 100 }
+	}
+	pops_compute_summary_metrics = {
 		set_variable = { pops_employed_percentage = pops_employed }
 		divide_variable = { pops_employed_percentage = pops_workforce }
 
@@ -177,6 +100,9 @@
 
 		set_variable = { pops_unemployed_percentage = pops_unemployed }
 		divide_variable = { pops_unemployed_percentage = pops_workforce }
+
+		divide_variable = { pops_creditworthiness = pops_workforce }
+		multiply_variable = { pops_creditworthiness = 100 }
 		
 		set_variable = { excess_workforce = pops_workforce }
 		subtract_from_variable = { excess_workforce = non_subs_jobs_buildings }
@@ -184,10 +110,253 @@
 		set_variable = { pops_spending = pops_needs_spending }
 		add_to_variable = { pops_spending = pops_income_tax_spending }
 		add_to_variable = { pops_spending = pops_sales_tax_spending }
-		add_to_variable = { pops_spending = pops_corporate_tax_spending }
 		add_to_variable = { pops_spending = pops_debt_interest_spending }
+		add_to_variable = { pops_spending = pops_debt_repayment_spending }
 
 		divide_variable = { pops_sol = pops_workforce }
+	}
+
+	pops_process_workforce_status = {
+		# current_pop_token 
+
+		# Total Amount
+		set_variable = { pops@var:current_pop_token = pops_workforce@var:current_pop_token }
+		divide_variable = { pops@var:current_pop_token = pops_workforce_percentage }
+
+		# Percentage
+		set_variable = { pops_percentage@var:current_pop_token = pops@var:current_pop_token }
+		divide_variable = { pops_percentage@var:current_pop_token = pops }
+
+		# Employment
+		set_variable = { pops_unemployed@var:current_pop_token = pops_workforce@var:current_pop_token }
+		subtract_from_variable = { pops_unemployed@var:current_pop_token = pops_employed@var:current_pop_token }
+
+	}
+	pops_calculate_earnings_and_investment = {
+		# current_pop_token 
+		
+		# Earnings from Wages
+		if = { 
+			limit = { check_variable = { current_pop_token = token:peasants } }
+			set_variable = { pops_earnings@var:current_pop_token = expenses_payroll@token:subsistence_farm }
+		}
+		else = {
+			set_variable = { pops_earnings@var:current_pop_token = pops_employed@var:current_pop_token }
+			multiply_variable = { pops_earnings@var:current_pop_token = global.wage_multiplier@var:current_pop_token }
+			multiply_variable = { pops_earnings@var:current_pop_token = base_wage }
+		}
+
+		# Earnings from Dividends
+		if = {
+			limit = { 
+				OR = { 
+					check_variable = { current_pop_token = token:aristocrats } 
+					check_variable = { current_pop_token = token:capitalists } 
+				} 
+			}
+			add_to_variable = { pops_earnings@var:current_pop_token = pops_dividends@var:current_pop_token }
+
+			if = {
+				limit = { check_variable = { pops_earnings@var:current_pop_token > 0 } }
+				if = { limit = { check_variable = { current_pop_token = token:aristocrats } }
+					set_variable = { pops_investment@var:current_pop_token = controller:modifier@aristocrats_investment_contribution_factor } 
+				}
+				if = { 
+					limit = { check_variable = { current_pop_token = token:capitalists } }
+					set_variable = { pops_investment@var:current_pop_token = controller:modifier@capitalists_investment_contribution_factor }
+				}
+				
+				clamp_variable = { var = pops_investment@var:current_pop_token max = 0.8 min = 0 }
+				multiply_variable = { pops_investment@var:current_pop_token = pops_earnings@var:current_pop_token }
+				subtract_from_variable = { pops_earnings@var:current_pop_token = pops_investment@var:current_pop_token }
+			}
+		}
+
+		# Other Earnings (TODO: Corruption for Bureaucrats)
+
+	}
+	pops_calculate_living_standards = {
+		# current_pop_token 
+
+		# Cost of Living
+		set_variable = { pops_col@var:current_pop_token = pops_needs_spending@var:current_pop_token }
+		divide_variable = { pops_col@var:current_pop_token = pops_workforce@var:current_pop_token }
+
+		# Standard of Living
+		set_variable = { pops_spending@var:current_pop_token = pops_needs_spending@var:current_pop_token }
+	}
+	pops_calculate_taxation = {
+		# current_pop_token 
+		
+		# Income Tax
+		set_temp_variable = { avg_earnings_temp = pops_earnings@var:current_pop_token }
+		divide_temp_variable = { avg_earnings_temp = pops@var:current_pop_token }
+		set_variable = { pops_income_tax_spending@var:current_pop_token = pops_earnings@var:current_pop_token }
+		if = {
+			limit = {
+				check_variable = { avg_earnings_temp < lower_earnings_limit }
+			}
+			multiply_variable = { pops_income_tax_spending@var:current_pop_token = lower_income_multiplier }
+		}
+		else_if = {
+			limit = {
+				check_variable = { avg_earnings_temp < upper_earnings_limit }
+			}
+			multiply_variable = { pops_income_tax_spending@var:current_pop_token = middle_income_multiplier }
+		}
+		else = {
+			multiply_variable = { pops_income_tax_spending@var:current_pop_token = upper_income_multiplier }
+		}
+		add_to_variable = { pops_spending@var:current_pop_token = pops_income_tax_spending@var:current_pop_token }
+		
+		#Sales Tax
+		set_variable = { pops_sales_tax_spending@var:current_pop_token = pops_needs_spending@var:current_pop_token }
+		multiply_variable = { pops_sales_tax_spending@var:current_pop_token = sales_tax_multiplier }
+		add_to_variable = { pops_spending@var:current_pop_token = pops_sales_tax_spending@var:current_pop_token }
+		
+		#Corporate Tax
+		if = {
+			limit = { check_variable = { pops_dividends@var:current_pop_token > 0 } }
+
+			set_variable = { pops_investment_tax@var:current_pop_token = pops_dividends@var:current_pop_token }
+			multiply_variable = { pops_investment_tax@var:current_pop_token = corporate_tax_multiplier }
+			if = { limit = { check_variable = { pops_investment_tax@var:current_pop_token > pops_dividends@var:current_pop_token } } set_variable = { pops_investment_tax@var:current_pop_token = pops_dividends@var:current_pop_token } }
+			if = { limit = { check_variable = { pops_investment_tax@var:current_pop_token < 0 } } set_variable = { pops_investment_tax@var:current_pop_token = 0 } }
+		}
+	}
+	pops_calculate_credit_metrics = {
+		# current_pop_token
+		set_variable = { pops_debt_spending@var:current_pop_token = pops_debt_interest_spending@var:current_pop_token }
+		add_to_variable = { pops_debt_spending@var:current_pop_token = pops_debt_repayment_spending@var:current_pop_token }
+
+		set_temp_variable = { ds_ratio = pops_debt_spending@var:current_pop_token }
+		divide_temp_variable = { ds_ratio = pops_earnings@var:current_pop_token }
+		set_variable = { pops_debt_spending_ratio@var:current_pop_token = ds_ratio }
+
+		# Use global banking_confidence & consumer_confidence as temp vars if needed
+		set_variable = { pops_debt_spending_limit@var:current_pop_token = 0.1 }
+
+		set_temp_variable = { debt_limit_temp = bank_conf_temp }
+		multiply_temp_variable = { debt_limit_temp = 0.05 }
+		add_to_variable = { pops_debt_spending_limit@var:current_pop_token = limit_temp }
+
+		set_temp_variable = { debt_limit_temp = cons_conf_temp }
+		multiply_temp_variable = { debt_limit_temp = 0.025 }
+		add_to_variable = { pops_debt_spending_limit@var:current_pop_token = debt_limit_temp }
+
+		# Creditworthiness
+		set_temp_variable = { income_temp = pops_earnings@var:current_pop_token }
+		set_temp_variable = { debt_temp = bank_lent_to_pops_k@var:current_pop_token }
+		set_temp_variable = { debt_spending_temp = pops_debt_spending@var:current_pop_token }
+		set_temp_variable = { savings_temp = pops_savings@var:current_pop_token }
+		calculate_creditworthiness = yes
+		set_variable = { pops_creditworthiness@var:current_pop_token = creditworthiness_temp }
+
+		set_temp_variable = { weighted_credit = pops_creditworthiness@var:current_pop_token }
+		divide_temp_variable = { weighted_credit = 100 }
+		multiply_temp_variable = { weighted_credit = pops_workforce@var:current_pop_token }
+		add_to_variable = { pops_creditworthiness = weighted_credit }
+	}
+	pops_update_confidence = {
+		# Base from macro conditions (From 0.2 to 2.0)
+		set_variable = { pops_consumer_confidence@var:current_pop_token = cons_conf_temp }
+
+		# Debt Spending Penalty (Up to -1.0)
+		subtract_from_variable = { pops_consumer_confidence@var:current_pop_token = pops_debt_spending_ratio@var:current_pop_token }
+
+		# Savings Bonus (Up to +0.12)
+		set_temp_variable = { temp_conf_delta = pops_savings@var:current_pop_token }
+		divide_temp_variable = { temp_conf_delta = pops_earnings@var:current_pop_token }
+		multiply_temp_variable = { temp_conf_delta = 0.01 }
+		add_to_variable = { pops_consumer_confidence@var:current_pop_token = temp_conf_delta }
+
+		# Debt Panic Penalty (Limitless, but 100% excess -> -0.55)
+		set_temp_variable = { excess_ratio = pops_debt_spending_ratio@var:current_pop_token }
+		divide_temp_variable = { excess_ratio = pops_debt_spending_limit@var:current_pop_token }
+		if = {
+			limit = { check_variable = { excess_ratio > 1 } }
+			set_temp_variable = { temp_penalty = excess_ratio }
+			subtract_from_temp_variable = { temp_penalty = 1 }
+			multiply_temp_variable = { temp_penalty = 0.5 }
+			add_to_temp_variable = { temp_penalty = 0.05 }
+			subtract_from_variable = { pops_consumer_confidence@var:current_pop_token = temp_penalty }
+		}
+
+		# Interest Rate Shock (every 12% excess interest -> -0.25)
+		set_temp_variable = { temp_interest = bank_interest_rate }
+		subtract_from_temp_variable = { temp_interest = 12 }  # 1% monthly
+		if = {
+			limit = { check_variable = { temp_interest > 0 } }
+			set_temp_variable = { temp_penalty = temp_interest }
+			divide_temp_variable = { temp_penalty = 12 }
+			multiply_temp_variable = { temp_penalty = 0.25 }
+			subtract_from_variable = { pops_consumer_confidence@var:current_pop_token = temp_penalty }
+		}
+
+		# Clamp 0.2–2
+		clamp_variable = {
+			var = pops_consumer_confidence@var:current_pop_token
+			min = 0.2
+			max = 2
+		}
+	}
+	pops_calculate_spending_targets = {
+		# current_pop_token 
+		
+		#Spending Target
+		set_variable = { pops_spending_target@var:current_pop_token = pops_earnings@var:current_pop_token }
+		multiply_variable = { pops_spending_target@var:current_pop_token = pops_consumer_confidence@var:current_pop_token }
+	}
+	pops_calculate_savings_targets = {
+		# current_pop_token
+		set_variable = { pops_savings_target@var:current_pop_token = pops_earnings@var:current_pop_token }
+		multiply_variable = { pops_savings_target@var:current_pop_token = bank_conf_temp }
+		multiply_variable = { pops_savings_target@var:current_pop_token = 12 }
+	}
+	pops_calculate_debt_servicing = {
+		# current_pop_token 
+
+		#Interest
+		set_variable = { pops_debt_interest_spending@var:current_pop_token = bank_interest_rate }
+		add_to_variable = { pops_debt_interest_spending@var:current_pop_token = pops_credit_rating_interest@var:current_pop_token }
+		multiply_variable = { pops_debt_interest_spending@var:current_pop_token = bank_lent_to_pops_k@var:current_pop_token }
+		divide_variable = { pops_debt_interest_spending@var:current_pop_token = 1.2 }
+		add_to_variable = { pops_spending@var:current_pop_token = pops_debt_interest_spending@var:current_pop_token }
+
+		# Debt Repayment
+		set_variable = { pops_debt_repayment_spending@var:current_pop_token = 4 }
+		multiply_variable = { pops_debt_repayment_spending@var:current_pop_token = bank_lent_to_pops_k@var:current_pop_token }
+		divide_variable = { pops_debt_repayment_spending@var:current_pop_token = 1.2 }
+		add_to_variable = { pops_spending@var:current_pop_token = pops_debt_repayment_spending@var:current_pop_token }
+	}
+	pops_add_to_state_totals = {
+		# current_pop_token 
+		
+		set_temp_variable = { sol_temp = pops_sol@var:current_pop_token }
+		multiply_temp_variable = { sol_temp = pops_workforce@var:current_pop_token }
+		add_to_variable = { pops_sol = sol_temp }
+		add_to_variable = { pops_needs_spending = pops_needs_spending@var:current_pop_token }
+		
+		add_to_variable = { pops_earnings = pops_earnings@var:current_pop_token }
+		add_to_variable = { pops_investment = pops_investment@var:current_pop_token }
+		add_to_variable = { pops_spending_target = pops_spending_target@var:current_pop_token }
+		add_to_variable = { pops_savings_target = pops_savings_target@var:current_pop_token }
+
+		add_to_variable = { pops_income_tax_spending = pops_income_tax_spending@var:current_pop_token }
+		# add_to_variable = { pops_corporate_tax_spending = pops_investment_tax@var:current_pop_token } - Gets calculated for the Investment Funds iirc
+		add_to_variable = { pops_sales_tax_spending = pops_sales_tax_spending@var:current_pop_token }
+		add_to_variable = { pops_debt_interest_spending = pops_debt_interest_spending@var:current_pop_token }
+		add_to_variable = { pops_debt_repayment_spending = pops_debt_repayment_spending@var:current_pop_token }
+	}
+	pops_clear_inactive_pop_data = {
+		# current_pop_token 
+
+		set_variable = { pops_unemployed@var:current_pop_token = 0 }
+		set_variable = { pops_spending_target@var:current_pop_token = 0 }
+		set_variable = { pops_income_tax_spending@var:current_pop_token = 0 }
+		set_variable = { pops_sales_tax_spending@var:current_pop_token = 0 }
+		set_variable = { pops_debt_interest_spending@var:current_pop_token = 0 }
+		set_variable = { pops_debt_repayment_spending@var:current_pop_token = 0 }
 	}
 
 	pops_needs_update = {
@@ -407,6 +576,7 @@
 					is_in_array = { buildings = pops_bld_token }
 				}
 				add_to_variable = { pops_jobs@token:capitalists = jobs_temp }
+				add_to_variable = { pops_jobs_available@token:capitalists = jobs_temp }
 				add_to_variable = { pops_dividends@token:capitalists = dividends@var:pops_bld_token }
 			}
 			else_if = {
@@ -414,10 +584,12 @@
 					check_variable = { pops_bld_token = token:railway }
 				}
 				add_to_variable = { pops_jobs@token:capitalists = jobs_temp }
+				add_to_variable = { pops_jobs_available@token:capitalists = jobs_temp }
 				add_to_variable = { pops_dividends@token:capitalists = dividends@var:pops_bld_token }
 			}
 			else = {
 				add_to_variable = { pops_jobs@token:aristocrats = jobs_temp }
+				add_to_variable = { pops_jobs_available@token:aristocrats = jobs_temp }
 				add_to_variable = { pops_dividends@token:aristocrats = dividends@var:pops_bld_token }
 			}
 		}
@@ -428,11 +600,12 @@
 		set_variable = { pops_jobs_available = 0 }
 		set_variable = { pops_jobs = 0 }
 		set_variable = { pops_employed = 0 }
+		set_variable = { pops_dividends = 0 }
 
 		for_each_loop = {
 			array = global.pops_array
 			value = pop_token
-			
+
 			clamp_variable = { var = pops_employed@var:pop_token max = pops_workforce@var:pop_token min = 0 }
 
 			if = {
@@ -469,6 +642,7 @@
 			add_to_variable = { pops_jobs_available = pops_jobs_available@var:pop_token }
 			add_to_variable = { pops_jobs = pops_jobs@var:pop_token }
 			add_to_variable = { pops_employed = pops_employed@var:pop_token }
+			add_to_variable = { pops_dividends = pops_dividends@var:pop_token }
 		}
 		add_to_variable = { pops_workforce_balance@token:peasants = pops_jobs_available@token:peasants }
 		subtract_from_variable = { pops_jobs_available = pops_jobs_available@token:peasants }
@@ -1101,8 +1275,9 @@
 				array = global.pops_array
 				value = pop_cvt_token
 
-				add_to_variable = { pops_workforce@var:pop_cvt_token = pops_change@pop_cvt_token }
-				add_to_variable = { pops_unemployed@var:pop_cvt_token = pops_change@pop_cvt_token }
+				log = "Change for [?pop_cvt_token.GetTokenKey]: [?pops_change@var:pop_cvt_token]"
+				add_to_variable = { pops_workforce@var:pop_cvt_token = pops_change@var:pop_cvt_token }
+				add_to_variable = { pops_unemployed@var:pop_cvt_token = pops_change@var:pop_cvt_token }
 			}
 		}
 
@@ -1212,6 +1387,7 @@
 			set_variable = { pops_earnings@var:pop_token = 0 }
 			set_variable = { pops_needs_spending@var:pop_token = 0 }
 			set_variable = { pops_dividends@var:pop_token = 0 }
+			set_variable = { pops_investment@var:pop_token = 0 }
 		}
 
 		every_controlled_state = {
@@ -1226,6 +1402,7 @@
 				add_to_variable = { PREV.pops_earnings@var:pop_token = pops_earnings@var:pop_token }
 				add_to_variable = { PREV.pops_needs_spending@var:pop_token = pops_needs_spending@var:pop_token }
 				add_to_variable = { PREV.pops_dividends@var:pop_token = pops_dividends@var:pop_token }
+				add_to_variable = { PREV.pops_investment@var:pop_token = pops_investment@var:pop_token }
 					
 				set_temp_variable = { stat_temp = pops_sol@var:pop_token }
 				multiply_temp_variable = { stat_temp = pops@var:pop_token }
@@ -1240,6 +1417,7 @@
 		set_variable = { pops_earnings = 0 }
 		set_variable = { pops_needs_spending = 0 }
 		set_variable = { pops_dividends = 0 }
+		set_variable = { pops_investment = 0 }
 		for_each_loop = {
 			array = global.pops_array
 			value = pop_token
@@ -1250,6 +1428,7 @@
 			add_to_variable = { pops_earnings = pops_earnings@var:pop_token }
 			add_to_variable = { pops_needs_spending = pops_needs_spending@var:pop_token }
 			add_to_variable = { pops_dividends = pops_dividends@var:pop_token }
+			add_to_variable = { pops_investment = pops_investment@var:pop_token }
 
 			set_temp_variable = { sol_temp = pops_sol@var:pop_token }
 			multiply_temp_variable = { sol_temp = pops_workforce@var:pop_token }
