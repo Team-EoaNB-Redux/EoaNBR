@@ -177,6 +177,15 @@ _country_advance_time = {
             remove_from_array = { array = gdp_amount_array index = 0 }
         }
 
+		# Average GDP over the last 3 years
+		set_variable = { gdp_average = 0 }
+		for_each_loop = {
+			array = gdp_amount_array
+			value = gdp_amount_temp
+			add_to_variable = { gdp_average = gdp_amount_temp }
+		}
+		divide_variable = { gdp_average = gdp_amount_array^num }
+
         # nil secs
         set_temp_variable = { num_temp = 12 }
         if = {
@@ -273,6 +282,13 @@ _country_advance_time = {
         econ_rerender_country_gdp_graph = yes
         econ_rerender_country_budget_graph = yes
     #
+
+	if = {
+		limit = {
+			check_variable = { global.years_passed > 0 }
+		}
+		check_economic_cycle = yes
+	}
 }
 
 create_econ_order_array = {
@@ -790,6 +806,199 @@ pops_update_standard_of_living = {
 
 	set_variable = { pops_sol_progress@var:current_pop_token = pops_sol_progress_temp }
 	set_variable = { pops_sol@var:current_pop_token = pops_sol_temp }
+}
+
+# Economic Booms/Busts
+check_economic_cycle = {
+	set_temp_variable = { total_temp = 0 }
+	set_temp_variable = { number_of_prospering_states = 0 } # >3% above average GDP over past 3 yrs
+	set_temp_variable = { number_of_growing_states = 0 } # above average
+	set_temp_variable = { number_of_declining_states = 0 } # below average
+	set_temp_variable = { number_of_falling_states = 0 } # >3% below avg
+	every_controlled_state = {
+		set_temp_variable = { ratio_temp = gdp_amount }
+		divide_temp_variable = { ratio_temp = gdp_average }
+
+		set_temp_variable = { share_temp = gdp_amount }
+		divide_temp_variable = { share_temp = 1000 }
+
+		if = { limit = { check_variable = { ratio_temp > 1.03 } }
+			add_to_temp_variable = { number_of_prospering_states = share_temp }
+		}
+		else_if = { limit = { check_variable = { ratio_temp < 0.97 } }
+			add_to_temp_variable = { number_of_falling_states = share_temp }
+		}
+		else_if = { limit = { check_variable = { ratio_temp < 1 } }
+			add_to_temp_variable = { number_of_declining_states = share_temp }
+		}
+		else = {
+			add_to_temp_variable = { number_of_growing_states = share_temp }
+		}
+
+		add_to_temp_variable = { total_temp = share_temp }
+	}
+
+	divide_temp_variable = { number_of_prospering_states = total_temp }
+	divide_temp_variable = { number_of_growing_states = total_temp }
+	divide_temp_variable = { number_of_declining_states = total_temp }
+	divide_temp_variable = { number_of_falling_states = total_temp }
+
+	set_temp_variable = { growing_portion = number_of_growing_states }
+	add_to_temp_variable = { growing_portion = number_of_prospering_states }
+	
+	set_temp_variable = { declining_portion = number_of_declining_states }
+	add_to_temp_variable = { declining_portion = number_of_falling_states }
+
+	# Eco statuses:
+	# -2 - Recession
+	# -1 - Downturn
+	# 0 - Recovery
+	# 1 - Downturn (from Boom)
+	# 2 - Boom
+
+	if = {
+		limit = {
+			NOT = { check_variable = { current_economic_status = -2 } }
+			check_variable = { number_of_falling_states > 0.5 }
+		}
+
+		# log = "RECESSION"
+		set_variable = { current_economic_status = -2 }
+		if = {
+			limit = {
+				is_ai = no
+			}
+			country_event = { id = economy.140 } # Recession
+		}
+		else = {
+			major_recession_effect = yes
+		}
+	}
+	else_if = {
+		limit = {
+			check_variable = { current_economic_status > -1 }
+			check_variable = { declining_portion > 0.5 }
+		}
+
+		# log = "DOWNTURN - SEVERE"
+		set_variable = { current_economic_status = -1 }
+		if = {
+			limit = {
+				is_ai = no
+			}
+			country_event = { id = economy.130 } # Downturn
+		}
+		else = {
+			worsen_economic_situation = yes
+		}
+	}
+	else_if = {
+		limit = {
+			check_variable = { current_economic_status < 0 }
+			check_variable = { growing_portion > declining_portion }
+		}
+
+		# log = "RECOVERY"
+		set_variable = { current_economic_status = 0 }
+		if = {
+			limit = {
+				is_ai = no
+			}
+			country_event = { id = economy.110 } # Recovery
+		}
+		else = {
+			improve_economic_situation = yes
+		}
+	}
+	else_if = {
+		limit = {
+			check_variable = { current_economic_status = 2 }
+			check_variable = { number_of_prospering_states < declining_portion }
+		}
+
+		# log = "DOWNTURN - MODERATE"
+		set_variable = { current_economic_status = 1 }
+		if = {
+			limit = {
+				is_ai = no
+			}
+			country_event = { id = economy.130 } # Downturn
+		}
+		else = {
+			worsen_economic_situation = yes
+		}
+	}
+	else_if = {
+		limit = {
+			NOT = { check_variable = { current_economic_status = -2 } }
+			NOT = { check_variable = { current_economic_status = 2 } }
+			check_variable = { number_of_prospering_states > 0.5 }
+		}
+
+		# log = "ECONOMIC BOOM"
+		set_variable = { current_economic_status = 2 }
+		if = {
+			limit = {
+				is_ai = no
+			}
+			country_event = { id = economy.120 } # Boom
+		}
+		else = {
+			major_economic_boom_effect = yes
+		}
+	}
+
+	# log = "Prospering/Growing | Declining/Falling: [?number_of_prospering_states]/[?number_of_growing_states] | [?number_of_declining_states]/[?number_of_falling_states]"
+}
+major_recession_effect = {
+	if = {
+		limit = {
+			has_idea = depression
+		}
+		set_temp_variable = { situation_temp = token:free_fall }
+	}
+	else_if = {
+		limit = {
+			OR = {
+				has_idea = recesion
+				has_idea = stagnation
+			}
+		}
+		set_temp_variable = { situation_temp = token:depression }
+	}
+	else = {
+		set_temp_variable = { situation_temp = token:recession }
+	}
+
+	set_economic_situation = yes
+
+	add_stability = -0.05
+	decrease_ps_by_one = yes
+}
+major_economic_boom_effect = {
+	if = {
+		limit = {
+			OR = {
+				has_idea = steady_growth
+				has_idea = fast_growth
+				has_idea = economic_boom
+			}
+		}
+		set_temp_variable = { situation_temp = token:economic_boom }
+	}
+	else_if = {
+		limit = {
+			has_idea = stagnation
+		}
+		set_temp_variable = { situation_temp = token:fast_growth }
+	}
+	else = {
+		set_temp_variable = { situation_temp = token:steady_growth }
+	}
+
+	set_economic_situation = yes
+
+	add_stability = 0.05
 }
 
 

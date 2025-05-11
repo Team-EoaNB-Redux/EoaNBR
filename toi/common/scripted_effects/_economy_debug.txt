@@ -88,3 +88,40 @@ debug_testing3 = {
 	}
 	bank_update = yes
 }
+
+log_economic_cycle = {
+	set_temp_variable = { total_temp = 0 }
+	set_temp_variable = { number_of_prospering_states = 0 } # >3% above average GDP over past 3 yrs
+	set_temp_variable = { number_of_growing_states = 0 } # above average
+	set_temp_variable = { number_of_declining_states = 0 } # below average
+	set_temp_variable = { number_of_falling_states = 0 } # >3% below avg
+	every_controlled_state = {
+		set_temp_variable = { ratio_temp = gdp_amount }
+		divide_temp_variable = { ratio_temp = gdp_average }
+
+		set_temp_variable = { share_temp = gdp_amount }
+		divide_temp_variable = { share_temp = 1000 }
+
+		if = { limit = { check_variable = { ratio_temp > 1.03 } }
+			add_to_temp_variable = { number_of_prospering_states = share_temp }
+		}
+		else_if = { limit = { check_variable = { ratio_temp < 0.97 } }
+			add_to_temp_variable = { number_of_falling_states = share_temp }
+		}
+		else_if = { limit = { check_variable = { ratio_temp < 1 } }
+			add_to_temp_variable = { number_of_declining_states = share_temp }
+		}
+		else = {
+			add_to_temp_variable = { number_of_growing_states = share_temp }
+		}
+
+		add_to_temp_variable = { total_temp = share_temp }
+	}
+
+	divide_temp_variable = { number_of_prospering_states = total_temp }
+	divide_temp_variable = { number_of_growing_states = total_temp }
+	divide_temp_variable = { number_of_declining_states = total_temp }
+	divide_temp_variable = { number_of_falling_states = total_temp }
+	
+	log = "Prospering/Growing | Declining/Falling: [?number_of_prospering_states]/[?number_of_growing_states] | [?number_of_declining_states]/[?number_of_falling_states]"
+}
