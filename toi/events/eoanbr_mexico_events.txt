@@ -941,11 +941,16 @@ add_namespace = mexico_civil_war
 		option = { #Recognize
 			#log = "[THIS.GetTag]: firing  = mexico_politics.38.a"
 			name = mexico_politics.38.a
+			custom_effect_tooltip = historical_option
 			MEX = {
 				country_event = {
 					id = mexico_politics.39
 					days = 2
 				}
+			}
+			add_opinion_modifier = {
+				target = MEX
+				modifier = USA_opinion_recognized_MEX_in_civil_war
 			}
 			hidden_effect = {
 				MEC = {
@@ -961,11 +966,11 @@ add_namespace = mexico_civil_war
 			#log = "[THIS.GetTag]: firing  = mexico_politics.38.b"
 			name = mexico_politics.38.b
 			MEX = {
+				set_country_flag = MEX_flag_mclane_ocampo_1_refused
 				country_event = {
 					id = mexico_politics.40
 					days = 2
 				}
-				set_country_flag = MEX_flag_mclane_ocampo_1
 			}
 		}
 	}
@@ -987,11 +992,30 @@ add_namespace = mexico_civil_war
 
 		immediate = {
 			# log = "[THIS.GetTag]: firing  = mexico_politics.39"
+			if = {
+				limit = {
+					tag = MEX
+				}
+				add_opinion_modifier = {
+					target = USA
+					modififer = MEX_opinion_recognized_in_civil_war
+				}
+			}
+			else_if = {
+				limit = {
+					tag = MEC
+				}
+				add_opinion_modifier = {
+					target = USA
+					modifier = MEX_opinion_unrecognized
+				}
+			}
 		}
 
 		option = { #negotiate with americans for more
 			#log = "[THIS.GetTag]: firing  = mexico_politics.39.a"
 			name = mexico_politics.39.a
+			custom_effect_tooltip = historical_option
 			trigger = {
 				tag = MEX
 			}
@@ -1001,11 +1025,25 @@ add_namespace = mexico_civil_war
 			}
 		}
 
-		option = {
+		option = { #MEC reacts
 			#log = "[THIS.GetTag]: firing  = mexico_politics.39.b"
 			name = mexico_politics.39.b
 			trigger = {
 				tag = MEC
+			}
+		}
+
+		option = {
+			#log = "[THIS.GetTag]: firing  = mexico_politics.39.b"
+			name = mexico_politics.39.c
+			trigger = {
+				tag = MEX
+			}
+			USA = {
+				country_event = {
+					id = mexico_politics.40
+					days = 2
+				}
 			}
 		}
 	}
@@ -1015,19 +1053,20 @@ add_namespace = mexico_civil_war
 		title = mexico_politics.40.t
 		desc = {
 			text = mexico_politics.40.d1 #US Refuses to recognize mid RW
-			trigger = { MEX = { has_country_flag = MEX_flag_mclane_ocampo_1 } }
+			trigger = { MEX = { has_country_flag = MEX_flag_mclane_ocampo_1_refused } }
 		}
 		desc = {
 			text = mexico_politics.40.d2 #MEX doesnt seek anything after recognition
-			trigger = {}
+			trigger = {
+				tag = USA
+				MEX = { has_country_flag = MEX_flag_mclane_ocampo_1_refused }
+			}
 		}
 		desc = {
-			text = mexico_politics.40.d2 #player backup if they meant to end negotiations
-			trigger = {}
-		}
-		desc = {
-			text = mexico_politics.40.d3 #US rejects MEX's counter offer
-			trigger = {}
+			text = mexico_politics.40.d2 #US rejects MEX's counter offer
+			trigger = {
+				USA = { has_country_flag - USA_mclane_ocampo_treaty_3_rejected }
+			}
 		}
 
 		is_triggered_only = yes
@@ -1043,7 +1082,7 @@ add_namespace = mexico_civil_war
 		}
 	}
 
-	country_event = { #Ask US for military assistance treaty or end negotiations
+	country_event = { #Ask US for military assistance treaty
 		id = mexico_politics.41
 		title = mexico_politics.41.t
 		desc = mexico_politics.41.d
@@ -1058,20 +1097,10 @@ add_namespace = mexico_civil_war
 		option = { #military assitance treaty
 			#log = "[THIS.GetTag]: firing  = mexico_politics.41.a"
 			name = mexico_politics.41.a
+			custom_effect_tooltip = historical_option
 			USA = {
 				country_event = {
 					id = mexico_politics.42
-					days = 2
-				}
-			}
-		}
-
-		option = { #backup for player only, end negotiations
-			#log = "[THIS.GetTag]: firing  = mexico_politics.41.b"
-			name = mexico_politics.41.b
-			USA = {
-				country_event = {
-					id = mexico_politics.40
 					days = 2
 				}
 			}
@@ -1109,6 +1138,7 @@ add_namespace = mexico_civil_war
 		option = { #counter offer to MEX, Baja proposal
 			#log = "[THIS.GetTag]: firing  = mexico_politics.42.b"
 			name = mexico_politics.42.b
+			custom_effect_tooltip = historical_option
 			MEX = {
 				country_event = {
 					id = mexico_politics.44
@@ -1163,6 +1193,7 @@ add_namespace = mexico_civil_war
 		option = { #counter counter offer
 			#log = "[THIS.GetTag]: firing  = mexico_politics.44.b"
 			name = mexico_politics.44.b
+			custom_effect_tooltip = historical_option
 			USA = {
 				country_event = {
 					id = mexico_politics.46
@@ -1210,6 +1241,7 @@ add_namespace = mexico_civil_war
 		option = { #accept counter counter offer, send to congress
 			#log = "[THIS.GetTag]: firing  = mexico_politics.46.a"
 			name = mexico_politics.46.a
+			custom_effect_tooltip = historical_option
 			set_country_flag = USA_mclane_ocampo_treaty_3
 			country_event = {
 				id = mexico_politics.48
@@ -1226,6 +1258,7 @@ add_namespace = mexico_civil_war
 		option = { #end negotiations abruptly
 			#log = "[THIS.GetTag]: firing  = mexico_politics.46.b"
 			name = mexico_politics.46.b
+			set_country_flag = USA_mclane_ocampo_treaty_3_rejected
 			MEX = {
 				country_event = {
 					id = mexico_politics.40
@@ -1351,6 +1384,24 @@ add_namespace = mexico_civil_war
 					tag = MEX
 				}
 				activate_targeted_decision = MEX_decision_mclane_ocampo_treaty_equipment
+				set_country_flag = MEX_flag_mclane_ocampo_1_confirmed
+				add_opinion_modifier = {
+					target = USA
+					modifier = MEX_opinion_USA_mclane_ocampo_1
+				}
+			}
+			else_if = {
+				limit = {
+					tag = USA
+				}
+				add_political_power = 20
+				add_opinion_modifier = {
+					target = MEX
+					modifier = USA_opinion_MEX_mclane_ocampo_1
+				}
+				MEX = {
+					give_military_access = USA
+				}
 			}
 		}
 
@@ -1370,6 +1421,36 @@ add_namespace = mexico_civil_war
 
 		immediate = {
 			# log = "[THIS.GetTag]: firing  = mexico_politics.50"
+			if = {
+				limit = {
+					tag = MEX
+				}
+				484 = {
+					transfer_state_to = USA
+				}
+				1359 = {
+					transfer_state_to = USA
+				}
+				add_opinion_modifier = {
+					target = USA
+					modifier = MEX_opinion_USA_mclane_ocampo_2
+				}
+			}
+			else_if = {
+				limit = {
+					tag = USA
+				}
+				set_temp_variable = { x_temp = -2000 }
+				add_treasury = yes
+				MEX = {
+					set_temp_variable = { x_temp = 2000 }
+					add_treasury = yes
+				}
+				add_opinion_modifier = {
+					target = MEX
+					modifier = USA_opinion_MEX_mclane_ocampo_2
+				}
+			}
 		}
 
 		option = {
