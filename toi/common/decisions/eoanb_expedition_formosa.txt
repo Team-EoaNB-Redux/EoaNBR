@@ -1,0 +1,186 @@
+war_planning = {
+	
+	#######################
+	# Preparing Decisions #
+	#######################
+
+
+	#####################
+	# Starting Mission #
+	#####################
+	SPR_formosa_expedition_begin_invasion = {
+		icon = generic_prepare_civil_war
+		ai_will_do = { factor = 100 }
+		available = {
+			if = {
+				limit = { HOL = { has_country_flag = HOL_formosa_expedition_invite_flag } }
+				HOL = { has_country_flag = SPR_formosa_expedition_begin_invasion_ready_flag }
+			}
+			has_country_flag = SPR_manila_port_expanded
+			PAW = {exists = yes}
+		}
+		activation = {
+			has_country_flag = SPR_formosa_expedition_flag
+		}
+		allowed = { 
+			tag = SPR 
+		}
+		selectable_mission = yes
+		is_good = no
+		fire_only_once = yes
+		cost = 25
+		days_mission_timeout = 1180
+		complete_effect = {
+			#Invasion Commences 
+			country_event = { id = SPR_philippines.5 }
+			if = {
+				limit = { NOT={ HOL = { has_country_flag = HOL_formosa_expedition_invite_flag } } } 
+				bypass_national_focus = SPR_ask_dutch_to_join
+			}
+			else={
+				HOL = country_event = { id = SPR_philippines.5 }
+			}
+		}
+		timeout_effect = {
+			#Spain Doesnt Have it's Shit Together
+			add_political_power = -25
+			custom_effect_tooltip = SPR_lost_formosa_chance
+		}
+	}
+#----------------------------------------------------------
+#Take Formosa
+#----------------------------------------------------------
+	SPR_formosa_expedition_take_port_mission = {
+		icon = generic_naval
+		ai_will_do = { factor = 100 }
+		available = {
+			if = {
+				limit = {
+					NOT = { TAG = PAW }
+				}
+				OR={
+						1228 = {
+							custom_trigger_tooltip = {
+								tooltip = SPR_cochinchina_expedition_state_not_controlled_trigger
+								PAW = { NOT = { controls_state = PREV } }
+							}
+							custom_trigger_tooltip = {
+								tooltip = SPR_cochinchina_expedition_state_controlled_trigger
+								any_country = {
+									controls_state = PREV
+									OR = {
+										AND = {
+											is_subject = yes
+											OVERLORD = {
+												OR = {
+													has_country_flag = HOL_formosa_expedition_invite_flag
+													has_country_flag = SPR_formosa_expedition_flag
+												}
+											}
+										}
+										has_country_flag = HOL_formosa_expedition_invite_flag
+										has_country_flag = SPR_formosa_expedition_flag
+									}
+								}
+							}
+						}
+					PAW={
+						surrender_progress > 0.75
+					}
+					has_global_flag = SPR_formosa_expedition_landing
+				}
+			}
+			else = {
+				hidden_trigger = { always = no }
+				1228 = { PAW = { controls_state = PREV } }
+			}
+		}
+		
+		allowed = { 
+			OR = { 
+				TAG = SPR
+				TAG = HOL
+				TAG = PAW
+			}
+		}
+		activation = { 
+			NOT = { has_global_flag = SPR_formosa_expedition_landing }
+			OR = {
+				has_country_flag = SPR_formosa_expedition_flag
+				has_country_flag = HOL_formosa_expedition_invite_flag
+				has_country_flag = PAW_formosa_expedition_flag
+			}
+			PAW = { has_country_flag = PAW_formosa_expedition_flag }
+		}
+		selectable_mission = no
+		is_good = no
+		
+		fire_only_once = yes
+
+		#cost = 0
+		
+		days_mission_timeout = 1460
+		
+		highlight_states = {
+			STATE = 1228	
+		}
+		
+		complete_effect = {
+			#Europeans Take the Port
+			hidden_effect = {
+				if = {
+					limit = {
+						TAG = SPR
+						SPR = { has_country_flag = SPR_formosa_expedition_flag } 
+					}
+					SPR = { country_event = { id = SPR_philippines.9 } }
+					if = {
+						limit = { NOT = { has_global_flag = SPR_formosa_expedition_landing } }
+						set_global_flag = SPR_formosa_expedition_landing
+					}
+					PAW = { remove_mission = SPR_formosa_expedition_take_port_mission }
+				}
+				if = {
+					limit = {
+						TAG = HOL
+						HOL = { has_country_flag = HOL_formosa_expedition_invite_flag } 
+					}
+					HOL = { country_event = { id = SPR_philippines.9 } }
+					if = {
+						limit = { NOT = { has_global_flag = SPR_formosa_expedition_landing } }
+						set_global_flag = SPR_formosa_expedition_landing
+					}
+				}
+			}
+		}
+		timeout_effect = {
+			#Gaoshan Holds Out
+			hidden_effect = {
+				if = {
+					limit = {
+						TAG = SPR
+						SPR = { has_country_flag = SPR_formosa_expedition_flag } 
+					}
+					SPR = { country_event = { id = SPR_philippines.10 } }
+				}
+				if = {
+					limit = {
+						TAG = HOL
+						HOL = { has_country_flag = HOL_formosa_expedition_invite_flag } 
+					}
+					HOL = { country_event = { id = SPR_philippines.10 } }
+				}
+				if = {
+					limit = { 
+						TAG = PAW
+						PAW = { 
+							exists = yes
+							has_country_flag = PAW_formosa_expedition_flag 
+						} 
+					}
+					PAW = { country_event = { id = SPR_philippines.11 } }
+				}
+			}
+		}
+	}
+}
