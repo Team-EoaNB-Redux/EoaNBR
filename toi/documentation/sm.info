@@ -1,0 +1,84 @@
+# ideas
+
+```
+ideas = {
+	yt_snacks_are_justice = { allowed = { always = no } }
+	yt_amongus_channel_xd = { allowed = { always = no } }
+}
+
+```
+
+# variables
+
+```
+	add_to_array = { global.yt_channels = token:yt_snacks_are_justice }
+	set_variable = { global.followers@token:yt_snacks_are_justice = 312 }
+	set_variable = { global.monthly_change@token:yt_snacks_are_justice = 5 }
+	set_variable = { global.last_position@token:yt_snacks_are_justice = 2 }
+	add_to_array = { global.yt_channels = token:yt_amongus_channel_xd }
+	set_variable = { global.followers@token:yt_amongus_channel_xd = 310 }
+	set_variable = { global.monthly_change@token:yt_amongus_channel_xd = -5 }
+	set_variable = { global.last_position@token:yt_amongus_channel_xd = 1 }
+
+```
+
+
+# effects
+
+```
+update_list = {
+	for_each_loop = {
+		array = global.yt_channels
+		value = vv
+		index = ii
+
+		add_to_variable = { global.followers@vv = global.monthly_change@vv }
+		set_variable = { global.last_position@vv = ii }
+	}
+	for_each_loop = {
+		array = global.yt_channels
+		value = vv
+
+		set_temp_variable = { iii = 0 }
+		while_loop_effect = {
+			limit = {
+				set_temp_variable = { channel_temp = global.yt_channels_temp^iii }
+				check_variable = { global.followers@channel_temp > global.followers@vv }
+			}
+			add_to_temp_variable = { iii = 1 }
+		}
+		add_to_array = {
+			array = global.yt_channels_temp
+			value = vv
+			position = iii
+		}
+	}
+	clear_array = global.yt_channels
+	for_each_loop = {
+		array = global.yt_channels_temp
+		value = vv
+		
+		add_to_array = { global.yt_channels = vv }
+	}
+	clear_array = global.yt_channels_temp
+	
+}
+
+```
+
+# scripted_gui
+
+```
+sm_lists = {
+	window_name = "gui_name"
+	context_type = player_context
+
+	dynamic_lists = {
+		yt_list = {
+			array = global.yt_channels
+			entry_container = channel_entry_container
+		}
+	}
+}
+
+```
