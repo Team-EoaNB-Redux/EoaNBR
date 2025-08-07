@@ -6,14 +6,14 @@
 
 		for_each_loop = {
 			array = global.pops_array
-			value = pop_token
+			value = pop_update_token
 
 			if = {
 				limit = {
-					check_variable = { pops_workforce@var:pop_token > 0 }
+					check_variable = { pops_workforce@var:pop_update_token > 0 }
 				}
 
-				set_temp_variable = { current_pop_token = pop_token }
+				set_temp_variable = { current_pop_token = pop_update_token }
 
 				pops_cache_pop_context = yes
 
@@ -89,7 +89,7 @@
 	}
 
 	log_pop_vals = {
-		set_temp_variable = { current_pop_token = token:capitalists }
+		set_temp_variable = { current_pop_token = token:laborers }
 		log = "Pop Values for [?current_pop_token.GetTokenKey]:"
 		log = "pops: [?pops@var:current_pop_token]"
 		log = "pops_percentage: [?pops_percentage@var:current_pop_token]"
@@ -231,6 +231,7 @@
 		add_to_temp_variable = { p_pops_earnings = pops_bonuses@var:current_pop_token }
 
 		# Earnings from Dividends
+		set_temp_variable = { p_pops_investment = 0 }
 		if = {
 			limit = { 
 				OR = { 
@@ -242,7 +243,6 @@
 
 			if = {
 				limit = { check_variable = { p_pops_earnings > 0 } }
-				set_temp_variable = { p_pops_investment = 0 }
 				if = { limit = { check_variable = { current_pop_token = token:aristocrats } }
 					set_temp_variable = { p_pops_investment = controller:modifier@aristocrats_investment_contribution_factor } 
 				}
@@ -711,7 +711,7 @@
 					limit = {
 						check_variable = { pop_token = token:workers }
 					}
-					log = "[?pop_r_token.GetTokenKey] amount: [?global.pops_spending_need_at_sol@var:pop_r_token^sol_temp]"
+					# log = "[?pop_r_token.GetTokenKey] amount: [?global.pops_spending_need_at_sol@var:pop_r_token^sol_temp]"
 				}
 				set_temp_variable = { resource_amount = global.pops_spending_need_at_sol@var:pop_r_token^sol_temp }
 				add_to_temp_variable = { pops_need_t@var:pop_r_token = resource_amount }
@@ -731,18 +731,12 @@
 		multiply_temp_variable = { needs_spending_temp = pop_temp }
 		
 
-		log = "[?pop_token.GetTokenKey]: [?pop_temp]"
+		# log = "[?pop_token.GetTokenKey]: [?pop_temp]"
 		for_each_loop = {
 			array = global.pop_needs_resources
 			value = pop_r_token
 			
 			multiply_temp_variable = { pops_need_t@var:pop_r_token = pop_temp }
-			if = {
-				limit = {
-					check_variable = { pops_need_t@var:pop_r_token > 0 }
-				}
-				log = "   [?pop_r_token.GetTokenKey]: [?pops_need_t@var:pop_r_token]"
-			}
 		}
 	}
 
