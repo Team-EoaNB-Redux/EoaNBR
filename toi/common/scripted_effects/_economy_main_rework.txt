@@ -2,9 +2,7 @@
 #Pops
 	pops_update = {
 		pops_reset_core_variable = yes
-		pops_workforce_update = yes
 		pops_prepare_contextual_multipliers = yes
-		pops_needs_update = yes
 
 		for_each_loop = {
 			array = global.pops_array
@@ -21,6 +19,7 @@
 
 				pops_process_workforce_status = yes
 				pops_calculate_earnings_and_investment = yes
+				pops_calculate_needs_spending = yes
 				pops_calculate_living_standards = yes
 				pops_calculate_taxation = yes
 
@@ -47,7 +46,6 @@
 		set_temp_variable = { p_pops_workforce = pops_workforce@var:current_pop_token }
 		set_temp_variable = { p_pops_employed = pops_employed@var:current_pop_token }
 		set_temp_variable = { p_pops_dividends = pops_dividends@var:current_pop_token }
-		set_temp_variable = { p_pops_needs_spending = pops_needs_spending@var:current_pop_token }
 		set_temp_variable = { p_bank_lent_to_pops_k = bank_lent_to_pops_k@var:current_pop_token }
 		set_temp_variable = { p_pops_savings = pops_savings@var:current_pop_token }
 	}
@@ -61,9 +59,12 @@
 		set_variable = { pops_earnings@var:current_pop_token = p_pops_earnings }
 		set_variable = { pops_investment@var:current_pop_token = p_pops_investment }
 
+		# Calculate Needs Spending
+		set_variable = { pops_needs_spending@var:current_pop_token = p_pops_needs_spending }
+		set_variable = { pops_spending@var:current_pop_token = p_pops_spending }
+
 		# Calculate Living Standards
 		set_variable = { pops_col@var:current_pop_token = p_pops_col }
-		set_variable = { pops_spending@var:current_pop_token = p_pops_spending }
 
 		# Calculate Taxation
 		set_variable = { pops_income_tax_spending@var:current_pop_token = p_pops_income_tax_spending }
@@ -88,7 +89,7 @@
 	}
 
 	log_pop_vals = {
-		set_temp_variable = { current_pop_token = token:laborers }
+		set_temp_variable = { current_pop_token = token:capitalists }
 		log = "Pop Values for [?current_pop_token.GetTokenKey]:"
 		log = "pops: [?pops@var:current_pop_token]"
 		log = "pops_percentage: [?pops_percentage@var:current_pop_token]"
@@ -117,10 +118,18 @@
 		set_variable = { pops = pops_workforce }
 		divide_variable = { pops = global.pops_workforce_participation }
 
+		for_each_loop = {
+			array = global.pop_needs_resources
+			value = pop_r_token
+
+			set_variable = { pops_need@var:pop_r_token = 0 }
+		}
+
 		set_variable = { pops_sol = 0 }
 		set_variable = { pops_needs_spending = 0 }
 
 		set_variable = { pops_earnings = 0 }
+		set_variable = { pops_dividends = 0 }
 		set_variable = { pops_investment = 0 }
 		set_variable = { pops_spending_target = 0 }
 		set_variable = { pops_savings_target = 0 }
@@ -218,6 +227,9 @@
 			multiply_temp_variable = { p_pops_earnings = base_wage }
 		}
 
+		# Earnings from Bonuses
+		add_to_temp_variable = { p_pops_earnings = pops_bonuses@var:current_pop_token }
+
 		# Earnings from Dividends
 		if = {
 			limit = { 
@@ -247,15 +259,30 @@
 		# Other Earnings (TODO: Corruption for Bureaucrats)
 
 	}
+	pops_calculate_needs_spending = {
+		# current_pop_token
+		
+		set_temp_variable = { sol_temp = pops_sol@var:current_pop_token }
+		set_temp_variable = { pop_temp = p_pops }
+		set_temp_variable = { magnitude_temp = 1 }
+		get_pop_needs = yes
+		set_temp_variable = { p_pops_needs_spending = needs_spending_temp }
+
+		for_each_loop = {
+			array = global.pop_needs_resources
+			value = pop_r_token
+			
+			add_to_variable = { pops_need@var:pop_r_token = pops_need_t@var:pop_r_token }
+		}
+
+		set_temp_variable = { p_pops_spending = p_pops_needs_spending }
+	}
 	pops_calculate_living_standards = {
 		# current_pop_token 
 
 		# Cost of Living
 		set_temp_variable = { p_pops_col = p_pops_needs_spending }
 		divide_temp_variable = { p_pops_col = p_pops_workforce }
-
-		# Standard of Living
-		set_temp_variable = { p_pops_spending = p_pops_needs_spending }
 	}
 	pops_calculate_taxation = {
 		# current_pop_token 
@@ -412,6 +439,7 @@
 		add_to_variable = { pops_investment = p_pops_investment }
 		add_to_variable = { pops_spending_target = p_pops_spending_target }
 		add_to_variable = { pops_savings_target = p_pops_savings_target }
+		add_to_variable = { pops_dividends = pops_dividends@var:current_pop_token }
 
 		add_to_variable = { pops_income_tax_spending = p_pops_income_tax_spending }
 		# add_to_variable = { pops_corporate_tax_spending = p_pops_investment_tax } - Gets calculated for the Investment Funds iirc
@@ -430,131 +458,144 @@
 		set_variable = { pops_debt_repayment_spending@var:current_pop_token = 0 }
 	}
 
-	pops_needs_update = {
-		if = { limit = { check_variable = { pops_workforce@token:slaves > 0 } } pops_slaves_needs_update = yes }
-		if = { limit = { check_variable = { pops_workforce@token:peasants > 0 } } pops_peasants_needs_update = yes }
-		if = { limit = { check_variable = { pops_workforce@token:laborers > 0 } } pops_laborers_needs_update = yes }
-		if = { limit = { check_variable = { pops_workforce@token:workers > 0 } } pops_workers_needs_update = yes }
-		if = { limit = { check_variable = { pops_workforce@token:professionals > 0 } } pops_professionals_needs_update = yes }
-		if = { limit = { check_variable = { pops_workforce@token:specialists > 0 } } pops_specialists_needs_update = yes }
-		if = { limit = { check_variable = { pops_workforce@token:capitalists > 0 } } pops_capitalists_needs_update = yes }
-		if = { limit = { check_variable = { pops_workforce@token:aristocrats > 0 } } pops_aristocrats_needs_update = yes }
-		if = { limit = { check_variable = { pops_workforce@token:bureaucrats > 0 } } pops_bureaucrats_needs_update = yes }
-		if = { limit = { check_variable = { pops_workforce@token:soldiers > 0 } } pops_soldiers_needs_update = yes }
-	}
-	pops_slaves_needs_update = {
-		set_variable = { pops_needs_spending@token:slaves = 0 }
-		for_each_loop = {
-			array = global.pop_needs_resources
-			value = r_token
-			set_variable = { slaves_need_cost@var:r_token = slaves_need@var:r_token } 
-			multiply_variable = { slaves_need_cost@var:r_token = controller:price@var:r_token }
-			add_to_variable = { pops_needs_spending@token:slaves = slaves_need_cost@var:r_token }
-		}
-	}
-	pops_peasants_needs_update = {
-		set_variable = { pops_needs_spending@token:peasants = 0 }
-		for_each_loop = {
-			array = global.pop_needs_resources
-			value = r_token
-			set_variable = { peasants_need_cost@var:r_token = peasants_need@var:r_token } 
-			multiply_variable = { peasants_need_cost@var:r_token = controller:price@var:r_token }
-			add_to_variable = { pops_needs_spending@token:peasants = peasants_need_cost@var:r_token }
-		}
-	}
-	pops_laborers_needs_update = {
-		set_variable = { pops_needs_spending@token:laborers = 0 }
-		for_each_loop = {
-			array = global.pop_needs_resources
-			value = r_token
-			set_variable = { laborers_need_cost@var:r_token = laborers_need@var:r_token } 
-			multiply_variable = { laborers_need_cost@var:r_token = controller:price@var:r_token }
-			add_to_variable = { pops_needs_spending@token:laborers = laborers_need_cost@var:r_token }
-		}
-	}
-	pops_workers_needs_update = {
-		set_variable = { pops_needs_spending@token:workers = 0 }
-		for_each_loop = {
-			array = global.pop_needs_resources
-			value = r_token
-			set_variable = { workers_need_cost@var:r_token = workers_need@var:r_token } 
-			multiply_variable = { workers_need_cost@var:r_token = controller:price@var:r_token }
-			add_to_variable = { pops_needs_spending@token:workers = workers_need_cost@var:r_token }
-		}
-	}
-	pops_professionals_needs_update = {
-		set_variable = { pops_needs_spending@token:professionals = 0 }
-		for_each_loop = {
-			array = global.pop_needs_resources
-			value = r_token
-			set_variable = { professionals_need_cost@var:r_token = professionals_need@var:r_token } 
-			multiply_variable = { professionals_need_cost@var:r_token = controller:price@var:r_token }
-			add_to_variable = { pops_needs_spending@token:professionals = professionals_need_cost@var:r_token }
-		}
-	}
-	pops_specialists_needs_update = {
-		set_variable = { pops_needs_spending@token:specialists = 0 }
-		for_each_loop = {
-			array = global.pop_needs_resources
-			value = r_token
-			set_variable = { specialists_need_cost@var:r_token = specialists_need@var:r_token } 
-			multiply_variable = { specialists_need_cost@var:r_token = controller:price@var:r_token }
-			add_to_variable = { pops_needs_spending@token:specialists = specialists_need_cost@var:r_token }
-		}
-	}
-	pops_capitalists_needs_update = {
-		set_variable = { pops_needs_spending@token:capitalists = 0 }
-		for_each_loop = {
-			array = global.pop_needs_resources
-			value = r_token
-			set_variable = { capitalists_need_cost@var:r_token = capitalists_need@var:r_token } 
-			multiply_variable = { capitalists_need_cost@var:r_token = controller:price@var:r_token }
-			add_to_variable = { pops_needs_spending@token:capitalists = capitalists_need_cost@var:r_token }
-		}
-	}
-	pops_aristocrats_needs_update = {
-		set_variable = { pops_needs_spending@token:aristocrats = 0 }
-		for_each_loop = {
-			array = global.pop_needs_resources
-			value = r_token
-			set_variable = { aristocrats_need_cost@var:r_token = aristocrats_need@var:r_token } 
-			multiply_variable = { aristocrats_need_cost@var:r_token = controller:price@var:r_token }
-			add_to_variable = { pops_needs_spending@token:aristocrats = aristocrats_need_cost@var:r_token }
-		}
-	}
-	pops_bureaucrats_needs_update = {
-		set_variable = { pops_needs_spending@token:bureaucrats = 0 }
-		for_each_loop = {
-			array = global.pop_needs_resources
-			value = r_token
-			set_variable = { bureaucrats_need_cost@var:r_token = bureaucrats_need@var:r_token } 
-			multiply_variable = { bureaucrats_need_cost@var:r_token = controller:price@var:r_token }
-			add_to_variable = { pops_needs_spending@token:bureaucrats = bureaucrats_need_cost@var:r_token }
-		}
-	}
-	pops_soldiers_needs_update = {
-		set_variable = { pops_needs_spending@token:soldiers = 0 }
-		for_each_loop = {
-			array = global.pop_needs_resources
-			value = r_token
-			set_variable = { soldiers_need_cost@var:r_token = soldiers_need@var:r_token } 
-			multiply_variable = { soldiers_need_cost@var:r_token = controller:price@var:r_token }
-			add_to_variable = { pops_needs_spending@token:soldiers = soldiers_need_cost@var:r_token }
-		}
-	}
 
-	pops_workforce_update = {
+	employment_update = {
+		# Updates Industry Jobs, Job Fulfillment, and Pop/Industry Employment
+
+		## JOBS
+		set_variable = { pops_jobs@token:capitalists = 0 }
+		set_variable = { pops_jobs@token:aristocrats = 0 }
+
+		set_temp_variable = { e_laborers_jobs = 0 }
+		set_temp_variable = { e_laborers_jobs_available = 0 }
+
+		set_temp_variable = { e_workers_jobs = 0 }
+		set_temp_variable = { e_workers_jobs_available = 0 }
+		
+		set_temp_variable = { e_professionals_jobs = 0 }
+		set_temp_variable = { e_professionals_jobs_available = 0 }
+		
+		set_temp_variable = { e_specialists_jobs = 0 }
+		set_temp_variable = { e_specialists_jobs_available = 0 }
+
+		# Industries
+		for_each_loop = {
+			array = industries
+			value = bu_token
+
+			if = {
+				limit = { NOT = { check_variable = { bu_token = token:subsistence_farm } } }
+				industry_update_size_jobs = yes
+				
+				add_to_temp_variable = { e_laborers_jobs = i_laborers_jobs }
+				add_to_temp_variable = { e_laborers_jobs_available = i_laborers_jobs_available }
+				
+				add_to_temp_variable = { e_workers_jobs = i_workers_jobs }
+				add_to_temp_variable = { e_workers_jobs_available = i_workers_jobs_available }
+				
+				add_to_temp_variable = { e_professionals_jobs = i_professionals_jobs }
+				add_to_temp_variable = { e_professionals_jobs_available = i_professionals_jobs_available }
+				
+				add_to_temp_variable = { e_specialists_jobs = i_specialists_jobs }
+				add_to_temp_variable = { e_specialists_jobs_available = i_specialists_jobs_available }
+			}
+
+			set_temp_variable = { owner_temp = global.industry_owner@var:bu_token }
+			add_to_variable = { pops_jobs@var:owner_temp = i_owner_jobs }
+		}
+
+		# Pops
+		set_variable = { pops_jobs@token:laborers = e_laborers_jobs }
+		set_variable = { pops_jobs_available@token:laborers = e_laborers_jobs_available }
+		set_variable = { pops_jobs@token:workers = e_workers_jobs }
+		set_variable = { pops_jobs_available@token:workers = e_workers_jobs_available }
+		set_variable = { pops_jobs@token:professionals = e_professionals_jobs }
+		set_variable = { pops_jobs_available@token:professionals = e_professionals_jobs_available }
+		set_variable = { pops_jobs@token:specialists = e_specialists_jobs }
+		set_variable = { pops_jobs_available@token:specialists = e_specialists_jobs_available }
+
+		set_variable = { pops_jobs_available@token:capitalists = pops_jobs@token:capitalists }
+		set_variable = { pops_jobs_available@token:aristocrats = pops_jobs@token:aristocrats }
+
+		## JOB FULFILLMENT
+		set_variable = { pops_jobs_available = 0 }
+		set_variable = { pops_jobs = 0 }
+		set_variable = { pops_employed = 0 }
 		for_each_loop = {
 			array = global.pops_array
 			value = pop_token
 
-			set_variable = { pops_employed@var:pop_token = 0 }
-			set_variable = { pops_jobs@var:pop_token = 0 }
-			set_variable = { pops_jobs_available@var:pop_token = 0 }
-			set_variable = { pops_dividends@var:pop_token = 0 }
+			set_temp_variable = { e_pops_jobs_available = pops_jobs_available@var:pop_token }
+			
+			set_variable = { pops_workforce_balance@var:pop_token = pops_workforce@var:pop_token }
+			subtract_from_variable = { pops_workforce_balance@var:pop_token = e_pops_jobs_available }
+			
+			if = {
+				limit = {
+					check_variable = { pops_workforce@var:pop_token > e_pops_jobs_available }
+				}
+				set_variable = { job_fulfillment@var:pop_token = 100 }
+				set_variable = { pops_employed@var:pop_token = e_pops_jobs_available }
+			}
+			else_if = {
+				limit = {
+					check_variable = { e_pops_jobs_available > 100 }
+				}
+				divide_temp_variable = { e_pops_jobs_available = 100 }
+
+				set_temp_variable = { e_job_fulfillment = pops_workforce@var:pop_token }
+				divide_temp_variable = { e_job_fulfillment = e_pops_jobs_available }
+				
+				set_temp_variable = { e_pops_employed = e_pops_jobs_available }
+				multiply_temp_variable = { e_pops_employed = e_job_fulfillment }
+				
+				set_variable = { job_fulfillment@var:pop_token = e_job_fulfillment }
+				set_variable = { pops_employed@var:pop_token = e_pops_employed }
+			}
+			else_if = {
+				limit = {
+					check_variable = { e_pops_jobs_available > 0 }
+				}
+				set_temp_variable = { e_job_fulfillment = pops_workforce@var:pop_token }
+				multiply_temp_variable = { e_job_fulfillment = 100 }
+				divide_temp_variable = { e_job_fulfillment = e_pops_jobs_available }
+				
+				set_temp_variable = { e_pops_employed = e_pops_jobs_available }
+				multiply_temp_variable = { e_pops_employed = e_job_fulfillment }
+				divide_temp_variable = { e_pops_employed = 100 }
+				
+				set_variable = { job_fulfillment@var:pop_token = e_job_fulfillment }
+				set_variable = { pops_employed@var:pop_token = e_pops_employed }
+			}
+			else = {
+				set_variable = { job_fulfillment@var:pop_token = 0 }
+				set_variable = { pops_employed@var:pop_token = 0 }
+			}
+				
+			add_to_variable = { pops_jobs_available = pops_jobs_available@var:pop_token }
+			add_to_variable = { pops_jobs = pops_jobs@var:pop_token }
+			add_to_variable = { pops_employed = pops_employed@var:pop_token }
 		}
-		set_variable = { pops_employed@token:peasants = pops_workforce@token:peasants }
-		set_variable = { pops_jobs@token:peasants = pops_workforce@token:peasants }
+		add_to_variable = { pops_workforce_balance@token:peasants = pops_jobs_available@token:peasants }
+		subtract_from_variable = { pops_jobs_available = pops_jobs_available@token:peasants }
+		
+		set_variable = { available_workforce = pops_workforce }
+		subtract_from_variable = { available_workforce = pops_jobs_available }
+		
+		set_variable = { net_workforce = pops_workforce }
+		add_to_variable = { net_workforce = pops_jobs@token:peasants }
+		subtract_from_variable = { net_workforce = pops_jobs }
+
+		## INDUSTRY EMPLOYMENT
+		for_each_loop = {
+			array = industries
+			value = bu_token
+
+			if = {
+				limit = { NOT = { check_variable = { bu_token = token:subsistence_farm } } }
+				industry_update_employment = yes
+			}
+		}
 
 		set_variable = { total_industry_size = 0 }
 		for_each_loop = {
@@ -567,429 +608,8 @@
 		add_to_variable = { total_industry_size = size@token:industrial_complex }
 		add_to_variable = { total_industry_size = size@token:arms_factory }
 		add_to_variable = { total_industry_size = size@token:dockyard }
-
-		#Industries
-		for_each_loop = {
-			array = industries
-			value = pops_bld_token
-
-			add_to_variable = { pops_employed@token:laborers = laborers_employed@var:pops_bld_token }
-			add_to_variable = { pops_employed@token:workers = workers_employed@var:pops_bld_token }
-			add_to_variable = { pops_employed@token:professionals = professionals_employed@var:pops_bld_token }
-			add_to_variable = { pops_employed@token:specialists = specialists_employed@var:pops_bld_token }
-			
-			add_to_variable = { pops_jobs@token:laborers = laborers_jobs@var:pops_bld_token }
-			add_to_variable = { pops_jobs@token:workers = workers_jobs@var:pops_bld_token }
-			add_to_variable = { pops_jobs@token:professionals = professionals_jobs@var:pops_bld_token }
-			add_to_variable = { pops_jobs@token:specialists = specialists_jobs@var:pops_bld_token }
-
-			if = {
-				limit = {
-					check_variable = { jobs@var:pops_bld_token > 10000 }
-				}
-				set_temp_variable = { jobs_available_temp = peasants_jobs@var:pops_bld_token }
-				divide_temp_variable = { jobs_available_temp = 100 }
-				multiply_temp_variable = { jobs_available_temp = employment_target@var:pops_bld_token }
-				add_to_variable = { pops_jobs_available@token:peasants = jobs_available_temp }
-
-				set_temp_variable = { jobs_available_temp = laborers_jobs@var:pops_bld_token }
-				divide_temp_variable = { jobs_available_temp = 100 }
-				multiply_temp_variable = { jobs_available_temp = employment_target@var:pops_bld_token }
-				add_to_variable = { pops_jobs_available@token:laborers = jobs_available_temp }
-				
-				set_temp_variable = { jobs_available_temp = workers_jobs@var:pops_bld_token }
-				divide_temp_variable = { jobs_available_temp = 100 }
-				multiply_temp_variable = { jobs_available_temp = employment_target@var:pops_bld_token }
-				add_to_variable = { pops_jobs_available@token:workers = jobs_available_temp }
-				
-				set_temp_variable = { jobs_available_temp = professionals_jobs@var:pops_bld_token }
-				divide_temp_variable = { jobs_available_temp = 100 }
-				multiply_temp_variable = { jobs_available_temp = employment_target@var:pops_bld_token }
-				add_to_variable = { pops_jobs_available@token:professionals = jobs_available_temp }
-				
-				set_temp_variable = { jobs_available_temp = specialists_jobs@var:pops_bld_token }
-				divide_temp_variable = { jobs_available_temp = 100 }
-				multiply_temp_variable = { jobs_available_temp = employment_target@var:pops_bld_token }
-				add_to_variable = { pops_jobs_available@token:specialists = jobs_available_temp }
-			}
-			else = {
-				set_temp_variable = { jobs_available_temp = peasants_jobs@var:pops_bld_token }
-				multiply_temp_variable = { jobs_available_temp = employment_target@var:pops_bld_token }
-				divide_temp_variable = { jobs_available_temp = 100 }
-				add_to_variable = { pops_jobs_available@token:peasants = jobs_available_temp }
-
-				set_temp_variable = { jobs_available_temp = laborers_jobs@var:pops_bld_token }
-				multiply_temp_variable = { jobs_available_temp = employment_target@var:pops_bld_token }
-				divide_temp_variable = { jobs_available_temp = 100 }
-				add_to_variable = { pops_jobs_available@token:laborers = jobs_available_temp }
-				
-				set_temp_variable = { jobs_available_temp = workers_jobs@var:pops_bld_token }
-				multiply_temp_variable = { jobs_available_temp = employment_target@var:pops_bld_token }
-				divide_temp_variable = { jobs_available_temp = 100 }
-				add_to_variable = { pops_jobs_available@token:workers = jobs_available_temp }
-				
-				set_temp_variable = { jobs_available_temp = professionals_jobs@var:pops_bld_token }
-				multiply_temp_variable = { jobs_available_temp = employment_target@var:pops_bld_token }
-				divide_temp_variable = { jobs_available_temp = 100 }
-				add_to_variable = { pops_jobs_available@token:professionals = jobs_available_temp }
-				
-				set_temp_variable = { jobs_available_temp = specialists_jobs@var:pops_bld_token }
-				multiply_temp_variable = { jobs_available_temp = employment_target@var:pops_bld_token }
-				divide_temp_variable = { jobs_available_temp = 100 }
-				add_to_variable = { pops_jobs_available@token:specialists = jobs_available_temp }
-			}
-			
-			set_temp_variable = { jobs_temp = owner_jobs@var:pops_bld_token }
-			multiply_temp_variable = { jobs_temp = employment_target@var:pops_bld_token }
-			divide_temp_variable = { jobs_temp = 100 }
-			if = {
-				limit = {
-					is_in_array = { buildings = pops_bld_token }
-				}
-				add_to_variable = { pops_jobs@token:capitalists = jobs_temp }
-				add_to_variable = { pops_jobs_available@token:capitalists = jobs_temp }
-				add_to_variable = { pops_dividends@token:capitalists = dividends@var:pops_bld_token }
-			}
-			else_if = {
-				limit = {
-					check_variable = { pops_bld_token = token:railway }
-				}
-				add_to_variable = { pops_jobs@token:capitalists = jobs_temp }
-				add_to_variable = { pops_jobs_available@token:capitalists = jobs_temp }
-				add_to_variable = { pops_dividends@token:capitalists = dividends@var:pops_bld_token }
-			}
-			else = {
-				add_to_variable = { pops_jobs@token:aristocrats = jobs_temp }
-				add_to_variable = { pops_jobs_available@token:aristocrats = jobs_temp }
-				add_to_variable = { pops_dividends@token:aristocrats = dividends@var:pops_bld_token }
-			}
-		}
-
-		set_variable = { pops_employed@token:capitalists = pops_jobs@token:capitalists }
-		set_variable = { pops_employed@token:aristocrats = pops_jobs@token:aristocrats }
-
-		set_variable = { pops_jobs_available = 0 }
-		set_variable = { pops_jobs = 0 }
-		set_variable = { pops_employed = 0 }
-		set_variable = { pops_dividends = 0 }
-
-		for_each_loop = {
-			array = global.pops_array
-			value = pop_token
-
-			clamp_variable = { var = pops_employed@var:pop_token max = pops_workforce@var:pop_token min = 0 }
-
-			if = {
-				limit = {
-					check_variable = { pops_workforce@var:pop_token > pops_jobs_available@var:pop_token }
-				}
-				set_variable = { job_fulfillment@var:pop_token = 100 }
-			}
-			else_if = {
-				limit = {
-					check_variable = { pops_jobs_available@var:pop_token > 10000 }
-				}
-				set_temp_variable = { pops_j_temp = pops_jobs_available@var:pop_token }
-				divide_temp_variable = { pops_j_temp = 100 }
-
-				set_variable = { job_fulfillment@var:pop_token = pops_workforce@var:pop_token }
-				divide_variable = { job_fulfillment@var:pop_token = pops_j_temp }
-			}
-			else_if = {
-				limit = {
-					check_variable = { pops_jobs_available@var:pop_token > 0 }
-				}
-				set_variable = { job_fulfillment@var:pop_token = pops_workforce@var:pop_token }
-				multiply_variable = { job_fulfillment@var:pop_token = 100 }
-				divide_variable = { job_fulfillment@var:pop_token = pops_jobs_available@var:pop_token }
-			}
-			else = {
-				set_variable = { job_fulfillment@var:pop_token = 0 }
-			}
-
-			set_variable = { pops_workforce_balance@var:pop_token = pops_workforce@var:pop_token }
-			subtract_from_variable = { pops_workforce_balance@var:pop_token = pops_jobs_available@var:pop_token }
-			
-			add_to_variable = { pops_jobs_available = pops_jobs_available@var:pop_token }
-			add_to_variable = { pops_jobs = pops_jobs@var:pop_token }
-			add_to_variable = { pops_employed = pops_employed@var:pop_token }
-			add_to_variable = { pops_dividends = pops_dividends@var:pop_token }
-		}
-		add_to_variable = { pops_workforce_balance@token:peasants = pops_jobs_available@token:peasants }
-		subtract_from_variable = { pops_jobs_available = pops_jobs_available@token:peasants }
-		add_to_variable = { pops_jobs_available = pops_jobs_available@token:capitalists }
-		add_to_variable = { pops_jobs_available = pops_jobs_available@token:aristocrats }
-
-		set_variable = { available_workforce = pops_workforce }
-		subtract_from_variable = { available_workforce = pops_jobs_available }
-		
-		set_variable = { net_workforce = pops_workforce }
-		add_to_variable = { net_workforce = pops_jobs@token:peasants }
-		subtract_from_variable = { net_workforce = pops_jobs }
 	}
 
-	calculate_pop_needs = {
-		# Calculates Pops Needs
-		# NOTE: This does need magnitude_temp
-		set_temp_variable = { magnitude_temp = 1 }
-
-		for_each_loop = {
-			array = global.pop_needs_resources
-			value = r_token
-			set_variable = { pops_need@var:r_token = 0 } 
-		}
-
-		#Slaves
-			if = {
-				limit = {
-					check_variable = { pops_workforce@token:slaves > 0 }
-				}
-
-				set_temp_variable = { sol_temp = pops_sol@token:slaves }
-				set_temp_variable = { pop_temp = pops@token:slaves }
-				get_pop_needs = yes
-
-				for_each_loop = {
-					array = global.pop_needs_resources
-					value = r_token
-					set_variable = { slaves_need@var:r_token = need_variable@var:r_token } 
-					add_to_variable = { pops_need@var:r_token = need_variable@var:r_token } 
-				}
-			}
-			else = {
-				for_each_loop = {
-					array = global.pop_needs_resources
-					value = r_token
-					clear_variable = slaves_need@var:r_token
-				}
-			}
-		#
-		#Peasants
-			if = {
-				limit = {
-					check_variable = { pops_workforce@token:peasants > 0 }
-				}
-
-				set_temp_variable = { sol_temp = pops_sol@token:peasants }
-				set_temp_variable = { pop_temp = pops@token:peasants }
-				get_pop_needs = yes
-
-				for_each_loop = {
-					array = global.pop_needs_resources
-					value = r_token
-					set_variable = { peasants_need@var:r_token = need_variable@var:r_token } 
-					add_to_variable = { pops_need@var:r_token = need_variable@var:r_token } 
-				}
-			}
-			else = {
-				for_each_loop = {
-					array = global.pop_needs_resources
-					value = r_token
-					clear_variable = peasants_need@var:r_token
-				}
-			}
-		#
-		#Laborers
-			if = {
-				limit = {
-					check_variable = { pops_workforce@token:laborers > 0 }
-				}
-
-				set_temp_variable = { sol_temp = pops_sol@token:laborers }
-				set_temp_variable = { pop_temp = pops@token:laborers }
-				get_pop_needs = yes
-
-				for_each_loop = {
-					array = global.pop_needs_resources
-					value = r_token
-					set_variable = { laborers_need@var:r_token = need_variable@var:r_token } 
-					add_to_variable = { pops_need@var:r_token = need_variable@var:r_token } 
-				}
-			}
-			else = {
-				for_each_loop = {
-					array = global.pop_needs_resources
-					value = r_token
-					clear_variable = laborers_need@var:r_token
-				}
-			}
-		#
-		#Workers
-			if = {
-				limit = {
-					check_variable = { pops_workforce@token:workers > 0 }
-				}
-
-				set_temp_variable = { sol_temp = pops_sol@token:workers }
-				set_temp_variable = { pop_temp = pops@token:workers }
-				get_pop_needs = yes
-
-				for_each_loop = {
-					array = global.pop_needs_resources
-					value = r_token
-					set_variable = { workers_need@var:r_token = need_variable@var:r_token } 
-					add_to_variable = { pops_need@var:r_token = need_variable@var:r_token } 
-				}
-			}
-			else = {
-				for_each_loop = {
-					array = global.pop_needs_resources
-					value = r_token
-					clear_variable = workers_need@var:r_token
-				}
-			}
-		#
-		#Professionals
-			if = {
-				limit = {
-					check_variable = { pops_workforce@token:professionals > 0 }
-				}
-
-				set_temp_variable = { sol_temp = pops_sol@token:professionals }
-				set_temp_variable = { pop_temp = pops@token:professionals }
-				get_pop_needs = yes
-
-				for_each_loop = {
-					array = global.pop_needs_resources
-					value = r_token
-					set_variable = { professionals_need@var:r_token = need_variable@var:r_token } 
-					add_to_variable = { pops_need@var:r_token = need_variable@var:r_token } 
-				}
-			}
-			else = {
-				for_each_loop = {
-					array = global.pop_needs_resources
-					value = r_token
-					clear_variable = professionals_need@var:r_token
-				}
-			}
-		#
-		#Specialists
-			if = {
-				limit = {
-					check_variable = { pops_workforce@token:specialists > 0 }
-				}
-
-				set_temp_variable = { sol_temp = pops_sol@token:specialists }
-				set_temp_variable = { pop_temp = pops@token:specialists }
-				get_pop_needs = yes
-
-				for_each_loop = {
-					array = global.pop_needs_resources
-					value = r_token
-					set_variable = { specialists_need@var:r_token = need_variable@var:r_token } 
-					add_to_variable = { pops_need@var:r_token = need_variable@var:r_token } 
-				}
-			}
-			else = {
-				for_each_loop = {
-					array = global.pop_needs_resources
-					value = r_token
-					clear_variable = specialists_need@var:r_token
-				}
-			}
-		#
-		#Capitalists
-			if = {
-				limit = {
-					check_variable = { pops_workforce@token:capitalists > 0 }
-				}
-
-				set_temp_variable = { sol_temp = pops_sol@token:capitalists }
-				set_temp_variable = { pop_temp = pops@token:capitalists }
-				get_pop_needs = yes
-
-				for_each_loop = {
-					array = global.pop_needs_resources
-					value = r_token
-					set_variable = { capitalists_need@var:r_token = need_variable@var:r_token } 
-					add_to_variable = { pops_need@var:r_token = need_variable@var:r_token } 
-				}
-			}
-			else = {
-				for_each_loop = {
-					array = global.pop_needs_resources
-					value = r_token
-					clear_variable = capitalists_need@var:r_token
-				}
-			}
-		#
-		#Aristocrats
-			if = {
-				limit = {
-					check_variable = { pops_workforce@token:aristocrats > 0 }
-				}
-
-				set_temp_variable = { sol_temp = pops_sol@token:aristocrats }
-				set_temp_variable = { pop_temp = pops@token:aristocrats }
-				get_pop_needs = yes
-
-				for_each_loop = {
-					array = global.pop_needs_resources
-					value = r_token
-					set_variable = { aristocrats_need@var:r_token = need_variable@var:r_token } 
-					add_to_variable = { pops_need@var:r_token = need_variable@var:r_token } 
-				}
-			}
-			else = {
-				for_each_loop = {
-					array = global.pop_needs_resources
-					value = r_token
-					clear_variable = aristocrats_need@var:r_token
-				}
-			}
-		#
-		#Bureaucrats
-			if = {
-				limit = {
-					check_variable = { pops_workforce@token:bureaucrats > 0 }
-				}
-
-				set_temp_variable = { sol_temp = pops_sol@token:bureaucrats }
-				set_temp_variable = { pop_temp = pops@token:bureaucrats }
-				get_pop_needs = yes
-
-				for_each_loop = {
-					array = global.pop_needs_resources
-					value = r_token
-					set_variable = { bureaucrats_need@var:r_token = need_variable@var:r_token } 
-					add_to_variable = { pops_need@var:r_token = need_variable@var:r_token } 
-				}
-			}
-			else = {
-				for_each_loop = {
-					array = global.pop_needs_resources
-					value = r_token
-					clear_variable = bureaucrats_need@var:r_token
-				}
-			}
-		#
-		#Soldiers
-			if = {
-				limit = {
-					check_variable = { pops_workforce@token:soldiers > 0 }
-				}
-
-				set_temp_variable = { sol_temp = pops_sol@token:soldiers }
-				set_temp_variable = { pop_temp = pops@token:soldiers }
-				get_pop_needs = yes
-
-				for_each_loop = {
-					array = global.pop_needs_resources
-					value = r_token
-					set_variable = { soldiers_need@var:r_token = need_variable@var:r_token } 
-					add_to_variable = { pops_need@var:r_token = need_variable@var:r_token } 
-				}
-			}
-			else = {
-				for_each_loop = {
-					array = global.pop_needs_resources
-					value = r_token
-					clear_variable = soldiers_need@var:r_token
-				}
-			}
-		#
-	}
 	get_pop_needs = {
 		#Input:
 		#	sol_temp
@@ -999,12 +619,14 @@
 
 		#Note: All these values should be taken as 1 resource every 1K WORKFORCE pops
 		#Output:
-		# need_variable@token:[good]
+		# needs_spending_temp
+		# pop_need_t@resource
 
+		set_temp_variable = { needs_spending_temp = 0 }
 		for_each_loop = {
 			array = global.pop_needs_resources
 			value = pop_r_token
-			set_variable = { need_variable@var:pop_r_token = 0 }
+			set_temp_variable = { pops_need_t@var:pop_r_token = 0 }
 		}
 
 		for_each_loop = {
@@ -1012,17 +634,19 @@
 			value = pop_r_token
 			if = {
 				limit = {
-					NOT = { check_variable = { global.pops_spending_tech@var:pop_r_token = 0 } }
-					set_temp_variable = { tech_temp = global.pops_spending_tech@var:pop_r_token }
-					owner = { NOT = { has_tech = var:tech_temp } }
+					check_variable = { controller:pops_spending_tech@var:pop_r_token = 0 }
 				}
 				set_temp_variable = { replace_token = global.pops_spending_replacement@var:pop_r_token }
 
 				set_temp_variable = { replace_amount = global.pops_spending_need_at_sol@var:pop_r_token^sol_temp }
 				multiply_temp_variable = { replace_amount = global.base_price@var:pop_r_token }
 				divide_temp_variable = { replace_amount = global.base_price@var:replace_token }
+
+				add_to_temp_variable = { pops_need_t@var:replace_token = replace_amount }
+
+				multiply_temp_variable = { replace_amount = controller:price@var:replace_token }
 				#log = "Replacing [?global.pops_spending_need_at_sol@var:pop_r_token^sol_temp] [?pop_r_token.GetTokenLocalizedKey] with [?replace_amount] [?replace_token.GetTokenLocalizedKey]"
-				add_to_variable = { need_variable@var:replace_token = replace_amount }
+				add_to_temp_variable = { needs_spending_temp = replace_amount }
 			}
 			else_if = {
 				limit = {
@@ -1030,6 +654,8 @@
 					check_variable = { state_electrification < 100 }
 				}
 				set_temp_variable = { replace_token = global.pops_spending_replacement@var:pop_r_token }
+				
+				set_temp_variable = { resource_amount = global.pops_spending_need_at_sol@var:pop_r_token^sol_temp }
 
 				set_temp_variable = { removal_amount = 100 }
 				subtract_from_temp_variable = { removal_amount = state_electrification }
@@ -1041,9 +667,15 @@
 				divide_temp_variable = { replace_amount = global.base_price@var:replace_token }
 
 				#log = "Replacing [?removal_amount] [?pop_r_token.GetTokenLocalizedKey] with [?replace_amount] [?replace_token.GetTokenLocalizedKey] (Electrification: [?state_electrification|1]%)"
-				add_to_variable = { need_variable@var:pop_r_token = global.pops_spending_need_at_sol@var:pop_r_token^sol_temp }
-				subtract_from_variable = { need_variable@var:pop_r_token = removal_amount }
-				add_to_variable = { need_variable@var:replace_token = replace_amount }
+				subtract_from_temp_variable = { resource_amount = removal_amount }
+				add_to_temp_variable = { pops_need_t@var:pop_r_token = resource_amount }
+				add_to_temp_variable = { pops_need_t@var:replace_token = replace_amount }
+
+				multiply_temp_variable = { resource_amount = controller:price@var:pop_r_token }
+				multiply_temp_variable = { replace_amount = controller:price@var:replace_token }
+
+				add_to_temp_variable = { needs_spending_temp = resource_amount }
+				add_to_temp_variable = { needs_spending_temp = replace_amount }
 			}
 			else_if = {
 				limit = {
@@ -1051,6 +683,8 @@
 					check_variable = { state_electrification > 0 }
 				}
 				set_temp_variable = { replace_token = global.pops_spending_replacement@var:pop_r_token }
+				
+				set_temp_variable = { resource_amount = global.pops_spending_need_at_sol@var:pop_r_token^sol_temp }
 
 				set_temp_variable = { removal_amount = state_electrification }
 				multiply_temp_variable = { removal_amount = global.pops_spending_need_at_sol@var:pop_r_token^sol_temp }
@@ -1061,27 +695,54 @@
 				divide_temp_variable = { replace_amount = global.base_price@var:replace_token }
 
 				#log = "Replacing [?removal_amount] [?pop_r_token.GetTokenLocalizedKey] with [?replace_amount] [?replace_token.GetTokenLocalizedKey] (Electrification: [?state_electrification|1]%)"
-				add_to_variable = { need_variable@var:pop_r_token = global.pops_spending_need_at_sol@var:pop_r_token^sol_temp }
-				subtract_from_variable = { need_variable@var:pop_r_token = removal_amount }
-				add_to_variable = { need_variable@var:replace_token = replace_amount }
+				subtract_from_temp_variable = { resource_amount = removal_amount }
+				add_to_temp_variable = { pops_need_t@var:pop_r_token = resource_amount }
+				add_to_temp_variable = { pops_need_t@var:replace_token = replace_amount }
+
+				multiply_temp_variable = { resource_amount = controller:price@var:pop_r_token }
+				multiply_temp_variable = { replace_amount = controller:price@var:replace_token }
+
+				add_to_temp_variable = { needs_spending_temp = resource_amount }
+				add_to_temp_variable = { needs_spending_temp = replace_amount }
 			}
 			else = {
-				add_to_variable = { need_variable@var:pop_r_token = global.pops_spending_need_at_sol@var:pop_r_token^sol_temp }
+				if = {
+					limit = {
+						check_variable = { pop_token = token:workers }
+					}
+					log = "[?pop_r_token.GetTokenKey] amount: [?global.pops_spending_need_at_sol@var:pop_r_token^sol_temp]"
+				}
+				set_temp_variable = { resource_amount = global.pops_spending_need_at_sol@var:pop_r_token^sol_temp }
+				add_to_temp_variable = { pops_need_t@var:pop_r_token = resource_amount }
+				multiply_temp_variable = { resource_amount = controller:price@var:pop_r_token }
+				add_to_temp_variable = { needs_spending_temp = resource_amount }
 			}
 		}
+
+		# Modifiers
+		set_temp_variable = { resource_amount = controller:modifier@pops_food_consumption_factor }
+		multiply_temp_variable = { resource_amount = global.pops_spending_need_at_sol@token:food^sol_temp }
+		subtract_from_temp_variable = { pops_need_t@token:food = resource_amount }
+		multiply_temp_variable = { resource_amount = controller:price@token:food }
+		add_to_temp_variable = { needs_spending_temp = resource_amount }
 		
 		divide_temp_variable = { pop_temp = magnitude_temp }
+		multiply_temp_variable = { needs_spending_temp = pop_temp }
+		
+
+		log = "[?pop_token.GetTokenKey]: [?pop_temp]"
 		for_each_loop = {
 			array = global.pop_needs_resources
 			value = pop_r_token
 			
-			multiply_variable = { need_variable@var:pop_r_token = pop_temp }
-			#log = "[?pop_r_token.GetTokenLocalizedKey]: [?need_variable@var:pop_r_token]"
+			multiply_temp_variable = { pops_need_t@var:pop_r_token = pop_temp }
+			if = {
+				limit = {
+					check_variable = { pops_need_t@var:pop_r_token > 0 }
+				}
+				log = "   [?pop_r_token.GetTokenKey]: [?pops_need_t@var:pop_r_token]"
+			}
 		}
-
-		set_temp_variable = { modifier_temp = controller:modifier@pops_food_consumption_factor }
-		add_to_temp_variable = { modifier_temp = 1 }
-		multiply_variable = { need_variable@token:food = modifier_temp }
 	}
 
 	pops_balance = {
@@ -1548,17 +1209,17 @@
 		set_temp_variable = { largest = 0 }
 		for_each_loop = {
 			array = pop_types_percentage
-			index = rr
+			index = pie_ind
 			if = {
 				limit = {
-					check_variable = { pop_types_percentage^rr > pop_types_percentage^largest }
+					check_variable = { pop_types_percentage^pie_ind > pop_types_percentage^largest }
 				}
-				set_temp_variable = { largest = rr }
+				set_temp_variable = { largest = pie_ind }
 			}
 
-			multiply_temp_variable = { pop_types_percentage^rr = 100 }
-			round_temp_variable = pop_types_percentage^rr
-			add_to_temp_variable = { total_temp = pop_types_percentage^rr }
+			multiply_temp_variable = { pop_types_percentage^pie_ind = 100 }
+			round_temp_variable = pop_types_percentage^pie_ind
+			add_to_temp_variable = { total_temp = pop_types_percentage^pie_ind }
 		}
 
 		if = {
@@ -1572,11 +1233,12 @@
 		set_temp_variable = { pie_pop = 0 }
 		for_each_loop = {
 			array = pop_types_percentage
-			index = rr
-			value = vv
+			index = pie_ind
+			value = pie_v
+
 
 			set_variable = { last_idx = pie_pop }
-			set_temp_variable = { pie_pop = vv }
+			set_temp_variable = { pie_pop = pie_v }
 
 			add_to_temp_variable = { pie_pop = last_idx }
 			#subtract_from_temp_variable = { pie_pop = 1 }
@@ -1586,118 +1248,122 @@
 				}
 				set_temp_variable = { pie_pop = 100 }
 			}
-			for_loop_effect = {
-				start = last_idx
-				end = pie_pop
-				set_variable = { pie_chart_pop_type^v = rr }
+			if = {
+				limit = {
+					check_variable = { last_idx < 100 }
+				}
+				set_variable = { pie_chart_pop_type^last_idx = pie_ind }
 			}
 			set_variable = { last_idx = pie_pop }
 		}
 		clear_variable = last_idx
+		clear_variable = pie_chart_v
+
+		# Paradox bugginess forced me to make this a separate loop rather than put it in the above loop
+		set_temp_variable = { pie_chart_idx = 0 }
+		while_loop_effect = {
+			limit = {
+				check_variable = { pie_chart_idx < 100 }
+			}
+			if = {
+				limit = {
+					check_variable = { pie_chart_pop_type^pie_chart_idx = 1 }
+				}
+				set_temp_variable = { prev_idx = pie_chart_idx }
+				subtract_from_temp_variable = { prev_idx = 1 }
+				set_variable = { pie_chart_pop_type^pie_chart_idx = pie_chart_pop_type^prev_idx }
+			}
+			add_to_temp_variable = { pie_chart_idx = 1 }
+		}
 
 		add_to_variable = { update_state_econ_window = 1 }
 	}
 #
 
 # Production Methods Update
+	update_all_national_pms = {
+		set_variable = { tech_dirty_var_pm_unlock = 1 }
+		set_variable = { tech_dirty_var_govt = 1 }
+		set_variable = { tech_dirty_var_transport = 1 }
+		set_variable = { tech_dirty_var_resource = 1 }
+		set_variable = { tech_dirty_var_agriculture = 1 }
+		set_variable = { tech_dirty_var_factory = 1 }
+		set_variable = { tech_dirty_var_urban = 1 }
+
+		update_national_production_methods = yes
+	}
 	update_national_production_methods = {
-		for_each_loop = { # Industries
-			array = global.industry_token_array
-			value = industry_token
-
-			# UNLOCKED PRODUCTION METHODS
-			set_variable = { latest_production_method@var:industry_token = 0 }
-			clear_array = building_unlocked_pms@var:industry_token
-			for_each_loop = {
-				array = global.building_production_methods@var:industry_token
-				value = pm_token
-				if = {
-					limit = {
-						OR = {
-							check_variable = { global.pm_tech_unlock@var:pm_token = 0 }
-							AND = {
-								NOT = { check_variable = { global.pm_tech_unlock@var:pm_token = -1 } }
-								set_temp_variable = { tech_temp = global.pm_tech_unlock@var:pm_token }
-								has_tech = var:tech_temp
-							}
-						}
-					}
-					add_to_array = { building_unlocked_pms@var:industry_token = pm_token }
-					set_variable = { latest_production_method@var:industry_token = pm_token }
-				}
+		if = {
+			limit = {
+				check_variable = { tech_dirty_var_pm_unlock = 1 }
 			}
-			# UNLOCKED AUTOMATION METHODS
-			set_variable = { latest_automation_method@var:industry_token = 0 }
-			clear_array = building_unlocked_ams@var:industry_token
-			for_each_loop = {
-				array = global.building_automation_methods@var:industry_token
-				value = pm_token
-				if = {
-					limit = {
-						OR = {
-							check_variable = { global.pm_tech_unlock@var:pm_token = 0 }
-							AND = {
-								NOT = { check_variable = { global.pm_tech_unlock@var:pm_token = -1 } }
-								set_temp_variable = { tech_temp = global.pm_tech_unlock@var:pm_token }
-								has_tech = var:tech_temp
+			clear_variable = tech_dirty_var_pm_unlock
+
+			for_each_loop = { # Industries
+				array = global.industry_token_array
+				value = industry_token
+
+				# UNLOCKED PRODUCTION METHODS
+				set_variable = { latest_production_method@var:industry_token = 0 }
+				clear_array = building_unlocked_pms@var:industry_token
+				for_each_loop = {
+					array = global.building_production_methods@var:industry_token
+					value = pm_token
+					if = {
+						limit = {
+							OR = {
+								check_variable = { global.pm_tech_unlock@var:pm_token = 0 }
+								AND = {
+									NOT = { check_variable = { global.pm_tech_unlock@var:pm_token = -1 } }
+									set_temp_variable = { tech_temp = global.pm_tech_unlock@var:pm_token }
+									has_tech = var:tech_temp
+								}
 							}
 						}
+						add_to_array = { building_unlocked_pms@var:industry_token = pm_token }
+						set_variable = { latest_production_method@var:industry_token = pm_token }
 					}
-					add_to_array = { building_unlocked_ams@var:industry_token = pm_token }
-					set_variable = { latest_automation_method@var:industry_token = pm_token }
+				}
+				# UNLOCKED AUTOMATION METHODS
+				set_variable = { latest_automation_method@var:industry_token = 0 }
+				clear_array = building_unlocked_ams@var:industry_token
+				for_each_loop = {
+					array = global.building_automation_methods@var:industry_token
+					value = pm_token
+					if = {
+						limit = {
+							OR = {
+								check_variable = { global.pm_tech_unlock@var:pm_token = 0 }
+								AND = {
+									NOT = { check_variable = { global.pm_tech_unlock@var:pm_token = -1 } }
+									set_temp_variable = { tech_temp = global.pm_tech_unlock@var:pm_token }
+									has_tech = var:tech_temp
+								}
+							}
+						}
+						add_to_array = { building_unlocked_ams@var:industry_token = pm_token }
+						set_variable = { latest_automation_method@var:industry_token = pm_token }
+					}
 				}
 			}
 		}
-
-		for_each_loop = { # Loop through PM token array to add them to country
-			array = global.pm_token_array
-			value = pm_token
-
-			set_variable = { pm_output_multiplier@var:pm_token = global.pm_output_multiplier@var:pm_token }
-			
-			set_variable = { pm_shipping_capacity@var:pm_token = global.pm_shipping_capacity@var:pm_token }
-			set_variable = { pm_industrial_capacity@var:pm_token = global.pm_industrial_capacity@var:pm_token }
-			set_variable = { pm_industrial_capacity_use@var:pm_token = global.pm_industrial_capacity_use@var:pm_token }
-
-			set_variable = { pm_construction_duration@var:pm_token = global.pm_construction_duration@var:pm_token }
-			clear_array = pm_construction_input@var:pm_token
-			clear_array = pm_construction_input_amount@var:pm_token
-			for_each_loop = { # Add inputs
-				array = global.pm_construction_input@var:pm_token
-				value = input_token
-				index = pm_input_i
-
-				add_to_array = { pm_construction_input@var:pm_token = input_token }
-				add_to_array = { pm_construction_input_amount@var:pm_token = global.pm_construction_input_amount@var:pm_token^pm_input_i }
-			}
-
-			set_variable = { pm_retooling_duration@var:pm_token = global.pm_retooling_duration@var:pm_token }
-			
-			clear_array = pm_input@var:pm_token
-			clear_array = pm_input_amount@var:pm_token
-			for_each_loop = { # Add inputs
-				array = global.pm_input@var:pm_token
-				value = input_token
-				index = pm_input_i
-
-				add_to_array = { pm_input@var:pm_token = input_token }
-				add_to_array = { pm_input_amount@var:pm_token = global.pm_input_amount@var:pm_token^pm_input_i }
-			}
-			
-			set_variable = { pm_workforce_peasants@var:pm_token = global.pm_workforce_peasants@var:pm_token }
-			set_variable = { pm_workforce_laborers@var:pm_token = global.pm_workforce_laborers@var:pm_token }
-			set_variable = { pm_workforce_workers@var:pm_token = global.pm_workforce_workers@var:pm_token }
-			set_variable = { pm_workforce_professionals@var:pm_token = global.pm_workforce_professionals@var:pm_token }
-			set_variable = { pm_workforce_specialists@var:pm_token = global.pm_workforce_specialists@var:pm_token }
-		}
-
+		
 		# Apply Tech Modiifers
-		# Govt
+		# Govt (Mils/Civs/Dockyards)
+		if = {
+			limit = { check_variable = { tech_dirty_var_govt = 1 } }
+			for_each_loop = {
+				array = global.pm_token_array_govt
+				value = pm_token
+
+				init_national_pm_method = yes
+			}
+
 			add_to_variable = { pm_workforce_laborers@token:pm_arms_factory = modifier@pm_arms_factory_laborers_modifier }
 			add_to_variable = { pm_workforce_workers@token:pm_arms_factory = modifier@pm_arms_factory_workers_modifier }
 			add_to_variable = { pm_workforce_professionals@token:pm_arms_factory = modifier@pm_arms_factory_professionals_modifier }
 			add_to_variable = { pm_workforce_specialists@token:pm_arms_factory = modifier@pm_arms_factory_specialists_modifier }
-			
+
 			add_to_variable = { pm_workforce_laborers@token:pm_industrial_complex = modifier@pm_industrial_complex_laborers_modifier }
 			add_to_variable = { pm_workforce_workers@token:pm_industrial_complex = modifier@pm_industrial_complex_workers_modifier }
 			add_to_variable = { pm_workforce_professionals@token:pm_industrial_complex = modifier@pm_industrial_complex_professionals_modifier }
@@ -1707,10 +1373,21 @@
 			add_to_variable = { pm_workforce_workers@token:pm_dockyard = modifier@pm_dockyard_workers_modifier }
 			add_to_variable = { pm_workforce_professionals@token:pm_dockyard = modifier@pm_dockyard_professionals_modifier }
 			add_to_variable = { pm_workforce_specialists@token:pm_dockyard = modifier@pm_dockyard_specialists_modifier }
-		#
-		# Infrastructure
+
+			clear_variable = tech_dirty_var_govt
+		}
+		# Transport (Infra/Rail/Ports)
+		if = {
+			limit = { check_variable = { tech_dirty_var_transport = 1 } }
+			for_each_loop = {
+				array = global.pm_token_array_transport
+				value = pm_token
+
+				init_national_pm_method = yes
+			}
 			## Infrastructure
 			# Production
+
 			add_to_variable = { pm_output_multiplier@token:pm_dirt_paths = modifier@pm_dirt_paths_output_modifier }
 			add_to_variable = { pm_industrial_capacity@token:pm_dirt_paths = modifier@pm_dirt_paths_industrial_capacity_modifier }
 
@@ -1773,8 +1450,17 @@
 			# Production
 
 			# Automation
-		#
-		# Logging
+		}
+		# Resource (Logging/Mining/Oil)
+		if = {
+			limit = { check_variable = { tech_dirty_var_resource = 1 } }
+			for_each_loop = {
+				array = global.pm_token_array_resource
+				value = pm_token
+
+				init_national_pm_method = yes
+			}
+			## Logging
 			# Production
 			add_to_variable = { pm_output_multiplier@token:pm_simple_forestry = modifier@pm_simple_forestry_output_modifier }
 			
@@ -1831,8 +1517,8 @@
 			add_to_variable = { pm_input_amount@token:pm_logging_machines^2 = modifier@pm_logging_machines_electricity_input_modifier }
 			add_to_variable = { pm_input_amount@token:pm_logging_machines^3 = modifier@pm_logging_machines_machinery_input_modifier }
 			add_to_variable = { pm_input_amount@token:pm_logging_machines^4 = modifier@pm_logging_machines_electronics_input_modifier }
-		#
-		# Mining
+
+			## Mining
 			# Production
 			add_to_variable = { pm_output_multiplier@token:pm_basic_extraction = modifier@pm_basic_extraction_output_modifier }
 			add_to_variable = { pm_industrial_capacity_use@token:pm_basic_extraction = modifier@pm_basic_extraction_industrial_capacity_use_modifier }
@@ -1933,8 +1619,8 @@
 			add_to_variable = { pm_input_amount@token:pm_autonomous_mining^0 = modifier@pm_autonomous_mining_machinery_input_modifier }
 			add_to_variable = { pm_input_amount@token:pm_autonomous_mining^1 = modifier@pm_autonomous_mining_computers_input_modifier }
 			add_to_variable = { pm_input_amount@token:pm_autonomous_mining^2 = modifier@pm_autonomous_mining_electricity_input_modifier }
-		#
-		# Oil
+
+			## Oil
 			# Production
 			add_to_variable = { pm_output_multiplier@token:pm_basic_oil_production = modifier@pm_basic_oil_production_output_modifier }
 			add_to_variable = { pm_industrial_capacity_use@token:pm_basic_oil_production = modifier@pm_basic_oil_production_industrial_capacity_use_modifier }
@@ -1989,8 +1675,19 @@
 			add_to_variable = { pm_input_amount@token:pm_smart_drilling^2 = modifier@pm_smart_drilling_oil_input_modifier }
 			add_to_variable = { pm_input_amount@token:pm_smart_drilling^3 = modifier@pm_smart_drilling_computers_input_modifier }
 			add_to_variable = { pm_input_amount@token:pm_smart_drilling^4 = modifier@pm_smart_drilling_electricity_input_modifier }
-		#
-		# Farming
+
+			clear_variable = tech_dirty_var_resource
+		}
+		# Farming (Farms/Ranches/Plantations)
+		if = {
+			limit = { check_variable = { tech_dirty_var_agriculture = 1 } }
+			for_each_loop = {
+				array = global.pm_token_array_agriculture
+				value = pm_token
+
+				init_national_pm_method = yes
+			}
+
 			# Production
 			add_to_variable = { pm_output_multiplier@token:pm_subsistence_farming = modifier@pm_subsistence_farming_output_modifier }
 
@@ -2113,8 +1810,19 @@
 			add_to_variable = { pm_input_amount@token:pm_milking_machines^4 = modifier@pm_milking_machines_tools_input_modifier }
 			add_to_variable = { pm_input_amount@token:pm_milking_machines^5 = modifier@pm_milking_machines_appliances_input_modifier }
 			add_to_variable = { pm_input_amount@token:pm_milking_machines^6 = modifier@pm_milking_machines_computers_input_modifier }
-		#
-		# Factories
+
+			clear_variable = tech_dirty_var_agriculture
+		}
+		# Factories (Manufacturing/Electricity)
+		if = {
+			limit = { check_variable = { tech_dirty_var_factory = 1 } }
+			for_each_loop = {
+				array = global.pm_token_array_factory
+				value = pm_token
+
+				init_national_pm_method = yes
+			}
+
 			# Textiles
 			add_to_variable = { pm_output_multiplier@token:pm_manual_sewing = modifier@pm_manual_sewing_output_modifier }
 			add_to_variable = { pm_industrial_capacity_use@token:pm_manual_sewing = modifier@pm_manual_sewing_industrial_capacity_use_modifier }
@@ -2320,7 +2028,7 @@
 			add_to_variable = { pm_input_amount@token:pm_intelligent_robots^3 = modifier@pm_intelligent_robots_portable_power_input_modifier }
 			add_to_variable = { pm_input_amount@token:pm_intelligent_robots^4 = modifier@pm_intelligent_robots_aluminum_input_modifier }
 			add_to_variable = { pm_input_amount@token:pm_intelligent_robots^5 = modifier@pm_intelligent_robots_silicon_input_modifier }
-			
+		
 			# Tools
 			add_to_variable = { pm_output_multiplier@token:pm_crude_tools = modifier@pm_crude_tools_output_modifier }
 			add_to_variable = { pm_industrial_capacity_use@token:pm_crude_tools = modifier@pm_crude_tools_industrial_capacity_use_modifier }
@@ -2464,6 +2172,7 @@
 			add_to_variable = { pm_input_amount@token:pm_petrochemicals^3 = modifier@pm_petrochemicals_machinery_input_modifier }
 			add_to_variable = { pm_input_amount@token:pm_petrochemicals^4 = modifier@pm_petrochemicals_tools_input_modifier }
 
+
 			# Composites
 
 			# Electricity
@@ -2517,7 +2226,57 @@
 			add_to_variable = { pm_input_amount@token:pm_mass_automation^1 = modifier@pm_mass_automation_electricity_input_modifier }
 			add_to_variable = { pm_input_amount@token:pm_mass_automation^2 = modifier@pm_mass_automation_computers_input_modifier }
 			add_to_variable = { pm_input_amount@token:pm_mass_automation^3 = modifier@pm_mass_automation_rubber_input_modifier }
-		#
+
+			clear_variable = tech_dirty_var_factory
+		}
+		# Urban Buildings (Services/Entertainment)
+		if = {
+			limit = { check_variable = { tech_dirty_var_urban = 1 } }
+			for_each_loop = {
+				array = global.pm_token_array_urban
+				value = pm_token
+
+				init_national_pm_method = yes
+			}
+		}
+	}
+	init_national_pm_method = {
+		set_variable = { pm_output_multiplier@var:pm_token = global.pm_output_multiplier@var:pm_token }
+		
+		set_variable = { pm_shipping_capacity@var:pm_token = global.pm_shipping_capacity@var:pm_token }
+		set_variable = { pm_industrial_capacity@var:pm_token = global.pm_industrial_capacity@var:pm_token }
+		set_variable = { pm_industrial_capacity_use@var:pm_token = global.pm_industrial_capacity_use@var:pm_token }
+
+		set_variable = { pm_construction_duration@var:pm_token = global.pm_construction_duration@var:pm_token }
+		clear_array = pm_construction_input@var:pm_token
+		clear_array = pm_construction_input_amount@var:pm_token
+		for_each_loop = { # Add inputs
+			array = global.pm_construction_input@var:pm_token
+			value = input_token
+			index = pm_input_i
+
+			add_to_array = { pm_construction_input@var:pm_token = input_token }
+			add_to_array = { pm_construction_input_amount@var:pm_token = global.pm_construction_input_amount@var:pm_token^pm_input_i }
+		}
+
+		set_variable = { pm_retooling_duration@var:pm_token = global.pm_retooling_duration@var:pm_token }
+		
+		clear_array = pm_input@var:pm_token
+		clear_array = pm_input_amount@var:pm_token
+		for_each_loop = { # Add inputs
+			array = global.pm_input@var:pm_token
+			value = input_token
+			index = pm_input_i
+
+			add_to_array = { pm_input@var:pm_token = input_token }
+			add_to_array = { pm_input_amount@var:pm_token = global.pm_input_amount@var:pm_token^pm_input_i }
+		}
+		
+		set_variable = { pm_workforce_peasants@var:pm_token = global.pm_workforce_peasants@var:pm_token }
+		set_variable = { pm_workforce_laborers@var:pm_token = global.pm_workforce_laborers@var:pm_token }
+		set_variable = { pm_workforce_workers@var:pm_token = global.pm_workforce_workers@var:pm_token }
+		set_variable = { pm_workforce_professionals@var:pm_token = global.pm_workforce_professionals@var:pm_token }
+		set_variable = { pm_workforce_specialists@var:pm_token = global.pm_workforce_specialists@var:pm_token }
 	}
 #
 
@@ -4412,37 +4171,33 @@
 		set_variable = { industry_construction_cost_factor = controller:modifier@industry_construction_cost_factor }
 		set_variable = { industry_upgrade_speed_factor = controller:modifier@industry_upgrade_speed_factor }
 		set_variable = { industry_upgrade_cost_factor = controller:modifier@industry_upgrade_cost_factor }
-        
-        for_each_loop = {
-            array = global.industry_token_array
-            value = modifier_token
-			set_variable = { industry_input_factor@var:modifier_token = controller:industry_input_factor@var:modifier_token }
-			set_variable = { industry_output_factor@var:modifier_token = controller:industry_output_factor@var:modifier_token }
-			set_variable = { industry_throughput_factor@var:modifier_token = controller:industry_throughput_factor@var:modifier_token }
-			set_variable = { industry_attractiveness_modifier@var:modifier_token = controller:industry_attractiveness_modifier@var:modifier_token }
-			set_variable = { industry_attractiveness_factor@var:modifier_token = controller:industry_attractiveness_factor@var:modifier_token }
-        }
-
-		#Economies of Scale
-			#For all but subsistence farms
-			for_each_loop = {
-				array = industries
-				value = modifier_token
-				if = {
-					limit = {
-						NOT = { check_variable = { modifier_token = token:building_subsistence_farm } }
-					}
-
-					set_temp_variable = { mod_temp = size@var:modifier_token }
-					multiply_temp_variable = { mod_temp = global.buildings_economy_of_scale_factor }
-					add_to_variable = { industry_throughput_factor@var:modifier_token = 0 }
-				}
-			}
-
-		#
 	}
 	r_update_modifiers_country_effects = {
 		set_variable = { wage_factor = global.base_wage_factor }
+
+		# Pop Spending
+		for_each_loop = {
+			array = global.pop_needs_resources
+			value = pop_r_token
+			if = {
+				limit = {
+					NOT = { check_variable = { global.pops_spending_tech@var:pop_r_token = 0 } }
+				}
+				if = {
+					limit = {
+						set_temp_variable = { tech_temp = global.pops_spending_tech@var:pop_r_token }
+						owner = { has_tech = var:tech_temp }
+					}
+					set_variable = { pops_spending_tech@var:pop_r_token = 1 }
+				}
+				else = {
+					set_variable = { pops_spending_tech@var:pop_r_token = 0 }
+				}
+			}
+			else = {
+				set_variable = { pops_spending_tech@var:pop_r_token = 1 }
+			}
+		}
 
 		set_variable = { industry_construction_speed_factor = modifier@industry_construction_speed_factor }
 		set_variable = { industry_construction_cost_factor = modifier@industry_construction_cost_factor }
@@ -4452,6 +4207,10 @@
         for_each_loop = {
             array = global.industry_token_array
             value = modifier_token
+			set_variable = { prev_industry_input_factor@var:modifier_token = industry_input_factor@var:modifier_token }
+			set_variable = { prev_industry_output_factor@var:modifier_token = industry_output_factor@var:modifier_token }
+			set_variable = { prev_industry_throughput_factor@var:modifier_token = industry_throughput_factor@var:modifier_token }
+			
 			set_variable = { industry_input_factor@var:modifier_token = modifier@industry_input_factor }
 			set_variable = { industry_output_factor@var:modifier_token = modifier@industry_output_factor }
 			set_variable = { industry_throughput_factor@var:modifier_token = modifier@industry_throughput_factor }
@@ -4878,10 +4637,29 @@
             add_to_variable = { industry_attractiveness_factor@token:entertainment = modifier@entertainment_attractiveness_factor }
         #
 
-		#Consumer_goods_factory
-			# set_variable = { industry_input_factor@token:building_consumer_goods_factory = modifier@building_consumer_goods_factory_input_factor }
-			# set_variable = { industry_output_factor@token:building_consumer_goods_factory = modifier@building_consumer_goods_factory_output_factor }
-			# set_variable = { industry_throughput_factor@token:building_consumer_goods_factory = modifier@building_consumer_goods_factory_throughput_factor }
+		# Check for Changes
+			for_each_loop = {
+				array = global.industry_token_array
+				value = modifier_token
+				if = {
+					limit = {
+						NOT = { AND = {
+							check_variable = { prev_industry_input_factor@var:modifier_token = industry_input_factor@var:modifier_token }
+							check_variable = { prev_industry_output_factor@var:modifier_token = industry_output_factor@var:modifier_token }
+							check_variable = { prev_industry_throughput_factor@var:modifier_token = industry_throughput_factor@var:modifier_token }
+						}}
+					}
+					every_controlled_state = {
+						limit = {
+							check_variable = { size@var:modifier_token > 0 }
+						}
+						set_variable = { industry_dirty_var@var:modifier_token = 1 }
+					}
+				}
+				clear_variable = prev_industry_input_factor@var:modifier_token
+				clear_variable = prev_industry_output_factor@var:modifier_token
+				clear_variable = prev_industry_throughput_factor@var:modifier_token
+			}
 		#
         
 	}

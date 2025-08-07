@@ -981,23 +981,9 @@
 			set_variable = { global.market_demand@var:r_type = 0 }
 			set_variable = { global.trade_demand@var:r_type = 0 }
 			set_variable = { global.trade_supply@var:r_type = 0 }
-
-			set_temp_variable = { offers_temp = offers@var:r_type }
-			multiply_temp_variable = { offers_temp = shipping_efficiency }
-
-			add_to_variable = { global_market_supply@var:r_type = production@var:r_type }
-			add_to_variable = { global_market_demand@var:r_type = need@var:r_type }
-			if = { # This country is importing
-				limit = {
-					check_variable = { offers@var:r_type > 0 }
-				}
-				add_to_variable = { trade_demand@var:r_type = offers_temp }
-			}
-			else = { # This country is exporting
-				subtract_from_variable = { trade_supply@var:r_type = offers_temp }
-			}
 		}
 
+		set_variable = { global.markets_count = global.markets^num }
 		for_each_scope_loop = {
 			array = global.markets
 			for_each_loop = {
@@ -1005,6 +991,8 @@
 				value = r_type
 				set_temp_variable = { offers_temp = offers@var:r_type }
 				multiply_temp_variable = { offers_temp = shipping_efficiency }
+				set_variable = { trade_offers_amt@var:r_type = offers@var:r_type }
+				set_variable = { trade_shipping_eff = shipping_efficiency }
 
 				add_to_variable = { global.market_supply@var:r_type = production@var:r_type }
 				add_to_variable = { global.market_demand@var:r_type = need@var:r_type }
@@ -1013,9 +1001,11 @@
 						check_variable = { offers@var:r_type > 0 }
 					}
 					add_to_variable = { global.trade_demand@var:r_type = offers_temp }
+					set_variable = { trade_demand_added@var:r_type = offers_temp }
 				}
 				else = { # This country is exporting
 					subtract_from_variable = { global.trade_supply@var:r_type = offers_temp }
+					set_variable = { trade_supply_added@var:r_type = offers_temp }
 				}
 			}
 		}
@@ -1146,6 +1136,10 @@
 					}
 					set_temp_variable = { trade_portion_temp = 1 }
 				}
+				else_if = {
+					limit = { check_variable = { trade_portion_temp < 0 } }
+					set_temp_variable = { trade_portion_temp = 0 }
+				}
 				multiply_variable = { trade@var:r_type = trade_portion_temp }
 			}
 			else_if = {
@@ -1164,6 +1158,10 @@
 						}
 					}
 					set_temp_variable = { trade_portion_temp = 1 }
+				}
+				else_if = {
+					limit = { check_variable = { trade_portion_temp < 0 } }
+					set_temp_variable = { trade_portion_temp = 0 }
 				}
 				multiply_variable = { trade@var:r_type = trade_portion_temp }
 			}
