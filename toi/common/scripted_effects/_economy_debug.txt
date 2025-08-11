@@ -90,3 +90,99 @@ log_economic_cycle = {
 	
 	log = "Prospering/Growing | Declining/Falling: [?number_of_prospering_states]/[?number_of_growing_states] | [?number_of_declining_states]/[?number_of_falling_states]"
 }
+
+calculate_state_deaths = {
+	# pops
+
+	# Pops die when:
+	#	- State controller does not fully control state (contested)
+	#	- State has damaged buildings
+	#	- State has resistance
+
+	# Applies weekly
+	set_temp_variable = { deaths_base_temp = pops }
+	multiply_temp_variable = { deaths_base_temp = 0.001 }
+
+	set_temp_variable = { weekly_pop_deaths = 0 }
+
+	log = "[THIS.GetName]"
+	# Contested State
+	if = {
+		limit = {
+			NOT = { is_fully_controlled_by = var:controller }
+		}
+		log = "contested"
+		add_to_temp_variable = { weekly_pop_deaths = deaths_base_temp }
+	}
+	else = {
+		log = "not contested"
+	}
+
+	# Damaged Buildings
+	if = {
+		limit = {
+			has_damaged_buildings = yes
+		}
+		set_temp_variable = { total_levels = building_level@industrial_complex }
+		add_to_temp_variable = { total_levels = building_level@arms_factory }
+		add_to_temp_variable = { total_levels = building_level@dockyard }
+		add_to_temp_variable = { total_levels = building_level@infrastructure }
+
+		set_temp_variable = { damaged_levels = damaged_building_level@industrial_complex }
+		add_to_temp_variable = { damaged_levels = damaged_building_level@arms_factory }
+		add_to_temp_variable = { damaged_levels = damaged_building_level@dockyard }
+		add_to_temp_variable = { damaged_levels = damaged_building_level@infrastructure }
+
+		if = {
+			limit = { check_variable = { total_levels > 0 } }
+			set_temp_variable = { deaths_temp = damaged_levels }
+			divide_temp_variable = { deaths_temp = total_levels }
+			multiply_temp_variable = { deaths_temp = deaths_base_temp }
+			add_to_temp_variable = { weekly_pop_deaths = deaths_base_temp }
+		}
+	}
+
+	# Resistance
+	if = {
+		limit = {
+			has_resistance = yes
+		}
+		set_temp_variable = { deaths_temp = resistance }
+		divide_temp_variable = { deaths_temp = 100 }
+		multiply_temp_variable = { deaths_temp = deaths_base_temp }
+		add_to_temp_variable = { weekly_pop_deaths = deaths_base_temp }
+	}
+
+	log = "Weekly Deaths: [?weekly_pop_deaths]"
+}
+
+calculate_manpower_recovery = {
+	# max_available_manpower_k 
+	# - deployed_army_manpower_k
+	# - deployed_navy_manpower_k
+	# - deployed_airforce_manpower_k
+	# - garrison_manpower_need / 1000
+	# - amount_manpower_in_deployment_queue / 1000
+	# - manpower_k
+
+	set_temp_variable = { garrison_manpower_need_k = garrison_manpower_need }
+	divide_temp_variable = { garrison_manpower_need_k = 1000 }
+
+	set_temp_variable = { amount_manpower_in_deployment_queue_k = amount_manpower_in_deployment_queue }
+	divide_temp_variable = { amount_manpower_in_deployment_queue_k = 1000 }
+
+	set_variable = { depleted_manpower_k = max_available_manpower_k }
+	subtract_from_variable = { depleted_manpower_k = deployed_army_manpower_k }
+	subtract_from_variable = { depleted_manpower_k = deployed_navy_manpower_k }
+	subtract_from_variable = { depleted_manpower_k = deployed_airforce_manpower_k }
+	subtract_from_variable = { depleted_manpower_k = garrison_manpower_need_k }
+	subtract_from_variable = { depleted_manpower_k = amount_manpower_in_deployment_queue_k }
+	subtract_from_variable = { depleted_manpower_k = manpower_k }
+
+	log = "Depleted Manpower: [?depleted_manpower_k|1]K"
+
+	set_variable = { manpower_recovery = max_available_manpower_k }
+	multiply_variable = { manpower_recovery = 4.166 }
+	round_variable = manpower_recovery
+	log = "Manpower Recovery: [?manpower_recovery|0]"
+}
