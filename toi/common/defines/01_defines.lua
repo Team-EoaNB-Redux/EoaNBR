@@ -1,5 +1,5 @@
 NDefines.NGame.START_DATE = "1857.5.10.24" -- "1936.1.1.12"
-NDefines.NGame.END_DATE = "2100.1.1.1" -- "1949.1.1.1"
+NDefines.NGame.END_DATE = "2050.1.1.1" -- "1949.1.1.1"
 NDefines.NGame.MAX_SCRIPTED_LOC_RECURSION = 60 -- 30
 NDefines.NGame.HANDS_OFF_START_TAG = "UCT" --URG
 
@@ -116,9 +116,9 @@ NDefines.NNavy.HIT_PROFILE_MULT = 50.0 -- 100
 NDefines.NNavy.HIT_PROFILE_SPEED_FACTOR = 0.5 -- 2
 NDefines.NNavy.OUT_OF_FUEL_SPEED_FACTOR = -0.95
 NDefines.NNavy.OUT_OF_FUEL_RANGE_FACTOR = -0.95
-NDefines.NNavy.SUPREMACY_PER_SHIP_PER_MANPOWER = 0.5							-- supremacy of a ship is calculated using its IC, manpower and a base define
-NDefines.NNavy.SUPREMACY_PER_SHIP_PER_IC = 0.1
-NDefines.NNavy.SUPREMACY_PER_SHIP_BASE = 500.0
+-- NDefines.NNavy.SUPREMACY_PER_SHIP_PER_MANPOWER = 0.5							-- supremacy of a ship is calculated using its IC, manpower and a base define
+-- NDefines.NNavy.SUPREMACY_PER_SHIP_PER_IC = 0.1
+-- NDefines.NNavy.SUPREMACY_PER_SHIP_BASE = 500.0
 NDefines.NNavy.CONVOY_DEFENSE_MAX_CONVOY_TO_SHIP_RATIO	= 2.0		-- each ship in convoy defense mission can at most cover this many convoys without losing efficiency
 
 NDefines.NAI.DEFAULT_LEGACY_VARIANT_CREATION_XP_CUTOFF_LAND = 10 -- 50
@@ -128,7 +128,6 @@ NDefines.NAI.DOCKYARDS_PER_NAVAL_DESIRE_EFFECT = 10.0			-- Effects how much AI w
 NDefines.NAI.MAX_SCREEN_FORCES_FOR_INVASION_SUPPORT = 0.99 -- max ratio of screens forces to be used in naval invasion missions
 NDefines.NAI.MAX_CAPITAL_FORCES_FOR_INVASION_SUPPORT = 0.99 -- max ratio of capital forces to be used in naval invasion missions
 NDefines.NAI.MIN_UNIT_RATIO_FOR_INVASIONS = 0.2                         -- don't allocate more divisions than this for naval invasions
-NDefines.NAI.MAX_INVASION_FRONT_SCORE = 2000                            -- max score for naval invasion front scores
 NDefines.NAI.MAX_INVASION_FRONT_SCORE = 2000                            -- max score for naval invasion front scores
 NDefines.NAI.DIVISION_DESIGN_COMBAT_WIDTH_TARGET_WEIGHT = -500.0	-- This score is reduced the farther the width is from the target width (if set)
 NDefines.NAI.DIVISION_MATCH_ROLE_BOOST_FACTOR = 1.2                -- When finding closest matching existing template to a target template, boost the score by this much if the template also has the correct role
