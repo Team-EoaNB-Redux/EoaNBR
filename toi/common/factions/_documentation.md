@@ -371,7 +371,7 @@ default_become_spymaster_minor = {
 		has_dlc = "La Resistance"
 	}
 	enable = {
-		is_major = no
+		is_great_or_secondary_power = no
 	}
 	abort_when_not_enabled = yes
 	ai_strategy = {
