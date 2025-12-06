@@ -712,6 +712,7 @@ pops_handle_surplus = {
 	set_temp_variable = { target_type = 1 }
 	set_temp_variable = { target_temp = current_pop_token }
 	#bank_repay_loan_pops = yes  - Disabled until bank system is done
+	set_temp_variable = { repay_temp_k = 0 }
 
 	# Remove amount repaid to net_money_temp for bookkeeping
 	set_temp_variable = { money_temp = repay_temp_k }
@@ -744,6 +745,7 @@ pops_handle_deficit = {
 	set_temp_variable = { target_temp = current_pop_token }
 	set_temp_variable = { no_update_temp = 1 }
 	#bank_loan_money_pops = yes - Disabled until bank system is done
+	set_temp_variable = { borrow_temp_k = 0 }
 
 	# Add the actual borrowed amount back for accounting
 	set_temp_variable = { money_temp = borrow_temp_k }
@@ -770,9 +772,9 @@ pops_update_standard_of_living = {
         
         set_temp_variable = { sol_change_temp = pops_sol_progress_temp }
 		subtract_from_temp_variable = { sol_change_temp = 0.5 }
-        round_variable = sol_change_temp  # Get integer part
+        round_temp_variable = sol_change_temp  # Get integer part
         
-        add_to_temp_variable = { pops_sol@var:current_pop_token = sol_change_temp }
+        add_to_variable = { pops_sol@var:current_pop_token = sol_change_temp }
         subtract_from_temp_variable = { pops_sol_progress_temp = sol_change_temp }
     }
     
@@ -782,16 +784,22 @@ pops_update_standard_of_living = {
         # Calculate how many full points to subtract
         set_temp_variable = { sol_change_temp = pops_sol_progress_temp }
 		add_to_temp_variable = { sol_change_temp = 0.5 }
-        round_variable = sol_change_temp
+        round_temp_variable = sol_change_temp
         
-        add_to_temp_variable = { pops_sol@var:current_pop_token = sol_change_temp }
+        add_to_variable = { pops_sol@var:current_pop_token = sol_change_temp }
         subtract_from_temp_variable = { pops_sol_progress_temp = sol_change_temp }
     }
+
+	# if = {
+	# 	limit = { state = 219 }
+	# 	log = "Pop: [?current_pop_token.GetTokenKey] | Spending Target: [?pops_spending_target@var:current_pop_token], Spending: [?pops_spending@var:current_pop_token], Net Money: [?net_money_temp], Needs Spending: [?pops_needs_spending@var:current_pop_token]"
+	# 	log = "SoL Progress Change: [?net_target_temp], New Progress: [?pops_sol_progress_temp]"
+	# 	log = "Pop SoL Changed by [?sol_change_temp] to [?pops_sol@var:current_pop_token]"
+	# }
     
-    clamp_temp_variable = { var = pops_sol@var:current_pop_token min = 1 max = 200 }
+    clamp_variable = { var = pops_sol@var:current_pop_token min = 1 max = 200 }
     
     set_variable = { pops_sol_progress@var:current_pop_token = pops_sol_progress_temp }
-    set_variable = { pops_sol@var:current_pop_token = pops_sol_temp }
 }
 # Economic Booms/Busts
 check_economic_cycle = {
