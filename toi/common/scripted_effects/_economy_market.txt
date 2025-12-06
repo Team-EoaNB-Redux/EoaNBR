@@ -155,12 +155,23 @@
 			}
 		}
 
-        for_each_scope_loop = { # Each country gets their production
+        for_each_scope_loop = { # Each country gets their own production + trade (multiplied by portion of GDP in market - only if it's imports)
 			array = market_countries
 			for_each_loop = {
 				array = global.resource_token_array
 				value = r_type
 				set_variable = { resource_cost@var:r_type = local_production@var:r_type }
+
+				if = { # Trade
+					limit = {
+						check_variable = { market_leader:trade@var:r_type > 0 }
+					}
+					set_temp_variable = { trade_amount_temp = gdp_amount }
+					divide_temp_variable = { trade_amount_temp = market_leader:market_gdp }
+					multiply_temp_variable = { trade_amount_temp = market_leader:trade@var:r_type }
+					add_to_variable = { resource_cost@var:r_type = trade_amount_temp }
+				}
+
 				multiply_variable = { resource_cost@var:r_type = -1 }
 				round_variable = resource_cost@var:r_type
 			}
