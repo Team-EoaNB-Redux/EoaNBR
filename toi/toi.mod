@@ -1,4 +1,4 @@
-name="End of a New Beginning Redux ~ GitHub Edition"
+name="End of a New Beginning Redux ~ Steam Edition"
 version="0.3.12 Ars Bellica"
 tags={
 	"Alternative History"
@@ -68,6 +68,6 @@ replace_path="history/countries"
 replace_path="history/general"
 replace_path="history/states"
 replace_path="map/strategicregions"
-supported_version="1.17.2"
+supported_version="1.17.*"
 path="mod/EoaNBR/toi"
 remote_file_id="2861920794"
