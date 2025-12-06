@@ -155,6 +155,7 @@ _country_advance_time = {
 
     # 0.1 secs
     budget_update = yes
+	#bank_update = yes - disable until bank system is done
     national_debt_update = yes
 
     # Statistics - 0.2 to 1.2 secs
@@ -583,9 +584,6 @@ on_monthly_pops = {
 			set_variable = { pops_sol_progress@var:pop_token = 0 }
 		}
 	}
-    
-	# Update bank after doing pops
-	bank_update = yes
 
 	# Demographic Changes
     pops_population_growth = yes
@@ -667,7 +665,7 @@ pops_debt_monthly_repayment = {
 	divide_temp_variable = { x_temp = 1000 }
 	set_temp_variable = { target_type = 1 }
 	set_temp_variable = { target_temp = pop_token }
-	bank_repay_loan = yes
+	#bank_repay_loan_pops = yes  - Disabled until bank system is done
 	
 	# Amount is already accounted for in pops_spending, so no need for additional accounting
 }
@@ -713,7 +711,7 @@ pops_handle_surplus = {
 	divide_temp_variable = { x_temp = 1000 }
 	set_temp_variable = { target_type = 1 }
 	set_temp_variable = { target_temp = current_pop_token }
-	bank_repay_loan = yes
+	#bank_repay_loan_pops = yes  - Disabled until bank system is done
 
 	# Remove amount repaid to net_money_temp for bookkeeping
 	set_temp_variable = { money_temp = repay_temp_k }
@@ -745,7 +743,7 @@ pops_handle_deficit = {
 	set_temp_variable = { target_type = 1 }
 	set_temp_variable = { target_temp = current_pop_token }
 	set_temp_variable = { no_update_temp = 1 }
-	bank_loan_money = yes
+	#bank_loan_money_pops = yes - Disabled until bank system is done
 
 	# Add the actual borrowed amount back for accounting
 	set_temp_variable = { money_temp = borrow_temp_k }
@@ -753,65 +751,48 @@ pops_handle_deficit = {
 	add_to_temp_variable = { net_money_temp = money_temp }
 }
 pops_update_standard_of_living = {
-	# current_pop_token
-	# net_money_temp
-
-	# Standard of Living Progress
-
-	# Target Change = 3 * (Spending Target - Spending + Net Money) / Goods Spending
-	set_temp_variable = { net_target_temp = pops_spending_target@var:current_pop_token }
-	subtract_from_temp_variable = { net_target_temp = pops_spending@var:current_pop_token }
-	add_to_temp_variable = { net_target_temp = net_money_temp }
-	divide_temp_variable = { net_target_temp = pops_needs_spending@var:current_pop_token }
-	multiply_temp_variable = { net_target_temp = 3 }
-
-	set_temp_variable = { pops_sol_progress_temp = pops_sol_progress@var:current_pop_token }
-	set_temp_variable = { pops_sol_temp = pops_sol@var:current_pop_token }
-
-	if = {
-		limit = {
-			check_variable = { net_target_temp > 0.33 }
-		}
-		add_to_temp_variable = { pops_sol_progress_temp = net_target_temp }
-	}
-	else_if = {
-		limit = {
-			check_variable = { net_target_temp < -0.33 }
-		}
-		divide_temp_variable = { net_target_temp = 2 }
-		add_to_temp_variable = { pops_sol_progress_temp = net_target_temp }
-	}
-	if = {
-		limit = {
-			check_variable = { pops_sol_temp = 1 }
-			check_variable = { pops_sol_progress_temp < 0 }
-		}
-		set_temp_variable = { pops_sol_progress_temp = 0 }
-	}
-	clamp_temp_variable = { var = pops_sol_progress_temp min = -5 max = 5 }
-
-	#Standard of Living Changes
-	while_loop_effect = {
-		limit = {
-			check_variable = { pops_sol_progress_temp > 0.999 }
-		}
-		subtract_from_temp_variable = { pops_sol_progress_temp = 1 }
-		add_to_temp_variable = { pops_sol_temp = 1 }
-	}
-	while_loop_effect = {
-		limit = {
-			check_variable = { pops_sol_progress_temp < -0.999 }
-		}
-		add_to_temp_variable = { pops_sol_progress_temp = 1 }
-		subtract_from_temp_variable = { pops_sol_temp = 1 }
-	}
-
-	clamp_temp_variable = { var = pops_sol_temp min = 1 max = 200 }
-
-	set_variable = { pops_sol_progress@var:current_pop_token = pops_sol_progress_temp }
-	set_variable = { pops_sol@var:current_pop_token = pops_sol_temp }
+    # Parameters: current_pop_token, net_money_temp
+    
+    # Calculate Target Change = 3 * (Spending Target - Spending + Net Money) / Goods Spending
+    set_temp_variable = { net_target_temp = pops_spending_target@var:current_pop_token }
+    subtract_from_temp_variable = { net_target_temp = pops_spending@var:current_pop_token }
+    add_to_temp_variable = { net_target_temp = net_money_temp }
+    divide_temp_variable = { net_target_temp = pops_needs_spending@var:current_pop_token }
+    multiply_temp_variable = { net_target_temp = 3 }
+    
+    set_temp_variable = { pops_sol_progress_temp = pops_sol_progress@var:current_pop_token }
+    add_to_temp_variable = { pops_sol_progress_temp = net_target_temp }
+    
+    clamp_temp_variable = { var = pops_sol_progress_temp min = -5 max = 5 }
+    
+    if = {
+        limit = { check_variable = { pops_sol_progress_temp > 0.999 } }
+        
+        set_temp_variable = { sol_change_temp = pops_sol_progress_temp }
+		subtract_from_temp_variable = { sol_change_temp = 0.5 }
+        round_variable = sol_change_temp  # Get integer part
+        
+        add_to_temp_variable = { pops_sol@var:current_pop_token = sol_change_temp }
+        subtract_from_temp_variable = { pops_sol_progress_temp = sol_change_temp }
+    }
+    
+    if = {
+        limit = { check_variable = { pops_sol_progress_temp < -0.999 } }
+        
+        # Calculate how many full points to subtract
+        set_temp_variable = { sol_change_temp = pops_sol_progress_temp }
+		add_to_temp_variable = { sol_change_temp = 0.5 }
+        round_variable = sol_change_temp
+        
+        add_to_temp_variable = { pops_sol@var:current_pop_token = sol_change_temp }
+        subtract_from_temp_variable = { pops_sol_progress_temp = sol_change_temp }
+    }
+    
+    clamp_temp_variable = { var = pops_sol@var:current_pop_token min = 1 max = 200 }
+    
+    set_variable = { pops_sol_progress@var:current_pop_token = pops_sol_progress_temp }
+    set_variable = { pops_sol@var:current_pop_token = pops_sol_temp }
 }
-
 # Economic Booms/Busts
 check_economic_cycle = {
 	set_temp_variable = { total_temp = 0 }
