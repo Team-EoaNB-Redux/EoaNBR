@@ -391,22 +391,27 @@
 				array = global.pops_array
 				value = pop_token
 
-                set_temp_variable = { avg_earnings_temp = pops_earnings@var:pop_token }
-                divide_temp_variable = { avg_earnings_temp = pops@var:pop_token }
                 if = {
                     limit = {
-                        check_variable = { avg_earnings_temp < lower_earnings_limit }
+                        check_variable = { pops_earnings@var:pop_token > 0 }
                     }
-                    add_to_temp_variable = { lower_income_earnings = pops_earnings@var:pop_token }
-                }
-                else_if = {
-                    limit = {
-                        check_variable = { avg_earnings_temp < upper_earnings_limit }
-                    }
-                    add_to_temp_variable = { middle_income_earnings = pops_earnings@var:pop_token }
-                }
-                else = {
-                    add_to_temp_variable = { upper_income_earnings = pops_earnings@var:pop_token }
+					set_temp_variable = { avg_earnings_temp = pops_earnings@var:pop_token }
+					divide_temp_variable = { avg_earnings_temp = pops@var:pop_token }
+					if = {
+						limit = {
+							check_variable = { avg_earnings_temp < lower_earnings_limit }
+						}
+						add_to_temp_variable = { lower_income_earnings = pops_earnings@var:pop_token }
+					}
+					else_if = {
+						limit = {
+							check_variable = { avg_earnings_temp < upper_earnings_limit }
+						}
+						add_to_temp_variable = { middle_income_earnings = pops_earnings@var:pop_token }
+					}
+					else = {
+						add_to_temp_variable = { upper_income_earnings = pops_earnings@var:pop_token }
+					}
                 }
             }
 
@@ -475,6 +480,9 @@
         #Sales Tax
             set_variable = { sales_tax_revenue = 0 }
             every_controlled_state = {
+				limit = {
+					check_variable = { pops_needs_spending > 0 }
+				}
                 add_to_variable = { PREV.sales_tax_revenue = pops_needs_spending }
             }
             if = {
@@ -495,24 +503,30 @@
         #
 
         #Corporate
-            set_variable = { corporate_tax_revenue = pops_dividends }
-            if = {
-                limit = {
-                    check_variable = { corporate_tax_revenue < 0 }
-                }
-                set_variable = { corporate_tax_revenue = 0 }
-            }
-            if = {
-                limit = {
-                    check_variable = { corporate_tax_revenue > 1000 }
-                }
-                divide_variable = { corporate_tax_revenue = 100 }
-                multiply_variable = { corporate_tax_revenue = corporate_tax_percentage_actual }
-            }
-            else = {
-                multiply_variable = { corporate_tax_revenue = corporate_tax_percentage_actual }
-                divide_variable = { corporate_tax_revenue = 100 }
-            }
+			if = {
+				limit = { check_variable = { pops_dividends > 0 } }
+            	set_variable = { corporate_tax_revenue = pops_dividends }
+				if = {
+					limit = {
+						check_variable = { corporate_tax_revenue < 0 }
+					}
+					set_variable = { corporate_tax_revenue = 0 }
+				}
+				if = {
+					limit = {
+						check_variable = { corporate_tax_revenue > 1000 }
+					}
+					divide_variable = { corporate_tax_revenue = 100 }
+					multiply_variable = { corporate_tax_revenue = corporate_tax_percentage_actual }
+				}
+				else = {
+					multiply_variable = { corporate_tax_revenue = corporate_tax_percentage_actual }
+					divide_variable = { corporate_tax_revenue = 100 }
+				}
+			}
+			else = {
+				set_variable = { corporate_tax_revenue = 0 }
+			}
             
             set_variable = { corporate_tax_corruption = corporate_tax_revenue }
             multiply_variable = { corporate_tax_corruption = corruption_temp }
