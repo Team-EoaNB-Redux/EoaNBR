@@ -169,6 +169,23 @@
             clamp_variable ={ var = military_spending_min max = military_spending_max min = 0 }
             round_variable = military_spending_min
             
+            set_variable = { procurement_spending_max = 100 }
+            add_to_variable = { procurement_spending_max = modifier@procurement_spending_max_modifier }
+            set_temp_variable = { modifier_temp = modifier@procurement_spending_max_factor }
+            add_to_temp_variable = { modifier_temp = 1 }
+            multiply_variable = { procurement_spending_max = modifier_temp }
+            clamp_variable ={ var = procurement_spending_max max = 100 min = 0 }
+            round_variable = procurement_spending_max
+            
+            set_variable = { procurement_spending_min = 0 }
+            add_to_variable = { procurement_spending_min = modifier@procurement_spending_min_modifier }
+            set_temp_variable = { add_temp = 100 }
+            subtract_from_temp_variable = { add_temp = procurement_spending_min }
+            multiply_temp_variable = { add_temp = modifier@procurement_spending_min_factor }
+            add_to_variable = { procurement_spending_min = add_temp }
+            clamp_variable ={ var = procurement_spending_min max = procurement_spending_max min = 0 }
+            round_variable = procurement_spending_min
+            
             set_variable = { research_spending_max = 100 }
             add_to_variable = { research_spending_max = modifier@research_spending_max_modifier }
             set_temp_variable = { modifier_temp = modifier@research_spending_max_factor }
@@ -235,6 +252,7 @@
             clamp_variable = { var = export_tariff_percentage max = export_tariff_max min = export_tariff_min }
             
             clamp_variable = { var = military_spending_percentage max = military_spending_max min = military_spending_min }
+            clamp_variable = { var = procurement_spending_percentage max = procurement_spending_max min = procurement_spending_min }
             clamp_variable = { var = research_spending_percentage max = research_spending_max min = research_spending_min }
             clamp_variable = { var = construction_spending_percentage max = construction_spending_max min = construction_spending_min }
             clamp_variable = { var = subsidies_spending_percentage max = subsidies_spending_max min = subsidies_spending_min }
@@ -318,6 +336,11 @@
             add_to_variable = { military_spending_max_pos = max_pos_add }
             set_variable = { military_spending_min_pos = military_spending_min }
             subtract_from_variable = { military_spending_min_pos = min_pos_sub }
+            
+            set_variable = { procurement_spending_max_pos = procurement_spending_max }
+            add_to_variable = { procurement_spending_max_pos = max_pos_add }
+            set_variable = { procurement_spending_min_pos = procurement_spending_min }
+            subtract_from_variable = { procurement_spending_min_pos = min_pos_sub }
             
             set_variable = { research_spending_max_pos = research_spending_max }
             add_to_variable = { research_spending_max_pos = max_pos_add }
@@ -741,6 +764,28 @@
             multiply_temp_variable = { factor_temp = -10.0 }
             add_to_variable = { tax_investment_confidence_modifier_factor = factor_temp }
 
+			# PROCUREMENT
+            set_temp_variable = { factor_temp = procurement_spending_percentage }
+            divide_temp_variable = { factor_temp = 100 }
+
+			# Production Efficiency Max Equation: Y = X - 0.5
+			# Production Efficiency Gain Equation: Y = X - 0.5
+			# Production Cost Mult Equation: Y = max ((2*X)^2, 0.1)
+
+            set_variable = { procurement_spending_production_factory_max_efficiency_factor = factor_temp }
+			subtract_from_variable = { procurement_spending_production_factory_max_efficiency_factor = 0.5 }
+			clamp_variable = { var = procurement_spending_production_factory_max_efficiency_factor min = -0.4 max = 0.5 }
+
+            set_variable = { procurement_spending_production_factory_efficiency_gain_factor = factor_temp }
+			subtract_from_variable = { procurement_spending_production_factory_efficiency_gain_factor = 0.5 }
+			clamp_variable = { var = procurement_spending_production_factory_efficiency_gain_factor min = -0.4 max = 0.5 }
+
+			set_variable = { procurement_spending_production_cost_multiplier = factor_temp }
+            multiply_variable = { procurement_spending_production_cost_multiplier = 2 }
+            multiply_variable = { procurement_spending_production_cost_multiplier = procurement_spending_production_cost_multiplier }
+			clamp_variable = { var = procurement_spending_production_cost_multiplier min = 0.1 max = 4 }
+
+
             # MILITARY
             set_temp_variable = { factor_temp = 100 }
             subtract_from_temp_variable = { factor_temp = military_spending_percentage }
@@ -895,7 +940,7 @@
         add_to_temp_variable = { modifier_temp = 1 }
         multiply_variable = { military_payroll_spending = modifier_temp }
 
-        #Military Production
+        #Military Procurement
             set_variable = { military_production_resources_spending = 0 }
             set_temp_variable = { modifier_temp = modifier@military_production_cost_factor }
             add_to_temp_variable = { modifier_temp = 1 }
@@ -906,12 +951,12 @@
                 set_temp_variable = { spending_temp = resource_consumed@var:r_type }
                 multiply_temp_variable = { spending_temp = price@var:r_type }
                 multiply_temp_variable = { spending_temp = modifier_temp }
+				multiply_temp_variable = { spending_temp = procurement_spending_production_cost_multiplier }
                 add_to_variable = { military_production_resources_spending = spending_temp }
             }
             divide_variable = { military_production_resources_spending = modifier@bureaucratic_efficiency_factor }
         #
-        set_variable = { military_mandatory_spending = military_production_resources_spending }
-        add_to_variable = { military_mandatory_spending = military_production_payroll_spending }
+        set_variable = { military_mandatory_spending = military_production_payroll_spending }
         add_to_variable = { military_mandatory_spending = military_payroll_spending }
 
         set_variable = { modifier_spending = modifier@treasury_cost_monthly }
@@ -1118,6 +1163,7 @@
         add_to_variable = { discretionary_spending = construction_spending }
         add_to_variable = { discretionary_spending = research_spending }
         add_to_variable = { discretionary_spending = military_spending }
+        add_to_variable = { discretionary_spending = military_production_resources_spending }
 
         set_temp_variable = { local_debt_payment_temp = debt_to_national_bank_k }
         multiply_temp_variable = { local_debt_payment_temp = domestic_interest_rate }
@@ -1162,6 +1208,11 @@
         set_variable = { tax_stability_factor_actual = tax_stability_factor_factor }
         set_variable = { tax_war_support_factor_actual = tax_war_support_factor_factor }
         set_variable = { tax_investment_confidence_modifier_actual = tax_investment_confidence_modifier_factor }
+
+		# Procurement Spending
+		set_variable = { procurement_spending_production_factory_max_efficiency_factor_actual = procurement_spending_production_factory_max_efficiency_factor }
+		set_variable = { procurement_spending_production_factory_efficiency_gain_factor_actual = procurement_spending_production_factory_efficiency_gain_factor }
+		set_variable = { procurement_spending_production_cost_multiplier_actual = procurement_spending_production_cost_multiplier }
 
         # Military Spending
         set_variable = { military_spending_supply_consumption_factor_actual = military_spending_supply_consumption_factor }
@@ -1460,6 +1511,16 @@
         }
         budget_update = yes
     }
+    change_procurement_spending = {
+        #Scope: Country
+        #Increases/Decreases the Procurement Spending level
+        #INPUT:
+            #percent_change_temp - Amount to decrease it by. 1.0 increases it by 1%,  -10.0 decreases it by 10%
+
+        add_to_variable = { procurement_spending_percentage = percent_change_temp }
+        budget_clamp = yes
+        budget_update = yes
+    }
     change_intelligence_spending = {
         #Scope: Country
         #Increases/Decreases the Intelligence Spending level
@@ -1617,6 +1678,7 @@
         # Country Scope
 
         set_variable = { spending_piechart_military_percentage = military_spending }
+        add_to_variable = { spending_piechart_military_percentage = military_production_resources_spending }
         add_to_variable = { spending_piechart_military_percentage = military_mandatory_spending }
         divide_variable = { spending_piechart_military_percentage = spending }
         set_variable = { spending_piechart_government_percentage = administration_spending }
