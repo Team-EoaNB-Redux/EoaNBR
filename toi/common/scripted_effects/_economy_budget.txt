@@ -767,6 +767,7 @@
 			# PROCUREMENT
             set_temp_variable = { factor_temp = procurement_spending_percentage }
             divide_temp_variable = { factor_temp = 100 }
+			clamp_temp_variable = { var = factor_temp min = 0.1 max = 1 }
 
 			# Production Efficiency Max Equation: Y = X - 0.5
 			# Production Efficiency Gain Equation: Y = X - 0.5
@@ -774,16 +775,28 @@
 
             set_variable = { procurement_spending_production_factory_max_efficiency_factor = factor_temp }
 			subtract_from_variable = { procurement_spending_production_factory_max_efficiency_factor = 0.5 }
-			clamp_variable = { var = procurement_spending_production_factory_max_efficiency_factor min = -0.4 max = 0.5 }
 
             set_variable = { procurement_spending_production_factory_efficiency_gain_factor = factor_temp }
 			subtract_from_variable = { procurement_spending_production_factory_efficiency_gain_factor = 0.5 }
-			clamp_variable = { var = procurement_spending_production_factory_efficiency_gain_factor min = -0.4 max = 0.5 }
 
 			set_variable = { procurement_spending_production_cost_multiplier = factor_temp }
             multiply_variable = { procurement_spending_production_cost_multiplier = 2 }
             multiply_variable = { procurement_spending_production_cost_multiplier = procurement_spending_production_cost_multiplier }
-			clamp_variable = { var = procurement_spending_production_cost_multiplier min = 0.1 max = 4 }
+
+			set_variable = { procurement_spending_industrial_capacity_dockyard = factor_temp }
+			subtract_from_variable = { procurement_spending_industrial_capacity_dockyard = 0.5 }
+			if = { 
+				limit = { 
+					check_variable = { procurement_spending_industrial_capacity_dockyard < 0 }
+				}
+				multiply_variable = { procurement_spending_industrial_capacity_dockyard = -3 }
+				multiply_variable = { procurement_spending_industrial_capacity_dockyard = procurement_spending_industrial_capacity_dockyard }
+				multiply_variable = { procurement_spending_industrial_capacity_dockyard = -1 }
+			}
+			else = {
+				multiply_variable = { procurement_spending_industrial_capacity_dockyard = 3 }
+				multiply_variable = { procurement_spending_industrial_capacity_dockyard = procurement_spending_industrial_capacity_dockyard }
+			}
 
 
             # MILITARY
@@ -1213,6 +1226,7 @@
 		set_variable = { procurement_spending_production_factory_max_efficiency_factor_actual = procurement_spending_production_factory_max_efficiency_factor }
 		set_variable = { procurement_spending_production_factory_efficiency_gain_factor_actual = procurement_spending_production_factory_efficiency_gain_factor }
 		set_variable = { procurement_spending_production_cost_multiplier_actual = procurement_spending_production_cost_multiplier }
+		set_variable = { procurement_spending_industrial_capacity_dockyard_actual = procurement_spending_industrial_capacity_dockyard }
 
         # Military Spending
         set_variable = { military_spending_supply_consumption_factor_actual = military_spending_supply_consumption_factor }
