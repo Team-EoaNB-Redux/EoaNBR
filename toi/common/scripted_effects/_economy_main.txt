@@ -1227,6 +1227,83 @@ major_economic_boom_effect = {
             set_temp_variable = { percent_change_temp = 100 }
             change_military_spending = yes
         }
+		if = { # AI reduces procurement spending if not at war and spending too much
+			limit = {
+				check_variable = { procurement_spending_percentage > 50 }
+                check_variable = { net_budget < 0 }
+				has_war = no
+			}
+			if = { # Massive budget shortfall
+				limit = {
+					set_temp_variable = { budget_deficit_temp = net_budget }
+					divide_temp_variable = { budget_deficit_temp = gdp_amount }
+					check_variable = { budget_deficit_temp < -0.02 }
+				}
+				set_temp_variable = { percent_change_temp = 10 }
+				subtract_from_temp_variable = { percent_change_temp = procurement_spending_percentage }
+				change_procurement_spending = yes
+			}
+			else_if = { # Moderate budget shortfall
+				limit = {
+					set_temp_variable = { budget_deficit_temp = net_budget }
+					divide_temp_variable = { budget_deficit_temp = gdp_amount }
+					check_variable = { budget_deficit_temp < -0.01 }
+				}
+				set_temp_variable = { percent_change_temp = 25 }
+				subtract_from_temp_variable = { percent_change_temp = procurement_spending_percentage }
+				change_procurement_spending = yes
+			}
+			else = {
+				set_temp_variable = { percent_change_temp = 50 }
+				subtract_from_temp_variable = { percent_change_temp = procurement_spending_percentage }
+				change_procurement_spending = yes
+			}
+		}
+		else_if = {
+			limit = {
+				has_war = yes
+			}
+			if = { # AI increases procurement spending to max in major wars
+				limit = {
+					check_variable = { procurement_spending_percentage < 100 }
+					has_war = yes
+					enemies_strength_ratio > 0.5
+				}
+				set_temp_variable = { percent_change_temp = 100 }
+				subtract_from_temp_variable = { percent_change_temp = procurement_spending_percentage }
+				change_procurement_spending = yes
+			}
+			else_if = { # AI increases procurement spending if at war and not spending enough
+				limit = {
+					check_variable = { procurement_spending_percentage < 50 }
+					has_war = yes
+					enemies_strength_ratio < 0.2
+				}
+				set_temp_variable = { percent_change_temp = 50 }
+				subtract_from_temp_variable = { percent_change_temp = procurement_spending_percentage }
+				change_procurement_spending = yes
+			}
+			else_if = { # AI increases procurement spending if at war and not spending enough
+				limit = {
+					check_variable = { procurement_spending_percentage < 75 }
+					has_war = yes
+					enemies_strength_ratio > 0.2
+				}
+				set_temp_variable = { percent_change_temp = 75 }
+				subtract_from_temp_variable = { percent_change_temp = procurement_spending_percentage }
+				change_procurement_spending = yes
+			}
+		}
+		else_if = { # AI increases procurement spending if too low and making money
+			limit = {
+				check_variable = { procurement_spending_percentage < 25 }
+                check_variable = { net_budget > 0 }
+			}
+			set_temp_variable = { percent_change_temp = 25 }
+			subtract_from_temp_variable = { percent_change_temp = procurement_spending_percentage }
+			change_procurement_spending = yes
+		}
+
         if = { # AI will fund research if it's rich enough
             limit = {
                 is_ai = yes
