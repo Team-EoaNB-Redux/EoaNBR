@@ -999,7 +999,6 @@ major_economic_boom_effect = {
     ai_budget = {
         if = {
             limit = {
-                is_ai = yes
                 check_variable = { treasury > 100 }
                 check_variable = { national_debt_k > 0 }
             }
@@ -1008,186 +1007,38 @@ major_economic_boom_effect = {
             repay_debt = yes
         }
         
-        if = { # AI
+        if = { # Raise income if in debt or running a deficit
             limit = {
-                is_ai = yes
-                check_variable = { net_budget < 0 }
+				OR = {
+					check_variable = { net_budget < 0 }
+					check_variable = { national_debt_k > 0 }
+				}
             }
             if = { # USA loves import tariffs
                 limit = {
                     tag = USA
                     check_variable = { import_tariff_percentage < import_tariff_max }
                 }
-                set_temp_variable = { percent_change_temp = 100 }
-                change_import_tariff = yes
+                set_variable = { import_tariff_percentage = import_tariff_max }
+                set_variable = { export_tariff_percentage = 20 }
             }
             else = {
-                set_variable = { import_tariff_percentage = 10 }
+                set_variable = { import_tariff_percentage = 20 }
+                set_variable = { export_tariff_percentage = 20 }
             }
 
-            if = {
-                limit = {
-                    check_variable = { sales_tax_percentage < sales_tax_max }
-                }
-                set_temp_variable = { percent_change_temp = 5 }
-                if = {
-                    limit = {
-                        check_variable = { sales_tax_percentage > 0 }
-                        check_variable = { sales_tax_revenue > 0 }
-                    }
-                    set_temp_variable = { st_per = sales_tax_revenue }
-                    divide_temp_variable = { st_per = sales_tax_percentage }
-
-                    set_temp_variable = { percent_change_temp = net_budget }
-                    divide_temp_variable = { percent_change_temp = st_per }
-                    multiply_temp_variable = { percent_change_temp = -1 }
-                    add_to_temp_variable = { percent_change_temp = 0.5 }
-                    round_temp_variable = percent_change_temp
-                    if = {
-                        limit = {
-                            check_variable = { percent_change_temp < 5 }
-                        }
-                        set_temp_variable = { percent_change_temp = 5 }
-                    }
-                }
-                change_sales_tax = yes
-            }
-            else_if = {
-                limit = {
-                    check_variable = { income_tax_lower_strata_percentage < income_tax_lower_strata_max }
-                }
-                set_temp_variable = { percent_change_temp = 5 }
-                if = {
-                    limit = {
-                        check_variable = { income_tax_lower_strata_percentage > 0 }
-                        check_variable = { income_tax_lower_strata_revenue > 0 }
-                    }
-                    set_temp_variable = { st_per = income_tax_lower_strata_revenue }
-                    divide_temp_variable = { st_per = income_tax_lower_strata_percentage }
-
-                    set_temp_variable = { percent_change_temp = net_budget }
-                    divide_temp_variable = { percent_change_temp = st_per }
-                    multiply_temp_variable = { percent_change_temp = -1 }
-                    add_to_temp_variable = { percent_change_temp = 0.5 }
-                    round_temp_variable = percent_change_temp
-                    if = {
-                        limit = {
-                            check_variable = { percent_change_temp < 5 }
-                        }
-                        set_temp_variable = { percent_change_temp = 5 }
-                    }
-                }
-                change_lower_strata_income_tax = yes
-            }
-            else_if = {
-                limit = {
-                    check_variable = { income_tax_middle_strata_percentage < income_tax_middle_strata_max }
-                }
-                set_temp_variable = { percent_change_temp = 5 }
-                if = {
-                    limit = {
-                        check_variable = { income_tax_middle_strata_percentage > 0 }
-                        check_variable = { income_tax_middle_strata_revenue > 0 }
-                    }
-                    set_temp_variable = { st_per = income_tax_middle_strata_revenue }
-                    divide_temp_variable = { st_per = income_tax_middle_strata_percentage }
-
-                    set_temp_variable = { percent_change_temp = net_budget }
-                    divide_temp_variable = { percent_change_temp = st_per }
-                    multiply_temp_variable = { percent_change_temp = -1 }
-                    add_to_temp_variable = { percent_change_temp = 0.5 }
-                    round_temp_variable = percent_change_temp
-                    if = {
-                        limit = {
-                            check_variable = { percent_change_temp < 5 }
-                        }
-                        set_temp_variable = { percent_change_temp = 5 }
-                    }
-                }
-                change_middle_strata_income_tax = yes
-            }
-            else_if = {
-                limit = {
-                    check_variable = { income_tax_upper_strata_percentage < income_tax_upper_strata_max }
-                }
-                set_temp_variable = { percent_change_temp = 5 }
-                if = {
-                    limit = {
-                        check_variable = { income_tax_upper_strata_percentage > 0 }
-                        check_variable = { income_tax_upper_strata_revenue > 0 }
-                    }
-                    set_temp_variable = { st_per = income_tax_upper_strata_revenue }
-                    divide_temp_variable = { st_per = income_tax_upper_strata_percentage }
-
-                    set_temp_variable = { percent_change_temp = net_budget }
-                    divide_temp_variable = { percent_change_temp = st_per }
-                    multiply_temp_variable = { percent_change_temp = -1 }
-                    add_to_temp_variable = { percent_change_temp = 0.5 }
-                    round_temp_variable = percent_change_temp
-                    if = {
-                        limit = {
-                            check_variable = { percent_change_temp < 5 }
-                        }
-                        set_temp_variable = { percent_change_temp = 5 }
-                    }
-                }
-                change_upper_strata_income_tax = yes
-            }
+            set_variable = { sales_tax_percentage = sales_tax_max }
+            set_variable = { income_tax_lower_strata_percentage = income_tax_lower_strata_max }
+			set_variable = { income_tax_middle_strata_percentage = income_tax_middle_strata_max }
+			set_variable = { income_tax_upper_strata_percentage = income_tax_upper_strata_max }
         }
-        else_if = { # AI debt repayment
+        else_if = { # AI lowers taxes if no debt and running a surplus AND no war
             limit = {
-                is_ai = yes
-                check_variable = { national_debt_k > 0 }
-                set_temp_variable = { debt_amount_temp = 0.025 }
-                multiply_temp_variable = { debt_amount_temp = gdp_amount }
-                check_variable = { net_budget < debt_amount_temp }
-            }
-            if = {
-                limit = {
-                    check_variable = { sales_tax_percentage < sales_tax_max }
-                }
-                set_temp_variable = { percent_change_temp = 5 }
-                change_sales_tax = yes
-            }
-            else_if = {
-                limit = {
-                    check_variable = { income_tax_lower_strata_percentage < income_tax_lower_strata_max }
-                }
-                set_temp_variable = { percent_change_temp = 5 }
-                change_lower_strata_income_tax = yes
-            }
-            else_if = {
-                limit = {
-                    check_variable = { income_tax_middle_strata_percentage < income_tax_middle_strata_max }
-                }
-                set_temp_variable = { percent_change_temp = 5 }
-                change_middle_strata_income_tax = yes
-            }
-            else_if = {
-                limit = {
-                    check_variable = { income_tax_upper_strata_percentage < income_tax_upper_strata_max }
-                }
-                set_temp_variable = { percent_change_temp = 5 }
-                change_upper_strata_income_tax = yes
-            }
-        }
-        else_if = { # AI lowers taxes if no debt OR if has debt and is earning wayyy too much
-            limit = {
-                is_ai = yes
-                OR = {
-                    AND = {
-                        check_variable = { national_debt_k = 0 }
-                        set_temp_variable = { debt_amount_temp = 0.005 }
-                        multiply_temp_variable = { debt_amount_temp = gdp_amount }
-                        check_variable = { net_budget > debt_amount_temp }
-                    }
-                    AND = {
-                        check_variable = { national_debt_k > 0 }
-                        set_temp_variable = { debt_amount_temp = 0.04 }
-                        multiply_temp_variable = { debt_amount_temp = gdp_amount }
-                        check_variable = { net_budget > debt_amount_temp }
-                    }
-                }
+                has_war = no
+                check_variable = { national_debt_k = 0 }
+				set_temp_variable = { debt_amount_temp = 0.02 }
+				multiply_temp_variable = { debt_amount_temp = gdp_amount }
+				check_variable = { net_budget > debt_amount_temp }
             }
 
             if = {
@@ -1219,30 +1070,149 @@ major_economic_boom_effect = {
                 change_sales_tax = yes
             }
         }
-        if = { # AI always funds its military
+        if = { # AI always funds its military at war
             limit = {
-                is_ai = yes
-                check_variable = { military_spending_percentage < 100 }
+                has_war = yes
             }
-            set_temp_variable = { percent_change_temp = 100 }
-            change_military_spending = yes
+            set_variable = { military_spending_percentage = 100 }
         }
-        if = { # AI will fund research if it's rich enough
+		else_if = { # AI defunds military if losing a lot of money in peacetime
+			limit = {
+				has_war = no
+				set_temp_variable = { money_amount_temp = -0.01 }
+				multiply_temp_variable = { money_amount_temp = gdp_amount }
+				check_variable = { net_budget < money_amount_temp }
+			}
+			set_variable = { military_spending_percentage = 0 }
+		}
+		else_if = { # AI funds military moderately in peacetime if it has money
+			limit = {
+				has_war = no
+				set_temp_variable = { money_amount_temp = 0.01 }
+				multiply_temp_variable = { money_amount_temp = gdp_amount }
+				check_variable = { net_budget > money_amount_temp }
+				check_variable = { military_spending_percentage < 50 }
+			}
+			set_temp_variable = { percent_change_temp = 5 }
+			change_military_spending = yes
+		}
+		else_if = { # AI defunds military moderately in peacetime if high military spending
+			limit = {
+				has_war = no
+				check_variable = { military_spending_percentage > 75 }
+			}
+			set_variable = { military_spending_percentage = 50 }
+		}
+
+
+		if = { # AI reduces procurement spending if not at war and spending too much
+			limit = {
+				check_variable = { procurement_spending_percentage > 50 }
+                check_variable = { net_budget < 0 }
+				has_war = no
+			}
+			if = { # Massive budget shortfall
+				limit = {
+					set_temp_variable = { budget_deficit_temp = net_budget }
+					divide_temp_variable = { budget_deficit_temp = gdp_amount }
+					check_variable = { budget_deficit_temp < -0.02 }
+				}
+				set_variable = { procurement_spending_percentage = 10 }
+			}
+			else_if = { # Moderate budget shortfall
+				limit = {
+					set_temp_variable = { budget_deficit_temp = net_budget }
+					divide_temp_variable = { budget_deficit_temp = gdp_amount }
+					check_variable = { budget_deficit_temp < -0.01 }
+				}
+				set_variable = { procurement_spending_percentage = 25 }
+			}
+			else = {
+				set_variable = { procurement_spending_percentage = 50 }
+			}
+		}
+		else_if = {
+			limit = {
+				has_war = yes
+			}
+			if = { # AI increases procurement spending to max in major wars
+				limit = {
+					check_variable = { procurement_spending_percentage < 100 }
+					has_war = yes
+					enemies_strength_ratio > 0.5
+				}
+				set_variable = { procurement_spending_percentage = 100 }
+			}
+			else_if = { # AI increases procurement spending if at war and not spending enough
+				limit = {
+					check_variable = { procurement_spending_percentage < 50 }
+					has_war = yes
+					enemies_strength_ratio < 0.2
+				}
+				set_variable = { procurement_spending_percentage = 50 }
+			}
+			else_if = { # AI increases procurement spending if at war and not spending enough
+				limit = {
+					check_variable = { procurement_spending_percentage < 75 }
+					has_war = yes
+					enemies_strength_ratio > 0.2
+				}
+				set_variable = { procurement_spending_percentage = 75 }
+			}
+		}
+		else_if = { # AI increases procurement spending if too low and making money
+			limit = {
+				check_variable = { procurement_spending_percentage < 25 }
+                check_variable = { net_budget > 0 }
+			}
+			set_variable = { procurement_spending_percentage = 25 }
+		}
+
+        if = { # AI will fund research if it's rich enough & not in a massive deficit
             limit = {
-                is_ai = yes
-                check_variable = { gdp_per_capita > 2 }
+				set_temp_variable = { budget_deficit_temp = net_budget }
+				divide_temp_variable = { budget_deficit_temp = gdp_amount }
+				check_variable = { budget_deficit_temp > -0.02 }
+				OR = {
+                	check_variable = { gdp_per_capita > 4 }
+					AND = {
+						check_variable = { gdp_per_capita > 2 }
+						check_variable = { budget_deficit_temp > 0.02 }
+					}
+				}
             }
-            set_variable = { research_spending_percentage = 25 }
-            budget_update = yes
+            set_variable = { research_spending_percentage = 50 }
         }
         else_if = {
             limit = {
-                is_ai = yes
-                check_variable = { gdp_per_capita > 4 }
+				set_temp_variable = { budget_deficit_temp = net_budget }
+				divide_temp_variable = { budget_deficit_temp = gdp_amount }
+				OR = {
+                	check_variable = { gdp_per_capita > 4 }
+					check_variable = { budget_deficit_temp > -0.02 }
+				}
+				OR = {
+					check_variable = { gdp_per_capita > 2 }
+					check_variable = { budget_deficit_temp > 0.02 }
+				}
             }
-            set_variable = { research_spending_percentage = 50 }
-            budget_update = yes
+            set_variable = { research_spending_percentage = 25 }
         }
+		else_if = {
+			limit = {
+				check_variable = { net_budget < 0 }
+			}
+			set_variable = { research_spending_percentage = 0 }
+		}
+        budget_clamp = yes
+        
+        set_variable = { import_tariff_percentage_actual = import_tariff_percentage }
+        multiply_variable = { import_tariff_percentage_actual = modifier@bureaucratic_efficiency_factor }
+        set_variable = { export_tariff_percentage_actual = export_tariff_percentage }
+        multiply_variable = { export_tariff_percentage_actual = modifier@bureaucratic_efficiency_factor }
+
+        trade_update_value = yes
+        budget_update = yes
     }
     on_monthly_industry_ai = { # Adjusts employment_target
         set_temp_variable = { icm_temp = controller:modifier@investment_confidence_modifier }

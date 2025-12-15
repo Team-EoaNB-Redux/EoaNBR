@@ -1595,7 +1595,6 @@
 
 		# Revenue
 		set_variable = { revenue@token:subsistence_farm = revenue_goods@token:subsistence_farm }
-		if = { limit = { check_variable = { revenue_goods@token:subsistence_farm > 0 } } set_temp_variable = { revenue_temp = revenue_goods@token:subsistence_farm } }
 
 		# Expenses
 		set_variable = { expenses_payroll@token:subsistence_farm = revenue@token:subsistence_farm }
@@ -1610,8 +1609,14 @@
 		subtract_from_variable = { dividends@token:subsistence_farm = expenses@token:subsistence_farm }
 
 		# Productivity
-		set_variable = { productivity@token:subsistence_farm = revenue_temp }
-		if = { limit = { check_variable = { pops_workforce@token:peasants > 0 } } divide_variable = { productivity@token:subsistence_farm = pops_workforce@token:peasants } }
+		if = { 
+			limit = { check_variable = { pops_workforce@token:peasants > 0 } check_variable = { revenue_goods@token:peasants > 0 } } 
+			set_variable = { productivity@token:subsistence_farm = revenue_goods@token:subsistence_farm }
+			divide_variable = { productivity@token:subsistence_farm = pops_workforce@token:peasants }
+		}
+		else = {
+			set_variable = { productivity@token:subsistence_farm = revenue_temp }
+		}
 
 
 		set_variable = { profit@token:subsistence_farm = 0 }
