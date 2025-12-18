@@ -112,10 +112,11 @@
 		# Adds x number of the given industry type in the state. If provided a production/automation method that is too advanced (that you don't have tech for) 
 		# or the building doesn't support, then it will auto adjust.
 		# Negative values do NOT work. Will not do anything if given an invalid industry token for the state.
-		# Does NOT cost anything. financier_temp will simply end up being the owner
+		# By default does NOT cost anything. financier_temp will simply end up being the owner
 		add_x_industries = {
 			# x_temp 
 			# financer_temp
+			# cost_factor_temp
 			# industry_token
 			# production_method_temp
 			# automation_method_temp
@@ -157,13 +158,42 @@
 
 					add_to_variable = { update_state_econ_window = 1 }
 				}
+				if = {
+					limit = {
+						check_variable = { cost_factor_temp > 0 }
+					}
+					if = {
+						limit = {
+							check_variable = { financer_temp > 0 }
+						}
+						set_temp_variable = { is_government = 1 }
+					}
+					if = { limit = { get_total_construction_cost = yes always = yes } }
+					multiply_temp_variable = { total_construction_cost_temp = x_temp }
+					multiply_temp_variable = { total_construction_cost_temp = cost_factor_temp }
+					
+					if = {
+						limit = {
+							check_variable = { financer_temp > 0 }
+						}
+						var:financer_temp = {
+							set_temp_variable = { x_temp = total_construction_cost_temp }
+							multiply_temp_variable = { x_temp = -1 }
+							add_treasury = yes
+						}
+						custom_effect_tooltip = add_x_industries_cost_factor_tt
+					}
+				}
+			}
+			else = {
+				custom_effect_tooltip = add_x_industries_fail_tt
 			}
 			set_temp_variable = { x_temp = 0 }
 			set_temp_variable = { financer_temp = 0 }
 			set_temp_variable = { industry_token = 0 }
 			set_temp_variable = { production_method_temp = 0 }
 			set_temp_variable = { automation_method_temp = 0 }
-			set_temp_variable = { no_cost_temp = 0 }
+			set_temp_variable = { cost_factor_temp = 0 }
 		}
 
 		# Removes X buildings from the state. Negative values do NOT work. Any building which reaches size 0 will be removed from the state.

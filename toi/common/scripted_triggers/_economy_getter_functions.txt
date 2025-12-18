@@ -681,4 +681,30 @@
             }
         }
     }
+	get_total_construction_cost = {
+		# Inputs: industry_token, is_government, returns #total_construction_cost_temp
+		# State or Country scope
+		# Note setting is_government to 1 will apply government construction cost modifiers. This also gets reset at the end
+
+		if = { limit = { NOT = { check_variable = { production_method_temp = 0 } } } set_temp_variable = { pm_temp = production_method_temp } }
+		else_if = { limit = { has_variable = production_method@var:industry_token } set_temp_variable = { pm_temp = production_method@var:industry_token } }
+		else = { set_temp_variable = { pm_temp = controller:latest_production_method@var:v } }
+
+		if = { limit = { NOT = { check_variable = { automation_method_temp = 0 } } } set_temp_variable = { am_temp = automation_method_temp } }
+		else_if = { limit = { has_variable = automation_method@var:industry_token } set_temp_variable = { am_temp = automation_method@var:industry_token } }
+		else = { set_temp_variable = { am_temp = controller:latest_automation_method@var:v } }
+		
+		get_construction_cost = yes
+
+		set_temp_variable = { investment_cost_temp = global.start_construction_cost_multiplier }
+		multiply_temp_variable = { investment_cost_temp = total_construction_cost_temp }
+		add_to_temp_variable = { total_construction_cost_temp = investment_cost_temp }
+
+		if = {
+			limit = { check_variable = { is_government = 1 } }
+			divide_temp_variable = { total_construction_cost_temp = controller:modifier@government_investment_efficiency_factor }
+		}
+
+		set_temp_variable = { is_government = 0 }
+	}
 #

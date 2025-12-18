@@ -15,38 +15,63 @@
 		# size_temp - defaulted to 1
 		# State Scope
 
-		round_temp_variable = size_temp
+		custom_trigger_tooltip = {
+			tooltip = can_build_industry_tt
 
-		if = {
-			limit = {
-				is_in_array = { global.building_token_array = industry_token }
-			}
-			OR = {
-				check_variable = { buildings^num < modifier@local_industry_slots }
-				is_in_array = { buildings = industry_token }
-			}
-		}
-		if = {
-			limit = {
-				check_variable = { size_temp < 0 }
-			}
-			always = yes
-		}
-		else = {
-			if = { limit = { check_variable = { size_temp = 0 } } set_temp_variable = { size_temp = 1 } }
+			round_temp_variable = size_temp
 
-			if = { limit = { is_in_array = { global.rgo_token_array = industry_token } }
-				NOT = { check_variable = { deposits@var:industry_token < size_temp } }
-			}
-			
-			is_valid_industry = yes
 			if = {
 				limit = {
-					check_variable = { global.building_arable_land_use@var:industry_token > 0 }
+					check_variable = { size_temp < 0 }
 				}
-				set_temp_variable = { arable_land_use_temp = global.building_arable_land_use@var:industry_token }
-				multiply_temp_variable = { arable_land_use_temp = size_temp }
-				NOT = { check_variable = { arable_land_use_temp > arable_land_available } }
+				always = yes
+			}
+			else = {
+				is_valid_industry = yes
+				can_build_industry_no_tech_check = yes
+			}
+		}
+	}
+	can_build_industry_no_tech_check = {
+		# industry_token
+		# size_temp - defaulted to 1
+		# State Scope
+
+		custom_trigger_tooltip = {
+			tooltip = can_build_industry_tt
+
+			round_temp_variable = size_temp
+
+			if = {
+				limit = {
+					is_in_array = { global.building_token_array = industry_token }
+				}
+				OR = {
+					check_variable = { buildings^num < modifier@local_industry_slots }
+					is_in_array = { buildings = industry_token }
+				}
+			}
+			if = {
+				limit = {
+					check_variable = { size_temp < 0 }
+				}
+				always = yes
+			}
+			else = {
+				if = { limit = { check_variable = { size_temp = 0 } } set_temp_variable = { size_temp = 1 } }
+
+				if = { limit = { is_in_array = { global.rgo_token_array = industry_token } }
+					NOT = { check_variable = { deposits@var:industry_token < size_temp } }
+				}
+				
+				if = {
+					limit = {
+						check_variable = { global.building_arable_land_use@var:industry_token > 0 }
+					}
+					set_temp_variable = { arable_land_use_temp = global.building_arable_land_use@var:industry_token }
+					multiply_temp_variable = { arable_land_use_temp = size_temp }
+					NOT = { check_variable = { arable_land_use_temp > arable_land_available } }
+				}
 			}
 		}
 	}
