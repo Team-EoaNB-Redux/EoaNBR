@@ -5,24 +5,191 @@ country_event = {
 	is_triggered_only = yes
 
 	option = {
-		clear_array = ruling_coalition_array
-		add_to_array = { ruling_coalition_array = token:party_RUS_house_of_romanov }
-		clear_array = parties_array
-		add_to_array = { parties_array = token:party_RUS_house_of_romanov }
-		set_variable = { ideology@token:party_RUS_house_of_romanov = token:ideology_monarchist }
-		set_variable = { strength@token:party_RUS_house_of_romanov = 105 }
-		set_variable = { trend@token:party_RUS_house_of_romanov = -1 }
-		add_to_array = { parties_array = token:party_generic_conservative_party }
-		set_variable = { ideology@token:party_generic_conservative_party = token:ideology_conservative }
-		set_variable = { strength@token:party_generic_conservative_party = 5 }
-		set_variable = { trend@token:party_generic_conservative_party = 1 }
-		add_to_array = { parties_array = token:party_generic_liberal_party }
-		set_variable = { ideology@token:party_generic_liberal_party = token:ideology_liberal }
-		set_variable = { strength@token:party_generic_liberal_party = 1 }
-		set_variable = { trend@token:party_generic_liberal_party = 1 }
-		add_to_array = { parties_array = token:party_generic_orthodox_party }
-		set_variable = { ideology@token:party_generic_orthodox_party = token:ideology_fundamentalist }
-		set_variable = { strength@token:party_generic_orthodox_party = 2 }
-		set_variable = { trend@token:party_generic_orthodox_party = 0 }
+		name = internal_politics.1.a
+	}
+	option = {
+		country_event = internal_politics.2
+	}
+	option = {
+		clear_array = interest_groups_array
+		add_to_array = { interest_groups_array = 1 }
+		add_to_array = { interest_groups_array = 2 }
+		add_to_array = { interest_groups_array = 3 }
+		add_to_array = { interest_groups_array = 4 }
+		add_to_array = { interest_groups_array = 5 }
+		add_to_array = { interest_groups_array = 6 }
+	}
+}
+country_event = {
+	id = internal_politics.2
+	
+	is_triggered_only = yes
+
+	hidden = yes
+
+	immediate = {
+		every_country = {
+			clear_array = ruling_coalition_array
+			clear_array = parties_temp_array
+			clear_array = parties_array
+
+			if = {
+				limit = { centrism > 0.01 }
+				add_to_array = { parties_temp_array = token:party_generic_liberal_party }
+				set_variable = { strength@token:party_generic_liberal_party =  party_popularity_100@centrism }
+				set_variable = { ideology@token:party_generic_liberal_party = token:ideology_liberal }
+			}
+			if = {
+				limit = { traditional_conservatism > 0.01 }
+				add_to_array = { parties_temp_array = token:party_generic_conservative_party }
+				set_variable = { strength@token:party_generic_conservative_party =  party_popularity_100@traditional_conservatism }
+				set_variable = { ideology@token:party_generic_conservative_party = token:ideology_conservative }
+			}
+			if = {
+				limit = { autocracy > 0.01 }
+				add_to_array = { parties_temp_array = token:party_generic_monarchist_party }
+				set_variable = { strength@token:party_generic_monarchist_party =  party_popularity_100@autocracy }
+				set_variable = { ideology@token:party_generic_monarchist_party = token:ideology_monarchist }
+			}
+			if = {
+				limit = { social_egalitarianism > 0.01 }
+				add_to_array = { parties_temp_array = token:party_generic_progressive_party }
+				set_variable = { strength@token:party_generic_progressive_party =  party_popularity_100@social_egalitarianism }
+				set_variable = { ideology@token:party_generic_progressive_party = token:ideology_egalitarian }
+			}
+			if = {
+				limit = { collectivist_socialism > 0.01 }
+				add_to_array = { parties_temp_array = token:party_generic_socialist_party }
+				set_variable = { strength@token:party_generic_socialist_party =  party_popularity_100@collectivist_socialism }
+				set_variable = { ideology@token:party_generic_socialist_party = token:ideology_socialist }
+			}
+			if = {
+				limit = { vanguard_communism > 0.01 }
+				add_to_array = { parties_temp_array = token:party_generic_communist_party }
+				set_variable = { strength@token:party_generic_communist_party =  party_popularity_100@vanguard_communism }
+				set_variable = { ideology@token:party_generic_communist_party = token:ideology_communist }
+			}
+			if = {
+				limit = { fundamentalism > 0.01 }
+				add_to_array = { parties_temp_array = token:party_generic_fundamentalist_party }
+				set_variable = { strength@token:party_generic_fundamentalist_party =  party_popularity_100@fundamentalism }
+				set_variable = { ideology@token:party_generic_fundamentalist_party = token:ideology_fundamentalist }
+			}
+			if = {
+				limit = { chauvinist_populism > 0.01 }
+				add_to_array = { parties_temp_array = token:party_generic_peoples_party }
+				set_variable = { strength@token:party_generic_peoples_party =  party_popularity_100@chauvinist_populism }
+				set_variable = { ideology@token:party_generic_peoples_party = token:ideology_chauvinist }
+			}
+			if = {
+				limit = { anarchism > 0.01 }
+				add_to_array = { parties_temp_array = token:party_generic_agrarian_party }
+				set_variable = { strength@token:party_generic_agrarian_party =  party_popularity_100@anarchism }
+				set_variable = { ideology@token:party_generic_agrarian_party = token:ideology_anarchist }
+			}
+			if = {
+				limit = { radical_democracy > 0.01 }
+				add_to_array = { parties_temp_array = token:party_generic_independent_party }
+				set_variable = { strength@token:party_generic_independent_party =  party_popularity_100@radical_democracy }
+				set_variable = { ideology@token:party_generic_independent_party = token:ideology_reactionary }
+			}
+			for_each_loop = {
+				array = parties_temp_array
+				value = p
+				if = {
+					limit = {
+						current_party_ideology_group = centrism
+						check_variable = { ideology@var:p = token:ideology_liberal }
+					}
+					add_to_array = { ruling_coalition_array = p }
+				}
+				else_if = {
+					limit = {
+						current_party_ideology_group = traditional_conservatism
+						check_variable = { ideology@var:p = token:ideology_conservative }
+					}
+					add_to_array = { ruling_coalition_array = p }
+				}
+				else_if = {
+					limit = {
+						current_party_ideology_group = autocracy
+						check_variable = { ideology@var:p = token:ideology_monarchist }
+					}
+					add_to_array = { ruling_coalition_array = p }
+				}
+				else_if = {
+					limit = {
+						current_party_ideology_group = social_egalitarianism
+						check_variable = { ideology@var:p = token:ideology_egalitarian }
+					}
+					add_to_array = { ruling_coalition_array = p }
+				}
+				else_if = {
+					limit = {
+						current_party_ideology_group = collectivist_socialism
+						check_variable = { ideology@var:p = token:ideology_socialist }
+					}
+					add_to_array = { ruling_coalition_array = p }
+				}
+				else_if = {
+					limit = {
+						current_party_ideology_group = vanguard_communism
+						check_variable = { ideology@var:p = token:ideology_communist }
+					}
+					add_to_array = { ruling_coalition_array = p }
+				}
+				else_if = {
+					limit = {
+						current_party_ideology_group = fundamentalism
+						check_variable = { ideology@var:p = token:ideology_fundamentalist }
+					}
+					add_to_array = { ruling_coalition_array = p }
+				}
+				else_if = {
+					limit = {
+						current_party_ideology_group = chauvinist_populism
+						check_variable = { ideology@var:p = token:ideology_chauvinist }
+					}
+					add_to_array = { ruling_coalition_array = p }
+				}
+				else_if = {
+					limit = {
+						current_party_ideology_group = anarchism
+						check_variable = { ideology@var:p = token:ideology_anarchist }
+					}
+					add_to_array = { ruling_coalition_array = p }
+				}
+				else_if = {
+					limit = {
+						current_party_ideology_group = radical_democracy
+						check_variable = { ideology@var:p = token:ideology_reactionary }
+					}
+					add_to_array = { ruling_coalition_array = p }
+				}
+			}
+			for_each_loop = {
+				array = parties_temp_array
+				value = p
+				for_each_loop = {
+					array = parties_array
+					index = ii
+					value = pp
+					break = bb
+					if = {
+						limit = { check_variable = { strength@var:p > strength@var:pp } }
+						add_to_array = {
+							array = parties_array
+							value = p
+							index = ii
+						}
+						set_temp_variable = { bb = 1 }
+					}
+				}
+				if = {
+					limit = { check_variable = { bb = 0 } }
+					add_to_array = { parties_array = p }
+				}
+			}
+		}
 	}
 }
