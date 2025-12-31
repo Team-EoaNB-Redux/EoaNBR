@@ -1,5 +1,5 @@
-name="End of a New Beginning Redux ~ Steam Edition"
-version="0.3.13 Ars Bellica"
+name="End of a New Beginning Redux ~ GitHub Edition"
+version="0.3.14 Ars Bellica"
 tags={
 	"Alternative History"
 	"Events"
