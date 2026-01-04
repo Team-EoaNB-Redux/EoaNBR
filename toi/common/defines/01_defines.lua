@@ -120,6 +120,7 @@ NDefines.NNavy.OUT_OF_FUEL_RANGE_FACTOR = -0.95
 -- NDefines.NNavy.SUPREMACY_PER_SHIP_PER_IC = 0.1
 -- NDefines.NNavy.SUPREMACY_PER_SHIP_BASE = 500.0
 NDefines.NNavy.CONVOY_DEFENSE_MAX_CONVOY_TO_SHIP_RATIO	= 2.0		-- each ship in convoy defense mission can at most cover this many convoys without losing efficiency
+NDefines.NNavy.DOMINANCE_PER_SHIP_PER_SPEED_NEUTRAL = 10		-- was 20				-- ship speed where there is no penalty nor bonus to naval dominance, below or above this will be scaled accordingly with penalty or bonus, min value is 0
 
 NDefines.NAI.DEFAULT_LEGACY_VARIANT_CREATION_XP_CUTOFF_LAND = 10 -- 50
 NDefines.NAI.NAVY_PREFERED_MAX_SIZE = 25 -- 25
