@@ -1,3 +1,151 @@
+monthly_colonization = {
+	for_each_scope_loop = {
+		array = global.colony_states_array
+		update_colony = yes
+	}
+	for_each_loop = {
+		array = global.frontier_states_array
+		update_frontier = yes
+	}
+}
+set_colony = {
+	if = {
+		limit = {
+			has_dynamic_modifier = {
+				modifier = frontier_state
+			}
+		}
+		remove_dynamic_modifier = {
+			modifier = frontier_state
+		}
+	}
+	if = {
+		limit = {
+			PREV = { has_tech = tech_projects_overseas_interests }
+			OWNER = {
+				NOT = {
+					has_idea = institution_centralization
+				}
+			}
+		}
+		add_dynamic_modifier = {
+			modifier = colony_state
+		}
+		if = {
+			limit = {
+				NOT = {
+					is_in_array = {
+						array = global.colony_states_array
+						value = THIS.id
+					}
+				}
+			}
+			add_to_array = {
+				array = global.colony_states_array
+				value = THIS.id
+			}
+		}
+		if = {
+			limit = {
+				NOT = {
+					is_in_array = {
+						array = colonizing_country_array
+						value = PREV.id
+					}
+				}
+			}
+			add_to_array = {
+				array = colonizing_country_array
+				value = PREV.id
+			}
+		}
+	}
+}
+update_colony = {
+	if = {
+		limit = { OWNER = { has_idea = institution_centralization } }
+		for_each_scope_loop = {
+			array = colony_countries_array
+			news_event = colonization.4
+		}
+		news_event = colonization.5
+		clear_colony = yes
+	}
+	else = {
+		for_each_loop = {
+			array = colony_countries_array
+			value = colonizer
+
+			set_temp_variable = { colonization_progress_modifier = 1 }
+			add_to_temp_variable = { colonization_progress_modifier = var:colonizer.modifier@monthly_colonization_speed_modifier }
+
+			set_temp_variable = { colonization_progress_factor = 1 }
+			add_to_temp_variable = { colonization_progress_factor = var:colonizer.modifier@monthly_colonization_speed_factor }
+			add_to_temp_variable = { colonization_progress_factor = modifier@monthly_colonization_speed_factor }
+			
+			if = {
+				limit = {
+					check_variable = {
+						colonization_progress_factor < 0
+					}
+				}
+				set_temp_variable = { colonization_progress_factor = 0 }
+			}
+			multiply_temp_variable = { colonization_progress_modifier = colonization_progress_factor }
+
+			add_to_variable = { colonization_progress@var:colonizer = colonization_progress_modifier }
+			if = {
+				limit = { check_variable = { colonization_progress@var:colonizer > 99.9 } }
+				set_temp_variable = { b = 1 }
+				set_temp_variable = { successful_colonizer = colonizer }
+				complete_colony = yes
+			}
+		}
+	}
+}
+complete_colony = {
+	OWNER = { news_event = colonization.1 }
+	for_each_loop = {
+		array = colony_countries_array
+		value = failed_colonizers
+
+		if = {
+			limit = {
+				NOT = { check_variable = { successful_colonizer = failed_colonizer } }
+				news_event = colonization.2
+			}
+		}
+		else = {
+			news_event = colonization.3
+			if = {
+				limit = {
+					NOT = { has_idea = institution_rationalism }
+				}
+				remove_core_of = OWNER
+			}
+			transfer_state_to = var:successful_colonizer
+		}
+	}
+	clear_colony = yes
+}
+clear_colony = {
+	remove_from_array = {
+		array = global.colony_states_array
+		value = THIS.id
+	}
+	for_each_loop = {
+		array = colony_countries_array
+		value = vv
+		clear_variable = colonization_progress@var:vv
+	}
+	clear_array = colony_countries_array
+	remove_dynamic_modifier = {
+		modifier = colony_state
+	}
+}
+
+
+
 eoanbr_colonize_setup = {
 	# state_scope
 	# THIS - STATE
