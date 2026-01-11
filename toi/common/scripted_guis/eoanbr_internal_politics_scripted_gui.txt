@@ -44,6 +44,15 @@ scripted_gui = {
 			selected_political_group_button_visible = {
 				check_variable = { internal_politics_overview_selected_party  = v }
 			}
+			political_group_ruling_coalition_hue_visible = {
+				check_variable = { v = token:ruling_coalition }
+			}
+			political_group_oppositional_parties_hue_visible = {
+				check_variable = { v = token:oppositional_parties }
+			}
+			political_group_ousted_parties_hue_visible = {
+				check_variable = { v = token:ousted_parties }
+			}
 		}
 
 		effects = {
@@ -54,29 +63,87 @@ scripted_gui = {
 				internal_politics_overview_party_interest_groups_toggle = yes
 			}
 			unselected_political_group_button_click = {
-				set_variable = { internal_politics_overview_selected_party = v }
+				if = {
+					limit = {
+						OR = {
+							check_variable = { v = token:ruling_coalition }
+							check_variable = { v = token:oppositional_parties }
+							check_variable = { v = token:ousted_parties }
+						}
+					}
+					log = "[?i]"
+					if = {
+						limit = { check_variable = { political_overview_open@var:v = 1 } }
+						for_each_loop = {
+							array = parties@var:v
+							value = p
+							remove_from_array = {
+								array = politics_overview_array
+								value = p
+							}
+						}
+						set_variable = { political_overview_open@var:v = 0 }
+					}
+					else = {
+						set_temp_variable = { ii = i }
+						add_to_temp_variable = { ii = 1 }
+						for_each_loop = {
+							array = parties@var:v
+							value = p
+							add_to_array = {
+								array = politics_overview_array
+								value = p
+								index = ii
+							}
+							add_to_temp_variable = { ii = 1 }
+						}
+						set_variable = { political_overview_open@var:v = 1 }
+					}
+				}
+				else = {
+					set_variable = { internal_politics_overview_selected_party = v }
+				}
 			}
 			unselected_political_group_button_right_click = {
 				internal_politics_overview_party_interest_groups_toggle = yes
+			}
+
+
+			#DEBUG
+			debug_overview1_click = {
+				generate_parties = yes
+			} 
+			debug_overview2_click = {
+				generate_coalitions = yes
+			}
+			debug_overview3_click = {
+				reset_coalitions = yes
+			}
+			debug_overview4_click = {
+				clear_politics = yes
 			}
 		} 
 
 		properties = { 
 			coalition_strength_trend_icon = {
 				image = "[GetCoalitionStrengthTrendInList]"
-			}
+			} 
 			political_group_strength_trend_icon = {
 				image = "[GetPoliticalGroupStrengthTrendInList]"
 			}
-			party_strength_progress_bar = { 
+			political_group_strength_progress_bar = { 
 				frame = strength@var:v
+				image = "[GetPoliticalGroupCoalitionStrengthBar]"
 			}
 		}
 
 		dynamic_lists = {
 			politics_overview_list = {
 				array = politics_overview_array
+				# array = parties_array
 				entry_container = political_group_item
+				value = v
+				index = i
 			}
 			parties_list = {
 				array = parties_array

@@ -1,36 +1,4 @@
-define_party_liberal_party = {
-	set_variable = { usa.color@token:party_liberal_party = token:color_red }
-	set_variable = { usa.type@token:party_liberal_party = token:pr_big_tent }
-	set_variable = { usa.name_override@token:party_liberal_party = token:party_republican_party }
 
-	set_variable = { usa.treasury@token:party_liberal_party = 0 }
-
-	clear_array =  usa.interest_groups@token:party_liberal_party
-
-	add_to_array = { usa.interest_groups@token:party_liberal_party = token:ig_capitalists }
-	add_to_array = { usa.interest_groups@token:party_liberal_party = token:ig_moralists }
-	add_to_array = { usa.interest_groups@token:party_liberal_party = token:ig_urbanists }
-}
-define_party_conservative_party = {
-	set_variable = { usa.color@token:party_conservative_party = token:color_light_blue }
-	set_variable = { usa.type@token:party_conservative_party = token:pr_big_tent }
-	set_variable = { usa.name_override@token:party_conservative_party = token:party_democratic_party }
-
-	clear_array = usa.interest_groups@token:party_conservative_party
-	
-	add_to_array = { usa.interest_groups@token:party_conservative_party = token:ig_leader }
-	add_to_array = { usa.interest_groups@token:party_conservative_party = token:ig_aristocrats }
-	add_to_array = { usa.interest_groups@token:party_conservative_party = token:ig_ruralists }
-	add_to_array = { usa.interest_groups@token:party_conservative_party = token:ig_ruralists }
-}
-
-define_ig_moralists = {
-	set_variable = { usa.ig_tech_unlock@token:ig_moralists = token:tech_humanities_capitalism }
-	set_variable = { usa.ig_category@token:ig_moralists = token:ig_type_ideological }
-
-	clear_array = global.ig_ideologies@token:ig_moralists
-
-}
 
 add_party_to_country = {
 	# party_temp - <party_token> any of the parties to be used in code
@@ -536,46 +504,9 @@ internal_politics_overview_party_interest_groups_toggle = {
 	}
 }
 
-define_trait_free_market = {
-	set_variable = { global.trait_tech_unlock@token:trait_free_market = token:tech_humanities_capitalism }
 
-	clear_array = global.trait_stance_type@token:trait_free_market
-	clear_array = global.trait_stance_position@token:trait_free_market
-	add_to_array = { global.trait_stance_type@token:trait_free_market = token:policy_free_trade }
-	add_to_array = { global.trait_stance_position@token:trait_free_market = 5 }
-	add_to_array = { global.trait_stance_type@token:trait_free_market = token:policy_protectionism }
-	add_to_array = { global.trait_stance_position@token:trait_free_market = -3 }
-}
 
-define_ig_egalitarians = {
-    # Interest Group: Egalitarians - Egalitarian Interest Group
-
-    # If ideologies conflict with each other, position score gets summed together to determine overall stance.
-    clear_array = global.ig_traits@token:interest_group_egalitarians
-    add_to_array = { global.ig_traits@token:interest_group_egalitarians = token:trait_abolitionist }
-    add_to_array = { global.ig_traits@token:interest_group_egalitarians = token:trait_republican }
-}
-
-define_ig_radical_republicans = {
-    # Interest Group: Radical Republicans - Egalitarian Interest Group
-    set_variable = { ig_name@token:interest_group_egalitarians = token:ig_radical_republicans }
-
-    # If ideologies conflict with each other, position score gets summed together to determine overall stance.
-    clear_array = ig_traits@token:interest_group_egalitarians
-    for_each_loop = {
-        array = global.ig_traits@token:interest_group_egalitarians
-        value = trait_temp
-        add_to_array = { ig_traits@token:interest_group_egalitarians = token:trait_temp }
-    }
-
-    add_to_array = { ig_traits@token:interest_group_egalitarians = token:trait_abolitionist } # Slavery
-    add_to_array = { ig_traits@token:interest_group_egalitarians = token:trait_republican } # Government
-    add_to_array = { ig_traits@token:interest_group_egalitarians = token:trait_protectionist } # Trade
-    add_to_array = { ig_traits@token:interest_group_egalitarians = token:trait_capitalist } # Economy
-    add_to_array = { ig_traits@token:interest_group_egalitarians = token:trait_pro_welfare } # Welfare
-}
-
-eoanbr_government_setup = {
+government_setup = {
 	if = {
 		limit = {
 			check_variable = { party@token:ideology_communist = 0 }
@@ -646,1079 +577,418 @@ eoanbr_government_setup = {
 
 politics_overview_reset = {
 	clear_array = politics_overview_array
-	for_each_loop = {
-		array = parties_array
-		value = v
-		add_to_array = { politics_overview_array = v }
+	set_variable = { political_overview_open@token:ruling_coalition = 0 }
+	set_variable = { political_overview_open@token:oppositional_parties = 0 }
+	set_variable = { political_overview_open@token:ousted_parties = 0 }
+	if = {
+		limit = {
+			check_variable = { parties@token:ruling_coalition^num > 0 }
+		}
+		set_variable = { political_overview_open@token:ruling_coalition = 1 }
+		add_to_array = {
+			array = politics_overview_array
+			value = token:ruling_coalition
+		}
+		set_variable = { strength@token:ruling_coalition = 0 }
+		for_each_loop = {
+			array = parties@token:ruling_coalition
+			value = p
+			add_to_array = {
+				array = politics_overview_array
+				value = p
+			}
+			add_to_variable = {
+				var = strength@token:ruling_coalition
+				value = strength@var:p
+			}
+		}
+	}
+	if = {
+		limit = {
+			check_variable = { parties@token:oppositional_parties^num > 0 }
+		}
+		set_variable = { political_overview_open@token:oppositional_parties = 1 }
+		add_to_array = { 
+			array = politics_overview_array
+			value = token:oppositional_parties
+		}
+		set_variable = { strength@token:oppositional_parties = 0 }
+		for_each_loop = {
+			array = parties@token:oppositional_parties
+			value = p
+			add_to_array = {
+				array = politics_overview_array
+				value = p
+			}
+			add_to_variable = {
+				var = strength@token:oppositional_parties
+				value = strength@var:p
+			}
+		}
+	}
+	if = {
+		limit = {
+			check_variable = { parties@token:ousted_parties^num > 0 }
+		}
+		set_variable = { political_overview_open@token:ousted_parties = 1 }
+		add_to_array = {
+			array = politics_overview_array
+			value = token:ousted_parties
+		}
+		set_variable = { strength@token:ousted_parties = 0 }
+		for_each_loop = {
+			array = parties@token:ousted_parties
+			value = p
+			add_to_array = {
+				array = politics_overview_array
+				value = p
+			}
+			add_to_variable = {
+				var = strength@token:ousted_parties
+				value = strength@var:p
+			}
+		}
 	}
 }
 
+generate_parties = {
+	clear_array =  parties_array
+
+	if = {
+		limit = { centrism > 0.01 }
+		add_to_temp_array = { parties_temp_array = token:party_liberal_party }
+		set_variable = { strength@token:party_liberal_party =  party_popularity_100@centrism }
+		set_variable = { ideology@token:party_liberal_party = token:ig_liberals }
+	}
+	if = {
+		limit = { traditional_conservatism > 0.01 }
+		add_to_temp_array = { parties_temp_array = token:party_conservative_party }
+		set_variable = { strength@token:party_conservative_party =  party_popularity_100@traditional_conservatism }
+		set_variable = { ideology@token:party_conservative_party = token:ig_conservatives }
+	}
+	if = {
+		limit = { autocracy > 0.01 }
+		add_to_temp_array = { parties_temp_array = token:party_monarchist_party }
+		set_variable = { strength@token:party_monarchist_party =  party_popularity_100@autocracy }
+		set_variable = { ideology@token:party_monarchist_party = token:ig_monarchs }
+	}
+	if = {
+		limit = { social_egalitarianism > 0.01 }
+		add_to_temp_array = { parties_temp_array = token:party_progressive_party }
+		set_variable = { strength@token:party_progressive_party =  party_popularity_100@social_egalitarianism }
+		set_variable = { ideology@token:party_progressive_party = token:ig_egaliterians }
+	}
+	if = {
+		limit = { collectivist_socialism > 0.01 }
+		add_to_temp_array = { parties_temp_array = token:party_socialist_party }
+		set_variable = { strength@token:party_socialist_party =  party_popularity_100@collectivist_socialism }
+		set_variable = { ideology@token:party_socialist_party = token:ig_collectivist_socialist }
+	}
+	if = {
+		limit = { vanguard_communism > 0.01 }
+		add_to_temp_array = { parties_temp_array = token:party_communist_party }
+		set_variable = { strength@token:party_communist_party =  party_popularity_100@vanguard_communism }
+		set_variable = { ideology@token:party_communist_party = token:ig_communists }
+	}
+	if = {
+		limit = { fundamentalism > 0.01 }
+		add_to_temp_array = { parties_temp_array = token:party_fundamentalist_party }
+		set_variable = { strength@token:party_fundamentalist_party =  party_popularity_100@fundamentalism }
+		set_variable = { ideology@token:party_fundamentalist_party = token:ig_clergy }
+	}
+	if = {
+		limit = { chauvinist_populism > 0.01 }
+		add_to_temp_array = { parties_temp_array = token:party_peoples_party }
+		set_variable = { strength@token:party_peoples_party =  party_popularity_100@chauvinist_populism }
+		set_variable = { ideology@token:party_peoples_party = token:ig_chauvinists }
+	}
+	if = {
+		limit = { anarchism > 0.01 }
+		add_to_temp_array = { parties_temp_array = token:party_agrarian_party }
+		set_variable = { strength@token:party_agrarian_party =  party_popularity_100@anarchism }
+		set_variable = { ideology@token:party_agrarian_party = token:ig_anarchists }
+	}
+	if = {
+		limit = { radical_democracy > 0.01 }
+		add_to_temp_array = { parties_temp_array = token:party_independent_party }
+		set_variable = { strength@token:party_independent_party =  party_popularity_100@radical_democracy }
+		set_variable = { ideology@token:party_independent_party = token:ig_reactionaries }
+	}
+	for_each_loop = {
+		array = parties_temp_array
+		value = p
+		for_each_loop = {
+			array = parties_array
+			index = ii
+			value = pp
+			break = bb
+			if = {
+				limit = { check_variable = { strength@var:p > strength@var:pp } }
+				add_to_array = {
+					array = parties_array
+					value = p
+					index = ii
+				}
+				set_temp_variable = { bb = 1 }
+			}
+		}
+		if = {
+			limit = { check_variable = { bb = 0 } }
+			add_to_array = { parties_array = p }
+		}
+	}
+}
+
+generate_coalitions = {
+	clear_array = parties@token:ruling_coalition
+	clear_array = parties@token:oppositional_parties
+	clear_array = parties@token:ousted_parties
+
+	# Temp Assignment for Ruling Party
+		for_each_loop = {
+			array = parties_array
+			value = p
+			if = {
+				limit = {
+					has_government = centrism
+					check_variable = { ideology@var:p = token:ig_liberals }
+				}
+				add_to_array = { parties@token:ruling_coalition = p }
+				set_temp_variable = {
+					var = ii
+					value = ideology@var:p
+				}
+				log = "[?p.GetTokenLocalizedKey] - [?ii.GetTokenLocalizedKey]"
+			}
+			else_if = {
+				limit = {
+					has_government = traditional_conservatism
+					check_variable = { ideology@var:p = token:ig_conservatives }
+				}
+				add_to_array = { parties@token:ruling_coalition = p }
+				set_temp_variable = {
+					var = ii
+					value = ideology@var:p
+				}
+				log = "[?p.GetTokenLocalizedKey] - [?ii.GetTokenLocalizedKey]"
+			}
+			else_if = {
+				limit = {
+					has_government = autocracy
+					check_variable = { ideology@var:p = token:ig_monarchs }
+				}
+				add_to_array = { parties@token:ruling_coalition = p }
+				set_temp_variable = {
+					var = ii
+					value = ideology@var:p
+				}
+				log = "[?p.GetTokenLocalizedKey] - [?ii.GetTokenLocalizedKey]"
+			}
+			else_if = {
+				limit = {
+					has_government = social_egalitarianism
+					check_variable = { ideology@var:p = token:ig_egaliterians }
+				}
+				add_to_array = { parties@token:ruling_coalition = p }
+				set_temp_variable = {
+					var = ii
+					value = ideology@var:p
+				}
+				log = "[?p.GetTokenLocalizedKey] - [?ii.GetTokenLocalizedKey]"
+			}
+			else_if = {
+				limit = {
+					has_government = collectivist_socialism
+					check_variable = { ideology@var:p = token:ig_collectivist_socialist }
+				}
+				add_to_array = { parties@token:ruling_coalition = p }
+				set_temp_variable = {
+					var = ii
+					value = ideology@var:p
+				}
+				log = "[?p.GetTokenLocalizedKey] - [?ii.GetTokenLocalizedKey]"
+			}
+			else_if = {
+				limit = {
+					has_government = vanguard_communism
+					check_variable = { ideology@var:p = token:ig_communists }
+				}
+				add_to_array = { parties@token:ruling_coalition = p }
+				set_temp_variable = {
+					var = ii
+					value = ideology@var:p
+				}
+				log = "[?p.GetTokenLocalizedKey] - [?ii.GetTokenLocalizedKey]"
+			}
+			else_if = {
+				limit = {
+					has_government = fundamentalism
+					check_variable = { ideology@var:p = token:ig_clergy }
+				}
+				add_to_array = { parties@token:ruling_coalition = p }
+				set_temp_variable = {
+					var = ii
+					value = ideology@var:p
+				}
+				log = "[?p.GetTokenLocalizedKey] - [?ii.GetTokenLocalizedKey]"
+			}
+			else_if = {
+				limit = {
+					has_government = chauvinist_populism
+					check_variable = { ideology@var:p = token:ig_chauvinists }
+				}
+				add_to_array = { parties@token:ruling_coalition = p }
+				set_temp_variable = {
+					var = ii
+					value = ideology@var:p
+				}
+				log = "[?p.GetTokenLocalizedKey] - [?ii.GetTokenLocalizedKey]"
+			}
+			else_if = {
+				limit = {
+					has_government = anarchism
+					check_variable = { ideology@var:p = token:ig_anarchists }
+				}
+				add_to_array = { parties@token:ruling_coalition = p }
+				set_temp_variable = {
+					var = ii
+					value = ideology@var:p
+				}
+				log = "[?p.GetTokenLocalizedKey] - [?ii.GetTokenLocalizedKey]"
+			}
+			else_if = {
+				limit = {
+					has_government = radical_democracy
+					check_variable = { ideology@var:p = token:ig_reactionaries }
+				}
+				add_to_array = { parties@token:ruling_coalition = p }
+				set_temp_variable = {
+					var = ii
+					value = ideology@var:p
+				}
+				log = "[?p.GetTokenLocalizedKey] - [?ii.GetTokenLocalizedKey]"
+			}
+			else_if = {
+				limit = {
+					check_variable = {
+						ousted@var:p = 1
+					}
+				}
+				add_to_array = { parties@token:ousted_parties = p }
+				set_temp_variable = {
+					var = ii
+					value = ideology@var:p
+				}
+				log = "ousted [?p.GetTokenLocalizedKey] - [?ii.GetTokenLocalizedKey]"
+			}
+			else = {
+				add_to_array = { parties@token:oppositional_parties = var:p }
+				set_temp_variable = {
+					var = ii
+					value = ideology@var:p
+				}
+				log = "oppositional [?p.GetTokenLocalizedKey] - [?ii.GetTokenLocalizedKey]"
+			}
+		}
+	#
+}
 
 debug_generate_government = {
+	clear_array = parties@token:ruling_coalition
+	clear_array = parties_temp_array
+	clear_array = parties_array
 
-
-
-
-
-
-
-	every_country = {
-			clear_array = ruling_coalition_array
-			clear_array = parties_temp_array
-			clear_array = parties_array
-
-			if = {
-				limit = { centrism > 0.01 }
-				add_to_array = { parties_temp_array = token:party_liberal_party }
-				set_variable = { strength@token:party_liberal_party =  party_popularity_100@centrism }
-				set_variable = { ideology@token:party_liberal_party = token:ideology_liberal }
+	
+	for_each_loop = {
+		array = parties_temp_array
+		value = p
+		if = {
+			limit = {
+				has_government = centrism
+				check_variable = { ideology@var:p = token:ideology_liberal }
 			}
-			if = {
-				limit = { traditional_conservatism > 0.01 }
-				add_to_array = { parties_temp_array = token:party_conservative_party }
-				set_variable = { strength@token:party_conservative_party =  party_popularity_100@traditional_conservatism }
-				set_variable = { ideology@token:party_conservative_party = token:ideology_conservative }
+			add_to_array = { parties@token:ruling_coalition = p }
+		}
+		else_if = {
+			limit = {
+				has_government = traditional_conservatism
+				check_variable = { ideology@var:p = token:ideology_conservative }
 			}
-			if = {
-				limit = { autocracy > 0.01 }
-				add_to_array = { parties_temp_array = token:party_monarchist_party }
-				set_variable = { strength@token:party_monarchist_party =  party_popularity_100@autocracy }
-				set_variable = { ideology@token:party_monarchist_party = token:ideology_monarchist }
+			add_to_array = { parties@token:ruling_coalition = p }
+		}
+		else_if = {
+			limit = {
+				has_government = autocracy
+				check_variable = { ideology@var:p = token:ideology_monarchist }
 			}
-			if = {
-				limit = { social_egalitarianism > 0.01 }
-				add_to_array = { parties_temp_array = token:party_progressive_party }
-				set_variable = { strength@token:party_progressive_party =  party_popularity_100@social_egalitarianism }
-				set_variable = { ideology@token:party_progressive_party = token:ideology_egalitarian }
+			add_to_array = { parties@token:ruling_coalition = p }
+		}
+		else_if = {
+			limit = {
+				has_government = social_egalitarianism
+				check_variable = { ideology@var:p = token:ideology_egalitarian }
 			}
-			if = {
-				limit = { collectivist_socialism > 0.01 }
-				add_to_array = { parties_temp_array = token:party_socialist_party }
-				set_variable = { strength@token:party_socialist_party =  party_popularity_100@collectivist_socialism }
-				set_variable = { ideology@token:party_socialist_party = token:ideology_socialist }
+			add_to_array = { parties@token:ruling_coalition = p }
+		}
+		else_if = {
+			limit = {
+				has_government = collectivist_socialism
+				check_variable = { ideology@var:p = token:ideology_socialist }
 			}
-			if = {
-				limit = { vanguard_communism > 0.01 }
-				add_to_array = { parties_temp_array = token:party_communist_party }
-				set_variable = { strength@token:party_communist_party =  party_popularity_100@vanguard_communism }
-				set_variable = { ideology@token:party_communist_party = token:ideology_communist }
+			add_to_array = { parties@token:ruling_coalition = p }
+		}
+		else_if = {
+			limit = {
+				has_government = vanguard_communism
+				check_variable = { ideology@var:p = token:ideology_communist }
 			}
-			if = {
-				limit = { fundamentalism > 0.01 }
-				add_to_array = { parties_temp_array = token:party_fundamentalist_party }
-				set_variable = { strength@token:party_fundamentalist_party =  party_popularity_100@fundamentalism }
-				set_variable = { ideology@token:party_fundamentalist_party = token:ideology_fundamentalist }
+			add_to_array = { parties@token:ruling_coalition = p }
+		}
+		else_if = {
+			limit = {
+				has_government = fundamentalism
+				check_variable = { ideology@var:p = token:ideology_fundamentalist }
 			}
-			if = {
-				limit = { chauvinist_populism > 0.01 }
-				add_to_array = { parties_temp_array = token:party_peoples_party }
-				set_variable = { strength@token:party_peoples_party =  party_popularity_100@chauvinist_populism }
-				set_variable = { ideology@token:party_peoples_party = token:ideology_chauvinist }
+			add_to_array = { parties@token:ruling_coalition = p }
+		}
+		else_if = {
+			limit = {
+				has_government = chauvinist_populism
+				check_variable = { ideology@var:p = token:ideology_chauvinist }
 			}
-			if = {
-				limit = { anarchism > 0.01 }
-				add_to_array = { parties_temp_array = token:party_agrarian_party }
-				set_variable = { strength@token:party_agrarian_party =  party_popularity_100@anarchism }
-				set_variable = { ideology@token:party_agrarian_party = token:ideology_anarchist }
+			add_to_array = { parties@token:ruling_coalition = p }
+		}
+		else_if = {
+			limit = {
+				has_government = anarchism
+				check_variable = { ideology@var:p = token:ideology_anarchist }
 			}
-			if = {
-				limit = { radical_democracy > 0.01 }
-				add_to_array = { parties_temp_array = token:party_independent_party }
-				set_variable = { strength@token:party_independent_party =  party_popularity_100@radical_democracy }
-				set_variable = { ideology@token:party_independent_party = token:ideology_reactionary }
+			add_to_array = { parties@token:ruling_coalition = p }
+		}
+		else_if = {
+			limit = {
+				has_government = radical_democracy
+				check_variable = { ideology@var:p = token:ideology_reactionary }
 			}
-			for_each_loop = {
-				array = parties_temp_array
+			add_to_array = { parties@token:ruling_coalition = p }
+		}
+	}
+	for_each_loop = {
+		array = parties_array
+		value = p
+		if = {
+			limit = {
+				NOT = {
+					is_in_array = {
+						array = parties@token:ruling_coalition
+						value = p
+					}
+				}
+			}
+			add_to_array = {
+				array = parties@token:oppositional_parties
 				value = p
-				if = {
-					limit = {
-						current_party_ideology_group = centrism
-						check_variable = { ideology@var:p = token:ideology_liberal }
-					}
-					add_to_array = { ruling_coalition_array = p }
-				}
-				else_if = {
-					limit = {
-						current_party_ideology_group = traditional_conservatism
-						check_variable = { ideology@var:p = token:ideology_conservative }
-					}
-					add_to_array = { ruling_coalition_array = p }
-				}
-				else_if = {
-					limit = {
-						current_party_ideology_group = autocracy
-						check_variable = { ideology@var:p = token:ideology_monarchist }
-					}
-					add_to_array = { ruling_coalition_array = p }
-				}
-				else_if = {
-					limit = {
-						current_party_ideology_group = social_egalitarianism
-						check_variable = { ideology@var:p = token:ideology_egalitarian }
-					}
-					add_to_array = { ruling_coalition_array = p }
-				}
-				else_if = {
-					limit = {
-						current_party_ideology_group = collectivist_socialism
-						check_variable = { ideology@var:p = token:ideology_socialist }
-					}
-					add_to_array = { ruling_coalition_array = p }
-				}
-				else_if = {
-					limit = {
-						current_party_ideology_group = vanguard_communism
-						check_variable = { ideology@var:p = token:ideology_communist }
-					}
-					add_to_array = { ruling_coalition_array = p }
-				}
-				else_if = {
-					limit = {
-						current_party_ideology_group = fundamentalism
-						check_variable = { ideology@var:p = token:ideology_fundamentalist }
-					}
-					add_to_array = { ruling_coalition_array = p }
-				}
-				else_if = {
-					limit = {
-						current_party_ideology_group = chauvinist_populism
-						check_variable = { ideology@var:p = token:ideology_chauvinist }
-					}
-					add_to_array = { ruling_coalition_array = p }
-				}
-				else_if = {
-					limit = {
-						current_party_ideology_group = anarchism
-						check_variable = { ideology@var:p = token:ideology_anarchist }
-					}
-					add_to_array = { ruling_coalition_array = p }
-				}
-				else_if = {
-					limit = {
-						current_party_ideology_group = radical_democracy
-						check_variable = { ideology@var:p = token:ideology_reactionary }
-					}
-					add_to_array = { ruling_coalition_array = p }
-				}
 			}
-			for_each_loop = {
-				array = parties_temp_array
-				value = p
-				for_each_loop = {
-					array = parties_array
-					index = ii
-					value = pp
-					break = bb
-					if = {
-						limit = { check_variable = { strength@var:p > strength@var:pp } }
-						add_to_array = {
-							array = parties_array
-							value = p
-							index = ii
-						}
-						set_temp_variable = { bb = 1 }
-					}
-				}
-				if = {
-					limit = { check_variable = { bb = 0 } }
-					add_to_array = { parties_array = p }
-				}
-			}
-		}
-}
-
-
-#Reforms
-	reform_autarchy_article = {
-		if = {
-			limit = { is_ai = yes }
-			random_list = {
-				20 = {
-					modifier = { 
-						OR = {
-							has_autarchy_absolutism_enable = no
-							has_autarchy_absolutism_available = no
-						}
-						factor = 0
-					}
-					modifier = {
-						has_autarchy_absolutism_selectable = no
-						factor = 0.25
-					}
-					add_ideas = autarchy_absolutism
-				}
-				20 = {
-					modifier = {
-						OR = {
-							has_autarchy_delegated_authority_enable = no
-							has_autarchy_delegated_authority_available = no
-						}
-						factor = 0
-					}
-					modifier = {
-						has_autarchy_delegated_authority_selectable = no
-						factor = 0.25
-					}
-					add_ideas = autarchy_delegated_authority
-				}
-				20 = {
-					modifier = {
-						OR = {
-							has_autarchy_delegated_representation_enable = no
-							has_autarchy_delegated_representation_available = no
-						}
-						factor = 0
-					}
-					modifier = {
-						has_autarchy_delegated_representation_selectable = no
-						factor = 0.25
-					}
-					add_ideas = autarchy_delegated_representation
-				}
-				20 = {
-					modifier = {
-						OR = {
-							has_autarchy_democratic_centralization_enable = no
-							has_autarchy_democratic_centralization_available = no
-						}
-						factor = 0
-					}
-					modifier = {
-						has_autarchy_democratic_centralization_selectable = no
-						factor = 0.25
-					}
-					add_ideas = autarchy_democratic_centralization
-				}
-				20 = {
-					modifier = {
-						OR = {
-							has_autarchy_democratic_representation_enable = no
-							has_autarchy_democratic_representation_available = no
-						}
-						factor = 0
-					}
-					modifier = {
-						has_autarchy_democratic_representation_selectable = no
-						factor = 0.25
-					}
-					add_ideas = autarchy_democratic_representation
-				}
-				20 = {
-					modifier = {
-						OR = {
-							has_autarchy_minarchy_enable = no
-							has_autarchy_minarchy_available = no
-						}
-						factor = 0
-					}
-					modifier = {
-						has_autarchy_minarchy_selectable = no
-						factor = 0.25
-					}
-					add_ideas = autarchy_minarchy
-				}
-			}
-
-		}
-		else = {
-			#Fire Event Choice
-			country_event = eoanbr_government_events.1
 		}
 	}
-	reform_zealotry_article = {
-		if = {
-			limit = { is_ai = yes }
-			random_list = {
-				20 = {
-					modifier = {
-						OR = {
-							has_zealotry_fundamentalist_enable = no
-							has_zealotry_fundamentalist_available = no
-						}
-						factor = 0
-					}
-					modifier = {
-						has_zealotry_fundamentalist_selectable = no
-						factor = 0.25
-					}
-					add_ideas = zealotry_fundamentalist
-				}
-				20 = {
-					modifier = {
-						OR = {
-							has_zealotry_state_religion_enable = no
-							has_zealotry_state_religion_available = no
-						}
-						factor = 0
-					}
-					modifier = {
-						has_zealotry_state_religion_selectable = no
-						factor = 0.25
-					}
-					add_ideas = zealotry_state_religion
-				}
-				20 = {
-					modifier = {
-						OR = {
-							has_zealotry_secular_enable = no
-							has_zealotry_secular_available = no
-						}
-						factor = 0
-					}
-					modifier = {
-						has_zealotry_secular_selectable = no
-						factor = 0.25
-					}
-					add_ideas = zealotry_secular
-				}
-			}
-
-		}
-		else = {
-			#Fire Event Choice
-			country_event = eoanbr_government_events.1
-		}
-	}
-	reform_franchisement_article = {
-		if = {
-			limit = { is_ai = yes }
-			random_list = {
-				20 = {
-					modifier = {
-						OR = {
-							has_franchisement_none_enable = no
-							has_franchisement_none_available = no
-						}
-						factor = 0
-					}
-					modifier = {
-						has_franchisement_none_selectable = no
-						factor = 0.25
-					}
-					add_ideas = franchisement_none
-				}
-				20 = {
-					modifier = {
-						OR = {
-							has_franchisement_landed_enable = no
-							has_franchisement_landed_available = no
-						}
-						factor = 0
-					}
-					modifier = {
-						has_franchisement_landed_selectable = no
-						factor = 0.25
-					}
-					add_ideas = franchisement_landed
-				}
-				20 = {
-					modifier = {
-						OR = {
-							has_franchisement_wealth_enable = no
-							has_franchisement_wealth_available = no
-						}
-						factor = 0
-					}
-					modifier = {
-						has_franchisement_wealth_selectable = no
-						factor = 0.25
-					}
-					add_ideas = franchisement_wealth
-				}
-				20 = {
-					modifier = {
-						OR = {
-							has_franchisement_census_enable = no
-							has_franchisement_census_available = no
-						}
-						factor = 0
-					}
-					modifier = {
-						has_franchisement_census_selectable = no
-						factor = 0.25
-					}
-					add_ideas = franchisement_census
-				}
-				20 = {
-					modifier = {
-						OR = {
-							has_franchisement_universal_enable = no
-							has_franchisement_universal_available = no
-						}
-						factor = 0
-					}
-					modifier = {
-						has_franchisement_universal_selectable = no
-						factor = 0.25
-					}
-					add_ideas = franchisement_universal
-				}
-			}
-
-		}
-		else = {
-			#Fire Event Choice
-			country_event = eoanbr_government_events.1
-		}
-	}
-	reform_voting_system_article = {
-		if = {
-			limit = { is_ai = yes }
-			random_list = {
-				20 = {
-					modifier = {
-						OR = {
-							has_voting_system_none_enable = no
-							has_voting_system_none_available = no
-						}
-						factor = 0
-					}
-					modifier = {
-						has_voting_system_none_selectable = no
-						factor = 0.25
-					}
-					add_ideas = voting_system_none
-				}
-				20 = {
-					modifier = {
-						OR = {
-							has_voting_system_first_past_the_post_enable = no
-							has_voting_system_first_past_the_post_available = no
-						}
-						factor = 0
-					}
-					modifier = {
-						has_voting_system_first_past_the_post_selectable = no
-						factor = 0.25
-					}
-					add_ideas = voting_system_first_past_the_post
-				}
-				20 = {
-					modifier = {
-						OR = {
-							has_voting_system_weighted_proportional_enable = no
-							has_voting_system_weighted_proportional_available = no
-						}
-						factor = 0
-					}
-					modifier = {
-						has_voting_system_weighted_proportional_selectable = no
-						factor = 0.25
-					}
-					add_ideas = voting_system_weighted_proportional
-				}
-				20 = {
-					modifier = {
-						OR = {
-							has_voting_system_proportional_enable = no
-							has_voting_system_proportional_available = no
-						}
-						factor = 0
-					}
-					modifier = {
-						has_voting_system_proportional_selectable = no
-						factor = 0.25
-					}
-					add_ideas = voting_system_proportional
-				}
-				20 = {
-					modifier = {
-						OR = {
-							has_voting_system_proportional_enable = no
-							has_voting_system_proportional_available = no
-						}
-						factor = 0
-					}
-					modifier = {
-						has_voting_system_proportional_selectable = no
-						factor = 0.25
-					}
-					add_ideas = voting_system_proportional
-				}
-			}
-		}
-		else = {
-			#Fire Event Choice
-			country_event = eoanbr_government_events.1
-		}
-	}
-	reform_upper_chamber_article = {
-		if = {
-			limit = { is_ai = yes }
-			random_list = {
-				20 = {
-					modifier = {
-						OR = {
-							has_upper_chamber_ruling_party_only_enable = no
-							has_upper_chamber_ruling_party_only_available = no
-						}
-						factor = 0
-					}
-					modifier = {
-						has_upper_chamber_ruling_party_only_selectable = no
-						factor = 0.25
-					}
-					add_ideas = upper_chamber_ruling_party_only
-				}
-				20 = {
-					modifier = {
-						OR = {
-							has_upper_chamber_appointed_enable = no
-							has_upper_chamber_appointed_available = no
-						}
-						factor = 0
-					}
-					modifier = {
-						has_upper_chamber_appointed_selectable = no
-						factor = 0.25
-					}
-					add_ideas = upper_chamber_appointed
-				}
-				20 = {
-					modifier = {
-						OR = {
-							has_upper_chamber_two_per_district_enable = no
-							has_upper_chamber_two_per_district_available = no
-						}
-						factor = 0
-					}
-					modifier = {
-						has_upper_chamber_two_per_district_selectable = no
-						factor = 0.25
-					}
-					add_ideas = upper_chamber_two_per_district
-				}
-				20 = {
-					modifier = {
-						OR = {
-							has_upper_chamber_per_popularity_enable = no
-							has_upper_chamber_per_popularity_available = no
-						}
-						factor = 0
-					}
-					modifier = {
-						has_upper_chamber_per_popularity_selectable = no
-						factor = 0.25
-					}
-					add_ideas = upper_chamber_per_popularity
-				}
-			}
-
-		}
-		else = {
-			#Fire Event Choice
-			country_event = eoanbr_government_events.1
-		}
-	}
-	reform_lower_chamber_article = {
-		if = {
-			limit = { is_ai = yes }
-			random_list = {
-				20 = {
-					modifier = {
-						OR = {
-							has_lower_chamber_none_enable = no
-							has_lower_chamber_none_available = no
-						}
-						factor = 0
-					}
-					modifier = {
-						has_lower_chamber_none_selectable = no
-						factor = 0.25
-					}
-					add_ideas = lower_chamber_none
-				}
-				20 = {
-					modifier = {
-						OR = {
-							has_lower_chamber_ceremonial_enable = no
-							has_lower_chamber_ceremonial_available = no
-						}
-						factor = 0
-					}
-					modifier = {
-						has_lower_chamber_ceremonial_selectable = no
-						factor = 0.25
-					}
-					add_ideas = lower_chamber_ceremonial
-				}
-				20 = {
-					modifier = {
-						OR = {
-							has_lower_chamber_established_enable = no
-							has_lower_chamber_established_available = no
-						}
-						factor = 0
-					}
-					modifier = {
-						has_lower_chamber_established_selectable = no
-						factor = 0.25
-					}
-					add_ideas = lower_chamber_established
-				}
-				20 = {
-					modifier = {
-						OR = {
-							has_lower_chamber_executive_enable = no
-							has_lower_chamber_executive_available = no
-						}
-						factor = 0
-					}
-					modifier = {
-						has_lower_chamber_executive_selectable = no
-						factor = 0.25
-					}
-					add_ideas = lower_chamber_executive
-				}
-			}
-
-		}
-		else = {
-			#Fire Event Choice
-			country_event = eoanbr_government_events.1
-		}
-	}
-	reform_judiciary_article = {
-		if = {
-			limit = { is_ai = yes }
-			random_list = {
-				20 = {
-					modifier = {
-						OR = {
-							has_judiciary_no_court_enable = no
-							has_judiciary_no_court_available = no
-						}
-						factor = 0
-					}
-					modifier = {
-						has_judiciary_no_court_selectable = no
-						factor = 0.25
-					}
-					add_ideas = judiciary_no_court
-				}
-				20 = {
-					modifier = {
-						OR = {
-							has_judiciary_kangaroo_court_enable = no
-							has_judiciary_kangaroo_court_available = no
-						}
-						factor = 0
-					}
-					modifier = {
-						has_judiciary_kangaroo_court_selectable = no
-						factor = 0.25
-					}
-					add_ideas = judiciary_kangaroo_court
-				}
-				20 = {
-					modifier = {
-						OR = {
-							has_judiciary_high_judge_court_enable = no
-							has_judiciary_high_judge_court_available = no
-						}
-						factor = 0
-					}
-					modifier = {
-						has_judiciary_high_judge_court_selectable = no
-						factor = 0.25
-					}
-					add_ideas = judiciary_high_judge_court
-				}
-				20 = {
-					modifier = {
-						OR = {
-							has_judiciary_quasi_jury_court_enable = no
-							has_judiciary_quasi_jury_court_available = no
-						}
-						factor = 0
-					}
-					modifier = {
-						has_judiciary_quasi_jury_court_selectable = no
-						factor = 0.25
-					}
-					add_ideas = judiciary_quasi_jury_court
-				}
-				20 = {
-					modifier = {
-						OR = {
-							has_judiciary_jury_court_enable = no
-							has_judiciary_jury_court_available = no
-						}
-						factor = 0
-					}
-					modifier = {
-						has_judiciary_jury_court_selectable = no
-						factor = 0.25
-					}
-					add_ideas = judiciary_jury_court
-				}
-			}
-
-		}
-		else = {
-			#Fire Event Choice
-			country_event = eoanbr_government_events.1
-		}
-	}
-	reform_press_article = {
-		if = {
-			limit = { is_ai = yes }
-			random_list = {
-				20 = {
-					modifier = {
-						OR = {
-							has_press_none_enable = no
-							has_press_none_available = no
-						}
-						factor = 0
-					}
-					modifier = {
-						has_press_none_selectable = no
-						factor = 0.25
-					}
-					add_ideas = press_none
-				}
-				20 = {
-					modifier = {
-						OR = {
-							has_press_state_only_enable = no
-							has_press_state_only_available = no
-						}
-						factor = 0
-					}
-					modifier = {
-						has_press_state_only_selectable = no
-						factor = 0.25
-					}
-					add_ideas = press_state_only
-				}
-				20 = {
-					modifier = {
-						OR = {
-							has_press_restricted_enable = no
-							has_press_restricted_available = no
-						}
-						factor = 0
-					}
-					modifier = {
-						has_press_restricted_selectable = no
-						factor = 0.25
-					}
-					add_ideas = press_restricted
-				}
-				20 = {
-					modifier = {
-						OR = {
-							has_press_free_enable = no
-							has_press_free_available = no
-						}
-						factor = 0
-					}
-					modifier = {
-						has_press_free_selectable = no
-						factor = 0.25
-					}
-					add_ideas = press_free
-				}
-			}
-
-		}
-		else = {
-			#Fire Event Choice
-			country_event = eoanbr_government_events.1
-		}
-	}
-	reform_elections_frequency_article = {
-		if = {
-			limit = { is_ai = yes }
-			random_list = {
-				20 = {
-					modifier = {
-						OR = {
-							has_elections_frequency_none_enable = no
-							has_elections_frequency_none_available = no
-						}
-						factor = 0
-					}
-					modifier = {
-						has_elections_frequency_none_selectable = no
-						factor = 0.25
-					}
-					add_ideas = elections_frequency_none
-				}
-				20 = {
-					modifier = {
-						OR = {
-							has_elections_frequency_ten_enable = no
-							has_elections_frequency_ten_available = no
-						}
-						factor = 0
-					}
-					modifier = {
-						has_elections_frequency_ten_selectable = no
-						factor = 0.25
-					}
-					add_ideas = elections_frequency_ten
-				}
-				20 = {
-					modifier = {
-						OR = {
-							has_elections_frequency_eight_enable = no
-							has_elections_frequency_eight_available = no
-						}
-						factor = 0
-					}
-					modifier = {
-						has_elections_frequency_eight_selectable = no
-						factor = 0.25
-					}
-					add_ideas = elections_frequency_eight
-				}
-				20 = {
-					modifier = {
-						OR = {
-							has_elections_frequency_six_enable = no
-							has_elections_frequency_six_available = no
-						}
-						factor = 0
-					}
-					modifier = {
-						has_elections_frequency_six_selectable = no
-						factor = 0.25
-					}
-					add_ideas = elections_frequency_six
-				}
-				20 = {
-					modifier = {
-						OR = {
-							has_elections_frequency_five_enable = no
-							has_elections_frequency_five_available = no
-						}
-						factor = 0
-					}
-					modifier = {
-						has_elections_frequency_five_selectable = no
-						factor = 0.25
-					}
-					add_ideas = elections_frequency_five
-				}
-				20 = {
-					modifier = {
-						OR = {
-							has_elections_frequency_four_enable = no
-							has_elections_frequency_four_available = no
-						}
-						factor = 0
-					}
-					modifier = {
-						has_elections_frequency_four_selectable = no
-						factor = 0.25
-					}
-					add_ideas = elections_frequency_four
-				}
-				20 = {
-					modifier = {
-						OR = {
-							has_elections_frequency_three_enable = no
-							has_elections_frequency_three_available = no
-						}
-						factor = 0
-					}
-					modifier = {
-						has_elections_frequency_three_selectable = no
-						factor = 0.25
-					}
-					add_ideas = elections_frequency_three
-				}
-			}
-
-		}
-		else = {
-			#Fire Event Choice
-			country_event = eoanbr_government_events.1
-		}
-	}
-	reform_slavery_article = {
-		if = {
-			limit = { is_ai = yes }
-			random_list = {
-				20 = {
-					modifier = {
-						OR = {
-							has_slavery_allowed_enable = no
-							has_slavery_allowed_available = no
-						}
-						factor = 0
-					}
-					modifier = {
-						has_slavery_allowed_selectable = no
-						factor = 0.25
-					}
-					add_ideas = slavery_allowed
-				}
-				20 = {
-					modifier = {
-						OR = {
-							has_slavery_restricted_enable = no
-							has_slavery_restricted_available = no
-						}
-						factor = 0
-					}
-					modifier = {
-						has_slavery_restricted_selectable = no
-						factor = 0.25
-					}
-					add_ideas = slavery_restricted
-				}
-				20 = {
-					modifier = {
-						OR = {
-							has_slavery_outlawed_enable = no
-							has_slavery_outlawed_available = no
-						}
-						factor = 0
-					}
-					modifier = {
-						has_slavery_outlawed_selectable = no
-						factor = 0.25
-					}
-					add_ideas = slavery_outlawed
-				}
-			}
-
-		}
-		else = {
-			#Fire Event Choice
-			country_event = eoanbr_government_events.1
-		}
-	}
-	reform_unionization_article = {
-		if = {
-			limit = { is_ai = yes }
-			random_list = {
-				20 = {
-					modifier = {
-						OR = {
-							has_unionization_illegal_enable = no
-							has_unionization_illegal_available = no
-						}
-						factor = 0
-					}
-					modifier = {
-						has_unionization_illegal_selectable = no
-						factor = 0.25
-					}
-					add_ideas = unionization_illegal
-				}
-				20 = {
-					modifier = {
-						OR = {
-							has_unionization_state_controlled_enable = no
-							has_unionization_state_controlled_available = no
-						}
-						factor = 0
-					}
-					modifier = {
-						has_unionization_state_controlled_selectable = no
-						factor = 0.25
-					}
-					add_ideas = unionization_state_controlled
-				}
-				20 = {
-					modifier = {
-						OR = {
-							has_unionization_non_socialist_enable = no
-							has_unionization_non_socialist_available = no
-						}
-						factor = 0
-					}
-					modifier = {
-						has_unionization_non_socialist_selectable = no
-						factor = 0.25
-					}
-					add_ideas = unionization_non_socialist
-				}
-				20 = {
-					modifier = {
-						OR = {
-							has_unionization_private_only_enable = no
-							has_unionization_private_only_available = no
-						}
-						factor = 0
-					}
-					modifier = {
-						has_unionization_private_only_selectable = no
-						factor = 0.25
-					}
-					add_ideas = unionization_private_only
-				}
-				20 = {
-					modifier = {
-						OR = {
-							has_unionization_all_allowed_enable = no
-							has_unionization_all_allowed_available = no
-						}
-						factor = 0
-					}
-					modifier = {
-						has_unionization_all_allowed_selectable = no
-						factor = 0.25
-					}
-					add_ideas = unionization_all_allowed
-				}
-			}
-		}
-		else = {
-			#Fire Event Choice
-			country_event = eoanbr_government_events.1
-		}
-	}
-#
-
-define_autarchy = {
-	clear_array = global.autarchy_articles_array
-
-	set_variable = { var = global.autarchy_base_importance value = 10 }
-
-	set_variable = { var = global.slaves_base_autarchy value = 20 }
-	set_variable = { var = global.peasants_base_autarchy value = 30}
-	set_variable = { var = global.laborers_base_autarchy value = 40 }
-	set_variable = { var = global.workers_base_autarchy value = 45 }
-	set_variable = { var = global.professionals_base_autarchy value = 50 }
-	set_variable = { var = global.specialists_base_autarchy value = 55 }
-	set_variable = { var = global.aristocrats_base_autarchy value = 70 }
-	set_variable = { var = global.capitalists_base_autarchy value = 60 }
-	set_variable = { var = global.bureaucrats_base_autarchy value = 65 }
-	set_variable = { var = global.soldiers_base_autarchy value = 65 }
-
-	add_to_array = { array = global.autarchy_articles_array value = token:autarchy_absolutism }
-		set_variable = { var = global.tech_unlock@token:autarchy_absolutism value = 0 }
-		set_variable = { var = global.min@token:autarchy_absolutism value = 60 }
-		set_variable = { var = global.mid@token:autarchy_absolutism value = 90 }
-		set_variable = { var = global.max@token:autarchy_absolutism value = 100 }
-		add_to_array = { array = global.autarchy_articles_array value = token:autarchy_delegated_authority }
-			set_variable = { var = global.tech_unlock@token:autarchy_delegated_authority value = 0 }
-			set_variable = { var = global.min@token:autarchy_delegated_authority value = 50 }
-			set_variable = { var = global.mid@token:autarchy_delegated_authority value = 75 }
-			set_variable = { var = global.max@token:autarchy_delegated_authority value = 95 }
-	add_to_array = { array = global.autarchy_articles_array value = token:autarchy_delegated_representation }
-		set_variable = { var = global.tech_unlock@token:autarchy_delegated_representation value = token:tech_rights_of_men }
-		set_variable = { var = global.min@token:autarchy_delegated_representation value = 40 }
-		set_variable = { var = global.mid@token:autarchy_delegated_representation value = 60 }
-		set_variable = { var = global.max@token:autarchy_delegated_representation value = 85 }
-	add_to_array = { array = global.autarchy_articles_array value = token:autarchy_democratic_centralization }
-		set_variable = { var = global.tech_unlock@token:autarchy_democratic_centralization value = token:tech_socialism }
-		set_variable = { var = global.min@token:autarchy_democratic_centralization value = 45 }
-		set_variable = { var = global.mid@token:autarchy_democratic_centralization value = 65 }
-		set_variable = { var = global.max@token:autarchy_democratic_centralization value = 100 }
-	add_to_array = { array = global.autarchy_articles_array value = token:autarchy_democratic_representation }
-		set_variable = { var = global.tech_unlock@token:autarchy_democratic_representation value = token:tech_rights_of_men }
-		set_variable = { var = global.min@token:autarchy_democratic_representation value = 25 }
-		set_variable = { var = global.mid@token:autarchy_democratic_representation value = 45 }
-		set_variable = { var = global.max@token:autarchy_democratic_representation value = 70 }
-	add_to_array = { array = global.autarchy_articles_array value = token:autarchy_minarchy }
-		set_variable = { var = global.tech_unlock@token:autarchy_minarchy value = tech:tech_libertarianism }
-		set_variable = { var = global.min@token:autarchy_minarchy value = 0 }
-		set_variable = { var = global.mid@token:autarchy_minarchy value = 20 }
-		set_variable = { var = global.max@token:autarchy_minarchy value = 40 }
 }
