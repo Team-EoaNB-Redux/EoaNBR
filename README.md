@@ -114,11 +114,15 @@ If you wish to contribute to the development of the mod, support us on Patreon o
 </td>
 <td align="center">
   <a href = "https://github.com/condor93"><strong>Lancer2201</strong></a>
-  <img src="https://cdn.discordapp.com/attachments/469238221436354580/960730076826193940/lancer.png" width="80px;" alt="Lancer2201"/>
+  <img src="https://avatars.githubusercontent.com/u/35199533?v=4" width="80px;" alt="Lancer2201"/>
 </td>
 <td align="center">
   <a href = "https://github.com/vanaidum-oxide"><strong>Vanadium</strong></a>
   <img src="https://avatars.githubusercontent.com/u/67757372?v=4" width="80px;" alt="Vanadium"/>
+</td>
+<td align="center">
+  <a href = "https://github.com/mountain-zippped"><strong>Mountain</strong></a>
+  <img src="https://avatars.githubusercontent.com/u/74386084?v=4" width="80px;" alt="Mountain"/>
 </td>
 </tr>
 </table>
