@@ -27,7 +27,7 @@
 
 [github-latest]: https://img.shields.io/github/last-commit/Team-EoaNB-Redux/EoaNBR?label=Latest%20Commit&color=blue&style=for-the-badge
 [github-activity]: https://img.shields.io/github/commit-activity/m/Team-EoaNB-Redux/EoaNBR?label=Team%20Activity&style=for-the-badge
-[github-beta-backlog]: https://img.shields.io/github/commits-since/Team-EoaNB-Redux/EoaNBR/v3.10.2?label=Ahead%20Of%20Steam&style=for-the-badge&color=blue
+[github-beta-backlog]: https://img.shields.io/github/commits-since/Team-EoaNB-Redux/EoaNBR/v3.13?label=Ahead%20Of%20Steam&style=for-the-badge&color=blue
 [discord-link]: https://img.shields.io/discord/1005522629052088340?color=lightgrey&label=DISCORD&style=for-the-badge
 
 <hr>
@@ -117,7 +117,7 @@ If you wish to contribute to the development of the mod, support us on Patreon o
   <img src="https://cdn.discordapp.com/attachments/469238221436354580/960730076826193940/lancer.png" width="80px;" alt="Lancer2201"/>
 </td>
 <td align="center">
-  <a href = "https://github.com/Vanadium-GITHUB"><strong>Vanadium</strong></a>
+  <a href = "https://github.com/vanaidum-oxide"><strong>Vanadium</strong></a>
   <img src="https://avatars.githubusercontent.com/u/67757372?v=4" width="80px;" alt="Vanadium"/>
 </td>
 </tr>
