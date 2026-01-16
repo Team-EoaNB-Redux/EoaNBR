@@ -109,20 +109,20 @@ If you wish to contribute to the development of the mod, support us on Patreon o
 <table>
 <tr>
 <td align="center">
-  <a href = "https://github.com/Energywelder"><strong>Energywelder</strong></a>
-  <img src="https://cdn.discordapp.com/attachments/469238221436354580/960730076553576498/energy.png" width="80px;" alt="Energywelder"/>
+  <p><img src="https://cdn.discordapp.com/attachments/469238221436354580/960730076553576498/energy.png" width="80px;" alt="Energywelder"/></p>
+  <p></p><a href = "https://github.com/Energywelder"><strong>Energywelder</strong></a></p>
 </td>
 <td align="center">
-  <a href = "https://github.com/condor93"><strong>Lancer2201</strong></a>
-  <img src="https://avatars.githubusercontent.com/u/35199533?v=4" width="80px;" alt="Lancer2201"/>
+  <p><img src="https://avatars.githubusercontent.com/u/35199533?v=4" width="80px;" alt="Lancer2201"/></p>
+  <p><a href = "https://github.com/condor93"><strong>Lancer2201</strong></a></p>
 </td>
 <td align="center">
-  <a href = "https://github.com/vanaidum-oxide"><strong>Vanadium</strong></a>
-  <img src="https://avatars.githubusercontent.com/u/67757372?v=4" width="80px;" alt="Vanadium"/>
+  <p><img src="https://avatars.githubusercontent.com/u/67757372?v=4" width="80px;" alt="Vanadium"/></p>
+  <p><a href = "https://github.com/vanaidum-oxide"><strong>Vanadium</strong></a></p>
 </td>
 <td align="center">
-  <a href = "https://github.com/mountain-zippped"><strong>Mountain</strong></a>
-  <img src="https://avatars.githubusercontent.com/u/74386084?v=4" width="80px;" alt="Mountain"/>
+  <p><img src="https://avatars.githubusercontent.com/u/74386084?v=4" width="80px;" alt="Mountain"/></p>
+  <p><a href = "https://github.com/mountain-zippped"><strong>Mountain</strong></a></p>
 </td>
 </tr>
 </table>
