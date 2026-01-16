@@ -1,4 +1,167 @@
 
+	# party_temp - <party_token> (Optional) Token for Party to be created.
+	# party_override_temp - <party_token> (Optional) Token for an override party name. Party value is still party_temp
+	# color_temp - <color_token> (Optional) Token for color used for party's symbol
+	# type_temp - <party_range_token> - (Optional) Token for party type
+	# leader_temp - <character_token> - (Optional) Token for party
+	# ig_array_temp - list of <ig_token> - (Required)
+	# ig_override_temp - <boolean> (Optional) - (1) will cause the party to 'steal' ig, if there are overlaps with current parties
+
+add_party = {
+	if = {
+		limit = {
+			check_variable = { party_temp = 0 }
+		}
+		get_party_name_from_ig_array = yes
+	}
+	if = {
+		limit = {
+			check_variable = { party_override_temp > 0 }
+		}
+	}
+
+	
+
+
+	# Log
+		log = "Forming [?party_temp.GetTokenLocalizedKey] in [THIS.GetTag]."
+		log = " [?party_temp.GetTokenLocalizedKey] is using [?color_temp.GetTokenLocalizedKey].."
+		log = " [?party_temp.GetTokenLocalizedKey] is [?type_temp.GetTokenLocalizedKey]..."
+		log = " [?party_temp.GetTokenLocalizedKey] has selected [?leader_temp.GetTokenLocalizedKey] as their leader...."
+		for_each_loop = {
+			array = ig_array_temp
+			value = ig_temp
+			log = " Recruiting [?ig_temp_GetTokenLocalizedKey] Voters..."
+		}
+	#
+	# Clear Values
+		clear_temp_variable = party_temp
+		clear_temp_variable = party_override_temp
+		clear_temp_variable = color_temp
+		clear_temp_variable = type_temp
+		clear_temp_variable = leader_temp
+		clear_temp_array = ig_array_temp
+	#
+}
+add_ig_to_party = {
+
+}
+remove_ig_from_party = {
+
+}
+remove_party = {
+
+}
+
+# Helper Effects
+	get_party_name_from_ig_array = {
+		# ig_array_temp - list of <ig_token> - (Required)
+		# type_temp - <party_range_token> - (Optional) Token for party type
+
+		if = {
+			limit = {
+				check_variable = { type_temp = 0 }
+			}
+			get_party_type_from_ig_array = yes
+		}
+		random_list = {
+			0 = {
+				set_temp_variable = { party_temp = token:party_communist_party }
+				modifier = {
+					check_variable = { ig_array_temp^1 = token:ig_communists }
+					add = 2
+				}
+				modifier = {
+					check_variable = { ig_array_temp^2 = token:ig_communists }
+					add = 1
+				}
+				modifier = {
+					check_variable = { type_temp = token:pr_ideological }
+					factor = 2
+				}
+				modifier = {
+					NOT = { has_tech = tech_humanities_commmunism }
+					factor = 0
+				}
+			}
+		}
+		log = "[?party_temp.GetTokenLocalizedKey] selected from ig_array_temp"
+	}
+	get_party_type_from_ig_array = {
+		# ig_array_temp - list of <ig_token> - (Required)
+
+		set_temp_variable = { ig_institutional_count = 0 }
+		set_temp_variable = { ig_ideological_count = 0 }
+		set_temp_variable = { ig_establishment_count = 0 }
+		set_temp_variable = { ig_oppositional_count = 0 }
+		for_each_loop = {
+			array = ig_array_temp
+			value = ig_temp
+			if = {
+				limit = {
+					is_in_array = {
+						array = global.ig_institutional_array
+						value = ig_temp
+					}
+				}
+				add_to_temp_variable = { ig_institutional_count = 1 }
+			}
+			if = {
+				limit = {
+					is_in_array = {
+						array = global.ig_ideological_array
+						value = ig_temp
+					}
+				}
+				add_to_temp_variable = { ig_ideological_count = 1 }
+			}
+			if = {
+				limit = {
+					check_variable = {
+						strength_perc@var:ig_temp > 0.075
+					}
+				}
+				add_to_temp_variable = { ig_establishment_count = strength@var:ig_temp }
+			}
+			else = {
+				add_to_temp_variable = { ig_oppositional_count = strength@var:ig_temp }
+			}
+		}
+		set_temp_variable = { total_temp = ig_institutional_count }
+		add_temp_variable = { total_temp = ig_ideological_count }
+		set_temp_variable = { divide_temp = ig_institutional_count }
+		set_temp_variable = { divide_temp = total_temp }
+		if = {
+			limit = {
+				check_variable = { divide_temp > 0.65 }
+			}
+			set_temp_variable = { type_temp = token:pr_institutional }
+		}
+		else_if = {
+			limit = {
+				check_variable = { divide_temp < 0.35 }
+			}
+			set_temp_variable = { type_temp = token:pr_institutional }
+		}
+		else_if = {
+			limit = {
+				check_variable = { ig_array_temp^num > 4 }
+			}
+			set_temp_variable = { type_temp = token:pr_big_tent }
+		}
+		else_if = {
+			limit = {
+				check_variable = { ig_establishment_count > ig_oppositional_count }
+			}
+			set_temp_variable = { type_temp = token:pr_establishment }
+		}
+		else = {
+			set_temp_variable = { type_temp = token:pr_oppositional}
+		}
+		
+		log = "[?type_temp.GetTokenLocalizedKey] selected from ig_array_temp"
+	}
+#
 
 add_party_to_country = {
 	# party_temp - <party_token> any of the parties to be used in code
@@ -74,6 +237,9 @@ add_party_to_country = {
 			}
 			5 = {
 				set_temp_variable = { type_temp = token:pr_institutional }
+			}
+			5 = {
+				set_temp_variable = { type_temp = token:pr_establishment }
 			}
 			5 = {
 				set_temp_variable = { type_temp = token:pr_oppositional }
