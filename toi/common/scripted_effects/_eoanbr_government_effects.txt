@@ -6,7 +6,7 @@
 	# leader_temp - <character_token> - (Optional) Token for party
 	# ig_array_temp - list of <ig_token> - (Required)
 	# ig_override_temp - <boolean> (Optional) - (1) will cause the party to 'steal' ig, if there are overlaps with current parties
-
+	# treasury_temp - <float> (Optional)
 add_party = {
 	if = {
 		limit = {
@@ -18,11 +18,81 @@ add_party = {
 		limit = {
 			check_variable = { party_override_temp > 0 }
 		}
+		set_variable = { name_override@var:party_temp = party_override_temp }
 	}
+	if = {
+		limit = {
+			check_variable = { color_temp = 0 }
+		}
+		get_party_color_from_ig_array = yes
+	}
+	set_variable = { color@var:party_temp = color_temp }
+	if = {
+		limit = {
+			check_variable = { type_temp = 0 }
+		}
+		get_party_type_from_ig_array = yes
+	}
+	set_variable = { pol_range@var:party_temp = type_temp }
+	set_variable = { leader@var:party_temp = leader_temp }
 
-	
-
-
+	if = {
+		limit = {
+			check_variable = { ig_override_temp > 0 }
+		}
+		for_each_loop = {
+			array = ig_array_temp
+			value = ig_temp
+			add_to_array = {
+				array = interest_groups@var:party_temp
+				value = ig_temp
+			}
+			if = {
+				limit = {
+					any_of = {
+						array = parties_array
+						value = p
+						is_in_array = {
+							array = interest_groups@var:p
+							value = ig_temp
+						}
+					}
+				}
+				for_each_loop = {
+					array = parties_array
+					value = p
+					remove_from_array = {
+						array = interest_groups@var:p
+						value = ig_temp
+					}
+				}
+			}
+		}
+		else = {
+			for_each_loop = {
+				array = ig_array_temp
+				value = ig_temp
+				if = {
+					limit = {
+						NOT = {
+							any_of = {
+								array = parties_array
+								value = p
+								is_in_array = {
+									array = interest_groups@var:p
+									value = ig_temp
+								}
+							}
+						}
+					}
+					add_to_array = {
+						array = interest_groups@var:party_temp
+						value = ig_temp
+					}
+				}
+			}
+		}
+	}
 	# Log
 		log = "Forming [?party_temp.GetTokenLocalizedKey] in [THIS.GetTag]."
 		log = " [?party_temp.GetTokenLocalizedKey] is using [?color_temp.GetTokenLocalizedKey].."
@@ -31,7 +101,11 @@ add_party = {
 		for_each_loop = {
 			array = ig_array_temp
 			value = ig_temp
-			log = " Recruiting [?ig_temp_GetTokenLocalizedKey] Voters..."
+			add_to_array = {
+				array = interest_groups@var:party_temp
+				value = ig_temp
+			}
+			log = " Recruiting [?ig_temp_GetTokenLocalizedKey] Voters to [?party_temp.GetTokenLocalizedKey]"
 		}
 	#
 	# Clear Values
@@ -41,6 +115,8 @@ add_party = {
 		clear_temp_variable = type_temp
 		clear_temp_variable = leader_temp
 		clear_temp_array = ig_array_temp
+		clear_temp_variable = ig_override_temp
+		clear_temp_variable = treasury_temp
 	#
 }
 add_ig_to_party = {
@@ -81,6 +157,13 @@ remove_party = {
 				}
 				modifier = {
 					NOT = { has_tech = tech_humanities_commmunism }
+					factor = 0
+				}
+				modifier = {
+					is_in_array = {
+						array = parties_array
+						value = token:party_communist_party
+					}
 					factor = 0
 				}
 			}
@@ -160,6 +243,731 @@ remove_party = {
 		}
 		
 		log = "[?type_temp.GetTokenLocalizedKey] selected from ig_array_temp"
+	}
+	get_party_color_from_ig_array = {
+		# ig_array_temp - list of <ig_token> - (Required)
+
+		random_list = {
+			1 = {
+				set_temp_variable = { color_temp = token:color_dark_red }
+				modifier = {
+					factor = 100
+					is_in_array = {
+						array = ig_array_temp
+						value = token:ig_communists
+					}
+				}
+				modifier = {
+					factor = 50
+					is_in_array = {
+						array = ig_array_temp
+						value = token:ig_vanguard_socialists
+					}
+				}
+				modifier = {
+					factor = 25
+					is_in_array = {
+						array = ig_array_temp
+						value = token:ig_vanguard_socialists
+					}
+				}
+				modifier = {
+					add = 10
+					is_in_array = {
+						array = ig_array_temp
+						value = token:ig_securocrats
+					}
+				}
+				modifier = {
+					factor = 0
+					any_of = {
+						array = parties_array
+						value = p
+						check_variable = { color@var:p = token:color_dark_red }
+					}
+				}
+			}
+			1 = {
+				set_temp_variable = { color_temp = token:color_red }
+				modifier = {
+					factor = 20
+					is_in_array = {
+						array = ig_array_temp
+						value = token:ig_anarchists
+					}
+				}
+				modifier = {
+					factor = 0
+					any_of = {
+						array = parties_array
+						value = p
+						check_variable = { color@var:p = token:color_red }
+					}
+				}
+			}
+			1 = {
+				set_temp_variable = { color_temp = token:color_light_red }
+				modifier = {
+					factor = 20
+					is_in_array = {
+						array = ig_array_temp
+						value = token:ig_anarchists
+					}
+				}
+				modifier = {
+					factor = 0
+					any_of = {
+						array = parties_array
+						value = p
+						check_variable = { color@var:p = token:color_light_red }
+					}
+				}
+			}
+			1 = {
+				set_temp_variable = { color_temp = token:color_dark_orange }
+				modifier = {
+					add = 10
+					is_in_array = {
+						array = ig_array_temp
+						value = token:ig_intelligensia
+					}
+				}
+				modifier = {
+					factor = 0
+					any_of = {
+						array = parties_array
+						value = p
+						check_variable = { color@var:p = token:color_dark_orange }
+					}
+				}
+			}
+			1 = {
+				set_temp_variable = { color_temp = token:color_orange }
+				modifier = {
+					add = 10
+					is_in_array = {
+						array = ig_array_temp
+						value = token:ig_army
+					}
+				}
+				modifier = {
+					add = 10
+					is_in_array = {
+						array = ig_array_temp
+						value = token:ig_intelligensia
+					}
+				}
+				modifier = {
+					factor = 0
+					any_of = {
+						array = parties_array
+						value = p
+						check_variable = { color@var:p = token:color_orange }
+					}
+				}
+			}
+			1 = {
+				set_temp_variable = { color_temp = token:color_light_orange }
+				modifier = {
+					add = 10
+					is_in_array = {
+						array = ig_array_temp
+						value = token:ig_army
+					}
+				}
+				modifier = {
+					add = 10
+					is_in_array = {
+						array = ig_array_temp
+						value = token:ig_intelligensia
+					}
+				}
+				modifier = {
+					factor = 0
+					any_of = {
+						array = parties_array
+						value = p
+						check_variable = { color@var:p = token:color_light_orange }
+					}
+				}
+			}
+			1 = {
+				set_temp_variable = { color_temp = token:color_dark_yellow }
+				modifier = {
+					factor = 10
+					is_in_array = {
+						array = ig_array_temp
+						value = token:ig_agrarians
+					}
+				}
+				modifier = {
+					add = 5
+					is_in_array = {
+						array = ig_array_temp
+						value = token:ig_clergy
+					}
+				}
+				modifier = {
+					factor = 0
+					any_of = {
+						array = parties_array
+						value = p
+						check_variable = { color@var:p = token:color_dark_yellow }
+					}
+				}
+			}
+			1 = {
+				set_temp_variable = { color_temp = token:color_yellow }
+				modifier = {
+					add = 10
+					is_in_array = {
+						array = ig_array_temp
+						value = token:ig_securocrats
+					}
+				}
+				modifier = {
+					factor = 0
+					any_of = {
+						array = parties_array
+						value = p
+						check_variable = { color@var:p = token:color_yellow }
+					}
+				}
+			}
+			1 = {
+				set_temp_variable = { color_temp = token:color_light_yellow }
+				modifier = {
+					factor = 0
+					any_of = {
+						array = parties_array
+						value = p
+						check_variable = { color@var:p = token:color_light_yellow }
+					}
+				}
+			}
+			1 = {
+				set_temp_variable = { color_temp = token:color_dark_green }
+				modifier = {
+					factor = 50
+					is_in_array = {
+						array = ig_array_temp
+						value = token:ig_agrarians
+					}
+				}
+				modifier = {
+					add = 50
+					is_in_array = {
+						array = ig_array_temp
+						value = token:ig_tribalists
+					}
+				}
+				modifier = {
+					factor = 0
+					any_of = {
+						array = parties_array
+						value = p
+						check_variable = { color@var:p = token:color_dark_green }
+					}
+				}
+			}
+			1 = {
+				set_temp_variable = { color_temp = token:color_green }
+				modifier = {
+					factor = 50
+					is_in_array = {
+						array = ig_array_temp
+						value = token:ig_agrarians
+					}
+				}
+				modifier = {
+					add = 25
+					is_in_array = {
+						array = ig_array_temp
+						value = token:ig_tribalists
+					}
+				}
+				modifier = {
+					add = 10
+					is_in_array = {
+						array = ig_array_temp
+						value = token:ig_clergy
+					}
+				}
+				modifier = {
+					factor = 0
+					any_of = {
+						array = parties_array
+						value = p
+						check_variable = { color@var:p = token:color_green }
+					}
+				}
+			}
+			1 = {
+				set_temp_variable = { color_temp = token:color_light_green }
+				modifier = {
+					factor = 50
+					is_in_array = {
+						array = ig_array_temp
+						value = token:ig_agrarians
+					}
+				}
+				modifier = {
+					add = 25
+					is_in_array = {
+						array = ig_array_temp
+						value = token:ig_tribalists
+					}
+				}
+				modifier = {
+					add = 10
+					is_in_array = {
+						array = ig_array_temp
+						value = token:ig_clergy
+					}
+				}
+				modifier = {
+					factor = 0
+					any_of = {
+						array = parties_array
+						value = p
+						check_variable = { color@var:p = token:color_light_green }
+					}
+				}
+			}
+			1 = {
+				set_temp_variable = { color_temp = token:color_dark_blue }
+				modifier = {
+					add = 20
+					is_in_array = {
+						array = ig_array_temp
+						value = token:ig_aristocrats
+					}
+				}
+				modifier = {
+					factor = 0
+					any_of = {
+						array = parties_array
+						value = p
+						check_variable = { color@var:p = token:color_dark_blue }
+					}
+				}
+			}
+			1 = {
+				set_temp_variable = { color_temp = token:color_blue }
+				modifier = {
+					factor = 0
+					any_of = {
+						array = parties_array
+						value = p
+						check_variable = { color@var:p = token:color_blue }
+					}
+				}
+				modifier = {
+					add = 10
+					is_in_array = {
+						array = ig_array_temp
+						value = token:ig_navy
+					}
+				}
+			}
+			1 = {
+				set_temp_variable = { color_temp = token:color_light_blue }
+				modifier = {
+					add = 10
+					is_in_array = {
+						array = ig_array_temp
+						value = token:ig_army
+					}
+				}
+				modifier = {
+					add = 10
+					is_in_array = {
+						array = ig_array_temp
+						value = token:ig_navy
+					}
+				}
+				modifier = {
+					factor = 0
+					any_of = {
+						array = parties_array
+						value = p
+						check_variable = { color@var:p = token:color_light_blue }
+					}
+				}
+			}
+			1 = {
+				set_temp_variable = { color_temp = token:color_dark_purple }
+				modifier = {
+					add = 50
+					is_in_array = {
+						array = ig_array_temp
+						value = token:ig_monarchists
+					}
+				}
+				modifier = {
+					factor = 0
+					any_of = {
+						array = parties_array
+						value = p
+						check_variable = { color@var:p = token:color_dark_purple }
+					}
+				}
+			}
+			1 = {
+				set_temp_variable = { color_temp = token:color_purple }
+				modifier = {
+					add = 100
+					is_in_array = {
+						array = ig_array_temp
+						value = token:ig_monarchists
+					}
+				}
+				modifier = {
+					factor = 0
+					any_of = {
+						array = parties_array
+						value = p
+						check_variable = { color@var:p = token:color_purple }
+					}
+				}
+			}
+			1 = {
+				set_temp_variable = { color_temp = token:color_light_purple }
+				modifier = {
+					add = 50
+					is_in_array = {
+						array = ig_array_temp
+						value = token:ig_monarchists
+					}
+				}
+				modifier = {
+					add = 10
+					is_in_array = {
+						array = ig_array_temp
+						value = token:ig_clergy
+					}
+				}
+				modifier = {
+					factor = 0
+					any_of = {
+						array = parties_array
+						value = p
+						check_variable = { color@var:p = token:color_light_purple }
+					}
+				}
+			}
+			1 = {
+				set_temp_variable = { color_temp = token:color_dark_grey }
+				modifier = {
+					add = 25
+					is_in_array = {
+						array = ig_array_temp
+						value = token:ig_army
+					}
+				}
+				modifier = {
+					add = 10
+					is_in_array = {
+						array = ig_array_temp
+						value = token:ig_bureaucrats
+					}
+				}
+				modifier = {
+					factor = 0
+					any_of = {
+						array = parties_array
+						value = p
+						check_variable = { color@var:p = token:color_dark_grey }
+					}
+				}
+			}
+			1 = {
+				set_temp_variable = { color_temp = token:color_grey }
+				modifier = {
+					add = 25
+					is_in_array = {
+						array = ig_array_temp
+						value = token:ig_army
+					}
+				}
+				modifier = {
+					add = 10
+					is_in_array = {
+						array = ig_array_temp
+						value = token:ig_aristocrats
+					}
+				}
+				modifier = {
+					factor = 0
+					any_of = {
+						array = parties_array
+						value = p
+						check_variable = { color@var:p = token:color_grey }
+					}
+				}
+			}
+			1 = {
+				set_temp_variable = { color_temp = token:color_light_grey }
+				modifier = {
+					add = 10
+					is_in_array = {
+						array = ig_array_temp
+						value = token:ig_army
+					}
+				}
+				modifier = {
+					add = 10
+					is_in_array = {
+						array = ig_array_temp
+						value = token:ig_navy
+					}
+				}
+				modifier = {
+					add = 10
+					is_in_array = {
+						array = ig_array_temp
+						value = token:ig_aristocrats
+					}
+				}
+				modifier = {
+					factor = 0
+					any_of = {
+						array = parties_array
+						value = p
+						check_variable = { color@var:p = token:color_light_grey }
+					}
+				}
+			}
+			1 = {
+				set_temp_variable = { color_temp = token:color_dark_brown }
+				modifier = {
+					add = 10
+					is_in_array = {
+						array = ig_array_temp
+						value = token:ig_tribalists
+					}
+				}
+				modifier = {
+					factor = 0
+					any_of = {
+						array = parties_array
+						value = p
+						check_variable = { color@var:p = token:color_dark_brown }
+					}
+				}
+			}
+			1 = {
+				set_temp_variable = { color_temp = token:color_brown }
+				modifier = {
+					add = 10
+					is_in_array = {
+						array = ig_array_temp
+						value = token:ig_army
+					}
+				}
+				modifier = {
+					add = 10
+					is_in_array = {
+						array = ig_array_temp
+						value = token:ig_tribalists
+					}
+				}
+				modifier = {
+					factor = 0
+					any_of = {
+						array = parties_array
+						value = p
+						check_variable = { color@var:p = token:color_brown }
+					}
+				}
+			}
+			1 = {
+				set_temp_variable = { color_temp = token:color_light_brown }
+				modifier = {
+					add = 10
+					is_in_array = {
+						array = ig_array_temp
+						value = token:ig_clergy
+					}
+				}
+				modifier = {
+					add = 10
+					is_in_array = {
+						array = ig_array_temp
+						value = token:ig_tribalists
+					}
+				}
+				modifier = {
+					factor = 0
+					any_of = {
+						array = parties_array
+						value = p
+						check_variable = { color@var:p = token:color_light_brown }
+					}
+				}
+			}
+			1 = {
+				set_temp_variable = { color_temp = token:color_black }
+				modifier = {
+					factor = 20
+					is_in_array = {
+						array = ig_array_temp
+						value = token:ig_anarchists
+					}
+				}
+				modifier = {
+					add = 10
+					is_in_array = {
+						array = ig_array_temp
+						value = token:ig_army
+					}
+				}
+				modifier = {
+					add = 10
+					is_in_array = {
+						array = ig_array_temp
+						value = token:ig_navy
+					}
+				}
+				modifier = {
+					factor = 0
+					any_of = {
+						array = parties_array
+						value = p
+						check_variable = { color@var:p = token:color_black }
+					}
+				}
+			}
+			1 = {
+				set_temp_variable = { color_temp = token:color_white }
+				modifier = {
+					add = 10
+					is_in_array = {
+						array = ig_array_temp
+						value = token:ig_navy
+					}
+				}
+				modifier = {
+					add = 10
+					is_in_array = {
+						array = ig_array_temp
+						value = token:ig_intelligensia
+					}
+				}
+				modifier = {
+					add = 10
+					is_in_array = {
+						array = ig_array_temp
+						value = token:ig_clergy
+					}
+				}
+				modifier = {
+					factor = 0
+					any_of = {
+						array = parties_array
+						value = p
+						check_variable = { color@var:p = token:color_white }
+					}
+				}
+			}
+			1 = {
+				set_temp_variable = { color_temp = token:color_magenta }
+				modifier = {
+					add = 10
+					is_in_array = {
+						array = ig_array_temp
+						value = token:ig_intelligensia
+					}
+				}
+				modifier = {
+					factor = 0
+					any_of = {
+						array = parties_array
+						value = p
+						check_variable = { color@var:p = token:color_magenta }
+					}
+				}
+			}
+			1 = {
+				set_temp_variable = { color_temp = token:color_aqua }
+				modifier = {
+					add = 10
+					is_in_array = {
+						array = ig_array_temp
+						value = token:ig_navy
+					}
+				}
+				modifier = {
+					factor = 0
+					any_of = {
+						array = parties_array
+						value = p
+						check_variable = { color@var:p = token:color_aqua }
+					}
+				}
+			}
+			1 = {
+				set_temp_variable = { color_temp = token:color_pink }
+				modifier = {
+					add = 10
+					is_in_array = {
+						array = ig_array_temp
+						value = token:ig_intelligensia
+					}
+				}
+				modifier = {
+					factor = 0
+					any_of = {
+						array = parties_array
+						value = p
+						check_variable = { color@var:p = token:color_pink }
+					}
+				}
+			}
+			1 = {
+				set_temp_variable = { color_temp = token:color_beige }
+				modifier = {
+					add = 10
+					is_in_array = {
+						array = ig_array_temp
+						value = token:ig_navy
+					}
+				}
+				modifier = {
+					add = 10
+					is_in_array = {
+						array = ig_array_temp
+						value = token:ig_clergy
+					}
+				}
+				modifier = {
+					factor = 0
+					any_of = {
+						array = parties_array
+						value = p
+						check_variable = { color@var:p = token:color_beige }
+					}
+				}
+			}
+			1 = {
+				set_temp_variable = { color_temp = token:color_burgundy }
+				modifier = {
+					add = 10
+					is_in_array = {
+						array = ig_array_temp
+						value = token:ig_clergy
+					}
+				}
+				modifier = {
+					factor = 0
+					any_of = {
+						array = parties_array
+						value = p
+						check_variable = { color@var:p = token:color_burgundy }
+					}
+				}
+			}
+		}
 	}
 #
 
@@ -836,7 +1644,7 @@ generate_parties = {
 		limit = { autocracy > 0.01 }
 		add_to_temp_array = { parties_temp_array = token:party_monarchist_party }
 		set_variable = { strength@token:party_monarchist_party =  party_popularity_100@autocracy }
-		set_variable = { ideology@token:party_monarchist_party = token:ig_monarchs }
+		set_variable = { ideology@token:party_monarchist_party = token:ig_monarchists }
 	}
 	if = {
 		limit = { social_egalitarianism > 0.01 }
@@ -941,7 +1749,7 @@ generate_coalitions = {
 			else_if = {
 				limit = {
 					has_government = autocracy
-					check_variable = { ideology@var:p = token:ig_monarchs }
+					check_variable = { ideology@var:p = token:ig_monarchists }
 				}
 				add_to_array = { parties@token:ruling_coalition = p }
 				set_temp_variable = {
