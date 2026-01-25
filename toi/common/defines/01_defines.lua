@@ -40,6 +40,7 @@ NDefines.NProduction.FLOATING_HARBOR_MAX_NAV_FACTORIES_PER_LINE = 6
 NDefines.NProduction.CONVOY_MAX_NAV_FACTORIES_PER_LINE = 18
 NDefines.NProduction.CAPITAL_SHIP_MAX_NAV_FACTORIES_PER_LINE = 6
 NDefines.NProduction.MAX_MIL_FACTORIES_PER_LINE = 180
+NDefines.NProduction.MAX_MIL_FACTORIES_VISIBLE_FOR_MIL_EQUIPMENT_LINE = 18
 NDefines.NProduction.RAILWAY_GUN_MAX_MIL_FACTORIES_PER_LINE = 6
 NDefines.NProduction.BASE_FACTORY_SPEED = 2.5				-- vanilla 5 Base factory speed multiplier (how much hoi3 style IC each factory gives). --4.5
 NDefines.NProduction.BASE_FACTORY_SPEED_MIL = 4       -- vanilla 4.5
