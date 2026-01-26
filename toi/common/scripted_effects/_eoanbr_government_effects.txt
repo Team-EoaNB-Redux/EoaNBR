@@ -4,7 +4,7 @@
 	# color_temp - <color_token> (Optional) Token for color used for party's symbol
 	# type_temp - <party_range_token> - (Optional) Token for party type
 	# leader_temp - <character_token> - (Optional) Token for party
-	# ig_array_temp - list of <ig_token> - (Required)
+	# interest_groups_temp - list of <ig_token> - (Required)
 	# ig_override_temp - <boolean> (Optional) - (1) will cause the party to 'steal' ig, if there are overlaps with current parties
 	# treasury_temp - <float> (Optional)
 add_party = {
@@ -12,7 +12,7 @@ add_party = {
 		limit = {
 			check_variable = { party_temp = 0 }
 		}
-		get_party_name_from_ig_array = yes
+		get_party_name_from_interest_groups = yes
 	}
 	if = {
 		limit = {
@@ -24,14 +24,14 @@ add_party = {
 		limit = {
 			check_variable = { color_temp = 0 }
 		}
-		get_party_color_from_ig_array = yes
+		get_party_color_from_interest_groups = yes
 	}
 	set_variable = { color@var:party_temp = color_temp }
 	if = {
 		limit = {
 			check_variable = { type_temp = 0 }
 		}
-		get_party_type_from_ig_array = yes
+		get_party_type_from_interest_groups = yes
 	}
 	set_variable = { pol_range@var:party_temp = type_temp }
 	set_variable = { leader@var:party_temp = leader_temp }
@@ -41,7 +41,7 @@ add_party = {
 			check_variable = { ig_override_temp > 0 }
 		}
 		for_each_loop = {
-			array = ig_array_temp
+			array = interest_groups_temp
 			value = ig_temp
 			add_to_array = {
 				array = interest_groups@var:party_temp
@@ -70,7 +70,7 @@ add_party = {
 		}
 		else = {
 			for_each_loop = {
-				array = ig_array_temp
+				array = interest_groups_temp
 				value = ig_temp
 				if = {
 					limit = {
@@ -99,7 +99,7 @@ add_party = {
 		log = " [?party_temp.GetTokenLocalizedKey] is [?type_temp.GetTokenLocalizedKey]..."
 		log = " [?party_temp.GetTokenLocalizedKey] has selected [?leader_temp.GetTokenLocalizedKey] as their leader...."
 		for_each_loop = {
-			array = ig_array_temp
+			array = interest_groups_temp
 			value = ig_temp
 			log = " Recruiting [?ig_temp_GetTokenLocalizedKey] Voters to [?party_temp.GetTokenLocalizedKey]"
 		}
@@ -110,7 +110,7 @@ add_party = {
 		clear_temp_variable = color_temp
 		clear_temp_variable = type_temp
 		clear_temp_variable = leader_temp
-		clear_temp_array = ig_array_temp
+		clear_temp_array = interest_groups_temp
 		clear_temp_variable = ig_override_temp
 		clear_temp_variable = treasury_temp
 	#
@@ -126,25 +126,25 @@ remove_party = {
 }
 
 # Helper Effects
-	get_party_name_from_ig_array = {
-		# ig_array_temp - list of <ig_token> - (Required)
+	get_party_name_from_interest_groups = {
+		# interest_groups_temp - list of <ig_token> - (Required)
 		# type_temp - <party_range_token> - (Optional) Token for party type
 
 		if = {
 			limit = {
 				check_variable = { type_temp = 0 }
 			}
-			get_party_type_from_ig_array = yes
+			get_party_type_from_interest_groups = yes
 		}
 		random_list = {
 			0 = {
 				set_temp_variable = { party_temp = token:party_communist_party }
 				modifier = {
-					check_variable = { ig_array_temp^1 = token:ig_communists }
+					check_variable = { interest_groups_temp^1 = token:ig_communists }
 					add = 2
 				}
 				modifier = {
-					check_variable = { ig_array_temp^2 = token:ig_communists }
+					check_variable = { interest_groups_temp^2 = token:ig_communists }
 					add = 1
 				}
 				modifier = {
@@ -164,17 +164,17 @@ remove_party = {
 				}
 			}
 		}
-		log = "[?party_temp.GetTokenLocalizedKey] selected from ig_array_temp"
+		log = "[?party_temp.GetTokenLocalizedKey] selected from interest_groups_temp"
 	}
-	get_party_type_from_ig_array = {
-		# ig_array_temp - list of <ig_token> - (Required)
+	get_party_type_from_interest_groups = {
+		# interest_groups_temp - list of <ig_token> - (Required)
 
 		set_temp_variable = { ig_institutional_count = 0 }
 		set_temp_variable = { ig_ideological_count = 0 }
 		set_temp_variable = { ig_establishment_count = 0 }
 		set_temp_variable = { ig_oppositional_count = 0 }
 		for_each_loop = {
-			array = ig_array_temp
+			array = interest_groups_temp
 			value = ig_temp
 			if = {
 				limit = {
@@ -224,7 +224,7 @@ remove_party = {
 		}
 		else_if = {
 			limit = {
-				check_variable = { ig_array_temp^num > 4 }
+				check_variable = { interest_groups_temp^num > 4 }
 			}
 			set_temp_variable = { type_temp = token:pr_big_tent }
 		}
@@ -238,10 +238,10 @@ remove_party = {
 			set_temp_variable = { type_temp = token:pr_oppositional}
 		}
 		
-		log = "[?type_temp.GetTokenLocalizedKey] selected from ig_array_temp"
+		log = "[?type_temp.GetTokenLocalizedKey] selected from interest_groups_temp"
 	}
-	get_party_color_from_ig_array = {
-		# ig_array_temp - list of <ig_token> - (Required)
+	get_party_color_from_interest_groups = {
+		# interest_groups_temp - list of <ig_token> - (Required)
 
 		random_list = {
 			1 = {
@@ -249,28 +249,28 @@ remove_party = {
 				modifier = {
 					factor = 100
 					is_in_array = {
-						array = ig_array_temp
+						array = interest_groups_temp
 						value = token:ig_communists
 					}
 				}
 				modifier = {
 					factor = 50
 					is_in_array = {
-						array = ig_array_temp
+						array = interest_groups_temp
 						value = token:ig_vanguard_socialists
 					}
 				}
 				modifier = {
 					factor = 25
 					is_in_array = {
-						array = ig_array_temp
+						array = interest_groups_temp
 						value = token:ig_vanguard_socialists
 					}
 				}
 				modifier = {
 					add = 10
 					is_in_array = {
-						array = ig_array_temp
+						array = interest_groups_temp
 						value = token:ig_securocrats
 					}
 				}
@@ -288,7 +288,7 @@ remove_party = {
 				modifier = {
 					factor = 20
 					is_in_array = {
-						array = ig_array_temp
+						array = interest_groups_temp
 						value = token:ig_anarchists
 					}
 				}
@@ -306,7 +306,7 @@ remove_party = {
 				modifier = {
 					factor = 20
 					is_in_array = {
-						array = ig_array_temp
+						array = interest_groups_temp
 						value = token:ig_anarchists
 					}
 				}
@@ -324,7 +324,7 @@ remove_party = {
 				modifier = {
 					add = 10
 					is_in_array = {
-						array = ig_array_temp
+						array = interest_groups_temp
 						value = token:ig_intelligensia
 					}
 				}
@@ -342,14 +342,14 @@ remove_party = {
 				modifier = {
 					add = 10
 					is_in_array = {
-						array = ig_array_temp
+						array = interest_groups_temp
 						value = token:ig_army
 					}
 				}
 				modifier = {
 					add = 10
 					is_in_array = {
-						array = ig_array_temp
+						array = interest_groups_temp
 						value = token:ig_intelligensia
 					}
 				}
@@ -367,14 +367,14 @@ remove_party = {
 				modifier = {
 					add = 10
 					is_in_array = {
-						array = ig_array_temp
+						array = interest_groups_temp
 						value = token:ig_army
 					}
 				}
 				modifier = {
 					add = 10
 					is_in_array = {
-						array = ig_array_temp
+						array = interest_groups_temp
 						value = token:ig_intelligensia
 					}
 				}
@@ -392,14 +392,14 @@ remove_party = {
 				modifier = {
 					factor = 10
 					is_in_array = {
-						array = ig_array_temp
+						array = interest_groups_temp
 						value = token:ig_agrarians
 					}
 				}
 				modifier = {
 					add = 5
 					is_in_array = {
-						array = ig_array_temp
+						array = interest_groups_temp
 						value = token:ig_clergy
 					}
 				}
@@ -417,7 +417,7 @@ remove_party = {
 				modifier = {
 					add = 10
 					is_in_array = {
-						array = ig_array_temp
+						array = interest_groups_temp
 						value = token:ig_securocrats
 					}
 				}
@@ -446,14 +446,14 @@ remove_party = {
 				modifier = {
 					factor = 50
 					is_in_array = {
-						array = ig_array_temp
+						array = interest_groups_temp
 						value = token:ig_agrarians
 					}
 				}
 				modifier = {
 					add = 50
 					is_in_array = {
-						array = ig_array_temp
+						array = interest_groups_temp
 						value = token:ig_tribalists
 					}
 				}
@@ -471,21 +471,21 @@ remove_party = {
 				modifier = {
 					factor = 50
 					is_in_array = {
-						array = ig_array_temp
+						array = interest_groups_temp
 						value = token:ig_agrarians
 					}
 				}
 				modifier = {
 					add = 25
 					is_in_array = {
-						array = ig_array_temp
+						array = interest_groups_temp
 						value = token:ig_tribalists
 					}
 				}
 				modifier = {
 					add = 10
 					is_in_array = {
-						array = ig_array_temp
+						array = interest_groups_temp
 						value = token:ig_clergy
 					}
 				}
@@ -503,21 +503,21 @@ remove_party = {
 				modifier = {
 					factor = 50
 					is_in_array = {
-						array = ig_array_temp
+						array = interest_groups_temp
 						value = token:ig_agrarians
 					}
 				}
 				modifier = {
 					add = 25
 					is_in_array = {
-						array = ig_array_temp
+						array = interest_groups_temp
 						value = token:ig_tribalists
 					}
 				}
 				modifier = {
 					add = 10
 					is_in_array = {
-						array = ig_array_temp
+						array = interest_groups_temp
 						value = token:ig_clergy
 					}
 				}
@@ -535,7 +535,7 @@ remove_party = {
 				modifier = {
 					add = 20
 					is_in_array = {
-						array = ig_array_temp
+						array = interest_groups_temp
 						value = token:ig_aristocrats
 					}
 				}
@@ -561,7 +561,7 @@ remove_party = {
 				modifier = {
 					add = 10
 					is_in_array = {
-						array = ig_array_temp
+						array = interest_groups_temp
 						value = token:ig_navy
 					}
 				}
@@ -571,14 +571,14 @@ remove_party = {
 				modifier = {
 					add = 10
 					is_in_array = {
-						array = ig_array_temp
+						array = interest_groups_temp
 						value = token:ig_army
 					}
 				}
 				modifier = {
 					add = 10
 					is_in_array = {
-						array = ig_array_temp
+						array = interest_groups_temp
 						value = token:ig_navy
 					}
 				}
@@ -596,7 +596,7 @@ remove_party = {
 				modifier = {
 					add = 50
 					is_in_array = {
-						array = ig_array_temp
+						array = interest_groups_temp
 						value = token:ig_monarchists
 					}
 				}
@@ -614,7 +614,7 @@ remove_party = {
 				modifier = {
 					add = 100
 					is_in_array = {
-						array = ig_array_temp
+						array = interest_groups_temp
 						value = token:ig_monarchists
 					}
 				}
@@ -632,14 +632,14 @@ remove_party = {
 				modifier = {
 					add = 50
 					is_in_array = {
-						array = ig_array_temp
+						array = interest_groups_temp
 						value = token:ig_monarchists
 					}
 				}
 				modifier = {
 					add = 10
 					is_in_array = {
-						array = ig_array_temp
+						array = interest_groups_temp
 						value = token:ig_clergy
 					}
 				}
@@ -657,14 +657,14 @@ remove_party = {
 				modifier = {
 					add = 25
 					is_in_array = {
-						array = ig_array_temp
+						array = interest_groups_temp
 						value = token:ig_army
 					}
 				}
 				modifier = {
 					add = 10
 					is_in_array = {
-						array = ig_array_temp
+						array = interest_groups_temp
 						value = token:ig_bureaucrats
 					}
 				}
@@ -682,14 +682,14 @@ remove_party = {
 				modifier = {
 					add = 25
 					is_in_array = {
-						array = ig_array_temp
+						array = interest_groups_temp
 						value = token:ig_army
 					}
 				}
 				modifier = {
 					add = 10
 					is_in_array = {
-						array = ig_array_temp
+						array = interest_groups_temp
 						value = token:ig_aristocrats
 					}
 				}
@@ -707,21 +707,21 @@ remove_party = {
 				modifier = {
 					add = 10
 					is_in_array = {
-						array = ig_array_temp
+						array = interest_groups_temp
 						value = token:ig_army
 					}
 				}
 				modifier = {
 					add = 10
 					is_in_array = {
-						array = ig_array_temp
+						array = interest_groups_temp
 						value = token:ig_navy
 					}
 				}
 				modifier = {
 					add = 10
 					is_in_array = {
-						array = ig_array_temp
+						array = interest_groups_temp
 						value = token:ig_aristocrats
 					}
 				}
@@ -739,7 +739,7 @@ remove_party = {
 				modifier = {
 					add = 10
 					is_in_array = {
-						array = ig_array_temp
+						array = interest_groups_temp
 						value = token:ig_tribalists
 					}
 				}
@@ -757,14 +757,14 @@ remove_party = {
 				modifier = {
 					add = 10
 					is_in_array = {
-						array = ig_array_temp
+						array = interest_groups_temp
 						value = token:ig_army
 					}
 				}
 				modifier = {
 					add = 10
 					is_in_array = {
-						array = ig_array_temp
+						array = interest_groups_temp
 						value = token:ig_tribalists
 					}
 				}
@@ -782,14 +782,14 @@ remove_party = {
 				modifier = {
 					add = 10
 					is_in_array = {
-						array = ig_array_temp
+						array = interest_groups_temp
 						value = token:ig_clergy
 					}
 				}
 				modifier = {
 					add = 10
 					is_in_array = {
-						array = ig_array_temp
+						array = interest_groups_temp
 						value = token:ig_tribalists
 					}
 				}
@@ -807,21 +807,21 @@ remove_party = {
 				modifier = {
 					factor = 20
 					is_in_array = {
-						array = ig_array_temp
+						array = interest_groups_temp
 						value = token:ig_anarchists
 					}
 				}
 				modifier = {
 					add = 10
 					is_in_array = {
-						array = ig_array_temp
+						array = interest_groups_temp
 						value = token:ig_army
 					}
 				}
 				modifier = {
 					add = 10
 					is_in_array = {
-						array = ig_array_temp
+						array = interest_groups_temp
 						value = token:ig_navy
 					}
 				}
@@ -839,21 +839,21 @@ remove_party = {
 				modifier = {
 					add = 10
 					is_in_array = {
-						array = ig_array_temp
+						array = interest_groups_temp
 						value = token:ig_navy
 					}
 				}
 				modifier = {
 					add = 10
 					is_in_array = {
-						array = ig_array_temp
+						array = interest_groups_temp
 						value = token:ig_intelligensia
 					}
 				}
 				modifier = {
 					add = 10
 					is_in_array = {
-						array = ig_array_temp
+						array = interest_groups_temp
 						value = token:ig_clergy
 					}
 				}
@@ -871,7 +871,7 @@ remove_party = {
 				modifier = {
 					add = 10
 					is_in_array = {
-						array = ig_array_temp
+						array = interest_groups_temp
 						value = token:ig_intelligensia
 					}
 				}
@@ -889,7 +889,7 @@ remove_party = {
 				modifier = {
 					add = 10
 					is_in_array = {
-						array = ig_array_temp
+						array = interest_groups_temp
 						value = token:ig_navy
 					}
 				}
@@ -907,7 +907,7 @@ remove_party = {
 				modifier = {
 					add = 10
 					is_in_array = {
-						array = ig_array_temp
+						array = interest_groups_temp
 						value = token:ig_intelligensia
 					}
 				}
@@ -925,14 +925,14 @@ remove_party = {
 				modifier = {
 					add = 10
 					is_in_array = {
-						array = ig_array_temp
+						array = interest_groups_temp
 						value = token:ig_navy
 					}
 				}
 				modifier = {
 					add = 10
 					is_in_array = {
-						array = ig_array_temp
+						array = interest_groups_temp
 						value = token:ig_clergy
 					}
 				}
@@ -950,7 +950,7 @@ remove_party = {
 				modifier = {
 					add = 10
 					is_in_array = {
-						array = ig_array_temp
+						array = interest_groups_temp
 						value = token:ig_clergy
 					}
 				}
@@ -1497,15 +1497,15 @@ government_setup = {
 	}
 	if = {
 		limit = {
-			check_variable = { party@token:ideology_conservative = 0 }
+			check_variable = { party@token:ig_conservatives = 0 }
 		}
-		set_variable = { party@token:ideology_conservative = token:party_reactionary_party }
+		set_variable = { party@token:ig_conservatives = token:party_reactionary_party }
 	}
 	if = {
 		limit = {
-			check_variable = { party@token:ideology_reactionary = 0 }
+			check_variable = { party@token:ig_reactionaries = 0 }
 		}
-		set_variable = { party@token:ideology_reactionary = token:party_reactionary_party }
+		set_variable = { party@token:ig_reactionaries = token:party_reactionary_party }
 	}
 	if = {
 		limit = {
@@ -1515,15 +1515,15 @@ government_setup = {
 	}
 	if = {
 		limit = {
-			check_variable = { party@token:ideology_fundamentalist = 0 }
+			check_variable = { party@token:ig_clergy = 0 }
 		}
-		set_variable = { party@token:ideology_fundamentalist = token:party_fundamentalist_party }
+		set_variable = { party@token:ig_clergy = token:party_fundamentalist_party }
 	}
 	if = {
 		limit = {
-			check_variable = { party@token:ideology_monarchist = 0 }
+			check_variable = { party@token:ig_monarchists = 0 }
 		}
-		set_variable = { party@token:ideology_monarchist = token:party_monarchist_party }
+		set_variable = { party@token:ig_monarchists = token:party_monarchist_party }
 	}
 	if = {
 		limit = {
@@ -1721,7 +1721,8 @@ generate_coalitions = {
 			if = {
 				limit = {
 					has_government = centrism
-					check_variable = { ideology@var:p = token:ig_liberals }
+					
+					is_in_array = { interest_groups@var:p = token:ig_liberals }
 				}
 				add_to_array = { parties@token:ruling_coalition = p }
 				set_temp_variable = {
@@ -1733,7 +1734,7 @@ generate_coalitions = {
 			else_if = {
 				limit = {
 					has_government = traditional_conservatism
-					check_variable = { ideology@var:p = token:ig_conservatives }
+					is_in_array = { interest_groups@var:p = token:ig_conservatives }
 				}
 				add_to_array = { parties@token:ruling_coalition = p }
 				set_temp_variable = {
@@ -1745,7 +1746,7 @@ generate_coalitions = {
 			else_if = {
 				limit = {
 					has_government = autocracy
-					check_variable = { ideology@var:p = token:ig_monarchists }
+					is_in_array = { interest_groups@var:p = token:ig_monarchists }
 				}
 				add_to_array = { parties@token:ruling_coalition = p }
 				set_temp_variable = {
@@ -1757,7 +1758,7 @@ generate_coalitions = {
 			else_if = {
 				limit = {
 					has_government = social_egalitarianism
-					check_variable = { ideology@var:p = token:ig_egaliterians }
+					is_in_array = { interest_groups@var:p = token:ig_egaliterians }
 				}
 				add_to_array = { parties@token:ruling_coalition = p }
 				set_temp_variable = {
@@ -1769,7 +1770,7 @@ generate_coalitions = {
 			else_if = {
 				limit = {
 					has_government = collectivist_socialism
-					check_variable = { ideology@var:p = token:ig_collectivist_socialist }
+					is_in_array = { interest_groups@var:p = token:ig_collectivist_socialist }
 				}
 				add_to_array = { parties@token:ruling_coalition = p }
 				set_temp_variable = {
@@ -1781,7 +1782,7 @@ generate_coalitions = {
 			else_if = {
 				limit = {
 					has_government = vanguard_communism
-					check_variable = { ideology@var:p = token:ig_communists }
+					is_in_array = { interest_groups@var:p = token:ig_communists }
 				}
 				add_to_array = { parties@token:ruling_coalition = p }
 				set_temp_variable = {
@@ -1793,7 +1794,7 @@ generate_coalitions = {
 			else_if = {
 				limit = {
 					has_government = fundamentalism
-					check_variable = { ideology@var:p = token:ig_clergy }
+					is_in_array = { interest_groups@var:p = token:ig_clergy }
 				}
 				add_to_array = { parties@token:ruling_coalition = p }
 				set_temp_variable = {
@@ -1805,7 +1806,7 @@ generate_coalitions = {
 			else_if = {
 				limit = {
 					has_government = chauvinist_populism
-					check_variable = { ideology@var:p = token:ig_chauvinists }
+					is_in_array = { interest_groups@var:p = token:ig_chauvinists }
 				}
 				add_to_array = { parties@token:ruling_coalition = p }
 				set_temp_variable = {
@@ -1817,7 +1818,7 @@ generate_coalitions = {
 			else_if = {
 				limit = {
 					has_government = anarchism
-					check_variable = { ideology@var:p = token:ig_anarchists }
+					is_in_array = { interest_groups@var:p = token:ig_anarchists }
 				}
 				add_to_array = { parties@token:ruling_coalition = p }
 				set_temp_variable = {
@@ -1829,8 +1830,9 @@ generate_coalitions = {
 			else_if = {
 				limit = {
 					has_government = radical_democracy
-					check_variable = { ideology@var:p = token:ig_reactionaries }
+					is_in_array = { interest_groups@var:p = token:ig_reactionaries }
 				}
+				add_political_power = 100
 				add_to_array = { parties@token:ruling_coalition = p }
 				set_temp_variable = {
 					var = ii
@@ -1882,14 +1884,14 @@ debug_generate_government = {
 		else_if = {
 			limit = {
 				has_government = traditional_conservatism
-				check_variable = { ideology@var:p = token:ideology_conservative }
+				check_variable = { ideology@var:p = token:ig_conservatives }
 			}
 			add_to_array = { parties@token:ruling_coalition = p }
 		}
 		else_if = {
 			limit = {
 				has_government = autocracy
-				check_variable = { ideology@var:p = token:ideology_monarchist }
+				check_variable = { ideology@var:p = token:ig_monarchists }
 			}
 			add_to_array = { parties@token:ruling_coalition = p }
 		}
@@ -1917,7 +1919,7 @@ debug_generate_government = {
 		else_if = {
 			limit = {
 				has_government = fundamentalism
-				check_variable = { ideology@var:p = token:ideology_fundamentalist }
+				check_variable = { ideology@var:p = token:ig_clergy }
 			}
 			add_to_array = { parties@token:ruling_coalition = p }
 		}
@@ -1938,7 +1940,7 @@ debug_generate_government = {
 		else_if = {
 			limit = {
 				has_government = radical_democracy
-				check_variable = { ideology@var:p = token:ideology_reactionary }
+				check_variable = { ideology@var:p = token:ig_reactionaries }
 			}
 			add_to_array = { parties@token:ruling_coalition = p }
 		}
