@@ -1427,56 +1427,58 @@ add_party_old = {
 	add_to_array = { parties_array = var:party_temp }
 }
 internal_politics_overview_party_interest_groups_toggle = {
-	set_temp_variable = { party_temp = v }
-	set_temp_variable = { index_temp = i }
-
 	if = {
-		limit = { check_variable = { color@var:party_temp > 0 } } # Check if Party
-		if = {
-			limit = {
-				NOT = {
-					all_of = {
-						array = interest_groups@var:party_temp
-						value = vv
-						is_in_array = {
-							array = politics_overview_array
-							value = vv
-						}
-					}
-				}
+		limit = { check_variable = { political_overview_open@var:v = 1 } }
+		for_each_loop = {
+			array = parties@var:v
+			value = p
+			remove_from_array = {
+				array = politics_overview_array
+				value = p
 			}
-			set_temp_variable = { ii = index_temp }
-			add_to_temp_variable = { ii = 1 }
 			for_each_loop = {
-				array = interest_groups@var:party_temp
-				value = vv
-				if = {
-					limit = {
-						NOT = {
-							is_in_array = {
-								array = politics_overview_array
-								value = vv
-							}
-						}
-					}
-					add_to_array = {
-						array = politics_overview_array
-						value = vv
-						index = ii
-					}
-				}
-			}
-		}
-		else = {
-			for_each_loop = {
-				array = interest_groups@var:party_temp
-				value = vv
+				array = interest_groups@var:p
+				value = ig
 				remove_from_array = {
 					array = politics_overview_array
-					value = vv
+					value = ig
 				}
 			}
 		}
+		for_each_loop = {
+			array = interest_groups@var:v
+			value = p
+			remove_from_array = {
+				array = politics_overview_array
+				value = p
+			}
+		}
+		set_variable = { political_overview_open@var:v = 0 }
+	}
+	else = {
+		set_temp_variable = { ii = i }
+		add_to_temp_variable = { ii = 1 }
+		for_each_loop = {
+			array = parties@var:v
+			value = p
+			add_to_array = {
+				array = politics_overview_array
+				value = p
+				index = ii
+			}
+			add_to_temp_variable = { ii = 1 }
+		}
+		for_each_loop = {
+			array = interest_groups@var:v
+			value = ig
+			add_to_array = {
+				array = politics_overview_array
+				value = ig
+				index = ii
+			}
+			add_to_temp_variable = { ii = 1 }
+		}
+		set_variable = { political_overview_open@var:v = 1 }
 	}
 }
 
