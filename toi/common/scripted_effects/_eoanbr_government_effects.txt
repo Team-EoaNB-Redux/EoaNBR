@@ -4,10 +4,11 @@
 	# color_temp - <color_token> (Optional) Token for color used for party's symbol
 	# type_temp - <party_range_token> - (Optional) Token for party type
 	# leader_temp - <character_token> - (Optional) Token for party
+	# ousted_temp - <boolean> - (Optional) Boolean for if party is 'ousted'
 	# interest_groups_temp - list of <ig_token> - (Required)
 	# ig_override_temp - <boolean> (Optional) - (1) will cause the party to 'steal' ig, if there are overlaps with current parties
 	# treasury_temp - <float> (Optional)
-add_party = {
+add_party_to_country = {
 	if = {
 		limit = {
 			check_variable = { party_temp = 0 }
@@ -34,7 +35,11 @@ add_party = {
 		get_party_type_from_interest_groups = yes
 	}
 	set_variable = { pol_range@var:party_temp = type_temp }
-	set_variable = { leader@var:party_temp = leader_temp }
+	var:leader_temp = {
+		set_variable = { PREV.leader@var:party_temp = THIS }
+	}
+	set_variable = { ousted@var:party_temp = ousted_temp }
+	set_variable = { treasury@var:party_temp = treasury_temp }
 
 	if = {
 		limit = {
@@ -110,18 +115,19 @@ add_party = {
 		clear_temp_variable = color_temp
 		clear_temp_variable = type_temp
 		clear_temp_variable = leader_temp
+		clear_temp_variable = ousted_temp
+		clear_temp_variable = treasury_temp
 		clear_temp_array = interest_groups_temp
 		clear_temp_variable = ig_override_temp
-		clear_temp_variable = treasury_temp
 	#
+}
+remove_party_from_country = {
+
 }
 add_ig_to_party = {
 
 }
 remove_ig_from_party = {
-
-}
-remove_party = {
 
 }
 
@@ -967,7 +973,7 @@ remove_party = {
 	}
 #
 
-add_party_to_country = {
+add_party_old = {
 	# party_temp - <party_token> any of the parties to be used in code
 	# party_override_temp - <party_token> override name
 	# color_temp - <color_token>
