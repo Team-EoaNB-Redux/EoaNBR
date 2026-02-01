@@ -2,7 +2,7 @@
 # Industry Update
 	industries_update = {
 		set_variable = { pops_dividends@token:capitalists = 0 }
-		set_variable = { pops_dividends@token:aristocrats = 0 }
+		set_variable = { pops_dividends@token:landowners = 0 }
 		set_variable = { pops_bonuses@token:laborers = 0 }
 		set_variable = { pops_bonuses@token:workers = 0 }
 		set_variable = { pops_bonuses@token:professionals = 0 }
@@ -1554,6 +1554,8 @@
 		clamp_variable = { var = peasants_marginal_land min = 0 max = pops_workforce@token:peasants }
 
 		# Subsistence Farm Production & Income
+		set_temp_variable = { market_reach_modifier = global.peasant_market_interaction } # Portion of production that can be sold at market price due to limited market reach
+		set_temp_variable = { basic_production_revenue = 0 } # Revenue from static production independent of price (to represent consumption of self-production)
 		set_temp_variable = { revenue_temp = 0 }
 		set_variable = { revenue_goods@token:subsistence_farm = 0 }
 		clear_array = production@token:subsistence_farm
@@ -1580,7 +1582,17 @@
 			set_temp_variable = { money_temp = prod_temp }
 			multiply_temp_variable = { money_temp = controller:price@var:r_token }
 
+			set_temp_variable = { non_market_money = 1 }
+			subtract_from_temp_variable = { non_market_money = market_reach_modifier }
+			multiply_temp_variable = { money_temp = market_reach_modifier } # Portion sold
+
+			multiply_temp_variable = { non_market_money = prod_temp }
+			multiply_temp_variable = { non_market_money = global.base_price@var:r_token }
+			add_to_temp_variable = { money_temp = non_market_money } # Portion consumed internally at base price
+			
+			multiply_temp_variable = { prod_temp = market_reach_modifier } # Portion sold
 			add_to_array = { production@token:subsistence_farm = prod_temp }
+
 			add_to_array = { revenue_goods@token:subsistence_farm = money_temp }
 			add_to_variable = { revenue_goods@token:subsistence_farm = money_temp }
 
@@ -1589,7 +1601,15 @@
 			multiply_temp_variable = { productivity_temp = controller:pm_output_multiplier@token:pm_subsistence_farming }
 			divide_temp_variable = { productivity_temp = global.building_base_employees@token:subsistence_farm }
 			divide_temp_variable = { productivity_temp = controller:pm_workforce_peasants@token:pm_subsistence_farming }
+
+			set_temp_variable = { non_market_money = 1 }
+			subtract_from_temp_variable = { non_market_money = market_reach_modifier }
+			multiply_temp_variable = { productivity_temp = market_reach_modifier }
+
+			multiply_temp_variable = { non_market_money = global.base_price@var:r_token }
 			multiply_temp_variable = { productivity_temp = controller:price@var:r_token }
+			add_to_temp_variable = { productivity_temp = non_market_money }
+			
 			add_to_temp_variable = { revenue_temp = productivity_temp }
 		}
 
@@ -1598,7 +1618,7 @@
 
 		# Expenses
 		set_variable = { expenses_payroll@token:subsistence_farm = revenue@token:subsistence_farm }
-		multiply_variable = { expenses_payroll@token:subsistence_farm = 0.8 }				 # Aristocrats take 20%
+		multiply_variable = { expenses_payroll@token:subsistence_farm = 0.8 }				 # Landowners take 20%
 		set_variable = { expenses@token:subsistence_farm = expenses_payroll@token:subsistence_farm }
 
 		set_variable = { average_wage@token:subsistence_farm = expenses_payroll@token:subsistence_farm }
@@ -1610,7 +1630,7 @@
 
 		# Productivity
 		if = { 
-			limit = { check_variable = { pops_workforce@token:peasants > 0 } check_variable = { revenue_goods@token:peasants > 0 } } 
+			limit = { check_variable = { pops_workforce@token:peasants > 0 } check_variable = { revenue_goods@token:subsistence_farm > 0 } } 
 			set_variable = { productivity@token:subsistence_farm = revenue_goods@token:subsistence_farm }
 			divide_variable = { productivity@token:subsistence_farm = pops_workforce@token:peasants }
 		}

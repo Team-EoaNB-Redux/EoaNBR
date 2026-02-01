@@ -215,16 +215,21 @@
 	}
 	pops_calculate_earnings_and_investment = {
 		# current_pop_token 
+
+		# Base Earnings
+		set_temp_variable = { p_pops_earnings = pops@var:current_pop_token }
+		multiply_temp_variable = { p_pops_earnings = global.base_pop_earnings } # 0.1
 		
 		# Earnings from Wages
 		if = { 
 			limit = { check_variable = { current_pop_token = token:peasants } }
-			set_temp_variable = { p_pops_earnings = expenses_payroll@token:subsistence_farm }
+			add_to_temp_variable = { p_pops_earnings = expenses_payroll@token:subsistence_farm }
 		}
 		else = {
-			set_temp_variable = { p_pops_earnings = p_pops_employed }
-			multiply_temp_variable = { p_pops_earnings = global.wage_multiplier@var:current_pop_token }
-			multiply_temp_variable = { p_pops_earnings = base_wage }
+			set_temp_variable = { p_pops_wage_earnings = p_pops_employed }
+			multiply_temp_variable = { p_pops_wage_earnings = global.wage_multiplier@var:current_pop_token }
+			multiply_temp_variable = { p_pops_wage_earnings = base_wage }
+			add_to_temp_variable = { p_pops_earnings = p_pops_wage_earnings }
 		}
 
 		# Earnings from Bonuses
@@ -235,7 +240,7 @@
 		if = {
 			limit = { 
 				OR = { 
-					check_variable = { current_pop_token = token:aristocrats } 
+					check_variable = { current_pop_token = token:landowners } 
 					check_variable = { current_pop_token = token:capitalists } 
 				} 
 			}
@@ -243,8 +248,8 @@
 
 			if = {
 				limit = { check_variable = { p_pops_earnings > 0 } }
-				if = { limit = { check_variable = { current_pop_token = token:aristocrats } }
-					set_temp_variable = { p_pops_investment = controller:modifier@aristocrats_investment_contribution_factor } 
+				if = { limit = { check_variable = { current_pop_token = token:landowners } }
+					set_temp_variable = { p_pops_investment = controller:modifier@landowners_investment_contribution_factor } 
 				}
 				if = { 
 					limit = { check_variable = { current_pop_token = token:capitalists } }
@@ -269,11 +274,23 @@
 		get_pop_needs = yes
 		set_temp_variable = { p_pops_needs_spending = needs_spending_temp }
 
+		if = { # After-the-fact consumption modifier on goods total. E.g. peasants consuming less market goods due to subsistence farming
+			limit = {
+				check_variable = { current_pop_token = token:peasants }
+			}
+			set_temp_variable = { consumption_modifier = global.peasant_market_interaction }
+		}
+		else = {
+			set_temp_variable = { consumption_modifier = 1 }
+		}
+
 		for_each_loop = {
 			array = global.pop_needs_resources
 			value = pop_r_token
-			
-			add_to_variable = { pops_need@var:pop_r_token = pops_need_t@var:pop_r_token }
+
+			set_temp_variable = { pops_need_t = pops_need_t@var:pop_r_token }
+			multiply_temp_variable = { pops_need_t = consumption_modifier }
+			add_to_variable = { pops_need@var:pop_r_token = pops_need_t }
 		}
 
 		set_temp_variable = { p_pops_spending = p_pops_needs_spending }
@@ -465,7 +482,7 @@
 
 		## JOBS
 		set_variable = { pops_jobs@token:capitalists = 0 }
-		set_variable = { pops_jobs@token:aristocrats = 0 }
+		set_variable = { pops_jobs@token:landowners = 0 }
 
 		set_temp_variable = { e_laborers_jobs = 0 }
 		set_temp_variable = { e_laborers_jobs_available = 0 }
@@ -516,7 +533,7 @@
 		set_variable = { pops_jobs_available@token:specialists = e_specialists_jobs_available }
 
 		set_variable = { pops_jobs_available@token:capitalists = pops_jobs@token:capitalists }
-		set_variable = { pops_jobs_available@token:aristocrats = pops_jobs@token:aristocrats }
+		set_variable = { pops_jobs_available@token:landowners = pops_jobs@token:landowners }
 
 		## JOB FULFILLMENT
 		set_variable = { pops_jobs_available = 0 }
@@ -814,8 +831,8 @@
 		set_temp_variable = { specialists_change = pops_workforce_balance@token:specialists }
 		multiply_temp_variable = { specialists_change = -1 }
 
-		set_temp_variable = { aristocrats_change = aristocrats_jobs }
-		subtract_from_temp_variable = { aristocrats_change = pops_workforce_balance@token:aristocrats }
+		set_temp_variable = { landowners_change = landowners_jobs }
+		subtract_from_temp_variable = { landowners_change = pops_workforce_balance@token:landowners }
 		
 		set_temp_variable = { capitalists_change = capitalists_jobs }
 		subtract_from_temp_variable = { capitalists_change = pops_workforce_balance@token:capitalists }
@@ -831,7 +848,7 @@
 		# workers_change
 		# professionals_change
 		# specialists_change
-		# aristocrats_change
+		# landowners_change
 		# capitalists_change
 		# bureaucrats_change
 		# soldiers_change
@@ -845,7 +862,7 @@
 		set_temp_variable = { pops_change@token:workers = workers_change }
 		set_temp_variable = { pops_change@token:professionals = professionals_change }
 		set_temp_variable = { pops_change@token:specialists = specialists_change }
-		set_temp_variable = { pops_change@token:aristocrats = aristocrats_change }
+		set_temp_variable = { pops_change@token:landowners = landowners_change }
 		set_temp_variable = { pops_change@token:capitalists = capitalists_change }
 		set_temp_variable = { pops_change@token:bureaucrats = bureaucrats_change }
 		set_temp_variable = { pops_change@token:soldiers = soldiers_change }
@@ -935,7 +952,7 @@
 
 		if = {
 			limit = { check_variable = { percent_done > 0 } }
-			# Note: Aristocrats & Capitalists don't count for qualification changes b/c they're required at every stage of tech. But they do count as literate + schooled.
+			# Note: Landowners & Capitalists don't count for qualification changes b/c they're required at every stage of tech. But they do count as literate + schooled.
 
 			## Educated Qualifications (Just specialists) ##
 				if = {
@@ -976,7 +993,7 @@
 					subtract_from_temp_variable = { schooled_change_cap = pops_workforce@token:professionals }
 					subtract_from_temp_variable = { schooled_change_cap = pops_workforce@token:specialists }
 					subtract_from_temp_variable = { schooled_change_cap = pops_workforce@token:capitalists }
-					subtract_from_temp_variable = { schooled_change_cap = pops_workforce@token:aristocrats }
+					subtract_from_temp_variable = { schooled_change_cap = pops_workforce@token:landowners }
 					# log = "Schooled Change: [?schooled_change] / [?schooled_change_cap]"
 
 					if = {
@@ -1035,7 +1052,7 @@
 				# if = { limit = { NOT = { check_variable = { workers_change = 0 } } }  log = "Workers Change: [?workers_change]" }
 				# if = { limit = { NOT = { check_variable = { professionals_change = 0 } } }  log = "Professionals Change: [?professionals_change]" }
 				# if = { limit = { NOT = { check_variable = { specialists_change = 0 } } }  log = "Specialists Change: [?specialists_change]" }
-				# if = { limit = { NOT = { check_variable = { aristocrats_change = 0 } } }  log = "Aristocrats Change: [?aristocrats_change]" }
+				# if = { limit = { NOT = { check_variable = { landowners_change = 0 } } }  log = "Landowners Change: [?landowners_change]" }
 				# if = { limit = { NOT = { check_variable = { capitalists_change = 0 } } }  log = "Capitalists Change: [?capitalists_change]" }
 				# if = { limit = { NOT = { check_variable = { bureaucrats_change = 0 } } }  log = "Bureaucrats Change: [?bureaucrats_change]" }
 				# if = { limit = { NOT = { check_variable = { soldiers_change = 0 } } }  log = "Soldiers Change: [?soldiers_change]" }
@@ -1046,7 +1063,7 @@
 				# if = { limit = { NOT = { check_variable = { workers_workforce = 0 } } }  log = "Workers Workforce: [?workers_workforce]" }
 				# if = { limit = { NOT = { check_variable = { professionals_workforce = 0 } } }  log = "Professionals Workforce: [?professionals_workforce]" }
 				# if = { limit = { NOT = { check_variable = { specialists_workforce = 0 } } }  log = "Specialists Workforce: [?specialists_workforce]" }
-				# if = { limit = { NOT = { check_variable = { aristocrats_workforce = 0 } } }  log = "Aristocrats Workforce: [?aristocrats_workforce]" }
+				# if = { limit = { NOT = { check_variable = { landowners_workforce = 0 } } }  log = "Landowners Workforce: [?landowners_workforce]" }
 				# if = { limit = { NOT = { check_variable = { capitalists_workforce = 0 } } }  log = "Capitalists Workforce: [?capitalists_workforce]" }
 				# if = { limit = { NOT = { check_variable = { bureaucrats_workforce = 0 } } }  log = "Bureaucrats Workforce: [?bureaucrats_workforce]" }
 				# if = { limit = { NOT = { check_variable = { soldiers_workforce = 0 } } }  log = "Soldiers Workforce: [?soldiers_workforce]" }
@@ -1071,7 +1088,7 @@
 			# if = { limit = { NOT = { check_variable = { workers_workforce = 0 } } }  log = "Workers Workforce: [?workers_workforce]" }
 			# if = { limit = { NOT = { check_variable = { professionals_workforce = 0 } } }  log = "Professionals Workforce: [?professionals_workforce]" }
 			# if = { limit = { NOT = { check_variable = { specialists_workforce = 0 } } }  log = "Specialists Workforce: [?specialists_workforce]" }
-			# if = { limit = { NOT = { check_variable = { aristocrats_workforce = 0 } } }  log = "Aristocrats Workforce: [?aristocrats_workforce]" }
+			# if = { limit = { NOT = { check_variable = { landowners_workforce = 0 } } }  log = "Landowners Workforce: [?landowners_workforce]" }
 			# if = { limit = { NOT = { check_variable = { capitalists_workforce = 0 } } }  log = "Capitalists Workforce: [?capitalists_workforce]" }
 			# if = { limit = { NOT = { check_variable = { bureaucrats_workforce = 0 } } }  log = "Bureaucrats Workforce: [?bureaucrats_workforce]" }
 			# if = { limit = { NOT = { check_variable = { soldiers_workforce = 0 } } }  log = "Soldiers Workforce: [?soldiers_workforce]" }
@@ -1085,7 +1102,7 @@
 		set_temp_variable = { workers_change = 0 }
 		set_temp_variable = { professionals_change = 0 }
 		set_temp_variable = { specialists_change = 0 }
-		set_temp_variable = { aristocrats_change = 0 }
+		set_temp_variable = { landowners_change = 0 }
 		set_temp_variable = { capitalists_change = 0 }
 		set_temp_variable = { bureaucrats_change = 0 }
 		set_temp_variable = { soldiers_change = 0 }
@@ -1115,13 +1132,13 @@
 		}
 	}
 	fix_negative_workforce = {
-		# Fixes negative aristocrats/capitalists by sourcing from peasants/laborers
+		# Fixes negative landowners/capitalists by sourcing from peasants/laborers
 		if = {
 			limit = {
-				check_variable = { pops_workforce@token:aristocrats < 0 }
+				check_variable = { pops_workforce@token:landowners < 0 }
 			}
-			add_to_variable = { pops_workforce@token:peasants = pops_workforce@token:aristocrats }
-			set_variable = { pops_workforce@token:aristocrats = 0 }
+			add_to_variable = { pops_workforce@token:peasants = pops_workforce@token:landowners }
+			set_variable = { pops_workforce@token:landowners = 0 }
 		}
 		if = {
 			limit = {
@@ -3644,6 +3661,23 @@
 			multiply_temp_variable = { gdp_temp = controller:price@var:r_token }
 			add_to_variable = { gdp_amount = gdp_temp }
 		}
+		# Subsistence Farming
+		for_each_loop = {
+			array = global.building_base_production@token:subsistence_farm
+			value = r_token
+			index = sub_i_temp
+
+			set_temp_variable = { sub_temp = production@token:subsistence_farm^sub_i_temp }
+			divide_temp_variable = { sub_temp = global.peasant_market_interaction }
+
+			set_temp_variable = { market_reach_temp = 1 }
+			subtract_from_temp_variable = { market_reach_temp = global.peasant_market_interaction }
+			multiply_temp_variable = { sub_temp = market_reach_temp }
+
+			multiply_temp_variable = { sub_temp = global.base_price@var:r_token }
+			add_to_variable = { gdp_amount = sub_temp }
+		}
+
 		set_temp_variable = { ind_tmp = industrial_capacity }
 		subtract_from_temp_variable = { ind_tmp = industrial_capacity_use }
 		subtract_from_temp_variable = { ind_tmp = global.base_industrial_capacity }
