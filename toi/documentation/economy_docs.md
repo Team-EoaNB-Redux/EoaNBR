@@ -568,9 +568,9 @@ NONE OF THESE ARE IMPLEMENTED
         <td> Country/State </td>
     </tr>
     <tr>
-        <td> has_aristocrats </td>
-        <td> <code> x_temp = float </code> <br> (Optional) Aristocrats amount. Default is 0.</td>
-        <td> <code> set_temp_variable = { x_temp = 3.5 } <br> has_aristocrats = yes </code> </td>
+        <td> has_landowners </td>
+        <td> <code> x_temp = float </code> <br> (Optional) Landowners amount. Default is 0.</td>
+        <td> <code> set_temp_variable = { x_temp = 3.5 } <br> has_landowners = yes </code> </td>
         <td> Checks if the current scope's aristocrat amount is more than the given value.</td>
         <td> </td>
         <td> Country/State </td>
@@ -853,7 +853,7 @@ A list of modifiers that can be used in ideas and dynamic modifiers. Each of the
         <td> Country </td>
     </tr>
     <tr>
-        <td> aristocrats_investment_contribution_factor </td>
+        <td> landowners_investment_contribution_factor </td>
         <td> </td>
         <td> </td>
         <td> </td>
