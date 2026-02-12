@@ -11,23 +11,29 @@
 	}
 	.example-header {
 		background-color: #f6e985;
+		color: black;
 	}
 	.example-row:nth-child(even) {
 		background-color: #fffff1;
+		color: black;
 	}
 	.example-row:hover {
 		font-weight: bold;
 		background-color: #eeee30dd;
+		color: black;
 	}
 	.define-header {
 		background-color: #85dff6;
+		color: black;
 	}
 	.define-row:nth-child(even) {
 		background-color: #f1ffff;
+		color: black;
 	}
 	.define-row:hover {
 		font-weight: bold;
 		background-color: #30eededd;
+		color: black;
 	}
 
 
@@ -83,7 +89,7 @@ Coalitions are dynamic groups of parties within a country's legislature that *ty
 
 ### Parties
 
-Parties are dynamic collections of interest groups that have agreed to vote together 
+Parties are dynamic collections of interest groups that have agreed to vote together.
 
 <div>
 	<table >
@@ -162,7 +168,7 @@ Parties are dynamic collections of interest groups that have agreed to vote toge
 	<table>
 </div>
 
-### Default Parties
+#### Default Parties
 
 This is the list of parties that may appear in a country's legislature if no custom parties have been defined, and their default values.
 
@@ -285,7 +291,15 @@ This is the list of parties that may appear in a country's legislature if no cus
 			<td>party_independence_party</td>
 			<td>Institutional</td>
 			<td>Blue</td>
-			<td>Independence</td>
+			<td>Independence Supporters</td>
+			<td><p></p></td>
+		</tr>
+		<tr class="example-row">
+			<td></td>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td></td>
 			<td><p></p></td>
 		</tr>
 	<table>
@@ -315,4 +329,4 @@ This is the list of parties that may appear in a country's legislature if no cus
 
 ## Scripted Localisation
 
-
+## Modifiers
