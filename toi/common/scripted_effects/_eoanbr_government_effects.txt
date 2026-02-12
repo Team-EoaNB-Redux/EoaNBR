@@ -1,10 +1,10 @@
 
 	# party_temp - <party_token> (Optional) Token for Party to be created.
-	# party_override_temp - <party_token> (Optional) Token for an override party name. Party value is still party_temp
+	# name_override_temp - <party_token> (Optional) Token for an override party name. Party value is still party_temp
 	# color_temp - <color_token> (Optional) Token for color used for party's symbol
 	# type_temp - <party_range_token> - (Optional) Token for party type
 	# leader_temp - <character_token> - (Optional) Token for party
-	# ousted_temp - <boolean> - (Optional) Boolean for if party is 'ousted'
+	# marginalized_temp - <boolean> - (Optional) Boolean for if party is 'marginalized'
 	# interest_groups_temp - list of <ig_token> - (Required)
 	# ig_override_temp - <boolean> (Optional) - (1) will cause the party to 'steal' ig, if there are overlaps with current parties
 	# treasury_temp - <float> (Optional)
@@ -17,9 +17,9 @@ add_party_to_country = {
 	}
 	if = {
 		limit = {
-			check_variable = { party_override_temp > 0 }
+			check_variable = { name_override_temp > 0 }
 		}
-		set_variable = { name_override@var:party_temp = party_override_temp }
+		set_variable = { name_override@var:party_temp = name_override_temp }
 	}
 	if = {
 		limit = {
@@ -38,7 +38,7 @@ add_party_to_country = {
 	var:leader_temp = {
 		set_variable = { PREV.leader@var:party_temp = THIS }
 	}
-	set_variable = { ousted@var:party_temp = ousted_temp }
+	set_variable = { marginalized@var:party_temp = marginalized_temp }
 	set_variable = { treasury@var:party_temp = treasury_temp }
 
 	if = {
@@ -111,11 +111,11 @@ add_party_to_country = {
 	#
 	# Clear Values
 		clear_temp_variable = party_temp
-		clear_temp_variable = party_override_temp
+		clear_temp_variable = name_override_temp
 		clear_temp_variable = color_temp
 		clear_temp_variable = type_temp
 		clear_temp_variable = leader_temp
-		clear_temp_variable = ousted_temp
+		clear_temp_variable = marginalized_temp
 		clear_temp_variable = treasury_temp
 		clear_temp_array = interest_groups_temp
 		clear_temp_variable = ig_override_temp
@@ -975,7 +975,7 @@ remove_ig_from_party = {
 
 add_party_old = {
 	# party_temp - <party_token> any of the parties to be used in code
-	# party_override_temp - <party_token> override name
+	# name_override_temp - <party_token> override name
 	# color_temp - <color_token>
 	# type_temp - <party_range_token>
 
@@ -1034,7 +1034,7 @@ add_party_old = {
 				set_temp_variable = { party_temp = token:party_socialist_party }
 			}
 		}
-		log = "[?party_temp]ascasc"
+		log = "[?party_temp]"
 	}
 	if = {
 		limit = { check_variable = { type_temp = 0 } }
@@ -1557,7 +1557,7 @@ politics_overview_reset = {
 	clear_array = politics_overview_array
 	set_variable = { political_overview_open@token:ruling_coalition = 0 }
 	set_variable = { political_overview_open@token:oppositional_parties = 0 }
-	set_variable = { political_overview_open@token:ousted_parties = 0 }
+	set_variable = { political_overview_open@token:marginalized_parties = 0 }
 	if = {
 		limit = {
 			check_variable = { parties@token:ruling_coalition^num > 0 }
@@ -1606,23 +1606,23 @@ politics_overview_reset = {
 	}
 	if = {
 		limit = {
-			check_variable = { parties@token:ousted_parties^num > 0 }
+			check_variable = { parties@token:marginalized_parties^num > 0 }
 		}
-		set_variable = { political_overview_open@token:ousted_parties = 1 }
+		set_variable = { political_overview_open@token:marginalized_parties = 1 }
 		add_to_array = {
 			array = politics_overview_array
-			value = token:ousted_parties
+			value = token:marginalized_parties
 		}
-		set_variable = { strength@token:ousted_parties = 0 }
+		set_variable = { strength@token:marginalized_parties = 0 }
 		for_each_loop = {
-			array = parties@token:ousted_parties
+			array = parties@token:marginalized_parties
 			value = p
 			add_to_array = {
 				array = politics_overview_array
 				value = p
 			}
 			add_to_variable = {
-				var = strength@token:ousted_parties
+				var = strength@token:marginalized_parties
 				value = strength@var:p
 			}
 		}
@@ -1720,7 +1720,7 @@ generate_parties = {
 generate_coalitions = {
 	clear_array = parties@token:ruling_coalition
 	clear_array = parties@token:oppositional_parties
-	clear_array = parties@token:ousted_parties
+	clear_array = parties@token:marginalized_parties
 
 	# Temp Assignment for Ruling Party
 		for_each_loop = {
@@ -1853,15 +1853,15 @@ generate_coalitions = {
 			else_if = {
 				limit = {
 					check_variable = {
-						ousted@var:p = 1
+						marginalized@var:p = 1
 					}
 				}
-				add_to_array = { parties@token:ousted_parties = p }
+				add_to_array = { parties@token:marginalized_parties = p }
 				set_temp_variable = {
 					var = ii
 					value = ideology@var:p
 				}
-				log = "ousted [?p.GetTokenLocalizedKey] - [?ii.GetTokenLocalizedKey]"
+				log = "marginalized [?p.GetTokenLocalizedKey] - [?ii.GetTokenLocalizedKey]"
 			}
 			else = {
 				add_to_array = { parties@token:oppositional_parties = var:p }
