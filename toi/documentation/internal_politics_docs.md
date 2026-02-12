@@ -6,6 +6,8 @@
 		border: 1px solid;
 		text-align: center;
 		padding: 8px;
+		
+		line-height: 1;
 	}
 	.example-header {
 		background-color: #f6e985;
@@ -55,7 +57,7 @@ Coalitions are dynamic groups of parties within a country's legislature that *ty
 			<th width=140px>Coalition Type</th>
 			<th width=140px>Token</th>
 			<th width=140px>Rules</th>
-			<th>Notes</th>
+			<th>Additional Notes</th>
 		</tr>
 		<tr class="example-row">
 			<td>Ruling Coalition</td>
@@ -89,7 +91,7 @@ Parties are dynamic collections of interest groups that have agreed to vote toge
 			<th width=140px>Value</th>
 			<th width=140px>Variable</th>
 			<th width=140px>Variable Type</th>
-			<th>Notes</th>
+			<th>Additional Notes</th>
 		</tr>
 		<tr class="define-row">
 			<td>Party</td>
@@ -134,40 +136,22 @@ Parties are dynamic collections of interest groups that have agreed to vote toge
 			<td><p>Array that represents the group of Interest Groups that will vote together per Party Interests.</p><p></p></td>
 		</tr>
 		<tr class="define-row">
-			<td>Party Treasury</td>
+			<td>Treasury</td>
 			<td>treasury</td>
 			<td>&lt;float&gt;</td>
-			<td><p></p><p></p></td>
+			<td><p>How much money the party has stockpiled.</p><p></p></td>
 		</tr>
 		<tr class="define-row">
 			<td>Popularity</td>
 			<td>popularity</td>
 			<td>&lt;float&gt;</td>
-			<td><p></p><p></p></td>
+			<td><p>How many relevant voters are considered members of this party.</p><p></p></td>
 		</tr>
 		<tr class="define-row">
 			<td>Strength</td>
 			<td>strength</td>
 			<td>&lt;float&gt;</td>
-			<td><p></p><p></p></td>
-		</tr>
-		<tr class="define-row">
-			<td>Enthusiasm</td>
-			<td>enthusiasm</td>
-			<td>&lt;percentage&gt;</td>
-			<td><p></p><p></p></td>
-		</tr>
-		<tr class="define-row">
-			<td>Unity</td>
-			<td>unity</td>
-			<td>&lt;percentage&gt;</td>
-			<td><p></p><p></p></td>
-		</tr>
-		<tr class="define-row">
-			<td></td>
-			<td></td>
-			<td></td>
-			<td><p></p><p></p></td>
+			<td><p>Represents how much power this party has on legislative processes within the national legislature. This is an abstraction of both how many 'seats' its party members may have, and their ability to sway/push legisilation.</p><p></p></td>
 		</tr>
 		<tr class="define-row">
 			<td></td>
@@ -180,7 +164,7 @@ Parties are dynamic collections of interest groups that have agreed to vote toge
 
 ### Default Parties
 
-This is the list of parties that may appear in a country's legislature if no custom parties have been defined.
+This is the list of parties that may appear in a country's legislature if no custom parties have been defined, and their default values.
 
 <div>
 	<table >
@@ -188,84 +172,120 @@ This is the list of parties that may appear in a country's legislature if no cus
 			<th width=140px>Party</th>
 			<th width=140px>Token</th>
 			<th width=140px>Type</th>
-			<th width=240px>Interest Groups</th>
-			<th>Notes</th>
+			<th width=140px>Color</th>
+			<th width=240px>Root Interest Group(s)</th>
+			<th>Additional Notes</th>
 		</tr>
 		<tr class="example-row">
 			<td>Communist Party</td>
 			<td>party_communist_party</td>
-			<td></td>
-			<td></td>
+			<td>Ideological</td>
+			<td>Red</td>
+			<td>Communists, Vanguard Socialists</td>
 			<td><p></p></td>
 		</tr>
 		<tr class="example-row">
 			<td>Socialist Party</td>
 			<td>party_socialist_party</td>
-			<td></td>
-			<td></td>
+			<td>Ideological</td>
+			<td>Light Red</td>
+			<td>Collectivist Socialists, Laborists</td>
 			<td><p></p></td>
 		</tr>
 		<tr class="example-row">
 			<td>Liberal Party</td>
 			<td>party_liberal_party</td>
-			<td></td>
-			<td></td>
+			<td>Ideological</td>
+			<td>Yellow</td>
+			<td>Liberals, Egaliterians, Entrepeneurs</td>
 			<td><p></p></td>
 		</tr>
 		<tr class="example-row">
 			<td>Conservative Party</td>
 			<td>party_conservative_party</td>
-			<td></td>
-			<td></td>
+			<td>Ideological</td>
+			<td>Light Blue</td>
+			<td>Conservatives, Capitalists</td>
+			<td><p></p></td>
+		</tr>
+		<tr class="example-row">
+			<td>Fascist Party</td>
+			<td>party_fascist_party</td>
+			<td>Ideological</td>
+			<td>Brown</td>
+			<td>Leader, Fascists</td>
+			<td><p></p></td>
+		</tr>
+		<tr class="example-row">
+			<td>National Party</td>
+			<td>party_national_party</td>
+			<td>Ideological</td>
+			<td>Black</td>
+			<td>Chauvinists, Intelligensia, Patriots</td>
 			<td><p></p></td>
 		</tr>
 		<tr class="example-row">
 			<td>Reactionary Party</td>
 			<td>party_reactionary_party</td>
-			<td></td>
-			<td></td>
-			<td><p></p></td>
-		</tr>
-		<tr class="example-row">
-			<td>Chauvinist Party</td>
-			<td>party_chauvinist_party</td>
-			<td></td>
-			<td></td>
+			<td>Institutional</td>
+			<td>Black</td>
+			<td>Reactionaries, Landowners</td>
 			<td><p></p></td>
 		</tr>
 		<tr class="example-row">
 			<td>Monarchist Party</td>
 			<td>party_monarchist_party</td>
-			<td></td>
-			<td></td>
+			<td>Institutional</td>
+			<td>Purple</td>
+			<td>Monarchists</td>
 			<td><p></p></td>
 		</tr>
 		<tr class="example-row">
 			<td>Fundamentalist Party</td>
 			<td>party_fundamentalist_party</td>
-			<td></td>
-			<td></td>
+			<td>Institutional</td>
+			<td>Beige</td>
+			<td>Clergy, Moralists</td>
 			<td><p></p></td>
 		</tr>
 		<tr class="example-row">
 			<td>Military Junta</td>
 			<td>party_stratocratic_party</td>
-			<td></td>
-			<td></td>
+			<td>Institutional</td>
+			<td>Gray</td>
+			<td>Army, Navy, Securocrats</td>
+			<td><p></p></td>
+		</tr>
+		<tr class="example-row">
+			<td>Agrarian Party</td>
+			<td>party_agrarian_party</td>
+			<td>Institutional</td>
+			<td>Light Green</td>
+			<td>Agrarians</td>
+			<td><p></p></td>
+		</tr>
+		<tr class="example-row">
+			<td>Anarchist Party</td>
+			<td>party_anarchist_party</td>
+			<td>Institutional</td>
+			<td>Dark Red</td>
+			<td>Anarchists</td>
 			<td><p></p></td>
 		</tr>
 		<tr class="example-row">
 			<td>Tribal Council</td>
 			<td>party_tribal_council</td>
-			<td></td>
-			<td></td>
+			<td>Institutional</td>
+			<td>Dark Green</td>
+			<td>Tribalists</td>
 			<td><p></p></td>
 		</tr>
 		<tr class="example-row">
 			<td>Independence Party</td>
 			<td>party_independence_party</td>
-			<td></td>
-			<td></td>
+			<td>Institutional</td>
+			<td>Blue</td>
+			<td>Independence</td>
 			<td><p></p></td>
 		</tr>
 	<table>
