@@ -17,6 +17,10 @@
 		background-color: #fffff1;
 		color: black;
 	}
+	.example-row:nth-child(odd) {
+		background-color: #e5e8e8;
+		color: black;
+	}
 	.example-row:hover {
 		font-weight: bold;
 		background-color: #eeee30dd;
@@ -28,6 +32,10 @@
 	}
 	.define-row:nth-child(even) {
 		background-color: #f1ffff;
+		color: black;
+	}
+	.define-row:nth-child(odd) {
+		background-color: #e5e8e8;
 		color: black;
 	}
 	.define-row:hover {
@@ -136,7 +144,7 @@ Parties are dynamic collections of interest groups that have agreed to vote toge
 			<td><p>Represents whether the party is considered 'marginalized' in national politics. Marginalized Parties cannot join either the ruling coalition, nor the oppositional coalition. They have a downsized influence in legislative voting, regardless their popularity within the national populous.</p><p></p></td>
 		</tr>
 		<tr class="define-row">
-			<td>Interest Group Members</td>
+			<td>Interest Groups</td>
 			<td>interest_groups</td>
 			<td>array of &lt;ig_token(s)&gt;</td>
 			<td><p>Array that represents the group of Interest Groups that will vote together per Party Interests.</p><p></p></td>
