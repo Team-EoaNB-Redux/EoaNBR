@@ -109,7 +109,7 @@ If you wish to contribute to the development of the mod, support us on Patreon o
 <table>
 <tr>
 <td align="center">
-  <p><img src="https://cdn.discordapp.com/attachments/469238221436354580/960730076553576498/energy.png" width="80px;" alt="Energywelder"/></p>
+  <p><img src="https://avatars.githubusercontent.com/u/67761668?v=4)" width="80px;" alt="Energywelder"/></p>
   <p></p><a href = "https://github.com/Energywelder"><strong>Energywelder</strong></a></p>
 </td>
 <td align="center">
