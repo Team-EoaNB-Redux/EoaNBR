@@ -1,9 +1,18 @@
 Topbar:
+	Budget:
+		Treasury
+		Monthly Net Budget
+		Net Budget to GDP
+		Budget Graph
+
 	Economy:
 		GDP
 		SoL
+		
+		Top Trades (Exports/Imports)
 		Population
-		Treasury & net budget
+		Unemployment / Business Cycle
+		Inflation
 
 	Politics:
 		Legislative Power
@@ -11,7 +20,7 @@ Topbar:
 		Stability
 		War Support
 		Political Strength
-		Political Support (bar)
+		Political Support (bar) - when something is being voted on (indicator for active session)
 
 		Ranking
 
@@ -19,9 +28,11 @@ Topbar:
 		Manpower
 		Regiments
 		Command Power
+
 		Convoys
 		Logstics
 		Fuel
+		Military Spending
 
 Politics:
 	Party 1 - Liberal Democrats: 20%
@@ -420,3 +431,290 @@ Making the Economy More Stable:
 	Buildings always at full employment?
 	More stable pop spending?
 	More stable prices?
+
+Land & Housing
+	Arable Land
+		1 Arable Land = 25,000 acres of usable farming land, enough for 1000 subsistence farmers & families to comfortably live off of
+		
+		Available Land
+			Land that is available for subsistence farming
+			Can be converted into Industrial Land or Urbanized Land via land purchases
+		Forested Land
+			Can be used to produce wood
+			Can be sustained, deforested, or reforested
+				Deforestation - High wood output, forest size decreases, available land increases, attractive when land value is high
+				Sustainment - Stable forest size, wood output capped by forest size
+				Reforestation - Low wood output, forest size increases, available land decreases
+				Decision for which policy is made at the state level, but can be influenced by national policies
+		Industrial Land
+			Land used by rural industries (large-scale ag)
+			Consumes land while active
+			Assumed to be owned by the industry
+		Urbanized Land
+			Land used for housing and urban infrastructure
+			Consumes land while active
+			Ownership depends on housing ownership
+		
+	Land Ownership
+		Affects available and forested land
+
+		Smallholders
+			Represents peasant ownership
+		Landowners
+			Represents estates, landlords, etc.
+		State
+			May own land directly
+	
+	How this affects Subsistence Farming:
+		Peasants will, by default, work on smallholder land first
+		If smallholder land is exhausted, they will work on land owned by landowners
+			Smallholders will then be paid wages by landowners
+		
+		State-owned land priority will depend on policy
+			If state land provides subsidies to subsistence farming, peasants will work on it after smallholder land
+			If not, it will be worked on last
+		
+		If there are more peasants than available smallholder land, wages will drop significantly
+	
+	Subsistence Farm Output:
+		Instead of dropping by half after available land is exhausted, output will slowly drop with saturation according to the following formula:
+		f(l) = W * (l / l + h)
+		where l = land per worker, W = max output per worker, h = half-saturation constant
+		This means that output will drop off more slowly as land becomes scarce, but will still decrease
+		by default, h = 0.75 (meaning output is half of max when land per worker is 0.75) 
+	
+	Land Purchase
+		Order of acquisition:
+			1. The State (if it is selling land)
+			2. Landowners (only if they have excess land)
+			3. Smallholders
+		
+		Land Value =
+			(Base Land Value) 
+			* (Urbanized + Industrial Land Share) 
+			* (Rural Pop / Available Land) 
+			* (Average Income)
+
+		Destruction of industries will result in land either being given to the state, to smallholders, or landowners based on policy
+
+	Housing
+		Each state tracks:
+			Housing Capacity
+			Housing Demand
+			Occupancy Ratio
+			Rent Price
+		
+		Housing Demand
+			Calculated per pop type based on SoL
+			Occupancy ratio = Housing Demand / Housing Capacity
+			Pops pay rent to landowners
+		
+		Rent Price =
+			Base Rent * f(Occupancy Ratio)
+			where f(x) = 1 + (x - 1)^2 for x > 1, and f(x) = 1 / (2 - x) for x < 1
+		
+		Housing Ownership
+			Landowners own housing by default
+			The State may also own housing
+
+			State owned housing functions as a discount for pops
+				Priority depends on policy (e.g. soldiers->bureaucrats->poorest)
+				Eligible pops get a rent discount based on state ownership percentage
+				Lost rent is assumed to be absorbed by the state as a subsidy
+			
+	Housing Construction
+		Housing can be constructed by:
+			Landowners
+			The State (if state housing policy is active)
+		
+		Two construction modes:
+			Build Out
+				consumes available land - must buy land
+				Cannot build if there is no available land to be bought
+				Decreases cost of future build-ups
+			Build Up
+				Higher cost and increases cost of future build-ups
+		
+	Housing Deprecation
+		Housing deprecates over time, reducing capacity
+
+		Housing Capacity decreases by 0.2% per month
+
+		Housing maintenance is represented through deprecation
+
+	Files & Scripts to edit:
+		Monthly script
+		Update script
+		Pops demand
+		Pops Update - landowners
+
+	
+Spreadsheet shenanigans
+	Automation Method desired roi: 5 years
+
+	Wage Mult of production method: E
+	Wage Mult Old: W
+	Wage Mult New: N
+	Construction Cost: C
+	Value Add difference: V (negative if new costs more to operate)
+
+	R = (W-N) / (E+W) = Ratio of wage savings to current wages
+	Monthly Wage Savings = R * Current Wages
+
+	ROI in years = C / (Monthly Wage Savings + V) / 12.0
+
+	Example:
+		Production Method:
+			Revenue: 15.0
+			Inputs: 5.0
+			Wages: 9.0
+			Wage Mult: 4.0
+
+		Old Automation Method:
+			Wage Mult: -2.0
+			Value Add: -0.5
+		
+		New Automation Method:
+			Wage Mult: -3.0
+			Value Add: -1.0
+			Cost: 20.0
+		W = -2.0
+		N = -3.0
+		E = 4.0
+		C = 20.0
+		V = -1.0 - (-0.5) = -0.5
+		R = (-2 - -3) / (4 + -2) = 1/2 = 0.5
+		Monthly Wage Savings = 0.5 * 9.0 = 4.5
+		ROI = 20.0 / (4.5 + -0.5) / 12.0 = 20.0 / 4.0 / 12.0 = 5 months / 12.0 = 0.417 years
+
+	
+	Manufacturing (input heavy) Automation:
+		30-40% revenue goes to inputs
+		33% of wage reduction are eaten by costs
+	
+	Labor Heavy Automation:
+		10-20% revenue goes to inputs
+		50% of wage reduction are eaten by costs
+
+	Input Heavy Industries:
+		All industry types that use the factory automation methods set
+		Oil Drilling/Refining
+		Power Plants (including renewable)
+	
+	Labor Heavy Industries:
+		Agriculture
+		Mining
+		Forestry
+		Urban Services
+		Entertainment Hubs
+		Ports
+		Railroads
+	
+	Notes:
+		Machinery Inputs for AMs:
+			Steam Engine: 0.005
+			Industrial Machinery: 0.01
+			Industrial Electrification: 0.01
+			Assembly Lines: 0.03
+			Robots: 0.12
+			Data Servers: 0.2
+			Mass Automation: 0.6
+		
+		Electricity Inputs for AMs:
+			Industrial Electrification: 0.15
+			Assembly Lines: 0.3
+			Robots: 1.0
+			Data Servers: 2.5
+			Mass Automation: 6.0
+
+		Computers Inputs for AMs:
+			Data Servers: 0.05
+			Mass Automation: 0.10
+
+
+	Construction Baskets:
+		1800:
+			Services: 15.0
+			Wood: 10.0
+
+		1850:
+			Services: 25.0
+			Iron: 15.0
+			Tools: 5.0
+			Machinery: 200.0 x input
+		
+		1900:
+			Services: 25.0
+			Steel: 15.0
+			Tools: 5.0
+			Machinery: 200.0 x input
+			Electronics: 20.0 x electricity input
+
+		1950:
+			Services: 25.0
+			Steel: 15.0
+			Tools: 10.0
+			Machinery: 200.0 x input
+			Electronics: 20.0 x electricity input
+			Computers: 100.0 x computer input
+
+		2000:
+			Services: 25.0
+			Composites: 15.0
+			Tools: 20.0
+			Machinery: 200.0 x input
+			Electronics: 20.0 x electricity input
+			Computers: 100.0 x computer input
+
+		2050:
+			Services: 25.0
+			Composites: 20.0
+			Tools: 30.0
+			Machinery: 200.0 x input
+			Electronics: 20.0 x electricity input
+			Computers: 100.0 x computer input
+
+Point of Pop Types:
+	- Politics system? 
+		- Not necessary
+	- Worker Types to represent skill level
+		- represented through literacy/schooling/education access
+	- Different needs
+		- Collapsing into one is possible
+	
+	Upper Class (Capitalists/Landowners/Upper Level Bureaucrats)
+		- 2-4% of population
+	Middle Class (Professionals/Specialists/Lower Level Bureaucrats)
+		- 10-40% of population
+	Working Class (Peasants/Laborers/Workers)
+		- 50-90% of population
+
+TODO List
+	Government factories affected by employment
+	Qualifications & Literacy
+	Self-employment
+	Building cap as soft cap
+	Fixing construction button
+	Fixing industry construction locations
+	10:1 production conversion
+	Industry construction mapmode
+	Population losses from war
+	Migration
+	Overview & Analytics
+	Industry Screen
+	Fixing AI Bankruptcy
+	Fix rail/port tooltips
+	Prospecting
+	Surge/Limited Production
+	Markets Mapmode - Trade Screen interaction
+	Smart Mapmodes (One eco mapmode to swap between national/state)
+
+	Invest in other countries
+	Industry ownership
+	Foreign loans
+	Custom Alerts
+		High attractiveness opportunities
+		Industry completion
+		Industries under construction list
+	
+	Unsorted Population list (State UI)

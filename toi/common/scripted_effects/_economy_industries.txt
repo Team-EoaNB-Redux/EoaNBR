@@ -1641,6 +1641,207 @@
 
 		set_variable = { profit@token:subsistence_farm = 0 }
 	}
+	
+	on_monthly_land = {
+		# Called around the time that on_monthly_industry/pops is called
+		# State Scope
+		
+		# Adjust forested land
+		add_to_variable = { forest_land_use = forest_land_change }
+		subtract_from_variable = { arable_land_available = forest_land_change }
+
+		set_temp_variable = { forest_land_max_temp = arable_land }
+		subtract_from_temp_variable = { forest_land_max_temp = industrial_land_use }
+		subtract_from_temp_variable = { forest_land_max_temp = urban_land_use }
+		clamp_variable = { var = forest_land_use min = 0 max = forest_land_max_temp }
+
+		# Housing Depreciation
+		set_temp_variable = { housing_depreciation_temp = global.housing_depreciation_rate }
+		multiply_temp_variable = { housing_depreciation_temp = housing_capacity_out }
+		subtract_from_variable = { housing_capacity_out = housing_depreciation_temp }
+		
+		set_temp_variable = { housing_depreciation_temp = global.housing_depreciation_rate }
+		multiply_temp_variable = { housing_depreciation_temp = housing_capacity_up }
+		subtract_from_variable = { housing_capacity_up = housing_depreciation_temp }
+
+		# Ownership Transfers
+		
+		
+	}
+
+	land_update = {
+		# Industrial Land Use
+		set_variable = { industrial_land_use = 0 }
+		for_each_loop = {
+			array = industries
+			value = bu_token
+			index = ind
+			break = ind_break
+
+			# Add up arable land use
+			add_to_variable = { industrial_land_use = arable_land_use@var:bu_token }
+		}
+
+		# Urban Land Use
+		set_variable = { urban_land_use = housing_capacity_out }
+		set_temp_variable = { housing_capacity_temp = 1 }
+		add_to_temp_variable = { housing_capacity_temp = controller:modifier@urban_land_efficiency_factor }
+		divide_variable = { urban_land_use = housing_capacity_temp }
+
+		# Arable Land Available
+		set_variable = { arable_land_available = arable_land }
+		subtract_from_variable = { arable_land_available = forest_land_use }
+		subtract_from_variable = { arable_land_available = industrial_land_use }
+		subtract_from_variable = { arable_land_available = urban_land_use }
+		clamp_variable = { var = arable_land_available min = 0 max = arable_land }
+
+		forest_update = yes
+
+		# Land value
+		set_variable = { land_value = global.base_land_value } # to-do
+		
+		set_temp_variable = { land_value_temp = urban_land_use }
+		add_to_temp_variable = { land_value_temp = industrial_land_use }
+		divide_temp_variable = { land_value_temp = arable_land }
+		multiply_variable = { land_value = land_value_temp }
+
+		set_temp_variable = { land_value_temp = pops_workforce@token:peasants }
+		divide_temp_variable = { land_value_temp = arable_land_available }
+		clamp_temp_variable = { var = land_value_temp min = 0 max = 2 }
+		multiply_variable = { land_value = land_value_temp }
+
+		set_temp_variable = { land_value_temp = gdp_amount_per_capita }
+		clamp_temp_variable = { var = land_value_temp min = 0.1 max = 1000 }
+		multiply_variable = { land_value = land_value_temp }
+
+		# Housing Capacity
+		set_variable = { housing_capacity = housing_capacity_up }
+		add_to_variable = { housing_capacity = housing_capacity_out }
+		add_to_variable = { housing_capacity = 1 } # Base housing capacity of 1 to prevent divide by zero errors
+		
+		set_temp_variable = { housing_deprecation_temp = global.housing_depreciation_rate }
+		multiply_temp_variable = { housing_deprecation_temp = housing_capacity }
+
+		# Rent
+		# rent price = base rent * f(occupancy ratio)
+		# if x > 1 (shortage): f(x) = 1 + (x-1)^2
+		# if x < 1 (surplus): f(x) = 1 - (1-x)^2
+		set_variable = { occupancy_ratio = pops }
+		subtract_from_variable = { occupancy_ratio = pops@token:peasants }
+		divide_variable = { occupancy_ratio = housing_capacity }
+
+		set_variable = { rent_price = global.base_rent_price }
+		if = {
+			limit = {
+				check_variable = { occupancy_ratio > 1 }
+			}
+			set_temp_variable = { occupancy_ratio_temp = occupancy_ratio }
+			subtract_from_temp_variable = { occupancy_ratio_temp = 1 }
+			multiply_temp_variable = { occupancy_ratio_temp = occupancy_ratio_temp }
+			add_to_temp_variable = { occupancy_ratio_temp = 1 }
+
+			multiply_variable = { rent_price = occupancy_ratio_temp }
+		}
+		else_if = {
+			limit = {
+				check_variable = { occupancy_ratio < 1 }
+			}
+			set_temp_variable = { occupancy_ratio_temp = 1 }
+			subtract_from_temp_variable = { occupancy_ratio_temp = occupancy_ratio }
+			multiply_temp_variable = { occupancy_ratio_temp = occupancy_ratio_temp }
+			subtract_from_temp_variable = { occupancy_ratio_temp = 1 }
+
+			multiply_variable = { rent_price = occupancy_ratio_temp }
+		}
+		
+		# Build Up
+		# Cost = ((2 * Capacity_Up + 1) / Capacity)^2 * Base_Cost * Steel_Price
+		set_variable = { housing_capacity_up_cost = housing_capacity_up }
+		multiply_variable = { housing_capacity_up_cost = 2 }
+		add_to_variable = { housing_capacity_up_cost = 1 }
+		divide_variable = { housing_capacity_up_cost = housing_capacity }
+		multiply_variable = { housing_capacity_up_cost = housing_capacity_up_cost }
+		multiply_variable = { housing_capacity_up_cost = global.housing_up_construction_cost }
+		multiply_variable = { housing_capacity_up_cost = controller:price@token:steel } # Steel is used as the construction input for building up
+
+		# Build Out
+		# Cost = Base_Cost * Wood_Price + Land_Cost
+		set_variable = { housing_capacity_out_cost = global.housing_out_construction_cost }
+		multiply_variable = { housing_capacity_out_cost = controller:price@token:wood } # Wood is used as the construction input for building out
+		set_temp_variable = { land_cost_temp = land_value }
+		divide_temp_variable = { land_cost_temp = global.housing_to_land_ratio }
+		add_to_variable = { housing_capacity_out_cost = land_cost_temp }
+
+
+		# Target ROI
+		set_temp_variable = { target_roi_temp = 0.005 } # 6%/y Target ROI
+
+		set_temp_variable = { roi_temp = rent_price }
+		divide_temp_variable = { roi_temp = housing_capacity_up_cost }
+		
+
+	}
+	forest_update = {
+		# Values for each policy
+		set_variable = { deforestation_value = 0 }
+		set_variable = { reforestation_value = 0 }
+		set_variable = { sustainment_value = 0 }
+
+		# Forest Land Update
+		set_variable = { wood_from_forest_available = forest_land_use }
+
+		# Population Cap
+		set_temp_variable = { pops_cap_temp = pops_workforce }
+		multiply_temp_variable = { pops_cap_temp = 0.5 } # 50% of pops workforce can be in forestry
+
+		if = {
+			limit = {
+				has_state_flag = deforestation
+				check_variable = { forest_land_use > 0 }
+			}
+			# 100%+ Chopping Rate
+			set_variable = { forest_land_change = -0.002 } # -0.2% deforestation rate per month
+			multiply_variable = { forest_land_change = arable_land }
+
+			# Yield is always 100% of total land when deforesting, even if forested land is low
+			set_variable = { wood_from_forest_available = arable_land }
+
+			# Limit yield with small forests to prevent nations with tiny forests from harvesting huge amounts of wood
+			set_temp_variable = { wood_production_limit_temp = forest_land_use }
+			multiply_temp_variable = { wood_production_limit_temp = 5 } # Max 5x forest land can be harvested per month
+			clamp_temp_variable = { var = wood_production_limit_temp min = 1 max = 9999999 }
+			clamp_variable = { var = wood_from_forest_available min = 1 max = wood_production_limit_temp }
+
+			# Multiply forest land change by wood RGO production percentage
+			# - so states with low employment in forestry deforest slower
+			multiply_variable = { forest_land_change = production_percentage@token:wood }
+
+			set_variable = { deforestation_value = 5 }
+		}
+		else_if = {
+			limit = {
+				has_state_flag = reforestation
+			}
+			# 25% Chopping Rate
+			set_variable = { forest_land_change = 0.001 } # 0.1% reforestation rate per month
+			
+			multiply_variable = { forest_land_change = arable_land }
+			multiply_variable = { wood_from_forest_available = 0.25 }
+
+			set_variable = { reforestation_value = 5 }
+		}
+		else = { # Sustainment
+			# 50% Chopping Rate
+			set_variable = { forest_land_change = 0 }
+			multiply_variable = { wood_from_forest_available = 0.5 }
+
+			set_variable = { sustainment_value = 5 }
+		}
+
+		set_temp_variable = { change_temp = forest_land_use }
+		multiply_temp_variable = { change_temp = -1 }
+		clamp_variable = { var = forest_land_change min = change_temp max = arable_land_available }
+	}
 
 	refresh_pm_list = {
 		# industry_token, am_select
