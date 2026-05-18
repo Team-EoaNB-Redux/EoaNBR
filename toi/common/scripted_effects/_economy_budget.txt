@@ -634,6 +634,11 @@
         multiply_temp_variable = { rev_temp = modifier@treasury_gain_monthly_per_gdp }
         add_to_variable = { modifier_revenue = rev_temp }
 
+        set_variable = { revenue = income_tax_revenue }
+        add_to_variable = { revenue = sales_tax_revenue }
+        add_to_variable = { revenue = corporate_tax_revenue }
+        add_to_variable = { revenue = tariff_revenue }
+
         set_variable = { other_revenue = public_enterprise_revenue }
         add_to_variable = { other_revenue = modifier_revenue }
 		#Trade
@@ -643,17 +648,13 @@
 				}
 				set_variable = { trade_revenue = trade_value }
 				multiply_variable = { trade_revenue = modifier@tax_efficiency_factor }
-        		add_to_variable = { other_revenue = trade_revenue }
 			}
 			else = {
-				set_variable = { trade_spending = 0 }
+				set_variable = { trade_revenue = 0 }
 			}
+			clamp_variable = { var = trade_revenue min = 0 max = revenue }
+        	add_to_variable = { other_revenue = trade_revenue }
 		#
-
-        set_variable = { revenue = income_tax_revenue }
-        add_to_variable = { revenue = sales_tax_revenue }
-        add_to_variable = { revenue = corporate_tax_revenue }
-        add_to_variable = { revenue = tariff_revenue }
         add_to_variable = { revenue = other_revenue }
 
         if = {
@@ -996,20 +997,6 @@
         set_variable = { other_spending = public_enterprise_payroll_spending }
         add_to_variable = { other_spending = modifier_spending }
 
-		#Trade
-			if = {
-				limit = {
-					check_variable = { trade_value < 0 }
-				}
-				set_variable = { trade_spending = trade_value }
-				multiply_variable = { trade_spending = -1 }
-        		add_to_variable = { other_spending = trade_spending }
-			}
-			else = {
-				set_variable = { trade_spending = 0 }
-			}
-		#
-
         #Military
             set_variable = { military_army_spending = 0 }
             set_variable = { military_navy_spending = 0 }
@@ -1219,6 +1206,22 @@
         add_to_variable = { mandatory_spending = military_mandatory_spending }
         add_to_variable = { mandatory_spending = order_and_intel_spending }
         add_to_variable = { mandatory_spending = social_spending }
+
+		#Trade
+			if = {
+				limit = {
+					check_variable = { trade_value < 0 }
+				}
+				set_variable = { trade_spending = trade_value }
+				multiply_variable = { trade_spending = -1 }
+			}
+			else = {
+				set_variable = { trade_spending = 0 }
+			}
+			clamp_variable = { var = trade_spending min = 0 max = mandatory_spending }
+        	add_to_variable = { other_spending = trade_spending }
+		#
+
         add_to_variable = { mandatory_spending = other_spending }
         
         set_variable = { spending = discretionary_spending }
