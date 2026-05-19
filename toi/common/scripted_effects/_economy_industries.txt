@@ -841,85 +841,56 @@
 
 	industries_highest_productivity_update = {
 		# Country Scope
-		clear_array = valid_buildings
-		clear_array = valid_rgos
 
 		for_each_loop = {
-			array = global.rgo_token_array
+			array = global.industry_token_array
 			value = industry_token
 
 			if = {
 				limit = {
 					is_valid_industry = yes
-					any_controlled_state = {
-						check_variable = { resource@var:industry_token > 0 }
-					}
 				}
-				add_to_array = { valid_rgos = industry_token }
-
 				industry_get_highest_pm = yes
 				set_variable = { highest_productivity_pm@var:industry_token = highest_pm_temp }
 				set_variable = { highest_productivity@var:industry_token = highest_productivity_temp }
+				set_variable = { highest_productivity_revenue@var:industry_token = highest_pm_revenue_temp }
+				set_variable = { highest_productivity_expenses@var:industry_token = highest_pm_expenses_temp }
+				set_variable = { highest_productivity_cost@var:industry_token = highest_pm_construction_cost_temp }
+				set_variable = { highest_productivity_wage_mult@var:industry_token = highest_pm_wage_mult_temp }
 			}
 		}
 		
-
+		clear_array = industries_highest_productivity
 		for_each_loop = {
 			array = global.building_token_array
 			value = industry_token
 
-			if = {
-				limit = {
+			for_each_loop = {
+				array = industries_highest_productivity 
+				index = ii 
+				value = vv 
+				break = bb
+
+				if = { limit = { 
+					AND = { 
+						check_variable = { highest_productivity@var:vv < highest_productivity@var:industry_token } 
+						is_valid_industry = yes 
+					} }
+					add_to_array = { array = industries_highest_productivity value = industry_token index = ii }
+					set_temp_variable = { bb = 1 }
+				}
+			}
+			if = { limit = { 
+				AND = { 
+					check_variable = { bb = 0 } 
 					is_valid_industry = yes
-				}
-				add_to_array = { valid_buildings = industry_token }
-
-				industry_get_highest_pm = yes
-				set_variable = { highest_productivity_pm@var:industry_token = highest_pm_temp }
-				set_variable = { highest_productivity@var:industry_token = highest_productivity_temp }
+				} }
+				add_to_array = { industries_highest_productivity = industry_token }
 			}
 		}
-		
-		# Check for Infra/Railway/Port
-		if = {
-			limit = {
-				set_temp_variable = { industry_token = token:infrastructure }
-				is_valid_industry = yes
-			}
-			add_to_array = { valid_buildings = industry_token }
-
-			industry_get_highest_pm = yes
-			set_variable = { highest_productivity_pm@var:industry_token = highest_pm_temp }
-			set_variable = { highest_productivity@var:industry_token = highest_productivity_temp }
-		}
-		if = {
-			limit = {
-				set_temp_variable = { industry_token = token:railway }
-				is_valid_industry = yes
-			}
-			add_to_array = { valid_buildings = industry_token }
-
-			industry_get_highest_pm = yes
-			set_variable = { highest_productivity_pm@var:industry_token = highest_pm_temp }
-			set_variable = { highest_productivity@var:industry_token = highest_productivity_temp }
-		}
-		if = {
-			limit = {
-				set_temp_variable = { industry_token = token:port }
-				is_valid_industry = yes
-			}
-			add_to_array = { valid_buildings = industry_token }
-
-			industry_get_highest_pm = yes
-			set_variable = { highest_productivity_pm@var:industry_token = highest_pm_temp }
-			set_variable = { highest_productivity@var:industry_token = highest_productivity_temp }
-		}
-
-		
-		clear_array = industries_highest_productivity
 		for_each_loop = {
-			array = valid_buildings 
-			value = om_building
+			array = global.special_token_array
+			value = industry_token
 
 			for_each_loop = {
 				array = industries_highest_productivity 
@@ -927,18 +898,26 @@
 				value = vv 
 				break = bb
 
-				if = { limit = { check_variable = { highest_productivity@var:vv < highest_productivity@var:om_building } }
-					add_to_array = { array = industries_highest_productivity value = om_building index = ii }
+				if = { limit = { 
+					AND = { 
+						check_variable = { highest_productivity@var:vv < highest_productivity@var:industry_token } 
+						is_valid_industry = yes 
+					} }
+					add_to_array = { array = industries_highest_productivity value = industry_token index = ii }
 					set_temp_variable = { bb = 1 }
 				}
 			}
-			if = { limit = { check_variable = { bb = 0 } }
-				add_to_array = { industries_highest_productivity = om_building }
+			if = { limit = { 
+				AND = { 
+					check_variable = { bb = 0 } 
+					is_valid_industry = yes
+				} }
+				add_to_array = { industries_highest_productivity = industry_token }
 			}
 		}
 		for_each_loop = {
-			array = valid_rgos 
-			value = om_building
+			array = global.rgo_token_array
+			value = industry_token
 
 			for_each_loop = {
 				array = industries_highest_productivity 
@@ -946,13 +925,33 @@
 				value = vv 
 				break = bb
 
-				if = { limit = { check_variable = { highest_productivity@var:vv < highest_productivity@var:om_building } }
-					add_to_array = { array = industries_highest_productivity value = om_building index = ii }
+				if = { limit = { 
+					AND = { 
+						check_variable = { highest_productivity@var:vv < highest_productivity@var:industry_token } 
+						is_valid_industry = yes 
+						any_controlled_state = {
+							OR = {
+								check_variable = { base_resource@var:industry_token > 0 }
+								check_variable = { known_reserves@var:industry_token > 0 }
+							}
+						}
+					} }
+					add_to_array = { array = industries_highest_productivity value = industry_token index = ii }
 					set_temp_variable = { bb = 1 }
 				}
 			}
-			if = { limit = { check_variable = { bb = 0 } }
-				add_to_array = { industries_highest_productivity = om_building }
+			if = { limit = { 
+				AND = { 
+					check_variable = { bb = 0 }
+					is_valid_industry = yes
+					any_controlled_state = {
+						OR = {
+							check_variable = { base_resource@var:industry_token > 0 }
+							check_variable = { known_reserves@var:industry_token > 0 }
+						}
+					}
+				} }
+				add_to_array = { industries_highest_productivity = industry_token }
 			}
 		}
 	}
@@ -2130,6 +2129,13 @@
 				}
 				set_temp_variable = { highest_productivity_temp = productivity_temp }
 				set_temp_variable = { highest_pm_temp = pm_temp }
+				set_temp_variable = { highest_pm_revenue_temp = core_revenue_temp }
+				set_temp_variable = { highest_pm_expenses_temp = core_expenses_temp }
+				set_temp_variable = { highest_pm_wage_mult_temp = payroll_multiplier_temp }
+
+				set_temp_variable = { am_temp = controller:latest_automation_method@var:industry_token }
+				calc_construction_cost = yes
+				set_temp_variable = { highest_pm_construction_cost_temp = total_construction_cost_temp }
 			}
 		}
 	}
@@ -2158,6 +2164,36 @@
 				set_temp_variable = { highest_productivity_temp = productivity_temp }
 				set_temp_variable = { highest_am_temp = pm_temp }
 			}
+		}
+	}
+
+	calc_construction_cost = {
+		# Does the same as get_construction_cost but via loop
+        # Returns the construction cost of building an industry of size 1
+        # State or Country scope
+        # Input: pm_temp, am_temp, industry_token
+        # Output: total_construction_cost_temp
+		
+        set_temp_variable = { construction_cost_temp = 1 }
+        add_to_temp_variable = { construction_cost_temp = controller:industry_construction_cost_factor }
+
+        set_temp_variable = { total_construction_cost_temp = 0 }
+
+		for_loop_effect = {
+			start = 0
+			end = controller:pm_construction_input_amount@var:pm_temp^num
+			value = cost_index
+			
+            set_temp_variable = { br_token = controller:pm_construction_input@var:pm_temp^cost_index }
+            set_temp_variable = { amount_temp = controller:pm_construction_duration@var:pm_temp }
+            add_to_temp_variable = { amount_temp = controller:pm_construction_duration@var:am_temp }
+
+            multiply_temp_variable = { amount_temp = controller:pm_construction_input_amount@var:pm_temp^cost_index }
+            multiply_temp_variable = { amount_temp = global.building_base_output_value@var:industry_token }
+            multiply_temp_variable = { amount_temp = construction_cost_temp }
+            divide_temp_variable = { amount_temp = global.base_price@var:br_token }
+            multiply_temp_variable = { amount_temp = controller:price@var:br_token }
+            add_to_temp_variable = { total_construction_cost_temp = amount_temp }
 		}
 	}
 
