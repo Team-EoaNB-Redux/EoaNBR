@@ -242,6 +242,37 @@
 		}
 	}
 #
+#INVESTMENT
+	get_io_cost = {
+		# State Scope
+		# industry_token, io_type
+
+		# Output: total_cost_temp (Investment + Construction)
+		set_temp_variable = { total_cost_temp = global.start_construction_cost_multiplier }
+		add_to_temp_variable = { total_cost_temp = 1 }
+		multiply_temp_variable = { total_cost_temp = controller:highest_productivity_cost@var:industry_token }
+	}
+	get_size_count = {
+		# State Scope
+		# industry_token, io_type
+
+		# Output: size_temp
+
+		# Target Spending / Total Cost
+
+		set_temp_variable = { size_temp = controller:investment_fund_target_spending }
+		get_io_cost = yes
+		divide_temp_variable = { size_temp = total_cost_temp }
+		round_temp_variable = size_temp
+
+		set_temp_variable = { size_max_temp = pops_workforce }
+		divide_temp_variable = { size_max_temp = 100.0 }
+		add_to_temp_variable = { size_max_temp = 1.0 }
+		round_temp_variable = size_max_temp
+
+		clamp_temp_variable = { var = size_temp min = 1 max = size_max_temp }
+	}
+#
 return_earliest_production_method = {
 	# building_token
 	# State Scope

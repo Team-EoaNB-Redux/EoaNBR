@@ -662,8 +662,11 @@
 
 		set_variable = { shipping_capacity = 100 }
 		add_to_variable = { shipping_capacity = shipping_capacity_convoys }
-		every_controlled_state = {
-			add_to_variable = { PREV.shipping_capacity = shipping_capacity@port }
+		for_each_scope_loop = { # Add up each country
+			array = market_countries
+			every_controlled_state = {
+				add_to_variable = { PREV.PREV.shipping_capacity = shipping_capacity@port }
+			}
 		}
 	}
 
@@ -959,30 +962,6 @@
 			}
 		}
 	}
-	adjust_trade_step = { # Adjusts trade offers by given amount multiplied by trade step size
-		# resource_temp - resource token
-		# steps_temp - Amount of steps to add/remove.
-		# no_update_temp - Set to non-zero to not update trade
-
-		set_temp_variable = { amount_temp = trade_step_size@var:resource_temp }
-		round_temp_variable = steps_temp
-		multiply_temp_variable = { amount_temp = steps_temp }
-
-		adjust_trade = yes
-	}
-	set_trade_step ={ # Sets trade offers to given amount multiplied by trade step size
-		# resource_temp - resource token
-		# steps_temp - Amount of steps to set to
-		# stop_at_zero_temp - Set to non-zero value to allow reductions in exports/imports to go past 0 and flip to become imports/exports respectively.
-		#					 AKA makes it so if you reduce exports by 200 when you're exporting 100, instead of it just being set to 0, it gets set to 100 immports
-		# no_update_temp - Set to non-zero to not update trade
-
-		set_temp_variable = { amount_temp = trade_step_size@var:resource_temp }
-		round_temp_variable = steps_temp
-		multiply_temp_variable = { amount_temp = steps_temp }
-
-		set_trade = yes
-	}
 
 	global_market_update = {
 		for_each_loop = {
@@ -1063,7 +1042,6 @@
 		trade_update_quantity = yes
 		trade_update_value = yes
 		local_global_market_calculations = yes
-		trade_step_calc = yes
 
 		if = {
 			limit = {
@@ -1382,34 +1360,6 @@
 			set_variable = { global_market_price_difference@var:r_type = price@var:r_type }
 			subtract_from_variable = { global_market_price_difference@var:r_type = global_market_price@var:r_type }
 			divide_variable = { global_market_price_difference@var:r_type = price@var:r_type }
-		}
-	}
-	trade_step_calc = {
-		for_each_loop = {
-			array = global.resource_token_array
-			value = r_type
-
-			# Gets the trade step size for this product
-			set_temp_variable = { trade_step_temp = global.shipping_amount@var:r_type }
-			divide_temp_variable = { trade_step_temp = 50 }
-			round_temp_variable = trade_step_temp
-			clamp_temp_variable = { var = trade_step_temp min = 1 }
-
-			# Min amount to adjust, get smallest amount of market demand/supply, global demand/supply
-			set_temp_variable = { min_adjust_amount = supply@var:r_type }
-			if = { limit = { check_variable = { min_adjust_amount > demand@var:r_type } } set_temp_variable = { min_adjust_amount = demand@var:r_type } }
-			if = { limit = { check_variable = { min_adjust_amount > trade_supply@var:r_type } } set_temp_variable = { min_adjust_amount = trade_supply@var:r_type } }
-			if = { limit = { check_variable = { min_adjust_amount > trade_demand@var:r_type } } set_temp_variable = { min_adjust_amount = trade_demand@var:r_type } }
-
-			multiply_temp_variable = { min_adjust_amount = 0.005 } # 0.5% of that amount
-
-			set_temp_variable = { amount_temp = min_adjust_amount }
-			divide_temp_variable = { amount_temp = trade_step_temp }
-			round_temp_variable = amount_temp
-			clamp_temp_variable = { var = amount_temp min = 1 }
-			multiply_temp_variable = { amount_temp = trade_step_temp }
-
-			set_variable = { trade_step_size@var:r_type = amount_temp }
 		}
 	}
 
