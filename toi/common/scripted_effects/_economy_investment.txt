@@ -1013,13 +1013,15 @@
 
 		# Build
 		io_add_build_opportunities = yes
+
+		# Expand
+		io_add_expand_opportunities = yes
 	}
 	io_add_build_opportunities = {
 		set_temp_variable = { io_type = token:io_build }
 
-		# Buildings
 		for_each_loop = {
-			array = global.building_token_array
+			array = global.private_building_token_array
 			value = industry_token
 
 			if = {
@@ -1029,14 +1031,11 @@
 				set_temp_variable = { chosen_state = 0 }
 				set_temp_variable = { chosen_attr = 0 }
 				every_controlled_state = {
-					limit = {
-						calc_size_count = yes
-						can_build_industry_no_tech_check = yes
-					}
-
+					calc_size_count = yes
 					score_io_attractiveness = yes
 					if = {
 						limit = {
+							can_build_industry_no_tech_check = yes
 							check_variable = { attr_total_temp > chosen_attr }
 						}
 						set_temp_variable = { chosen_state = THIS }
@@ -1052,69 +1051,47 @@
 				}
 			}
 		}
-
-		# Railways
-		set_temp_variable = { industry_token = token:railway }
-		if = {
-			limit = {
-				is_valid_industry = yes
-			}
-			set_temp_variable = { chosen_state = 0 }
-			set_temp_variable = { chosen_attr = 0 }
-			every_controlled_state = {
-				limit = {
-					calc_size_count = yes
-					can_build_industry_no_tech_check = yes
-				}
-
-				score_io_attractiveness = yes
-				if = {
-					limit = {
-						check_variable = { attr_total_temp > chosen_attr }
-					}
-					set_temp_variable = { chosen_state = THIS }
-					set_temp_variable = { chosen_attr = attr_total_temp }
-				}
-			}
+	}
+	io_add_expand_opportunities = {
+		set_temp_variable = { io_type = token:io_expand }
 
 			if = {
 				limit = {
-					NOT = { check_variable = { chosen_attr = 0 } }
+					is_valid_industry = yes
 				}
-				io_add_investment = yes
-			}
-		}
+				every_controlled_state = {
+					for_each_loop = {
+						array = industries
+						value = industry_token
 
-		# Ports
-		set_temp_variable = { industry_token = token:port }
-		if = {
-			limit = {
-				is_valid_industry = yes
-			}
-			set_temp_variable = { chosen_state = 0 }
-			set_temp_variable = { chosen_attr = 0 }
-			every_controlled_state = {
-				limit = {
-					calc_size_count = yes
-					can_build_industry_no_tech_check = yes
-				}
+						if = {
+							limit = {
+								NOT = { is_in_array = { rgos = industry_token } }
+								NOT = { check_variable = { global.building_unexpandable@var:industry_token = 1 } }
+								NOT = { check_variable = { global.building_government_control@var:industry_token = 1 } }
+							}
+							calc_size_count = yes
+							score_io_attractiveness = yes
+							if = {
+								limit = {
+									if = {
+										limit = {
+											check_variable = { global.building_arable_land_use@var:industry_token > 0 }
+										}
+										set_temp_variable = { arable_land_use_temp = global.building_arable_land_use@var:industry_token }
+										multiply_temp_variable = { arable_land_use_temp = size_temp }
+										NOT = { check_variable = { arable_land_use_temp > arable_land_available } }
+									}
+									check_variable = { size@var:industry_token > 0 }
+									check_variable = { attr_total_temp > 0 }
+								}
 
-				score_io_attractiveness = yes
-				if = {
-					limit = {
-						check_variable = { attr_total_temp > chosen_attr }
+								set_temp_variable = { chosen_state = THIS }
+								io_add_investment = yes
+							}
+						}
 					}
-					set_temp_variable = { chosen_state = THIS }
-					set_temp_variable = { chosen_attr = attr_total_temp }
 				}
-			}
-
-			if = {
-				limit = {
-					NOT = { check_variable = { chosen_attr = 0 } }
-				}
-				io_add_investment = yes
-			}
 		}
 	}
 	io_add_investment = {
@@ -1126,8 +1103,48 @@
 			set_variable = { investment_opportunity_type@var:io_num = io_type }
 			set_variable = { investment_opportunity_size@var:io_num = size_temp }
 			set_variable = { investment_opportunity_investment@var:io_num = 0 }
-			set_variable = { investment_opportunity_attractiveness_productivity@var:io_num = attr_base_temp }
+
 			set_variable = { investment_opportunity_attractiveness@var:io_num = attr_total_temp }
+			set_variable = { investment_opportunity_attractiveness_base@var:io_num = attr_base_temp }
+			set_variable = { investment_opportunity_attractiveness_scale@var:io_num = attr_scale_temp }
+			set_variable = { investment_opportunity_attractiveness_price@var:io_num = attr_price_temp }
+			set_variable = { investment_opportunity_attractiveness_labor@var:io_num = attr_labor_temp }
+			set_variable = { investment_opportunity_attractiveness_other@var:io_num = attr_modifier_temp }
+			set_variable = { investment_opportunity_attractiveness_factor@var:io_num = controller:building_attractiveness_factor@var:industry_token }
+		}
+	}
+
+	sort_io_list = {
+		set_temp_variable = { arr_size = investment_opportunities^num }
+		subtract_from_temp_variable = { arr_size = 1 }
+		set_temp_variable = { swapped = 1 }
+
+		while_loop_effect = {
+			limit = { check_variable = { swapped = 1 } }
+
+			for_loop_effect = {
+				start = 0
+				end = arr_size
+				value = io_i
+
+				# Get IO IDs
+				set_temp_variable = { io_i_1 = io_i }
+				add_to_temp_variable = { io_i_1 = 1 }
+				set_temp_variable = { id_a = investment_opportunities^io_i }
+				set_temp_variable = { id_b = investment_opportunities^io_i_1 }
+
+				# Compare scores
+				if = {
+					limit = {
+						check_variable = { investment_opportunity_attractiveness@var:id_a < investment_opportunity_attractiveness@var:id_b }
+					}
+					# Swap IDs
+					set_variable = { investment_opportunities^io_i = id_b }
+					set_variable = { investment_opportunities^io_i_1 = id_a }
+
+					set_temp_variable = { swapped = 1 }
+				}
+			}
 		}
 	}
 
@@ -1195,11 +1212,19 @@
 
 		# Return on Investment (Every 10 years)
 		# If roi_temp > 1.0, that means it's a good investment (Full ROI < 10 Years)
-		set_temp_variable = { roi_temp = controller:highest_productivity_revenue@var:industry_token }
-		set_temp_variable = { expenses_temp = base_wage }
-		multiply_temp_variable = { expenses_temp = controller:highest_productivity_wage_mult@var:industry_token }
-		add_to_temp_variable = { expenses_temp = controller:highest_productivity_expenses@var:industry_token }
-		subtract_from_temp_variable = { roi_temp = expenses_temp } # Profit
+		if = {
+			limit = {
+				check_variable = { io_type = token:io_expand }
+			}
+			set_temp_variable = { roi_temp = profit@var:industry_token }
+		}
+		else = {
+			set_temp_variable = { roi_temp = controller:highest_productivity_revenue@var:industry_token }
+			set_temp_variable = { expenses_temp = base_wage }
+			multiply_temp_variable = { expenses_temp = controller:highest_productivity_wage_mult@var:industry_token }
+			add_to_temp_variable = { expenses_temp = controller:highest_productivity_expenses@var:industry_token }
+			subtract_from_temp_variable = { roi_temp = expenses_temp } # Profit
+		}
 
 		calc_io_cost = yes # output: total_cost_temp
 		divide_temp_variable = { roi_temp = total_cost_temp } # Divide by Total Cost
@@ -1253,13 +1278,13 @@
 			limit = {
 				NOT = { is_core_of = var:controller }
 			}
-			add_to_temp_variable = { attr_modifier_temp = -50 }
+			#add_to_temp_variable = { attr_modifier_temp = -50 }
 		}
 		if = { # Not owned
 			limit = {
 				NOT = { is_owned_by = var:controller }
 			}
-			add_to_temp_variable = { attr_modifier_temp = -100 }
+			#add_to_temp_variable = { attr_modifier_temp = -100 }
 		}
 		if = { # If it has no buildings for build
 			limit = {
@@ -1270,20 +1295,28 @@
 		}
 		if = { # Already an IO here of the same type
 			limit = {
-				any_of = {
-					array = controller:investment_opportunities
-					value = io_num_temp
-					check_variable = { controller:investment_opportunity_type@var:io_num_temp = io_type }
-					check_variable = { controller:investment_opportunity_state@var:io_num_temp = THIS }
-				}
+				check_variable = { io_type = token:io_build }
 			}
-			add_to_temp_variable = { attr_modifier_temp = -10 }
 			if = {
 				limit = {
-					check_variable = { io_type = token:io_build }
+					any_of = {
+						array = controller:investment_opportunities
+						value = io_num_temp
+						check_variable = { controller:investment_opportunity_type@var:io_num_temp = io_type }
+						check_variable = { controller:investment_opportunity_state@var:io_num_temp = THIS }
+					}
 				}
 				add_to_temp_variable = { attr_modifier_temp = -50 }
 			}
+		}
+		if = {
+			limit = {
+				check_variable = { io_type = token:io_expand }
+			}
+			set_temp_variable = { attr_temp = production_percentage@var:industry_token }
+			subtract_from_temp_variable = { attr_temp = 100 }
+			multiply_temp_variable = { attr_temp = 2 }
+			add_to_temp_variable = { attr_modifier_temp = attr_temp }
 		}
 
 		# Labor
