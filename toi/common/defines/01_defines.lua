@@ -22,6 +22,7 @@ NDefines.NDiplomacy.BASE_IMPROVE_RELATION_DIFFERENT_IDEOLOGY_GROUP_MAINTAIN_COST
 NDefines.NDiplomacy.PEACE_SCORE_SCALE_FACTOR = 1.25 -- 1.35
 NDefines.NDiplomacy.MARKET_ACCESS_ACCEPTANCE_OPINION = 2.5 -- Acceptance factor for opinion
 NDefines.NDiplomacy.MARKET_ACCESS_ACCEPTANCE_TRADE_INFLUENCE = 0.00 -- Acceptance factor for trade influence (adjusted from base value)
+NDefines.NDiplomacy.EQUIPMENT_PURCHASE_ACCEPTANCE_TRADE_INFLUENCE = 0.00 -- Acceptance factor for trade influence (adjusted from base value)
 
 NDefines.NCountry.BASE_RESEARCH_SLOTS = 1
 NDefines.NCountry.POPULATION_YEARLY_GROWTH_BASE = 0.010
