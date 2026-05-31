@@ -163,9 +163,9 @@ add_namespace = mexico_civil_war
 		immediate = {
 			# log = "[THIS.GetTag]: firing  = mexico_politics.7"
 			hidden_effect = {
-				MEC = {
-					promote_character = MEC_Char_Felix_Zuloaga
-				}
+				# MEC = {
+				# 	promote_character = MEC_Char_Felix_Zuloaga
+				# }
 			}
 		}
 
@@ -203,6 +203,15 @@ add_namespace = mexico_civil_war
 				# }
 				MEC = {
 					set_variable = { rival_country = MEX.id }
+					set_province_controller = 5021
+					479 = {
+						create_unit = {
+							division = "name = \"Conservative Infantry\" division_template = \"Line Infantry Regiment\" start_experience_factor = 0.25 start_equipment_factor = 0.95"
+							owner = MEC
+							prioritize_location = 5021
+						}
+					}
+					
 					every_controlled_state = {
 						create_unit = {
 							division = "name = \"Conservative Infantry\" division_template = \"Line Infantry Regiment\" start_experience_factor = 0.25 start_equipment_factor = 0.25"
@@ -364,6 +373,9 @@ add_namespace = mexico_civil_war
 				add_idea = MEX_idea_negotiated_with_viadurri
 			}
 			decrease_resistance_la_reforma = yes
+			ai_chance = {
+				base = 4
+			}
 		}
 
 		option = {#confront
@@ -377,6 +389,13 @@ add_namespace = mexico_civil_war
 			swap_ideas = {
 				remove_idea = MEX_idea_provisional_funding_efforts
 				add_idea = MEX_idea_compelled_viadurri
+			}
+			ai_chance = {
+				base = 1
+				modifier = {
+					factor = 0
+					is_historical_focus_on = yes
+				}
 			}
 		}
 	}
@@ -393,6 +412,9 @@ add_namespace = mexico_civil_war
 		option = {
 			name = mexico_politics.23.a
 			set_occupation_law = local_police_force_garrison
+			every_owned_state = {
+				set_occupation_law = local_police_force_garrison
+			}
 			set_country_flag = generic_country_flag_garrison_laws_locked
 			add_ideas = MEX_idea_emergency_powers
 			# every_core_state = {
@@ -3780,9 +3802,16 @@ country_event = { #Debt system initial announcement
 			MEX = {
 				complete_national_focus = MEX_defend_the_constitution
 				country_event = { id = mexico.2 days = 3 }
+				party_leader = {
+					limit = {
+						has_ideology = reactionary
+					}
+					set_nationality = MEC
+				}
 			}
 			MEC = {
 				complete_national_focus = MEX_support_tacubaya_plan
+				promote_character = MEC_Char_Felix_Zuloaga
 				country_event = { id = mexico.2 days = 3 }
 			}
 			hidden_effect = {
@@ -4083,7 +4112,7 @@ country_event = { #Debt system initial announcement
 		# picture = 
 
 		is_triggered_only = yes
-		fire_only_once = yes
+		# fire_only_once = yes
 		
 		immediate = {
 			# log = "[THIS.GetTag]: firing  = mexico_civil_war.49"
@@ -4092,14 +4121,27 @@ country_event = { #Debt system initial announcement
 		option = { #support MEC
 			name = mexico_civil_war.49.a
 			# log = "[THIS.GetTag]: firing  = mexico_civil_war.49.a"
+			# add_relation_rule_override = {
+			# 	target = MEC
+			# 	can_access_market = yes
+			# }
+			give_market_access = MEC
 			MEC = {
-				add_relation_rule_override = {
-					target = PREV
-					can_access_market = yes
-				}
+				# add_relation_rule_override = {
+				# 	target = ROOT
+				# 	trigger = eoanb_enable_autonomy #always = yes
+				# 	can_access_market = yes
+				# }
 				add_opinion_modifier = {
 					target = PREV
 					modifier = MEX_opinion_recognized_in_civil_war
+				}
+				add_opinion_modifier = {
+					target = PREV
+					modifier = MEX_opinion_legitimate_trade
+				}
+				hidden_effect = {
+					add_offsite_building = { type = industrial_complex level = 1 }
 				}
 				#also add an idea helping with foreign loan interest
 			}
@@ -4116,6 +4158,11 @@ country_event = { #Debt system initial announcement
 				}
 				MEC = {
 					add_ideas = MEC_idea_recognized_by_ENG
+					add_relation_rule_override = {
+						target = ENG
+						# trigger = eoanb_enable_autonomy #always = yes
+						can_access_market = yes
+					}
 				}
 			}
 			else_if = {
@@ -4124,6 +4171,11 @@ country_event = { #Debt system initial announcement
 				}
 				MEC = {
 					add_ideas = MEC_idea_recognized_by_FRA
+					add_relation_rule_override = {
+						target = FRA
+						# trigger = eoanb_enable_autonomy #always = yes
+						can_access_market = yes
+					}
 				}
 			}
 			else_if = {
@@ -4132,6 +4184,11 @@ country_event = { #Debt system initial announcement
 				}
 				MEC = {
 					add_ideas = MEC_idea_recognized_by_SPR
+					add_relation_rule_override = {
+						target = SPR
+						# trigger = eoanb_enable_autonomy #always = yes
+						can_access_market = yes
+					}
 				}
 			}
 			if = {
@@ -4139,9 +4196,9 @@ country_event = { #Debt system initial announcement
 					has_dlc = "Arms Against Tyranny"
 				}
 				MEC = {
-					add_cic = 1500
 					set_temp_variable = { x_temp = 1000 }
 					add_treasury = yes
+					add_cic = 1500
 					add_equipment_subsidy = {
 						cic = 1000
 						equipment_type = infantry_equipment
@@ -4177,13 +4234,18 @@ country_event = { #Debt system initial announcement
 				}
 				send_equipment = {
 					equipment = field_artillery_equipment
-					amount = 72
+					amount = 36
 					target = MEC
 				}
 				send_equipment = {
 					equipment = cavalry_equipment
 					amount = 200
 					target = MEC
+				}
+			}
+			hidden_effect = {
+				MEC = {
+					country_event = mexico_civil_war.50
 				}
 			}
 			ai_chance = {
@@ -4207,6 +4269,11 @@ country_event = { #Debt system initial announcement
 					modifier = MEX_opinion_unrecognized
 				}
 			}
+			hidden_effect = {
+				MEC = {
+					country_event = mexico_civil_war.51
+				}
+			}
 			ai_chance = {
 				base = 1
 				modifier = {
@@ -4214,6 +4281,106 @@ country_event = { #Debt system initial announcement
 					is_historical_focus_on = yes
 				}
 			}
+		}
+	}
+
+	country_event = {
+		id = mexico_civil_war.50
+		title = mexico_civil_war.50.t
+		desc = mexico_civil_war.50.d
+		# picture = GFX_report_event_generic
+		is_triggered_only = yes
+	
+		option = {
+			name = mexico_civil_war.50.a
+			effect_tooltip = {
+				set_temp_variable = { x_temp = 1000 }
+				add_treasury = yes
+				if = {
+					limit = {
+						FROM = {
+							tag = ENG
+						}
+					}
+					add_ideas = MEC_idea_recognized_by_ENG
+				}
+				else_if = {
+					limit = {
+						FROM = {
+							tag = FRA
+						}
+					}
+					add_ideas = MEC_idea_recognized_by_FRA
+				}
+				else_if = {
+					limit = {
+						FROM = {
+							tag = SPR
+						}
+					}
+					add_ideas = MEC_idea_recognized_by_SPR
+				}
+				if = {
+					limit = {
+						has_dlc = "Arms Against Tyranny"
+					}
+					add_cic = 1500
+					add_equipment_subsidy = {
+						cic = 1000
+						equipment_type = infantry_equipment
+						seller_tags = { FROM }
+					}
+					add_equipment_subsidy = {
+						cic = 1000
+						equipment_type = uniform_equipment
+						seller_tags = { FROM }
+					}
+					add_equipment_subsidy = {
+						cic = 1000
+						equipment_type = field_artillery_equipment
+						seller_tags = { FROM }
+					}
+					add_equipment_subsidy = {
+						cic = 1000
+						equipment_type = cavalry_equipment
+						seller_tags = { FROM }
+					}
+				}
+				else = {
+					add_equipment_to_stockpile = {
+						equipment = infantry_equipment
+						amount = 1000
+						producer = FROM
+					}
+					add_equipment_to_stockpile = {
+						equipment = uniform_equipment
+						amount = 1000
+						producer = FROM
+					}
+					add_equipment_to_stockpile = {
+						equipment = field_artillery_equipment
+						amount = 36
+						producer = FROM
+					}
+					add_equipment_to_stockpile = {
+						equipment = cavalry_equipment
+						amount = 200
+						producer = FROM
+					}
+				}
+			}
+		}
+	}
+
+	country_event = {
+		id = mexico_civil_war.51
+		title = mexico_civil_war.51.t
+		desc = mexico_civil_war.51.d
+		# picture = GFX_report_event_generic
+		is_triggered_only = yes
+	
+		option = {
+			name = mexico_civil_war.51.a
 		}
 	}
 
