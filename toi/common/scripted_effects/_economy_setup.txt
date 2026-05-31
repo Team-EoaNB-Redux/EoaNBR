@@ -507,7 +507,8 @@ _country_fin = {
 
 	# Starting Treasury
 	set_variable = { treasury = gdp_amount }
-	divide_variable = { treasury = 2 }
+	divide_variable = { treasury = 4 }
+	add_to_variable = { treasury = 100 }
 
     # Graphs & Displays
     initialize_country_gdp_graph = yes
@@ -1594,6 +1595,7 @@ initialize_country = {
         clear_array = global.special_token_array
         clear_array = global.building_token_array
         clear_array = global.industry_token_array
+        clear_array = global.private_building_token_array # All expandable industries that private individuals can own
         add_to_array = { global.special_token_array = token:subsistence_farm }
         add_to_array = { global.special_token_array = token:infrastructure }
         add_to_array = { global.special_token_array = token:railway }
@@ -1637,6 +1639,13 @@ initialize_country = {
             array = global.building_token_array
             value = b_token
             add_to_array = { global.industry_token_array = b_token }
+			if = {
+				limit = {
+					NOT = { check_variable = { global.building_unexpandable@var:b_token = 1 } }
+					NOT = { check_variable = { global.building_government_control@var:b_token = 1 } }
+				}
+            	add_to_array = { global.private_building_token_array = b_token }
+			}
 
             # Base Output Value
             set_variable = { global.building_base_output_value@var:b_token = 0 }
@@ -1654,6 +1663,13 @@ initialize_country = {
             array = global.special_token_array
             value = b_token
             add_to_array = { global.industry_token_array = b_token }
+			if = {
+				limit = {
+					NOT = { check_variable = { global.building_unexpandable@var:b_token = 1 } }
+					NOT = { check_variable = { global.building_government_control@var:b_token = 1 } }
+				}
+            	add_to_array = { global.private_building_token_array = b_token }
+			}
 
             # Base Output Value
             set_variable = { global.building_base_output_value@var:b_token = 0 }
