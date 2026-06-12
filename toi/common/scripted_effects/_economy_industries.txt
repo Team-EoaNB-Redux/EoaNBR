@@ -79,7 +79,7 @@
 		# Update Industry Size
 		if = { # RGOs
 			limit = {
-				is_in_array = { global.rgo_token_array = bu_token }
+				check_variable = { global.building_rgo@var:bu_token > 0 }
 			}
 			set_temp_variable = { size_temp = base_resource@var:bu_token }
 			set_variable = { size@var:bu_token = size_temp }
@@ -856,6 +856,7 @@
 				set_variable = { highest_productivity_revenue@var:industry_token = highest_pm_revenue_temp }
 				set_variable = { highest_productivity_expenses@var:industry_token = highest_pm_expenses_temp }
 				set_variable = { highest_productivity_cost@var:industry_token = highest_pm_construction_cost_temp }
+				set_variable = { highest_productivity_retooling_cost@var:industry_token = highest_pm_retooling_cost_temp }
 				set_variable = { highest_productivity_wage_mult@var:industry_token = highest_pm_wage_mult_temp }
 			}
 		}
@@ -958,67 +959,32 @@
 	industries_retoolable_update = {
 		# Country Scope
 		# Runs thru every industry to check if PM/AM is upgradable, then sets it if so.
+		# Also updates national unlocked AM values 
 		
-		clear_variable = industries_pm_upgradable
-		clear_variable = industries_am_upgradable
+
+		# Find Upgradable PMs/AMs
+		clear_array = industries_pm_upgradable
+		clear_array = industries_am_upgradable
 
 		every_controlled_state = {
 			for_each_loop = {
 				array = industries
 				value = industry_token
 
-				# PMs
+				# Check that PM isn't the best one
 				clear_variable = pm_upgradable@var:industry_token
 				if = {
-					limit = { check_variable = { global.building_production_methods@var:industry_token^num > 1 } }
-					set_variable = { pm_upgradable@var:industry_token = 0 }
-
-					# Get index of PM
-					for_each_loop = {
-						array = global.building_production_methods@var:industry_token
-						value = pm_temp
-						index = pm_i
-						break = pm_brk
-						if = { limit = { check_variable = { pm_temp = production_method@var:industry_token } } set_temp_variable = { i_temp = pm_i } set_temp_variable = { pm_brk = 1 } }
+					limit = {
+						NOT = { check_variable = { controller:highest_productivity_pm@var:industry_token = production_method@var:industry_token } }
+						check_variable = { retooling_pm@var:industry_token = 0 }
 					}
 
-					# Check that PM isn't last one & that next PM is available
-					if = {
-						limit = {
-							add_to_temp_variable = { i_temp = 1 }
-							check_variable = { i_temp < global.building_production_methods@var:industry_token^num }
-
-							set_temp_variable = { pm_temp = global.building_production_methods@var:industry_token^i_temp }
-							is_valid_pm = yes
-
-							check_variable = { retooling_pm@var:industry_token = 0 }
-						}
-
-						# Compare current PM productivity against next level PM productivity
-						# If greater, set upgradable to new divided by old
-						if = {
-							limit = {
-								set_temp_variable = { pm_temp = production_method@var:industry_token }
-								get_pm_values = yes
-								set_temp_variable = { curr_pm_prod = productivity_temp }
-
-								set_temp_variable = { pm_temp = global.building_production_methods@var:industry_token^i_temp }
-								get_pm_values = yes
-
-								check_variable = { productivity_temp > curr_pm_prod }
-								check_variable = { productivity_temp > 0 }
-							}
-							set_variable = { pm_upgradable@var:industry_token = productivity_temp }
-							divide_variable = { pm_upgradable@var:industry_token = curr_pm_prod }
-							
-							if = { 
-								limit = { NOT = { is_in_array = { PREV.industries_pm_upgradable = industry_token } } } 
-								add_to_array = { PREV.industries_pm_upgradable = industry_token } 
-							}
-							# log = "[?industry_token.GetTokenLocalizedKey] in [THIS.GetName]: [?pm_upgradable@var:industry_token|+=] ([?pm_temp.GetTokenLocalizedKey])"
-						}
+					set_variable = { pm_upgradable@var:industry_token = 1 }
+					
+					if = { 
+						limit = { NOT = { is_in_array = { PREV.industries_pm_upgradable = industry_token } } } 
+						add_to_array = { PREV.industries_pm_upgradable = industry_token } 
 					}
-
 				}
 
 				# AMs
@@ -1059,8 +1025,7 @@
 								check_variable = { base_wage_temp > productivity_temp }
 								check_variable = { productivity_temp > 0 }
 							}
-							set_variable = { am_upgradable@var:industry_token = base_wage }
-							divide_variable = { am_upgradable@var:industry_token = productivity_temp }
+							set_variable = { am_upgradable@var:industry_token = 1 }
 							
 							if = { 
 								limit = { NOT = { is_in_array = { PREV.industries_am_upgradable = industry_token } } } 
@@ -1072,6 +1037,27 @@
 
 				}
 			}
+		}
+
+		# Recalc AMs
+		for_each_loop = {
+			array = unlocked_ams
+			value = pm_temp
+
+			if = {
+				limit = {
+					get_am_values = yes
+				}
+			}
+			set_variable = { base_am_expenses@var:pm_temp = expenses_temp } # Multiply by building_base_output_value, throughput/input
+			set_variable = { base_am_wage_mult@var:pm_temp = payroll_multiplier_temp } # Multiply by building_base_employees
+
+			if = {
+				limit = {
+					get_retooling_cost = yes
+				}
+			}
+			set_variable = { base_am_cost@var:pm_temp = total_retooling_cost_temp }
 		}
 	}
 #
@@ -1120,25 +1106,34 @@
 		set_temp_variable = { reserves_temp = base_resource@var:r_token }
 		add_to_temp_variable = { reserves_temp = known_reserves@var:r_token }
 		divide_temp_variable = { reserves_temp = reserves_total@var:r_token }
-		multiply_temp_variable = { reserves_temp = 2 }
-
-		set_temp_variable = { chance_temp = 0.75 }
-		subtract_from_temp_variable = { chance_temp = reserves_temp }
 		
 		# Minor Discoveries
-		set_variable = { discovery_chance@var:r_token = controller:industry_prospecting_ability_factor@var:r_token }
-		add_to_variable = { discovery_chance@var:r_token = 0.25 }
-		add_to_variable = { discovery_chance@var:r_token = chance_temp }
+		set_temp_variable = { prospecting_ability_temp = controller:industry_prospecting_ability_factor@var:r_token }
+		add_to_temp_variable = { prospecting_ability_temp = 1.0 }
+
+		set_temp_variable = { resource_depletion_temp = prospecting_ability_temp }
+		subtract_from_temp_variable = { resource_depletion_temp = reserves_temp }
+		subtract_from_temp_variable = { resource_depletion_temp = reserves_temp }
+		
+		set_temp_variable = { resource_amount_temp = 20 }
+		multiply_temp_variable = { resource_amount_temp = resource_depletion_temp }
+		divide_temp_variable = { resource_amount_temp = global.base_price@var:r_token }
+		round_temp_variable = resource_amount_temp
+		set_variable = { discovery_low@var:r_token = resource_amount_temp }
+		
+		set_temp_variable = { resource_amount_temp = 100 }
+		multiply_temp_variable = { resource_amount_temp = resource_depletion_temp }
+		divide_temp_variable = { resource_amount_temp = global.base_price@var:r_token }
+		round_temp_variable = resource_amount_temp
+		set_variable = { discovery_high@var:r_token = resource_amount_temp }
 
 		# Major Discoveries
-		set_variable = { major_discovery_chance@var:r_token = controller:industry_prospecting_ability_factor@var:r_token }
-		multiply_variable = { major_discovery_chance@var:r_token = 0.2 }
-		add_to_variable = { major_discovery_chance@var:r_token = 0.02 }
-		multiply_temp_variable = { chance_temp = 0.25 }
-		add_to_variable = { major_discovery_chance@var:r_token = chance_temp }
+		set_variable = { major_discovery_chance@var:r_token = prospecting_ability_temp }
+		multiply_variable = { major_discovery_chance@var:r_token = 0.25 }
+		subtract_from_variable = { major_discovery_chance@var:r_token = reserves_temp }
 
 		set_temp_variable = { major_discoveries_temp = major_discoveries@var:r_token }
-		multiply_temp_variable = { major_discoveries_temp = 0.2 }
+		multiply_temp_variable = { major_discoveries_temp = 0.4 }
 		subtract_from_variable = { major_discovery_chance@var:r_token = major_discoveries_temp }
 		
 		set_temp_variable = { major_discoveries_temp = reserves_total@var:r_token }
@@ -1149,8 +1144,21 @@
 			divide_variable = { major_discovery_chance@var:r_token = 2 }
 		}
 
+		# Prospecting Cost
+		# avg is £60 revenue. £6 
+		set_temp_variable = { depletion_cost_temp = reserves_temp }
+		multiply_temp_variable = { depletion_cost_temp = reserves_temp }
+		multiply_temp_variable = { depletion_cost_temp = 9 }
+		add_to_temp_variable = { depletion_cost_temp = 1 }
+
+		set_variable = { prospecting_cost@var:r_token = 1000 }
+		multiply_variable = { prospecting_cost@var:r_token = depletion_cost_temp }
+		multiply_variable = { prospecting_cost@var:r_token = prospecting_ability_temp }
+
 		# Clamping
-		clamp_variable = { var = major_discovery_chance@var:r_token max = 1 min = 0 }
+		clamp_variable = { var = discovery_low@var:r_token max = potential_reserves@var:r_token min = 0 }
+		clamp_variable = { var = discovery_high@var:r_token max = potential_reserves@var:r_token min = 0 }
+		clamp_variable = { var = major_discovery_chance@var:r_token max = 1 min = 0.01 }
 
 		set_temp_variable = { chance_temp = 1 }
 		subtract_from_temp_variable = { chance_temp = major_discovery_chance@var:r_token }
@@ -2136,6 +2144,14 @@
 				set_temp_variable = { am_temp = controller:latest_automation_method@var:industry_token }
 				calc_construction_cost = yes
 				set_temp_variable = { highest_pm_construction_cost_temp = total_construction_cost_temp }
+
+				if = {
+					limit = {
+						get_retooling_cost = yes
+					}
+				}
+				set_temp_variable = { highest_pm_retooling_cost_temp = total_retooling_cost_temp }
+				multiply_temp_variable = { highest_pm_retooling_cost_temp = global.building_base_output_value@var:industry_token }
 			}
 		}
 	}
@@ -2320,12 +2336,10 @@
 	rgo_discovery = {
 		# r_token
 		# Takes some potential deposits and makes them known
-		set_temp_variable = { resource_amount_temp = random }
-		multiply_temp_variable = { resource_amount_temp = 20 }
-		add_to_temp_variable = { resource_amount_temp = 10 }
-		divide_temp_variable = { resource_amount_temp = global.base_price@var:r_token }
+		set_temp_variable = { resource_amount_temp = discovery_high@var:r_token }
+		subtract_from_temp_variable = { resource_amount_temp = discovery_low@var:r_token }
+		multiply_temp_variable = { resource_amount_temp = random }
 		round_temp_variable = resource_amount_temp
-		clamp_temp_variable = { var = resource_amount_temp min = 0 max = potential_reserves@var:r_token }
 		
 		add_to_variable = { known_reserves@var:r_token = resource_amount_temp }
 		subtract_from_variable = { potential_reserves@var:r_token = resource_amount_temp }
@@ -2341,14 +2355,11 @@
 		# Adds a random amount of known & potential deposits
 		set_variable = { major_discovery_resource = r_token }
 
-		set_variable = { major_discovery_known = random }
-		multiply_variable = { major_discovery_known = 60 }
-		add_to_variable = { major_discovery_known = 15 }
-		divide_variable = { major_discovery_known = global.base_price@var:r_token }
+		set_variable = { major_discovery_known = discovery_high@var:r_token }
 
 		set_temp_variable = { random_temp = random }
-		multiply_temp_variable = { random_temp = 50 }
-		add_to_temp_variable = { random_temp = 75 }
+		multiply_temp_variable = { random_temp = 100 }
+		add_to_temp_variable = { random_temp = 100 }
 		set_variable = { major_discovery_potential = random_temp }
 		divide_variable = { major_discovery_potential = global.base_price@var:r_token }
 
@@ -2598,6 +2609,7 @@
 					get_retooling_cost = yes
 				}
 				set_temp_variable = { initial_cost_temp = total_retooling_cost_temp }
+				multiply_temp_variable = { initial_cost_temp = global.building_base_output_value@var:industry_token }
 				multiply_temp_variable = { initial_cost_temp = global.start_construction_cost_multiplier }
 				multiply_temp_variable = { initial_cost_temp = size@var:industry_token }
 				if = {
