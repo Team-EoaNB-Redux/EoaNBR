@@ -148,4 +148,10 @@ NDefines.NGraphics.COUNTRY_FLAG_SMALL_TEX_MAX_SIZE = 256
 NDefines.NGraphics.MINIMUM_PROVINCE_SIZE_IN_PIXELS = 1
 NDefines.NGraphics.POLITICAL_GRID_SMALL_BOX_LIMIT = 100
 
+NDefines.NSupply.RAILWAY_BASE_FLOW = 25.0
+NDefines.NSupply.RAILWAY_FLOW_PER_LEVEL = 15.0
+NDefines.NSupply.RAILWAY_FLOW_PENALTY_PER_DAMAGED = 15.0
+NDefines.NSupply.RAILWAY_MIN_FLOW = 10.0
+NDefines.NSupply.NAVAL_FLOW_PER_LEVEL = 5.0
+
 NDefines.NResistance.RESISTANCE_TARGET_BASE = 5.0						-- base resistance target percentage
