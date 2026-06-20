@@ -11,14 +11,47 @@
 		for_each_loop = {
 			array = industries
 			value = bu_token
-			
-			set_temp_variable = { owner_temp = global.industry_owner@var:bu_token }
-			add_to_variable = { pops_dividends@var:owner_temp = dividends@var:bu_token }
+			if = {
+				limit = {
+					check_variable = { size@var:bu_token > 0 }
+				}
 
-			add_to_variable = { pops_bonuses@token:laborers = laborers_bonuses@var:bu_token }
-			add_to_variable = { pops_bonuses@token:workers = workers_bonuses@var:bu_token }
-			add_to_variable = { pops_bonuses@token:professionals = professionals_bonuses@var:bu_token }
-			add_to_variable = { pops_bonuses@token:specialists = specialists_bonuses@var:bu_token }
+				set_temp_variable = { owner_temp = global.industry_owner@var:bu_token }
+
+				# Apportion dividends by ownership: locals receive only their (size - incorporated) share.
+				# The incorporated share is collected by companies in companies_update. owner_sizes is
+				# empty for unincorporated industries, so local_fraction = 1 and behaviour is unchanged.
+				set_temp_variable = { local_dividends_temp = dividends@var:bu_token }
+				set_temp_variable = { incorporated_size_temp = 0 }
+				for_each_loop = {
+					array = owner_sizes@var:bu_token
+					value = owner_size_temp
+					add_to_temp_variable = { incorporated_size_temp = owner_size_temp }
+				}
+				if = {
+					limit = {
+						check_variable = { incorporated_size_temp > 0 }
+					}
+					set_temp_variable = { local_fraction_temp = size@var:bu_token }
+					subtract_from_temp_variable = { local_fraction_temp = incorporated_size_temp }
+					divide_temp_variable = { local_fraction_temp = size@var:bu_token }
+					clamp_temp_variable = { var = local_fraction_temp min = 0 max = 1 }
+					multiply_temp_variable = { local_dividends_temp = local_fraction_temp }
+				}
+				add_to_variable = { pops_dividends@var:owner_temp = local_dividends_temp }
+
+				add_to_variable = { pops_bonuses@token:laborers = laborers_bonuses@var:bu_token }
+				add_to_variable = { pops_bonuses@token:workers = workers_bonuses@var:bu_token }
+				add_to_variable = { pops_bonuses@token:professionals = professionals_bonuses@var:bu_token }
+				add_to_variable = { pops_bonuses@token:specialists = specialists_bonuses@var:bu_token }
+			}
+		}
+
+		for_each_loop = {
+			array = company_hqs
+			value = cid
+			# Add company dividends
+			add_to_variable = { pops_dividends@token:capitalists = global.company_dividends@var:cid }
 		}
 
 		special_buildings_update = yes

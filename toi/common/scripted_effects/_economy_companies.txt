@@ -1,0 +1,374 @@
+##################################################
+## ECONOMY - COMPANIES SYSTEM (MVP)             ##
+## - planned w/ Strat, coded as the MVP scaffold ##
+##################################################
+
+# OVERVIEW
+#   Companies are entities that own FRACTIONAL slices of industries (by size) and run their own budget.
+#   A single industry of size N in a state can be split between "locals" (the state's owner pop, paid via
+#   pops_dividends) and any number of companies. Within one building all slices share the same PM/AM/wage/price,
+#   so profit & dividends scale LINEARLY with size -- companies never recompute finances, they apportion the
+#   building's already-computed revenue/expenses/profit/dividends by their owned size.
+#
+# DATA MODEL (data-oriented: company records are GLOBAL-scoped, keyed by company id `cid`)
+#   Global scope:
+#       global.company_num                       - id allocation counter
+#       global.companies                         - master list of every company id
+#       global.company_owner@var:cid             - owner country scope
+#       global.company_hq_state@var:cid          - HQ state scope (payout goes to capitalists here)
+#       global.company_type@var:cid              - token: company_type_private / _public / _soe
+#       global.company_focus@var:cid             - primary industry token (informational for MVP)
+#       global.company_treasury@var:cid          - retained capital pool (accrued by companies_monthly)
+#       global.company_total_size@var:cid        - sum of owned size across all holdings
+#       global.company_revenue@var:cid / _expenses / _profit / _gross_dividends - P&L (set by companies_update)
+#       global.company_dividends@var:cid         - this month's payout to HQ-state capitalists (set by companies_update)
+#       global.company_retained@var:cid          - this month's amount to retain (set by companies_update, accrued by companies_monthly)
+#       Holdings (parallel arrays, one entry per owned building-slice; merged so (state,building) is unique):
+#           global.company_holding_state@var:cid     - state scope of the slice
+#           global.company_holding_industry@var:cid  - industry token of the slice
+#           global.company_holding_size@var:cid      - size owned in that building
+#
+#   Country scope:
+#       companies                                - index array of the company ids this country owns (drives country-side calc)
+#
+#   State scope:
+#       company_hqs                              - array of company ids HQ'd in this state
+#       owner_companies@var:bu_token    - array of company ids owning a slice of this building
+#       owner_sizes@var:bu_token        - parallel array of owned sizes
+#       (incorporated size = sum(owner_sizes); local size = size - incorporated)
+#
+# CALCULATION runs country-side: companies_update/_monthly loop the country's `companies` index during that
+#   country's turn in global.econ_order_array (rank-sorted, so the UK etc. get first pickings for investment).
+#
+# DIVIDEND ROUTING (pull-based): companies_update sets global.company_dividends@var:cid; industries_update
+#   loops the HQ state's company_hqs and pulls global.company_dividends@var:cid into pops_dividends@token:capitalists.
+#   The pull reads last tick's payout -> one-tick lag, consistent with the local-dividend lag (same tick-N building
+#   dividends consumed at tick N+1), no double count.
+#
+# UPDATE vs MONTHLY (per Strat's convention): _update effects are idempotent recomputes (same result if called
+#   twice); _monthly effects mutate/accumulate. companies_update recomputes P&L + payout/retained; companies_monthly
+#   accrues retained earnings into the treasury.
+#
+# MVP SCOPE: ownership + budget + dividend reroute only.
+#   OUT OF SCOPE (later layers): stock valuation/price, capital raising, independent investment, behavior
+#   states/complacency, M&A, bankruptcy, closure.
+
+
+# ID ALLOCATION ----------------------------------------------------------------
+	# Mirrors allocate_io_number. Country scope. Sets company_num to a free id.
+	allocate_company_number = {
+		add_to_variable = { global.company_num = 1 }
+		if = { limit = { check_variable = { global.company_num > 100000 } } set_variable = { global.company_num = 1 } }
+		while_loop_effect = {
+			limit = { has_variable = global.company_hq_state@var:global.company_num }
+			add_to_variable = { global.company_num = 1 }
+		}
+	}
+
+# LIFECYCLE --------------------------------------------------------------------
+	# Founds a new company owned by THIS country. Country scope.
+	# INPUT:
+	#   company_hq_state_temp  - state scope where the company is headquartered (dividends paid to its capitalists)
+	#   company_focus_temp     - primary industry token (informational for MVP)
+	#   company_type_temp      - token:company_type_private / _public / _soe (defaults to private)
+	# OUTPUT:
+	#   cid            - the id of the newly founded company (also appended to `companies`)
+	found_company = {
+		if = { limit = { check_variable = { company_type_temp = 0 } } set_temp_variable = { company_type_temp = token:company_type_private } }
+
+		allocate_company_number = yes
+		set_temp_variable = { cid = global.company_num }
+
+		add_to_array = { global.companies = cid }
+		add_to_array = { companies = cid }
+		add_to_array = { company_hq_state_temp:company_hqs = cid }
+		set_variable = { global.company_hq_state@var:cid = company_hq_state_temp }
+
+		set_variable = { global.company_owner@var:cid = THIS }
+		set_variable = { global.company_type@var:cid = company_type_temp }
+		set_variable = { global.company_focus@var:cid = company_focus_temp }
+
+		set_variable = { global.company_treasury@var:cid = 0 }
+		set_variable = { global.company_total_size@var:cid = 0 }
+		set_variable = { global.company_revenue@var:cid = 0 }
+		set_variable = { global.company_expenses@var:cid = 0 }
+		set_variable = { global.company_profit@var:cid = 0 }
+		set_variable = { global.company_gross_dividends@var:cid = 0 }
+		set_variable = { global.company_dividends@var:cid = 0 }
+		set_variable = { global.company_retained@var:cid = 0 }
+
+		clear_array = global.company_holding_state@var:cid
+		clear_array = global.company_holding_industry@var:cid
+		clear_array = global.company_holding_size@var:cid
+
+		set_temp_variable = { company_hq_state_temp = 0 }
+		set_temp_variable = { company_focus_temp = 0 }
+		set_temp_variable = { company_type_temp = 0 }
+	}
+	
+	# Assigns `holding_size_temp` of an industry slice to a company. Updates BOTH sides of the relationship,
+	# MERGING into the existing entry for that (state, building) so holdings stay consolidated, and CLAMPING
+	# to the building's available local size so companies never over-own.
+	# Any scope.
+	# INPUT:
+	#   company_temp           - company id
+	#   holding_state_temp     - state scope of the building
+	#   holding_building_temp  - industry token
+	#   holding_size_temp      - size to assign to the company
+	company_add_holding = {
+		if = {
+			limit = { check_variable = { holding_size_temp > 0 } }
+
+			# Clamp to available local size and update the building-centric mirror, inside the building's state.
+			var:holding_state_temp = {
+				set_temp_variable = { incorporated_temp = 0 }
+				for_each_loop = {
+					array = owner_sizes@var:holding_building_temp
+					value = owner_size_temp
+					add_to_temp_variable = { incorporated_temp = owner_size_temp }
+				}
+				set_temp_variable = { available_temp = size@var:holding_building_temp }
+				subtract_from_temp_variable = { available_temp = incorporated_temp }
+				if = { limit = { check_variable = { available_temp < 0 } } set_temp_variable = { available_temp = 0 } }
+				if = { limit = { check_variable = { holding_size_temp > available_temp } } set_temp_variable = { holding_size_temp = available_temp } }
+
+				if = {
+					limit = { check_variable = { holding_size_temp > 0 } }
+
+					# Find this company's existing entry in this building; merge or append.
+					set_temp_variable = { b_idx = -1 }
+					for_each_loop = {
+						array = owner_companies@var:holding_building_temp
+						value = owner_company_temp
+						index = bi
+						break = b_brk
+						if = {
+							limit = { check_variable = { owner_company_temp = company_temp } }
+							set_temp_variable = { b_idx = bi }
+							set_temp_variable = { b_brk = 1 }
+						}
+					}
+					if = {
+						limit = { check_variable = { b_idx > -1 } }
+						add_to_variable = { owner_sizes@var:holding_building_temp^b_idx = holding_size_temp }
+					}
+					else = {
+						add_to_array = { owner_companies@var:holding_building_temp = company_temp }
+						add_to_array = { owner_sizes@var:holding_building_temp = holding_size_temp }
+					}
+				}
+			}
+
+			# Company-centric side (global). holding_size_temp is now clamped.
+			if = {
+				limit = { check_variable = { holding_size_temp > 0 } }
+
+				set_temp_variable = { h_idx = -1 }
+				for_each_loop = {
+					array = global.company_holding_industry@var:company_temp
+					value = holding_b_temp
+					index = hi
+					break = h_brk
+					if = {
+						limit = {
+							check_variable = { holding_b_temp = holding_building_temp }
+							check_variable = { global.company_holding_state@var:company_temp^hi = holding_state_temp }
+						}
+						set_temp_variable = { h_idx = hi }
+						set_temp_variable = { h_brk = 1 }
+					}
+				}
+				if = {
+					limit = { check_variable = { h_idx > -1 } }
+					add_to_variable = { global.company_holding_size@var:company_temp^h_idx = holding_size_temp }
+				}
+				else = {
+					add_to_array = { global.company_holding_state@var:company_temp = holding_state_temp }
+					add_to_array = { global.company_holding_industry@var:company_temp = holding_building_temp }
+					add_to_array = { global.company_holding_size@var:company_temp = holding_size_temp }
+				}
+				add_to_variable = { global.company_total_size@var:company_temp = holding_size_temp }
+			}
+		}
+
+		set_temp_variable = { company_temp = 0 }
+		set_temp_variable = { holding_state_temp = 0 }
+		set_temp_variable = { holding_building_temp = 0 }
+		set_temp_variable = { holding_size_temp = 0 }
+	}
+
+	# Removes `holding_size_temp` of an industry slice from a company (the reverse of company_add_holding).
+	# Reduces the matching entry on both sides; if an entry hits zero it is removed from the parallel arrays.
+	# If holding_size_temp <= 0 or exceeds the owned amount, the WHOLE slice is removed.
+	# Any scope.
+	# INPUT: company_temp, holding_state_temp, holding_building_temp, holding_size_temp
+	company_remove_holding = {
+		# Company-centric side (global): find the (state, building) entry.
+		set_temp_variable = { h_idx = -1 }
+		for_each_loop = {
+			array = global.company_holding_industry@var:company_temp
+			value = holding_b_temp
+			index = hi
+			break = h_brk
+			if = {
+				limit = {
+					check_variable = { holding_b_temp = holding_building_temp }
+					check_variable = { global.company_holding_state@var:company_temp^hi = holding_state_temp }
+				}
+				set_temp_variable = { h_idx = hi }
+				set_temp_variable = { h_brk = 1 }
+			}
+		}
+
+		if = {
+			limit = { check_variable = { h_idx > -1 } }
+
+			set_temp_variable = { owned_temp = global.company_holding_size@var:company_temp^h_idx }
+			# Default / overflow -> remove the whole slice.
+			clamp_temp_variable = { var = holding_size_temp min = 0 max = owned_temp }
+
+			subtract_from_variable = { global.company_total_size@var:company_temp = holding_size_temp }
+			set_temp_variable = { remaining_temp = owned_temp }
+			subtract_from_temp_variable = { remaining_temp = holding_size_temp }
+			if = {
+				limit = { check_variable = { remaining_temp > 0 } }
+				set_variable = { global.company_holding_size@var:company_temp^h_idx = remaining_temp }
+			}
+			else = {
+				remove_from_array = { array = global.company_holding_state@var:company_temp index = h_idx }
+				remove_from_array = { array = global.company_holding_industry@var:company_temp index = h_idx }
+				remove_from_array = { array = global.company_holding_size@var:company_temp index = h_idx }
+			}
+
+			# Building-centric mirror (state): reduce or remove this company's entry.
+			var:holding_state_temp = {
+				set_temp_variable = { b_idx = -1 }
+				for_each_loop = {
+					array = owner_companies@var:holding_building_temp
+					value = owner_company_temp
+					index = bi
+					break = b_brk
+					if = {
+						limit = { check_variable = { owner_company_temp = company_temp } }
+						set_temp_variable = { b_idx = bi }
+						set_temp_variable = { b_brk = 1 }
+					}
+				}
+				if = {
+					limit = { check_variable = { b_idx > -1 } }
+					set_temp_variable = { b_remaining_temp = owner_sizes@var:holding_building_temp^b_idx }
+					subtract_from_temp_variable = { b_remaining_temp = holding_size_temp }
+					if = {
+						limit = { check_variable = { b_remaining_temp > 0 } }
+						set_variable = { owner_sizes@var:holding_building_temp^b_idx = b_remaining_temp }
+					}
+					else = {
+						remove_from_array = { array = owner_companies@var:holding_building_temp index = b_idx }
+						remove_from_array = { array = owner_sizes@var:holding_building_temp index = b_idx }
+					}
+				}
+			}
+		}
+
+		set_temp_variable = { company_temp = 0 }
+		set_temp_variable = { holding_state_temp = 0 }
+		set_temp_variable = { holding_building_temp = 0 }
+		set_temp_variable = { holding_size_temp = 0 }
+	}
+
+
+# RECOMPUTE (idempotent) -------------------------------------------------------
+	# Country pass over this country's companies. Recomputes each company's P&L by apportioning its holdings'
+	# building finances by owned size, then derives the dividend payout and the amount to retain. Pure: calling
+	# twice produces the same result (no accumulation). companies_monthly accrues the retained amount separately.
+	companies_update = {
+		for_each_loop = {
+			array = companies
+			value = cid
+
+			# Reset this month's P&L
+			set_variable = { global.company_revenue@var:cid = 0 }
+			set_variable = { global.company_expenses@var:cid = 0 }
+			set_variable = { global.company_gross_dividends@var:cid = 0 }
+
+			# Collect apportioned finances from every owned slice. Reading building (state) vars via temp-scope
+			# read (same pattern as market_leader_temp:supply@var:r_type in _economy_market.txt).
+			for_each_loop = {
+				array = global.company_holding_industry@var:cid
+				value = bld_temp
+				index = h
+
+				set_temp_variable = { hstate = global.company_holding_state@var:cid^h }
+				set_temp_variable = { hsize = global.company_holding_size@var:cid^h }
+
+				set_temp_variable = { btot = hstate:size@var:bld_temp }
+				if = {
+					limit = { check_variable = { btot > 0 } }
+
+					set_temp_variable = { frac = hsize }
+					divide_temp_variable = { frac = btot }
+					clamp_temp_variable = { var = frac min = 0 max = 1 }
+
+					set_temp_variable = { bdiv = hstate:dividends@var:bld_temp }
+					multiply_temp_variable = { bdiv = frac }
+					add_to_variable = { global.company_gross_dividends@var:cid = bdiv }
+
+					set_temp_variable = { brev = hstate:revenue@var:bld_temp }
+					multiply_temp_variable = { brev = frac }
+					add_to_variable = { global.company_revenue@var:cid = brev }
+
+					set_temp_variable = { bexp = hstate:expenses@var:bld_temp }
+					multiply_temp_variable = { bexp = frac }
+					add_to_variable = { global.company_expenses@var:cid = bexp }
+				}
+			}
+
+			set_variable = { global.company_profit@var:cid = global.company_revenue@var:cid }
+			subtract_from_variable = { global.company_profit@var:cid = global.company_expenses@var:cid }
+
+			# Split gross dividends into retained vs paid out (both derived -> set, not accumulated).
+			set_temp_variable = { retain_temp = global.company_gross_dividends@var:cid }
+			multiply_temp_variable = { retain_temp = global.company_retention_factor }
+			set_variable = { global.company_retained@var:cid = retain_temp }
+
+			set_temp_variable = { payout_temp = global.company_gross_dividends@var:cid }
+			subtract_from_temp_variable = { payout_temp = retain_temp }
+			set_variable = { global.company_dividends@var:cid = payout_temp }
+		}
+	}
+
+
+# MONTHLY (mutating) -----------------------------------------------------------
+	# Country pass over this country's companies. Accrues each company's retained earnings (computed by
+	# companies_update) into its treasury. This is the irreversible accumulation, kept out of the _update.
+	companies_monthly = {
+		for_each_loop = {
+			array = companies
+			value = cid
+
+			add_to_variable = { global.company_treasury@var:cid = global.company_retained@var:cid }
+		}
+	}
+
+
+# DEBUG ------------------------------------------------------------------------
+	# Convenience tester. Country scope. Founds a private company HQ'd in the country's capital and incorporates
+	# `holding_size_temp` (default 1) of `holding_building_temp` in the capital state into it.
+	debug_found_company = {
+		if = { limit = { check_variable = { holding_size_temp = 0 } } set_temp_variable = { holding_size_temp = 1 } }
+		set_variable = { dbg_building = holding_building_temp }
+		set_variable = { dbg_size = holding_size_temp }
+
+		set_temp_variable = { dbg_capital_state = capital } # capital - paradox variable for capital scope
+
+		set_temp_variable = { company_hq_state_temp = dbg_capital_state }
+		set_temp_variable = { company_focus_temp = dbg_building }
+		set_temp_variable = { company_type_temp = token:company_type_private }
+		found_company = yes
+
+		set_temp_variable = { company_temp = cid }
+		set_temp_variable = { holding_state_temp = dbg_capital_state }
+		set_temp_variable = { holding_building_temp = dbg_building }
+		set_temp_variable = { holding_size_temp = dbg_size }
+		company_add_holding = yes
+	}
