@@ -2166,6 +2166,48 @@
         # Checks if IO is still valid. If not, removes it (and refunds money if any was put in)
         # io_num_temp
 
+        set_temp_variable = { io_type = investment_opportunity_type@var:io_num_temp }
+        set_temp_variable = { state_temp = investment_opportunity_state@var:io_num_temp }
+        set_temp_variable = { industry_token = investment_opportunity_building@var:io_num_temp }
+
+        set_temp_variable = { io_invalid_temp = 0 }
+
+        # An IO becomes invalid if its target is already being built/upgraded by someone else (e.g. the player
+        # built it directly, or a company started it). Without this the fund would "adopt" that construction and
+        # treat the other party's work as its own investment.
+        var:state_temp = {
+            if = {
+                limit = {
+                    OR = {
+                        check_variable = { io_type = token:io_build }
+                        check_variable = { io_type = token:io_expand }
+                        check_variable = { io_type = token:io_exploit }
+                    }
+                    NOT = { check_variable = { construction@var:industry_token = 0 } }
+                }
+                set_temp_variable = { io_invalid_temp = 1 }
+            }
+            else_if = {
+                limit = {
+                    OR = {
+                        check_variable = { io_type = token:io_upgrade_pm }
+                        check_variable = { io_type = token:io_upgrade_am }
+                    }
+                    NOT = { check_variable = { retooling_pm@var:industry_token = 0 } }
+                }
+                set_temp_variable = { io_invalid_temp = 1 }
+            }
+        }
+
+        if = {
+            limit = { check_variable = { io_invalid_temp = 1 } }
+            # Refund any money already committed to the fund before dropping the opportunity.
+            if = {
+                limit = { check_variable = { investment_opportunity_investment@var:io_num_temp > 0 } }
+                add_to_variable = { investment_fund = investment_opportunity_investment@var:io_num_temp }
+            }
+            remove_investment_opportunity = yes
+        }
     }
 #
 
@@ -2239,22 +2281,30 @@
             }
             set_temp_variable = { io_num_temp = active_investment_opportunities^0 }
 
-            set_temp_variable = { spending_amount_temp = investment_opportunity_cost@var:io_num_temp }
-            subtract_from_temp_variable = { spending_amount_temp = investment_opportunity_investment@var:io_num_temp }
+            # Drop & refund the opportunity if it's no longer valid (e.g. already under construction by someone
+            # else). Guarded below so we don't fund a removed IO this iteration; the loop re-picks ^0 next pass.
+            check_investment_opportunity = yes
 
-            if = { # Enough money
-                limit = {
-                    check_variable = { spending_cap_temp > spending_amount_temp }
+            if = {
+                limit = { has_variable = investment_opportunity_state@var:io_num_temp }
+
+                set_temp_variable = { spending_amount_temp = investment_opportunity_cost@var:io_num_temp }
+                subtract_from_temp_variable = { spending_amount_temp = investment_opportunity_investment@var:io_num_temp }
+
+                if = { # Enough money
+                    limit = {
+                        check_variable = { spending_cap_temp > spending_amount_temp }
+                    }
+                    subtract_from_variable = { investment_fund = spending_amount_temp }
+                    subtract_from_temp_variable = { spending_cap_temp = spending_amount_temp }
+                    set_variable = { investment_opportunity_investment@var:io_num_temp = investment_opportunity_cost@var:io_num_temp }
+                    evaluate_investment_opportunity = yes
                 }
-                subtract_from_variable = { investment_fund = spending_amount_temp }
-                subtract_from_temp_variable = { spending_cap_temp = spending_amount_temp }
-                set_variable = { investment_opportunity_investment@var:io_num_temp = investment_opportunity_cost@var:io_num_temp }
-                evaluate_investment_opportunity = yes
-            }
-            else = { # Not enough money
-                subtract_from_variable = { investment_fund = spending_cap_temp }
-                add_to_variable = { investment_opportunity_investment@var:io_num_temp = spending_cap_temp }
-                set_temp_variable = { spending_cap_temp = 0 }
+                else = { # Not enough money
+                    subtract_from_variable = { investment_fund = spending_cap_temp }
+                    add_to_variable = { investment_opportunity_investment@var:io_num_temp = spending_cap_temp }
+                    set_temp_variable = { spending_cap_temp = 0 }
+                }
             }
 
             add_to_temp_variable = { ifm_temp = 1 }
