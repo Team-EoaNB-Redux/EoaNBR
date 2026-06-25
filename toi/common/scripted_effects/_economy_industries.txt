@@ -34,9 +34,14 @@
 					}
 					set_temp_variable = { local_fraction_temp = size@var:bu_token }
 					subtract_from_temp_variable = { local_fraction_temp = incorporated_size_temp }
+					set_variable = { owner_sizes_local@var:bu_token = local_fraction_temp }
+
 					divide_temp_variable = { local_fraction_temp = size@var:bu_token }
 					clamp_temp_variable = { var = local_fraction_temp min = 0 max = 1 }
 					multiply_temp_variable = { local_dividends_temp = local_fraction_temp }
+				}
+				else = {
+					set_variable = { owner_sizes_local@var:bu_token = size@var:bu_token }
 				}
 				add_to_variable = { pops_dividends@var:owner_temp = local_dividends_temp }
 
@@ -754,6 +759,29 @@
 			set_variable = { productivity@var:bu_token = revenue_temp }
 			subtract_from_variable = { productivity@var:bu_token = expenses_temp }
 			divide_variable = { productivity@var:bu_token = payroll_multiplier@var:bu_token }
+
+			# Asset value - what the industry is worth as an asset (drives acquisition cost & company valuation).
+			# = cost to construct it as it stands (current size & PM/AM) scaled by profitability: a profitable
+			# plant carries a goodwill premium, a loss-making one a distressed discount, floored so the physical
+			# plant always retains value.
+			set_temp_variable = { industry_token = bu_token }
+			set_temp_variable = { pm_temp = production_method@var:bu_token }
+			set_temp_variable = { am_temp = automation_method@var:bu_token }
+			if = {
+				limit = {
+					get_construction_cost = yes # -> total_construction_cost_temp (per size, at current PM/AM)
+				}
+			}
+
+			set_temp_variable = { asset_value_temp = total_construction_cost_temp }
+			multiply_temp_variable = { asset_value_temp = size@var:bu_token }
+
+			set_temp_variable = { asset_mult_temp = profitability@var:bu_token }
+			add_to_temp_variable = { asset_mult_temp = 1 }
+			clamp_temp_variable = { var = asset_mult_temp min = 0.25 max = 2 }
+			multiply_temp_variable = { asset_value_temp = asset_mult_temp }
+
+			set_variable = { asset_value@var:bu_token = asset_value_temp }
 		}
 	}
 	industry_update_construction_retooling = {
@@ -2256,6 +2284,7 @@
 		# automation_method_temp - if relevant
 
 		add_to_variable = { size@var:industry_token = x_temp }
+		add_to_variable = { owner_sizes_local@var:industry_token = x_temp }
 		if = { limit = { check_variable = { size@var:industry_token < 0 } } set_variable = { size@var:industry_token = 0 } }
 			
 		if = { # Remove if it's size 0
@@ -2459,6 +2488,7 @@
 
 		# State
 
+
 		if = {
 			limit = {
 				check_variable = { x_temp > 0 }
@@ -2475,12 +2505,13 @@
 				}
 				if = {
 					limit = {
-						check_variable = { financer_temp < 0 } #Corporation
+						check_variable = { financer_temp > 0 } #Corporation
 					}
+					has_variable = global.company_hq_state@var:financer_temp
 				}
 				else_if = {
 					limit = {
-						check_variable = { financer_temp > 0 } #Government
+						check_variable = { financer_temp > 10500 } #Government
 					}
 					country_exists = var:financer_temp
 

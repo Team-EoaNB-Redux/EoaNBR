@@ -1028,6 +1028,7 @@
 			# Pick random starting point
 			set_temp_variable = { start_idx = investment_opportunities^num }
 			multiply_temp_variable = { start_idx = random }
+			multiply_temp_variable = { start_idx = random } # Weighted to top of list
 			round_temp_variable = start_idx
 
 			# Walk from that point
@@ -1432,6 +1433,9 @@
 			}
 		}
 	}
+    io_add_acquire_opportunities = {
+        # TODO - For when companies are selling assets either during bankruptcy or trying to optimize their business
+    }
 	io_add_investment = {
 		var:controller = {
 			allocate_io_number = yes
@@ -1453,7 +1457,7 @@
 		}
 	}
 
-	sort_io_list = {
+	sort_active_io_list = {
 		set_temp_variable = { arr_size = active_investment_opportunities^num }
 		subtract_from_temp_variable = { arr_size = 1 }
 		set_temp_variable = { swapped = 1 }
@@ -1488,6 +1492,43 @@
 			}
 		}
 	}
+	sort_io_list = {
+        sort_active_io_list = yes
+
+		set_temp_variable = { arr_size = investment_opportunities^num }
+		subtract_from_temp_variable = { arr_size = 1 }
+		set_temp_variable = { swapped = 1 }
+
+		while_loop_effect = {
+			limit = { check_variable = { swapped = 1 } }
+
+			set_temp_variable = { swapped = 0 }
+
+			for_loop_effect = {
+				start = 0
+				end = arr_size
+				value = io_i
+
+				# Get IO IDs
+				set_temp_variable = { io_i_1 = io_i }
+				add_to_temp_variable = { io_i_1 = 1 }
+				set_temp_variable = { id_a = investment_opportunities^io_i }
+				set_temp_variable = { id_b = investment_opportunities^io_i_1 }
+
+				# Compare scores
+				if = {
+					limit = {
+						check_variable = { investment_opportunity_attractiveness@var:id_a < investment_opportunity_attractiveness@var:id_b }
+					}
+					# Swap IDs
+					set_variable = { investment_opportunities^io_i = id_b }
+					set_variable = { investment_opportunities^io_i_1 = id_a }
+
+					set_temp_variable = { swapped = 1 }
+				}
+			}
+		}
+	}
 
 	calc_io_cost = {
 		# State Scope
@@ -1508,6 +1549,13 @@
 			}
 			multiply_temp_variable = { construction_cost_temp = controller:base_am_cost@var:pm_temp }
 			multiply_temp_variable = { construction_cost_temp = global.building_base_output_value@var:industry_token }
+		}
+		else_if = {
+			limit = {
+				check_variable = { io_type = token:io_acquire }
+			}
+			multiply_temp_variable = { construction_cost_temp = asset_value@var:industry_token } # Industry asset value (set in industry_update)
+			divide_temp_variable = { construction_cost_temp = size@var:industry_token } # per size, so total = value
 		}
 		else = {
 			multiply_temp_variable = { construction_cost_temp = controller:highest_productivity_cost@var:industry_token }
@@ -1821,6 +1869,12 @@
 			multiply_temp_variable = { attr_temp = 2 }
 			add_to_temp_variable = { attr_modifier_temp = attr_temp }
 		}
+		if = {
+			limit = {
+				check_variable = { io_type = token:io_acquire }
+			}
+			add_to_temp_variable = { attr_modifier_temp = 50 } # Acquiring means you don't need to wait for it to build.
+		}
 
 		# Labor
 		set_temp_variable = { attr_labor_temp = available_workforce }
@@ -1873,6 +1927,7 @@
 				clear_variable = io_expand@var:industry_token
 				clear_variable = io_upgrade_pm@var:industry_token
 				clear_variable = io_upgrade_am@var:industry_token
+				clear_variable = io_acquire@var:industry_token
 			}	
 			for_each_loop = {
 				array = rgos
@@ -1946,6 +2001,26 @@
 				set_temp_variable = { io_ind_temp = investment_opportunity_building@var:io_num_temp }
 				var:io_state_temp = {
 					set_variable = { io_exploit@var:io_ind_temp = 1 }
+				}
+			}
+			else_if = {
+				limit = {
+					check_variable = { investment_opportunity_type@var:io_num_temp = token:io_convert }
+				}
+				set_temp_variable = { io_state_temp = investment_opportunity_state@var:io_num_temp }
+				set_temp_variable = { io_ind_temp = investment_opportunity_building@var:io_num_temp }
+				var:io_state_temp = {
+					set_variable = { io_convert@var:io_ind_temp = 1 }
+				}
+			}
+			else_if = {
+				limit = {
+					check_variable = { investment_opportunity_type@var:io_num_temp = token:io_acquire }
+				}
+				set_temp_variable = { io_state_temp = investment_opportunity_state@var:io_num_temp }
+				set_temp_variable = { io_ind_temp = investment_opportunity_building@var:io_num_temp }
+				var:io_state_temp = {
+					set_variable = { io_acquire@var:io_ind_temp = 1 }
 				}
 			}
 		}
