@@ -80,43 +80,6 @@ _country_advance_time = {
         base_wage_calculation = yes
         on_monthly_industry_ai = yes # Adjusts employment_target
 
-        # TEMPORARY - prospecting
-        for_each_loop = {
-            array = rgos
-            value = r_temp
-
-            set_temp_variable = { r_token = r_temp }
-            if = {
-                limit = {
-                    check_variable = { prospecting@var:r_token = 1 }
-                }
-                set_temp_variable = { roll_temp = random }
-
-                if = {
-                    limit = { check_variable = { roll_temp < discovery_chance@var:r_token } }
-                    rgo_discovery = yes
-                }
-                else_if = {
-                    limit = {
-                        subtract_from_temp_variable = { roll_temp = discovery_chance@var:r_token }
-                        check_variable = { roll_temp < major_discovery_chance@var:r_token }
-                    }
-                    rgo_major_discovery = yes
-                }
-            }
-
-            set_temp_variable = { r_token = r_temp }
-            if = {
-                limit = {
-                    check_variable = { known_reserves@var:r_token > 0 }
-                }
-                set_temp_variable = { known_temp = known_reserves@var:r_token }
-                set_temp_variable = { deposit_temp = known_temp }
-                multiply_temp_variable = { known_temp = -1 }
-                add_rgo_internal = yes
-            }
-        }
-
         pops_balance = yes
         fix_negative_workforce = yes
 
@@ -134,11 +97,23 @@ _country_advance_time = {
         set_variable = { prev_gdp_amount = gdp_amount }
     }
 
-    # Investment
-    investment_opportunities_update = yes
+    ## INVESTMENT ##
+	io_cleanup_flags = yes
+	io_refresh_list = yes
+	io_update = yes
+	
+    # Companies (MVP)
+    # _monthly accrues last tick's retained earnings to treasuries; _update then recomputes P&L + the dividend
+    # payout/retained from this tick's (freshly updated) building finances, consumed next tick by the pull in
+    # industries_update and by next month's companies_monthly. Same one-tick lag as local dividends.
+    companies_monthly = yes
+    companies_update = yes
+
+	# Investment Fund
     investment_fund_update = yes
     investment_funds_monthly = yes
     investment_opportunities_monthly = yes
+    national_opportunities_monthly = yes # country-level actions (company founding); funds from leftover investment_fund
 
     ## UPDATING EVERYTHING ##
     update_country_pop_stats = yes
@@ -464,14 +439,27 @@ on_monthly_industries = {
             add_to_temp_variable = { construction_speed_temp = industry_construction_speed_factor }
             multiply_temp_variable = { const_speed = construction_speed_temp }
 
-            add_to_variable = { construction_progress@var:om_building = const_speed }
-            subtract_from_variable = { construction_time_left@var:om_building = construction_speed_temp }
+			add_to_variable = { construction_progress@var:om_building = const_speed }
+			subtract_from_variable = { construction_time_left@var:om_building = construction_speed_temp }
             if = {
                 limit = {
                     check_variable = { construction_time_left@var:om_building < 0.001 }
                 }
-                add_to_variable = { size@var:om_building = construction@var:om_building }
+				set_temp_variable = { x_temp = construction@var:om_building }
+				set_temp_variable = { financer_temp = construction_financier@var:om_building }
+				set_temp_variable = { industry_token = om_building }
+				add_x_industry_internal = yes
                 if = {
+                    limit = {
+                        check_variable = { global.building_rgo@var:om_building = 1 }
+                    }
+					set_temp_variable = { known_temp = construction@var:om_building }
+					set_temp_variable = { deposit_temp = known_temp }
+					multiply_temp_variable = { known_temp = -1 }
+					set_temp_variable = { r_token = om_building }
+					add_rgo_internal = yes # NOTE: add_x_industry_internal and this should work fine together
+                }
+                else_if = {
                     limit = {
                         check_variable = { om_building = token:arms_factory }
                     }
@@ -504,6 +492,18 @@ on_monthly_industries = {
                         instant_build = yes
                     }
                 }
+
+                # Clear the financing company's active-build marker so it can start a new project.
+                if = {
+                    limit = {
+                        check_variable = { financer_temp > 0 }
+                        NOT = { check_variable = { financer_temp > 10500 } }
+                    }
+                    set_variable = { global.company_project_state@var:financer_temp = 0 }
+					set_variable = { global.company_project_industry@var:financer_temp = 0 }
+                }
+
+                set_variable = { construction_financier@var:om_building = 0 }
                 set_variable = { construction@var:om_building = 0 }
             }
         }
@@ -548,6 +548,27 @@ on_monthly_industries = {
             set_variable = { money@var:om_building = 0 }
         }
     }
+	for_each_loop = { # Prospecting
+		array = rgos
+		value = r_temp
+
+		set_temp_variable = { r_token = r_temp }
+		if = {
+			limit = {
+				check_variable = { prospecting@var:r_token = 1 }
+			}
+			set_temp_variable = { roll_temp = random }
+			if = {
+				limit = {
+					check_variable = { roll_temp < major_discovery_chance@var:r_token }
+				}
+				rgo_major_discovery = yes
+			}
+			else = {
+				rgo_discovery = yes
+			}
+		}
+	}
 }
 on_monthly_pops = {
     # Finances

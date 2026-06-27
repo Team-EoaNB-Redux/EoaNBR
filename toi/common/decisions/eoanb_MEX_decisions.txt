@@ -1009,8 +1009,15 @@ EOANBSYS_national_crisis_decision_category = {
 								add = 1
 								has_dynamic_modifier = { modifier = dynmod_MEX_resistance_modifier_2 }
 							}
-							increase_resistance_la_reforma = yes
-							EOANBSYS_national_crisis_progress_add_one = yes
+							if = {
+								limit = {
+									NOT = {
+										country_exists = MEC
+									}
+								}
+								increase_resistance_la_reforma = yes
+								EOANBSYS_national_crisis_progress_add_one = yes
+							}
 							hidden_effect = {
 								random_list = {
 									1 = {
@@ -1034,7 +1041,14 @@ EOANBSYS_national_crisis_decision_category = {
 											add = 1
 											resistance > 90
 										}
-										EOANBSYS_national_crisis_progress_add_three = yes
+										if = {
+											limit = {
+												NOT = {
+													country_exists = MEC
+												}
+											}
+											EOANBSYS_national_crisis_progress_add_three = yes
+										}
 									}
 									1 = {
 										modifier = {
@@ -1049,7 +1063,14 @@ EOANBSYS_national_crisis_decision_category = {
 											add = 1
 											resistance > 45
 										}
-										EOANBSYS_national_crisis_progress_add_one = yes
+										if = {
+											limit = {
+												NOT = {
+													country_exists = MEC
+												}
+											}
+											EOANBSYS_national_crisis_progress_add_one = yes
+										}
 									}
 									1 = {
 										modifier = {
@@ -1133,7 +1154,13 @@ EOANBSYS_national_crisis_decision_category = {
 			}
 			modifier = {
 				factor = 0
-				check_variable = { EOANBSYS_national_crisis_progress_var > 85 }
+				AND = {
+					check_variable = { EOANBSYS_national_crisis_progress_var > 85 }
+					NOT = {
+						country_exists = MEC
+					}
+				}
+				
 			}
 		}
 	}
@@ -1369,7 +1396,7 @@ EOANBSYS_national_crisis_decision_category = {
 			tag = MEX
 		}
 		target_root_trigger = {
-			has_completed_focus = MEX_focus_addressing_media_campaign
+			has_completed_focus = MEX_focus_unite_the_states
 		}
 
 		targets = {
@@ -1452,6 +1479,7 @@ EOANBSYS_national_crisis_decision_category = {
 					decision = MEX_decision_quell_state
 				}
 			}
+			if = { limit = { has_war = no } add_political_power = 15 }
 		}
 	}
 	MEX_decision_mclane_ocampo_treaty_equipment = {
@@ -1669,5 +1697,32 @@ EOANBSYS_national_crisis_decision_category = {
 	}
 }
 
-#MEX_decision_category_reform_war = {
-#}
+MEX_decision_category_reform_war = {
+	MEC_decision_ask_church_for_money = {
+		allowed = {
+			tag = MEC
+		}
+		
+		target_root_trigger = {
+			has_completed_focus = MEC_focus_approach_church_for_funds
+		}
+
+		targets = {
+			MEC
+		}
+
+		fixed_random_seed = no
+		cost = 5
+		days_re_enable = 14
+		complete_effect = {
+			set_temp_variable = { x_temp = 0.2 }
+			if = {
+				limit = {
+					has_completed_focus = MEC_focus_forced_loans
+				}
+				multiply_temp_variable = { x_temp = 1.5 }
+			}
+			add_months_of_income = yes
+		}
+	}
+}
