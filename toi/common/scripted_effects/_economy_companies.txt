@@ -22,24 +22,17 @@
 #       global.company_total_size@var:cid        - sum of owned size across all holdings
 #       global.company_revenue@var:cid / _expenses / _profit / _gross_dividends - P&L (set by companies_update)
 #       global.company_dividends@var:cid         - this month's payout to HQ-state capitalists (set by companies_update)
-#       global.company_net_cashflow@var:cid      - net money in/out of treasury this month = operating cash kept after
-#                                                  dividends, minus all investment outlays (construction + pooling). companies_monthly applies it to the treasury.
+#       global.company_retained@var:cid          - this month's amount to retain (set by companies_update, accrued by companies_monthly)
 #       Holdings (parallel arrays, one entry per owned building-slice; merged so (state,building) is unique):
 #           global.company_holding_state@var:cid     - state scope of the slice
 #           global.company_holding_industry@var:cid  - industry token of the slice
 #           global.company_holding_size@var:cid      - size owned in that building
-#       Funding project (one at a time; 0 state = idle. Stage 1 pools toward cost, then construction starts):
-#           global.company_project_state@var:cid     - target state (0 = no funding project)
-#           global.company_project_industry@var:cid  - target industry token
-#           global.company_project_type@var:cid      - token:io_build or io_expand
-#           global.company_project_size@var:cid      - size to build
-#           global.company_project_cost@var:cid      - investment cost to pool (~25% of construction cost)
-#           global.company_project_investment@var:cid - pooled so far
-#           global.company_project_attractiveness@var:cid - score (negative => dropped next tick)
+#       Active build marker (charge-during-construction; the build itself lives in the state's construction vars):
+#           global.company_project_state@var:cid     - state of the active build (0 = none / idle)
+#           global.company_project_industry@var:cid  - industry token of the active build
 #       Investment budget levers (computed by companies_update):
-#           global.company_target_investment_spending@var:cid - monthly investment budget (sizes & caps investment)
-#           global.company_investment_spending@var:cid        - active construction outlay (budget gate)
-#           global.company_investment_spending_pmtd@var:cid   - per-month-to-date total investment outlay (construction + pooling)
+#           global.company_target_investment_spending@var:cid - monthly investment budget (sizes new builds)
+#           global.company_investment_spending@var:cid        - current outlay (active construction; + retooling later)
 #           global.company_construction_spending@var:cid      - aggregated monthly cost of active company-financed builds
 #
 #   Country scope:
@@ -60,13 +53,12 @@
 #   dividends consumed at tick N+1), no double count.
 #
 # UPDATE vs MONTHLY (per Strat's convention): _update effects are idempotent recomputes (same result if called
-#   twice); _monthly effects mutate/accumulate. companies_update recomputes P&L (operating revenue/expenses/profit),
-#   the dividend payout, and net_cashflow (treasury delta); companies_monthly applies net_cashflow to the treasury.
-#   Operating profit != net_cashflow: profit is operating only, net_cashflow nets in dividends paid + investment outlays.
+#   twice); _monthly effects mutate/accumulate. companies_update recomputes P&L + payout/retained; companies_monthly
+#   accrues retained earnings into the treasury.
 #
-# SCOPE: ownership + budget + dividend reroute + two-stage investment (pool investment cost -> construct).
-#   OUT OF SCOPE (later layers): stock valuation/price, capital raising, behavior states/complacency, M&A,
-#   bankruptcy, closure, PM/AM upgrade investment.
+# MVP SCOPE: ownership + budget + dividend reroute only.
+#   OUT OF SCOPE (later layers): stock valuation/price, capital raising, independent investment, behavior
+#   states/complacency, M&A, bankruptcy, closure.
 
 
 # ID ALLOCATION ----------------------------------------------------------------
@@ -112,16 +104,11 @@
 		set_variable = { global.company_profit@var:cid = 0 }
 		set_variable = { global.company_gross_dividends@var:cid = 0 }
 		set_variable = { global.company_dividends@var:cid = 0 }
-		set_variable = { global.company_net_cashflow@var:cid = 0 }
+		set_variable = { global.company_retained@var:cid = 0 }
 
-		# Active build marker (0 state = none) - set when an investment is chosen, cleared on construction beginning.
+		# Active build marker (0 state = none) - set when a build starts, cleared on completion.
 		set_variable = { global.company_project_state@var:cid = 0 }
 		set_variable = { global.company_project_industry@var:cid = 0 }
-		set_variable = { global.company_project_type@var:cid = 0 }
-		set_variable = { global.company_project_size@var:cid = 0 }
-		set_variable = { global.company_project_cost@var:cid = 0 }
-		set_variable = { global.company_project_investment@var:cid = 0 }
-		set_variable = { global.company_project_attractiveness@var:cid = 0 }
 
 		# Investment budget lever (computed each month by companies_update).
 		set_variable = { global.company_target_investment_spending@var:cid = 0 }
@@ -151,7 +138,16 @@
 
 			# Clamp to available local size and update the building-centric mirror, inside the building's state.
 			var:holding_state_temp = {
-				if = { limit = { check_variable = { holding_size_temp > owner_sizes_local@var:holding_building_temp } } set_temp_variable = { holding_size_temp = owner_sizes_local@var:holding_building_temp } }
+				set_temp_variable = { incorporated_temp = 0 }
+				for_each_loop = {
+					array = owner_sizes@var:holding_building_temp
+					value = owner_size_temp
+					add_to_temp_variable = { incorporated_temp = owner_size_temp }
+				}
+				set_temp_variable = { available_temp = size@var:holding_building_temp }
+				subtract_from_temp_variable = { available_temp = incorporated_temp }
+				if = { limit = { check_variable = { available_temp < 0 } } set_temp_variable = { available_temp = 0 } }
+				if = { limit = { check_variable = { holding_size_temp > available_temp } } set_temp_variable = { holding_size_temp = available_temp } }
 
 				if = {
 					limit = { check_variable = { holding_size_temp > 0 } }
@@ -177,7 +173,6 @@
 						add_to_array = { owner_companies@var:holding_building_temp = company_temp }
 						add_to_array = { owner_sizes@var:holding_building_temp = holding_size_temp }
 					}
-					subtract_from_variable = { owner_sizes_local@var:holding_building_temp = holding_size_temp }
 				}
 			}
 
@@ -276,7 +271,6 @@
 						set_temp_variable = { b_brk = 1 }
 					}
 				}
-				add_to_variable = { owner_sizes_local@var:holding_building_temp = holding_size_temp }
 				if = {
 					limit = { check_variable = { b_idx > -1 } }
 					set_temp_variable = { b_remaining_temp = owner_sizes@var:holding_building_temp^b_idx }
@@ -305,29 +299,6 @@
 	# building finances by owned size, then derives the dividend payout and the amount to retain. Pure: calling
 	# twice produces the same result (no accumulation). companies_monthly accrues the retained amount separately.
 	companies_update = {
-		# Reset & aggregate active construction spending per financing company across this country's states
-		# (retooling added here when company upgrades are hooked up). Drives the investment-budget gate & the lever.
-		for_each_loop = {
-			array = companies
-			value = cid
-			set_variable = { global.company_construction_spending@var:cid = 0 }
-		}
-		every_controlled_state = {
-			for_each_loop = {
-				array = industries
-				value = bu_token
-				if = {
-					limit = {
-						NOT = { check_variable = { construction@var:bu_token = 0 } }
-						check_variable = { construction_financier@var:bu_token > 0 }
-						NOT = { check_variable = { construction_financier@var:bu_token > 10500 } }
-					}
-					set_temp_variable = { fin_temp = construction_financier@var:bu_token }
-					add_to_variable = { global.company_construction_spending@var:fin_temp = construction_cost@var:bu_token }
-				}
-			}
-		}
-
 		for_each_loop = {
 			array = companies
 			value = cid
@@ -372,33 +343,28 @@
 			set_variable = { global.company_profit@var:cid = global.company_revenue@var:cid }
 			subtract_from_variable = { global.company_profit@var:cid = global.company_expenses@var:cid }
 
-			# Dividend payout to HQ-state capitalists; retain_temp is the operating cash kept after dividends.
+			# Split gross dividends into retained vs paid out (both derived -> set, not accumulated).
 			set_temp_variable = { retain_temp = global.company_gross_dividends@var:cid }
 			multiply_temp_variable = { retain_temp = global.company_retention_factor }
+			set_variable = { global.company_retained@var:cid = retain_temp }
 
 			set_temp_variable = { payout_temp = global.company_gross_dividends@var:cid }
 			subtract_from_temp_variable = { payout_temp = retain_temp }
 			set_variable = { global.company_dividends@var:cid = payout_temp }
 
-			# Investment spending lever = this company's active construction outlay (aggregated in the preamble).
+			# Investment spending lever (this month's outlay = active construction; + retooling later).
+			set_temp_variable = { state_temp = global.company_project_state@var:cid }
+			set_temp_variable = { industry_token = global.company_project_industry@var:cid }
+			set_variable = { global.company_construction_spending@var:cid = state_temp:construction_cost@var:industry_token }
 			set_variable = { global.company_investment_spending@var:cid = global.company_construction_spending@var:cid }
 
-			# Net cashflow = the money actually moving in/out of the treasury this month: operating cash kept after
-			# dividends, minus ALL investment outlays (construction fees + pooling, summed in _pmtd). companies_monthly
-			# adds this to the treasury; a negative figure beyond the treasury is what the company must cover with debt.
-			set_variable = { global.company_net_cashflow@var:cid = retain_temp }
-			subtract_from_variable = { global.company_net_cashflow@var:cid = global.company_investment_spending_pmtd@var:cid }
-
-			# Target investment budget, mirroring investment_fund_target_spending: operating cash kept (investment
-			# income) + 5% of treasury (stored capital). Based on operating capacity, not the post-investment cashflow.
-			set_variable = { global.company_target_investment_spending@var:cid = retain_temp }
+			# Target investment spending - the company's monthly investment budget, mirroring
+			# investment_fund_target_spending: retained earnings (investment income) + 5% of treasury (stored capital).
+			set_variable = { global.company_target_investment_spending@var:cid = global.company_retained@var:cid }
 			set_temp_variable = { tis_temp = global.company_treasury@var:cid }
 			multiply_temp_variable = { tis_temp = 0.05 }
 			add_to_variable = { global.company_target_investment_spending@var:cid = tis_temp }
 		}
-
-		# Recompute each active funding project's attractiveness & cost (like io_update does for IOs).
-		companies_project_update = yes
 	}
 
 
@@ -410,46 +376,34 @@
 			array = companies
 			value = cid
 
-			# Treasury
-			add_to_variable = { global.company_treasury@var:cid = global.company_net_cashflow@var:cid }
-
-			# Investment
-			if = {
-				limit = {
-					check_variable = { global.company_project_attractiveness@var:cid < 0 }
-				}
-				companies_drop_project = yes
-			}
-
-			if = {
-				limit = {
-					check_variable = { global.company_project_state@var:cid = 0 } # no active build
-					check_variable = { global.company_investment_spending@var:cid < global.company_target_investment_spending@var:cid } # Company investing less than it wants
-				}
-				companies_select_project = yes
-			}
-
-			set_variable = { global.company_investment_spending_pmtd@var:cid = global.company_investment_spending@var:cid }
-			if = {
-				limit = {
-					NOT = { check_variable = { global.company_project_state@var:cid = 0 } } # active build
-					check_variable = { global.company_investment_spending@var:cid < global.company_target_investment_spending@var:cid } # Company investing less than it wants
-				}
-				companies_fund_project = yes
-			}
+			add_to_variable = { global.company_treasury@var:cid = global.company_retained@var:cid }
 		}
 	}
 
 
-# INVESTMENT (Architecture A: direct & independent, two-stage) ------------------
-	# Driven from companies_monthly per company: (1) SELECT - pick the most attractive EXPAND-held / BUILD-in-focus
-	# candidate (in any controlled state) and set it up as the current funding project; (2) FUND - pool treasury into
-	# the project's investment cost each month; once met, start construction (financer = cid) and free the funding
-	# slot. on_monthly_industries then charges the monthly construction fee during the build, and add_x_industry_internal
-	# attributes the built size on completion. A company funds ONE project at a time but can have several builds running.
-	# companies_project_update (run in companies_update) refreshes the funding project's attractiveness & cost.
+# INVESTMENT (Architecture A: direct & independent, charge-during-construction) -
+	# Country pass over this country's companies. A company with no active build selects one - EXPAND an industry
+	# it holds, or BUILD new in its focus (HQ state) - ranked by score_io_attractiveness and sized by its own target
+	# investment spending. It starts construction immediately (financer = cid), grabbing the build slot so the
+	# national fund / other companies are locked out of that industry. on_monthly_industries then charges the
+	# month's construction_cost to the company treasury each tick (stalling if it can't pay), and on completion
+	# add_x_industry_internal attributes the built size to the company. company_project_state marks the active build.
+	companies_invest = {
+		for_each_loop = {
+			array = companies
+			value = cid
 
-	# Picks the most attractive expand/build candidate for company `cid` and sets it as the current funding project.
+			if = {
+				limit = {
+					check_variable = { global.company_project_state@var:cid = 0 } # no active build
+					check_variable = { global.company_target_investment_spending@var:cid > 0 }
+				}
+				companies_select_project = yes
+			}
+		}
+	}
+
+	# Picks the most attractive expand/build candidate for company `cid` and starts construction on it now.
 	companies_select_project = {
 		set_temp_variable = { best_attr = 0 }
 		set_temp_variable = { best_state = 0 }
@@ -482,51 +436,34 @@
 			}
 		}
 
-		# Build candidate: the company's focus industry in any controlled state.
+		# Build candidate: the company's focus industry in its HQ state.
 		set_temp_variable = { hq_state = global.company_hq_state@var:cid }
 		set_temp_variable = { focus_industry = global.company_focus@var:cid }
+		if = {
+			limit = { is_in_array = { global.industry_token_array = focus_industry } }
 
-		set_temp_variable = { attr_total_temp = 0 }
-		set_temp_variable = { industry_token = focus_industry }
-		set_temp_variable = { io_type = token:io_build }
-		every_controlled_state = {
-			limit = { 
-				NOT = { check_variable = { size@var:focus_industry > 0 } } 
-				NOT = { check_variable = { construction@var:focus_industry > 0 } }
-				can_build_industry = yes
+			set_temp_variable = { industry_token = focus_industry }
+			set_temp_variable = { io_type = token:io_build }
+			set_temp_variable = { attr_total_temp = 0 }
+			var:hq_state = {
+				if = {
+					limit = {
+						can_build_industry = yes
+						check_variable = { construction@var:focus_industry = 0 }
+					}
+					score_io_attractiveness = yes
+				}
 			}
-
-			score_io_attractiveness = yes
-			subtract_from_temp_variable = { attr_total_temp = 25 } # Subtract 25 so companies prioritize expanding current over new
 			if = {
 				limit = { check_variable = { attr_total_temp > best_attr } }
 				set_temp_variable = { best_attr = attr_total_temp }
-				set_temp_variable = { best_state = THIS }
+				set_temp_variable = { best_state = hq_state }
 				set_temp_variable = { best_industry = focus_industry }
 				set_temp_variable = { best_type = token:io_build }
 			}
 		}
 
-		# Acquire candidate
-		set_temp_variable = { attr_total_temp = 0 }
-		set_temp_variable = { industry_token = focus_industry }
-		set_temp_variable = { io_type = token:io_acquire }
-		every_controlled_state = {
-			limit = {
-				check_variable = { owner_sizes_local@var:focus_industry > 0 }
-			}
-			score_io_attractiveness = yes
-			add_to_temp_variable = { attr_total_temp = 200 } # Temp
-			if = {
-				limit = { check_variable = { attr_total_temp > best_attr } }
-				set_temp_variable = { best_attr = attr_total_temp }
-				set_temp_variable = { best_state = THIS }
-				set_temp_variable = { best_industry = focus_industry }
-				set_temp_variable = { best_type = token:io_acquire }
-			}
-		}
-
-		# Set the best candidate up as the funding project, if any is worthwhile.
+		# Start construction on the best candidate, if any is worthwhile.
 		if = {
 			limit = {
 				check_variable = { best_attr > 0 }
@@ -539,15 +476,31 @@
 			var:best_state = {
 				calc_company_size_count = yes # -> size_temp (sized by the company's investment budget)
 
-				multiply_temp_variable = { investment_cost_temp = size_temp }
-				
-				set_variable = { global.company_project_state@var:cid = best_state }
-				set_variable = { global.company_project_industry@var:cid = best_industry }
-				set_variable = { global.company_project_type@var:cid = best_type }
-				set_variable = { global.company_project_size@var:cid = size_temp }
-				set_variable = { global.company_project_cost@var:cid = investment_cost_temp }
-				set_variable = { global.company_project_investment@var:cid = 0 }
-				set_variable = { global.company_project_attractiveness@var:cid = best_attr }
+				if = {
+					limit = { check_variable = { best_type = token:io_build } }
+					set_temp_variable = { proj_pm = controller:latest_production_method@var:industry_token }
+					set_temp_variable = { proj_am = controller:latest_automation_method@var:industry_token }
+				}
+				else = {
+					set_temp_variable = { proj_pm = production_method@var:industry_token }
+					set_temp_variable = { proj_am = automation_method@var:industry_token }
+				}
+
+				if = {
+					limit = { check_variable = { size_temp > 0 } }
+
+					# Begin the build now; financer = cid grabs the slot. on_monthly_industries charges it monthly
+					# and add_x_industry_internal attributes the size to the company on completion.
+					set_temp_variable = { x_temp = size_temp }
+					set_temp_variable = { financer_temp = cid }
+					set_temp_variable = { production_method_temp = proj_pm }
+					set_temp_variable = { automation_method_temp = proj_am }
+					set_temp_variable = { no_cost_temp = 1 } # paid monthly during construction, not upfront
+					construct_x_industries_no_update = yes
+
+					set_variable = { global.company_project_state@var:cid = best_state }
+					set_variable = { global.company_project_industry@var:cid = best_industry }
+				}
 			}
 		}
 	}
@@ -567,125 +520,6 @@
 		round_temp_variable = size_max_temp
 
 		clamp_temp_variable = { var = size_temp min = 1 max = size_max_temp }
-	}
-
-	# Recomputes each company's active funding project's attractiveness & cost, mirroring how io_update refreshes
-	# IOs. A project whose target is no longer valid (something else is already building it) gets negative
-	# attractiveness so companies_monthly drops it next tick. Called at the end of companies_update.
-	companies_project_update = {
-		for_each_loop = {
-			array = companies
-			value = cid
-
-			if = {
-				limit = { NOT = { check_variable = { global.company_project_state@var:cid = 0 } } }
-
-				set_temp_variable = { proj_state = global.company_project_state@var:cid }
-				set_temp_variable = { proj_industry = global.company_project_industry@var:cid }
-				set_temp_variable = { proj_size = global.company_project_size@var:cid }
-
-				set_temp_variable = { proj_attr = -1 } # default invalid (overwritten below if still buildable)
-				set_temp_variable = { proj_cost = global.company_project_cost@var:cid }
-
-				set_temp_variable = { io_type = global.company_project_type@var:cid }
-				var:proj_state = {
-					set_temp_variable = { industry_token = proj_industry }
-
-					# Valid only while nothing else is building it; otherwise leave proj_attr negative -> dropped.
-					if = {
-						limit = { check_variable = { construction@var:proj_industry = 0 } }
-						score_io_attractiveness = yes
-						set_temp_variable = { proj_attr = attr_total_temp }
-
-						calc_io_cost = yes # -> investment_cost_temp
-						set_temp_variable = { proj_cost = investment_cost_temp }
-						multiply_temp_variable = { proj_cost = proj_size }
-					}
-				}
-
-				set_variable = { global.company_project_attractiveness@var:cid = proj_attr }
-				set_variable = { global.company_project_cost@var:cid = proj_cost }
-			}
-		}
-	}
-
-	# Funds the current project until investment exceeds investment cost then starts construction.
-	# Any scope. INPUT: cid
-	companies_fund_project = {
-		# Pool treasury into the project, up to the investment cost still outstanding (capped by treasury).
-		set_temp_variable = { allocate_temp = global.company_project_cost@var:cid }
-		subtract_from_temp_variable = { allocate_temp = global.company_project_investment@var:cid }
-		if = {
-			limit = { check_variable = { allocate_temp > global.company_treasury@var:cid } }
-			set_temp_variable = { allocate_temp = global.company_treasury@var:cid }
-		}
-		set_temp_variable = { max_allocate_temp = global.company_target_investment_spending@var:cid }
-		subtract_from_temp_variable = { max_allocate_temp = global.company_investment_spending@var:cid }
-		if = {
-			limit = { check_variable = { allocate_temp > max_allocate_temp } }
-			set_temp_variable = { allocate_temp = max_allocate_temp }
-		}
-		if = {
-			limit = { check_variable = { allocate_temp > 0 } }
-			# pooled cash leaves the treasury via net_cashflow (tracked in _pmtd), not debited directly here
-			add_to_variable = { global.company_project_investment@var:cid = allocate_temp }
-			add_to_variable = { global.company_investment_spending_pmtd@var:cid = allocate_temp }
-		}
-
-		# Once the investment cost is met, start construction (financer = cid). The pooled cash WAS the investment
-		# cost, so no_cost = 1; on_monthly_industries then charges the monthly construction fee during the build,
-		# and add_x_industry_internal attributes the size on completion. Clear the project to free the funding slot.
-		if = {
-			limit = { NOT = { check_variable = { global.company_project_investment@var:cid < global.company_project_cost@var:cid } } }
-			set_temp_variable = { proj_state = global.company_project_state@var:cid }
-			set_temp_variable = { proj_industry = global.company_project_industry@var:cid }
-			if = {
-				limit = {
-					check_variable = { global.company_project_type@var:cid = token:io_acquire }
-				}
-				set_temp_variable = { company_temp = cid }
-				set_temp_variable = { holding_state_temp = proj_state }
-				set_temp_variable = { holding_building_temp = proj_industry }
-				set_temp_variable = { holding_size_temp = global.company_project_size@var:cid }
-				company_add_holding = yes
-			}
-			else = {
-				var:proj_state = {
-					if = {
-						limit = { check_variable = { construction@var:proj_industry = 0 } }
-						set_temp_variable = { x_temp = global.company_project_size@var:cid }
-						set_temp_variable = { industry_token = proj_industry }
-						set_temp_variable = { financer_temp = cid }
-						set_temp_variable = { production_method_temp = controller:latest_production_method@var:proj_industry }
-						set_temp_variable = { automation_method_temp = controller:latest_automation_method@var:proj_industry }
-						set_temp_variable = { no_cost_temp = 1 } # investment cost was already pooled
-						construct_x_industries_no_update = yes
-					}
-				}
-			}
-
-			set_variable = { global.company_project_state@var:cid = 0 }
-			set_variable = { global.company_project_industry@var:cid = 0 }
-			set_variable = { global.company_project_type@var:cid = 0 }
-			set_variable = { global.company_project_size@var:cid = 0 }
-			set_variable = { global.company_project_cost@var:cid = 0 }
-			set_variable = { global.company_project_investment@var:cid = 0 }
-			set_variable = { global.company_project_attractiveness@var:cid = 0 }
-		}
-	}
-
-	# Removes active project. Refunds investment cash into treasury.
-	# Any scope. INPUT: cid
-	companies_drop_project = {
-		add_to_variable = { global.company_treasury@var:cid = global.company_project_investment@var:cid }
-
-		set_variable = { global.company_project_state@var:cid = 0 }
-		set_variable = { global.company_project_industry@var:cid = 0 }
-		set_variable = { global.company_project_type@var:cid = 0 }
-		set_variable = { global.company_project_size@var:cid = 0 }
-		set_variable = { global.company_project_cost@var:cid = 0 }
-		set_variable = { global.company_project_investment@var:cid = 0 }
-		set_variable = { global.company_project_attractiveness@var:cid = 0 }
 	}
 
 
