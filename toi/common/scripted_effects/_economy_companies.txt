@@ -19,7 +19,9 @@
 #       global.company_type@var:cid              - token: company_type_private / _public / _soe
 #       global.company_focus@var:cid             - primary industry token (informational for MVP)
 #       global.company_treasury@var:cid          - retained capital pool (accrued by companies_monthly)
-#       global.company_total_size@var:cid        - sum of owned size across all holdings
+#       global.company_total_size@var:cid        - sum of owned size across all holdings (= the "size count")
+#       global.company_employees@var:cid         - apportioned employee count across holdings (display; set by companies_update)
+#       global.company_asset_value@var:cid       - apportioned asset value across holdings (display; set by companies_update)
 #       global.company_revenue@var:cid / _expenses / _profit / _gross_dividends - P&L (set by companies_update)
 #       global.company_dividends@var:cid         - this month's payout to HQ-state capitalists (set by companies_update)
 #       global.company_net_cashflow@var:cid      - net money in/out of treasury this month = operating cash kept after
@@ -337,6 +339,10 @@
 			set_variable = { global.company_expenses@var:cid = 0 }
 			set_variable = { global.company_gross_dividends@var:cid = 0 }
 
+			# Reset display aggregates (recomputed from holdings in the loop below).
+			set_variable = { global.company_employees@var:cid = 0 }
+			set_variable = { global.company_asset_value@var:cid = 0 }
+
 			# Collect apportioned finances from every owned slice. Reading building (state) vars via temp-scope
 			# read (same pattern as market_leader_temp:supply@var:r_type in _economy_market.txt).
 			for_each_loop = {
@@ -366,6 +372,15 @@
 					set_temp_variable = { bexp = hstate:expenses@var:bld_temp }
 					multiply_temp_variable = { bexp = frac }
 					add_to_variable = { global.company_expenses@var:cid = bexp }
+
+					# Display aggregates: the company's apportioned share of the building's employees & asset value.
+					set_temp_variable = { bemp = hstate:employed@var:bld_temp }
+					multiply_temp_variable = { bemp = frac }
+					add_to_variable = { global.company_employees@var:cid = bemp }
+
+					set_temp_variable = { basset = hstate:asset_value@var:bld_temp }
+					multiply_temp_variable = { basset = frac }
+					add_to_variable = { global.company_asset_value@var:cid = basset }
 				}
 			}
 
@@ -392,6 +407,11 @@
 			# Target investment budget, mirroring investment_fund_target_spending: operating cash kept (investment
 			# income) + 5% of treasury (stored capital). Based on operating capacity, not the post-investment cashflow.
 			set_variable = { global.company_target_investment_spending@var:cid = retain_temp }
+
+			set_temp_variable = { modifier_temp = modifier@investment_confidence_modifier }
+			divide_temp_variable = { modifier_temp = 100 }
+			multiply_temp_variable = { global.company_target_investment_spending@var:cid = modifier_temp }
+
 			set_temp_variable = { tis_temp = global.company_treasury@var:cid }
 			multiply_temp_variable = { tis_temp = 0.05 }
 			add_to_variable = { global.company_target_investment_spending@var:cid = tis_temp }
@@ -412,6 +432,10 @@
 
 			# Treasury
 			add_to_variable = { global.company_treasury@var:cid = global.company_net_cashflow@var:cid }
+			if = { # TODO: Temporary until debt is added
+				limit = { check_variable = { global.company_treasury@var:cid < 0 } }
+				set_variable = { global.company_treasury@var:cid = 0 }
+			}
 
 			# Investment
 			if = {
@@ -550,6 +574,7 @@
 				check_variable = { owner_sizes_local@var:focus_industry > 0 }
 			}
 			score_io_attractiveness = yes
+			add_to_temp_variable = { attr_total_temp = 50 } # Prioritize acquiring over expanding
 			if = {
 				limit = { check_variable = { attr_total_temp > best_attr } }
 				set_temp_variable = { best_attr = attr_total_temp }

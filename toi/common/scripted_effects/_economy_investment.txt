@@ -2411,6 +2411,7 @@
                         check_variable = { nopp_attractiveness@var:active_nopp_temp > investment_opportunity_attractiveness@var:io_num_temp }
                     }
                 }
+                log = "Attractiveness: [?nopp_attractiveness@var:active_nopp_temp] | [?investment_opportunity_attractiveness@var:io_num_temp]"
                 set_temp_variable = { spending_amount_temp = nopp_cost@var:active_nopp_temp }
                 subtract_from_temp_variable = { spending_amount_temp = nopp_investment@var:active_nopp_temp }
                 if = { # Enough money to finish pooling
@@ -2636,7 +2637,10 @@
 		}
 
 		if = {
-			limit = { check_variable = { founding_active_temp = 0 } }
+			limit = { 
+                check_variable = { founding_active_temp = 0 }
+                check_variable = { gdp_amount > 10000 }
+            }
 
 			# Progressive cost penalty for this country (read by both score and cost below).
 			calc_founding_cost_mult = yes
@@ -2657,8 +2661,11 @@
 				value = industry_token
 				if = {
 					limit = {
-						check_variable = { highest_productivity@var:industry_token > 1 }
+						check_variable = { highest_productivity@var:industry_token > 2 }
 						check_variable = { size@var:industry_token > 10 }
+                        any_controlled_state = {
+							check_variable = { profitability@var:industry_token > 0.1 }
+                        }
 					}
 					set_temp_variable = { fi_score_temp = highest_productivity@var:industry_token }
 					# Penalty if a company already focuses this industry.
@@ -2741,10 +2748,17 @@
 				set_temp_variable = { hq_best_temp = -1 }
 				every_controlled_state = {
 					set_temp_variable = { hq_score_temp = total_industry_size }
+                    if = {
+                        limit = {
+                            check_variable = { controller:market_capital = THIS }
+                        }
+                        add_to_temp_variable = { hq_score_temp = 50 }
+                    }
 					if = {
 						limit = { check_variable = { pops@token:capitalists > 0 } }
 						set_temp_variable = { cap_pc_temp = pops_earnings@token:capitalists }
 						divide_temp_variable = { cap_pc_temp = pops@token:capitalists } # capitalist per-capita earnings
+						divide_temp_variable = { cap_pc_temp = controller:gdp_per_capita } # capitalist per-capita earnings
 						add_to_temp_variable = { hq_score_temp = cap_pc_temp }
 					}
 					if = {
@@ -2850,6 +2864,8 @@
 			# State-share stub: the govt subsidy should buy equity in the new company. The stock /
 			# ownership-split system doesn't exist yet, so nopp_subsidy is just dropped for now.
 			# TODO: convert nopp_subsidy@var:nopp_num_temp into state-held shares of cid once stocks exist.
+
+            companies_update = yes
 		}
 		remove_national_opportunity = yes
 	}
