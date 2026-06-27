@@ -456,7 +456,7 @@
 		set_temp_variable = { best_industry = 0 }
 		set_temp_variable = { best_type = 0 }
 
-		# Expand candidates: every industry the company already holds.
+		# Expand & Exploit candidates: every industry the company already holds.
 		for_each_loop = {
 			array = global.company_holding_industry@var:cid
 			value = cand_industry
@@ -464,12 +464,22 @@
 
 			set_temp_variable = { cand_state = global.company_holding_state@var:cid^h }
 			set_temp_variable = { industry_token = cand_industry }
-			set_temp_variable = { io_type = token:io_expand }
 			set_temp_variable = { attr_total_temp = 0 }
 			var:cand_state = {
-				# Skip if this industry is already under construction (no two ongoing projects per industry).
+				# Skip if already under construction
 				if = {
-					limit = { check_variable = { construction@var:cand_industry = 0 } }
+					limit = {
+						check_variable = { construction@var:cand_industry = 0 }
+					}
+					if = {
+						limit = {
+							check_variable = { global.building_rgo@var:cand_industry > 0 }
+						}
+						set_temp_variable = { io_type = token:io_exploit }
+					}
+					else = {
+						set_temp_variable = { io_type = token:io_expand }
+					}
 					score_io_attractiveness = yes
 				}
 			}
@@ -478,32 +488,56 @@
 				set_temp_variable = { best_attr = attr_total_temp }
 				set_temp_variable = { best_state = cand_state }
 				set_temp_variable = { best_industry = cand_industry }
-				set_temp_variable = { best_type = token:io_expand }
+				set_temp_variable = { best_type = io_type }
 			}
 		}
 
-		# Build candidate: the company's focus industry in any controlled state.
+		# Develop-capacity candidate: the company's focus industry in any controlled state. An RGO focus
+		# develops known reserves (io_exploit); anything else builds a new plant (io_build).
 		set_temp_variable = { hq_state = global.company_hq_state@var:cid }
 		set_temp_variable = { focus_industry = global.company_focus@var:cid }
 
 		set_temp_variable = { attr_total_temp = 0 }
 		set_temp_variable = { industry_token = focus_industry }
-		set_temp_variable = { io_type = token:io_build }
-		every_controlled_state = {
-			limit = { 
-				NOT = { check_variable = { size@var:focus_industry > 0 } } 
-				NOT = { check_variable = { construction@var:focus_industry > 0 } }
-				can_build_industry = yes
+		if = {
+			limit = { check_variable = { global.building_rgo@var:focus_industry > 0 } }
+			# RGO focus -> exploit existing known reserves (mirrors io_add_exploit_opportunities' conditions).
+			set_temp_variable = { io_type = token:io_exploit }
+			every_controlled_state = {
+				limit = {
+					NOT = { check_variable = { size@var:focus_industry > 0 } }
+					check_variable = { known_reserves@var:focus_industry > 0 }
+					check_variable = { construction@var:focus_industry = 0 }
+				}
+				score_io_attractiveness = yes
+				subtract_from_temp_variable = { attr_total_temp = 25 } # prioritize expanding current over new
+				if = {
+					limit = { check_variable = { attr_total_temp > best_attr } }
+					set_temp_variable = { best_attr = attr_total_temp }
+					set_temp_variable = { best_state = THIS }
+					set_temp_variable = { best_industry = focus_industry }
+					set_temp_variable = { best_type = token:io_exploit }
+				}
 			}
+		}
+		else = {
+			set_temp_variable = { io_type = token:io_build }
+			every_controlled_state = {
+				limit = {
+					NOT = { check_variable = { size@var:focus_industry > 0 } }
+					NOT = { check_variable = { construction@var:focus_industry > 0 } }
+					can_build_industry = yes
+				}
 
-			score_io_attractiveness = yes
-			subtract_from_temp_variable = { attr_total_temp = 25 } # Subtract 25 so companies prioritize expanding current over new
-			if = {
-				limit = { check_variable = { attr_total_temp > best_attr } }
-				set_temp_variable = { best_attr = attr_total_temp }
-				set_temp_variable = { best_state = THIS }
-				set_temp_variable = { best_industry = focus_industry }
-				set_temp_variable = { best_type = token:io_build }
+				score_io_attractiveness = yes
+				subtract_from_temp_variable = { attr_total_temp = 25 } # Subtract 25 so companies prioritize expanding current over new
+				if = {
+					limit = { check_variable = { attr_total_temp > best_attr } }
+					set_temp_variable = { best_attr = attr_total_temp }
+					set_temp_variable = { best_state = THIS }
+					set_temp_variable = { best_industry = focus_industry }
+					set_temp_variable = { best_type = token:io_build }
+				}
 			}
 		}
 
@@ -516,13 +550,43 @@
 				check_variable = { owner_sizes_local@var:focus_industry > 0 }
 			}
 			score_io_attractiveness = yes
-			add_to_temp_variable = { attr_total_temp = 200 } # Temp
 			if = {
 				limit = { check_variable = { attr_total_temp > best_attr } }
 				set_temp_variable = { best_attr = attr_total_temp }
 				set_temp_variable = { best_state = THIS }
 				set_temp_variable = { best_industry = focus_industry }
 				set_temp_variable = { best_type = token:io_acquire }
+			}
+		}
+
+		# Prospect candidate: RGO companies only, and heavily DISFAVORED. Prospecting finds reserves whose
+		# payoff is diffuse (anyone can then exploit them) and not immediate to the company, so it only bids
+		# when the resource price is well above base and nothing better is on offer. Mirrors the conditions
+		# in io_add_prospect_opportunities. price_compared_to_base is (price/base - 1), state-propagated.
+		if = {
+			limit = { 
+				check_variable = { global.building_rgo@var:focus_industry > 0 } 
+				check_variable = { price_compared_to_base@var:focus_industry > 1.0 } # price >= 100% above base
+			}
+			set_temp_variable = { attr_total_temp = 0 }
+			set_temp_variable = { industry_token = focus_industry }
+			set_temp_variable = { io_type = token:io_prospect }
+			every_controlled_state = {
+				limit = {
+					check_variable = { discovery_high@var:focus_industry > 0 }
+					check_variable = { known_reserves@var:focus_industry = 0 }
+					check_variable = { prospecting@var:focus_industry = 0 }
+					check_variable = { io_prospect@var:focus_industry = 0 }
+				}
+				score_io_attractiveness = yes
+				subtract_from_temp_variable = { attr_total_temp = 100 } # strong disfavor
+				if = {
+					limit = { check_variable = { attr_total_temp > best_attr } }
+					set_temp_variable = { best_attr = attr_total_temp }
+					set_temp_variable = { best_state = THIS }
+					set_temp_variable = { best_industry = focus_industry }
+					set_temp_variable = { best_type = token:io_prospect }
+				}
 			}
 		}
 
@@ -537,10 +601,18 @@
 			set_temp_variable = { company_target_temp = global.company_target_investment_spending@var:cid }
 
 			var:best_state = {
-				calc_company_size_count = yes # -> size_temp (sized by the company's investment budget)
+				if = {
+					limit = { check_variable = { best_type = token:io_prospect } }
+					# Prospecting has its own model: size = reserves expected to be found, cost = the flat
+					# prospecting cost (no per-size construction, no 25%/ongoing-fee split).
+					set_temp_variable = { size_temp = potential_reserves@var:best_industry }
+					set_temp_variable = { investment_cost_temp = prospecting_cost@var:best_industry }
+				}
+				else = {
+					calc_company_size_count = yes # -> size_temp (sized by the company's investment budget)
+					multiply_temp_variable = { investment_cost_temp = size_temp }
+				}
 
-				multiply_temp_variable = { investment_cost_temp = size_temp }
-				
 				set_variable = { global.company_project_state@var:cid = best_state }
 				set_variable = { global.company_project_industry@var:cid = best_industry }
 				set_variable = { global.company_project_type@var:cid = best_type }
@@ -567,6 +639,12 @@
 		round_temp_variable = size_max_temp
 
 		clamp_temp_variable = { var = size_temp min = 1 max = size_max_temp }
+
+		# Exploit can't develop more than the known reserves (mirrors calc_size_count's io_exploit cap).
+		if = {
+			limit = { check_variable = { io_type = token:io_exploit } }
+			clamp_temp_variable = { var = size_temp min = 1 max = known_reserves@var:industry_token }
+		}
 	}
 
 	# Recomputes each company's active funding project's attractiveness & cost, mirroring how io_update refreshes
@@ -591,15 +669,29 @@
 				var:proj_state = {
 					set_temp_variable = { industry_token = proj_industry }
 
-					# Valid only while nothing else is building it; otherwise leave proj_attr negative -> dropped.
 					if = {
-						limit = { check_variable = { construction@var:proj_industry = 0 } }
-						score_io_attractiveness = yes
-						set_temp_variable = { proj_attr = attr_total_temp }
+						limit = { check_variable = { io_type = token:io_prospect } }
+						# Prospect: valid until prospecting actually starts; cost is the flat prospecting cost.
+						if = {
+							limit = { check_variable = { prospecting@var:proj_industry = 0 } }
+							score_io_attractiveness = yes
+							multiply_temp_variable = { attr_total_temp = 0.2 } # same disfavor as selection
+							set_temp_variable = { proj_attr = attr_total_temp }
+							set_temp_variable = { proj_cost = prospecting_cost@var:proj_industry }
+						}
+					}
+					else = {
+						# Build/expand/exploit/acquire: valid only while nothing else is building it;
+						# otherwise leave proj_attr negative -> dropped.
+						if = {
+							limit = { check_variable = { construction@var:proj_industry = 0 } }
+							score_io_attractiveness = yes
+							set_temp_variable = { proj_attr = attr_total_temp }
 
-						calc_io_cost = yes # -> investment_cost_temp
-						set_temp_variable = { proj_cost = investment_cost_temp }
-						multiply_temp_variable = { proj_cost = proj_size }
+							calc_io_cost = yes # -> investment_cost_temp
+							set_temp_variable = { proj_cost = investment_cost_temp }
+							multiply_temp_variable = { proj_cost = proj_size }
+						}
 					}
 				}
 
@@ -643,11 +735,29 @@
 				limit = {
 					check_variable = { global.company_project_type@var:cid = token:io_acquire }
 				}
+				# Add holding
 				set_temp_variable = { company_temp = cid }
 				set_temp_variable = { holding_state_temp = proj_state }
 				set_temp_variable = { holding_building_temp = proj_industry }
 				set_temp_variable = { holding_size_temp = global.company_project_size@var:cid }
 				company_add_holding = yes
+
+				# Transfer cash to investment fund
+				add_to_variable = { investment_fund = global.company_project_investment@var:cid }
+			}
+			else_if = {
+				limit = { check_variable = { global.company_project_type@var:cid = token:io_prospect } }
+				# Start prospecting, financed by this company. The pooled cash already covered the flat
+				# prospecting cost; only the government-financier path (_economy_budget) re-charges via
+				# construction_spending, so a company financier is NOT double-charged. Found reserves are
+				# not exclusive to the company (diffuse benefit) - which is why prospecting is disfavored.
+				var:proj_state = {
+					if = {
+						limit = { check_variable = { prospecting@var:proj_industry = 0 } }
+						set_variable = { prospecting@var:proj_industry = 1 }
+						set_variable = { prospecting_financier@var:proj_industry = cid }
+					}
+				}
 			}
 			else = {
 				var:proj_state = {

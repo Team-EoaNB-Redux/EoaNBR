@@ -2345,23 +2345,89 @@
     investment_funds_monthly = {
         add_to_variable = { investment_fund = investment_fund_balance }
 
+        # Validity pre-pass: drop & refund EVERY invalid active IO up-front (not just the one being funded),
+        # so the player's manual funding can never land on a stale opportunity. Reverse-walk by index so
+        # removals don't shift entries we haven't visited yet.
+        set_temp_variable = { iocheck_idx_temp = active_investment_opportunities^num }
+        while_loop_effect = {
+            limit = { check_variable = { iocheck_idx_temp > 0 } }
+            subtract_from_temp_variable = { iocheck_idx_temp = 1 }
+            set_temp_variable = { io_num_temp = active_investment_opportunities^iocheck_idx_temp }
+            check_investment_opportunity = yes
+        }
+
         set_temp_variable = { ifm_temp = 0 }
         set_temp_variable = { spending_cap_temp = investment_fund_target_spending }
         subtract_from_temp_variable = { spending_cap_temp = investment_fund_spending }
         while_loop_effect = {
             limit = {
                 check_variable = { spending_cap_temp > 0 }
-                check_variable = { active_investment_opportunities^num > 0 }
                 check_variable = { ifm_temp < investment_opportunities_cap }
+                OR = {
+                    check_variable = { active_investment_opportunities^num > 0 }
+                    AND = { # an active national opportunity still needs funding
+                        check_variable = { active_national_opportunity > 0 }
+                        check_variable = { nopp_cost@var:active_national_opportunity > nopp_investment@var:active_national_opportunity }
+                    }
+                }
             }
-            set_temp_variable = { io_num_temp = active_investment_opportunities^0 }
 
-            # Drop & refund the opportunity if it's no longer valid (e.g. already under construction by someone
-            # else). Guarded below so we don't fund a removed IO this iteration; the loop re-picks ^0 next pass.
-            check_investment_opportunity = yes
-
+            # Is the active national opportunity still in need of funding this pass?
+            set_temp_variable = { nopp_fundable_temp = 0 }
             if = {
-                limit = { has_variable = investment_opportunity_state@var:io_num_temp }
+                limit = {
+                    check_variable = { active_national_opportunity > 0 }
+                    check_variable = { nopp_cost@var:active_national_opportunity > nopp_investment@var:active_national_opportunity }
+                }
+                set_temp_variable = { nopp_fundable_temp = 1 }
+                set_temp_variable = { active_nopp_temp = active_national_opportunity }
+            }
+
+            # Re-validate the top IO (construction started earlier this loop can invalidate a sibling), then
+            # see if it's fundable.
+            if = {
+                limit = { check_variable = { active_investment_opportunities^num > 0 } }
+                set_temp_variable = { io_num_temp = active_investment_opportunities^0 }
+                check_investment_opportunity = yes
+            }
+            set_temp_variable = { io_available_temp = 0 }
+            if = {
+                limit = { check_variable = { active_investment_opportunities^num > 0 } }
+                set_temp_variable = { io_num_temp = active_investment_opportunities^0 }
+                if = {
+                    limit = { has_variable = investment_opportunity_state@var:io_num_temp }
+                    set_temp_variable = { io_available_temp = 1 }
+                }
+            }
+
+            # Fund the national opportunity if it exists and either there's no IO or it out-scores the top IO.
+            # NOTE: IO and national-opportunity attractiveness are on different scales right now - tune the
+            # founding score (score_national_opportunity) to make this comparison fair.
+            if = {
+                limit = {
+                    check_variable = { nopp_fundable_temp = 1 }
+                    OR = {
+                        check_variable = { io_available_temp = 0 }
+                        check_variable = { nopp_attractiveness@var:active_nopp_temp > investment_opportunity_attractiveness@var:io_num_temp }
+                    }
+                }
+                set_temp_variable = { spending_amount_temp = nopp_cost@var:active_nopp_temp }
+                subtract_from_temp_variable = { spending_amount_temp = nopp_investment@var:active_nopp_temp }
+                if = { # Enough money to finish pooling
+                    limit = { check_variable = { spending_cap_temp > spending_amount_temp } }
+                    subtract_from_variable = { investment_fund = spending_amount_temp }
+                    subtract_from_temp_variable = { spending_cap_temp = spending_amount_temp }
+                    set_variable = { nopp_investment@var:active_nopp_temp = nopp_cost@var:active_nopp_temp }
+                    # Fulfillment (founding the company) happens in national_opportunities_monthly this same tick.
+                }
+                else = { # Partial - pool what's left and stop
+                    subtract_from_variable = { investment_fund = spending_cap_temp }
+                    add_to_variable = { nopp_investment@var:active_nopp_temp = spending_cap_temp }
+                    set_temp_variable = { spending_cap_temp = 0 }
+                }
+            }
+            else_if = {
+                limit = { check_variable = { io_available_temp = 1 } }
 
                 set_temp_variable = { spending_amount_temp = investment_opportunity_cost@var:io_num_temp }
                 subtract_from_temp_variable = { spending_amount_temp = investment_opportunity_investment@var:io_num_temp }
@@ -2393,4 +2459,434 @@
             set_variable = { investment_fund = 0 }
         }
     }
+#
+
+# NATIONAL OPPORTUNITIES ----------------------------------------------------------
+# Country-level investment actions funded by the investment fund, SEPARATE from the
+# state-tied IO list (active_investment_opportunities). Generic typed-record frame; only
+# the `nopp_founding` type is implemented (adding a type = add a branch, not a restructure).
+# Lifecycle mirrors the IO system one scope up:
+#   allocate id -> select/propose -> score -> cost -> check (stringent + clock) -> fulfill -> remove.
+# The money POOLING is NOT here: it happens in investment_funds_monthly's spending loop, where the
+# active founding competes with state IOs by attractiveness under the same target-spending cap.
+# national_opportunities_monthly only validates, fulfils the fully-funded, and proposes new ones.
+#
+# DATA (country scope):
+#   national_opportunities      - array of active nopp ids
+#   active_national_opportunity - id of the one in-flight founding (0 = none); what the fund pools into
+#   nopp_num                    - id allocator counter (mirrors io_num)
+#   nopp_type@id                - token:nopp_founding
+#   nopp_state@id               - seed BUILDING state (stored scope, restore via var:); where the slice is
+#   nopp_hq_state@id            - HQ / dividend state (stored scope); the financial hub, often != build state
+#   nopp_focus@id               - seed industry token
+#   nopp_holding_size@id        - size of the local slice the new company incorporates on birth
+#   nopp_cost@id / nopp_investment@id - total to raise (gross) / capitalist money pooled so far
+#   nopp_reimburse@id           - asset value refunded to the IF on founding (only the net is truly spent)
+#   nopp_subsidy@id             - govt subsidy money (-> state-shares later; 0 = none yet)
+#   nopp_attractiveness@id
+#   nopp_months_left@id         - funding clock; founding fails if it hits 0 unfunded
+#
+# Founding CAN fail: select conditions are loose, but check_national_opportunity re-validates
+# stringent continuation conditions every month and counts down the clock. On failure the
+# pooled money (+ subsidy) is refunded to the fund and the record dropped.
+
+	allocate_nopp_number = {
+		add_to_variable = { nopp_num = 1 }
+		if = { limit = { check_variable = { nopp_num > 100000 } } set_variable = { nopp_num = 1 } }
+		while_loop_effect = {
+			limit = { has_variable = nopp_type@var:nopp_num }
+			add_to_variable = { nopp_num = 1 }
+		}
+	}
+
+	# Country scope. Output: founding_cost_mult_temp. Progressive penalty - each company a country already
+	# owns compounds the cost of founding the next one (so a sprawling owner founds ever more rarely).
+	# Uses a math expression: founding_cost_mult_temp = 1.2 ^ (number of companies owned)
+	# (~7 companies to reach parity with a full acquisition's cost).
+	calc_founding_cost_mult = {
+		set_temp_variable = { founding_cost_mult_temp = { value = 1.2  pow = companies^num } }
+	}
+
+	# State scope. Input: nopp_type_temp, industry_token. Output: nopp_attr_temp
+	score_national_opportunity = {
+		set_temp_variable = { nopp_attr_temp = 0 }
+		if = {
+			limit = { check_variable = { nopp_type_temp = token:nopp_founding } }
+
+			# ROI base, mirroring score_io_attractiveness so this is COMPARABLE to IO attractiveness:
+			# 100 at a 10% annualized ROI, linear (clamped). ROI = monthly profit per size of the seed
+			# industry divided by its per-size NET cost (the asset value is reimbursed on founding, so the
+			# real spend is just the investment portion - making founding read ~4x better than an acquisition).
+			if = {
+				limit = { check_variable = { size@var:industry_token > 0 } }
+				set_temp_variable = { roi_temp = profit@var:industry_token }
+				divide_temp_variable = { roi_temp = size@var:industry_token } # monthly profit per size
+			}
+			else = { set_temp_variable = { roi_temp = 0 } }
+
+			set_temp_variable = { per_size_cost_temp = asset_value@var:industry_token }
+			if = { limit = { check_variable = { size@var:industry_token > 0 } } divide_temp_variable = { per_size_cost_temp = size@var:industry_token } }
+			multiply_temp_variable = { per_size_cost_temp = global.start_construction_cost_multiplier } # only the investment portion is real cost...
+			multiply_temp_variable = { per_size_cost_temp = founding_cost_mult_temp } # ...escalating with companies owned
+
+			if = {
+				limit = { check_variable = { per_size_cost_temp > 0 } }
+				divide_temp_variable = { roi_temp = per_size_cost_temp }
+			}
+			else = { set_temp_variable = { roi_temp = 0 } }
+
+			multiply_temp_variable = { roi_temp = 120 } # monthly roi * 12 months / 10%
+			clamp_temp_variable = { var = roi_temp min = -10.0 max = 10.0 }
+
+			set_temp_variable = { nopp_attr_temp = 100 }
+			multiply_temp_variable = { nopp_attr_temp = roi_temp }
+
+			# Founding factor: scale by the local fraction (room to incorporate - a mostly-incorporated
+			# industry is a poor founding seed). Keeps the ROI base dominant, like the IO 'factors' stage.
+			set_temp_variable = { local_frac_temp = owner_sizes_local@var:industry_token }
+			if = { limit = { check_variable = { size@var:industry_token > 0 } } divide_temp_variable = { local_frac_temp = size@var:industry_token } }
+			multiply_temp_variable = { nopp_attr_temp = local_frac_temp }
+		}
+	}
+
+	# State scope. Input: nopp_type_temp, industry_token, nopp_size_temp, founding_cost_mult_temp.
+	# Output: nopp_cost_temp (gross, what must be pooled) and nopp_reimburse_temp (asset value handed
+	# back to the IF on founding - the fund is buying the assets off the locals, so that part is circular).
+	calc_national_opportunity_cost = {
+		set_temp_variable = { nopp_cost_temp = 0 }
+		set_temp_variable = { nopp_reimburse_temp = 0 }
+		if = {
+			limit = { check_variable = { nopp_type_temp = token:nopp_founding } }
+			# Asset value of the seed slice (per size * slice) - the reimbursed portion.
+			set_temp_variable = { nopp_reimburse_temp = asset_value@var:industry_token }
+			divide_temp_variable = { nopp_reimburse_temp = size@var:industry_token } # per size
+			multiply_temp_variable = { nopp_reimburse_temp = nopp_size_temp } # the slice being incorporated
+
+			# Net (real) cost = investment portion only: start_construction_cost_multiplier, escalated by the
+			# progressive penalty. Gross = asset value + net; on founding the asset value is reimbursed, so
+			# only the net actually leaves the fund.
+			set_temp_variable = { nopp_net_cost_temp = nopp_reimburse_temp }
+			multiply_temp_variable = { nopp_net_cost_temp = global.start_construction_cost_multiplier }
+			multiply_temp_variable = { nopp_net_cost_temp = founding_cost_mult_temp }
+
+			set_temp_variable = { nopp_cost_temp = nopp_reimburse_temp }
+			add_to_temp_variable = { nopp_cost_temp = nopp_net_cost_temp }
+		}
+	}
+
+	# Country scope. Inputs (temps): nopp_type_temp, nopp_state_temp, nopp_hq_state_temp, nopp_focus_temp,
+	# nopp_size_temp, nopp_cost_temp, nopp_reimburse_temp, nopp_attr_temp.
+	add_national_opportunity = {
+		allocate_nopp_number = yes
+		add_to_array = { national_opportunities = nopp_num }
+		set_variable = { nopp_type@var:nopp_num = nopp_type_temp }
+		set_variable = { nopp_state@var:nopp_num = nopp_state_temp } # seed building state
+		set_variable = { nopp_hq_state@var:nopp_num = nopp_hq_state_temp } # HQ (dividend) state - may differ
+		set_variable = { nopp_focus@var:nopp_num = nopp_focus_temp }
+		set_variable = { nopp_holding_size@var:nopp_num = nopp_size_temp }
+		set_variable = { nopp_cost@var:nopp_num = nopp_cost_temp }
+		set_variable = { nopp_reimburse@var:nopp_num = nopp_reimburse_temp } # asset value returned to the IF on founding
+		set_variable = { nopp_investment@var:nopp_num = 0 }
+		set_variable = { nopp_subsidy@var:nopp_num = 0 }
+		set_variable = { nopp_attractiveness@var:nopp_num = nopp_attr_temp }
+		set_variable = { nopp_months_left@var:nopp_num = 12 } # founding deadline (months)
+
+		# The one in-flight opportunity that investment_funds_monthly competes against IOs to fund.
+		if = {
+			limit = {
+				check_variable = { active_national_opportunity = 0 }
+			}
+			set_variable = { active_national_opportunity = nopp_num }
+		}
+	}
+
+	# Country scope. Input: nopp_num_temp.
+	remove_national_opportunity = {
+		if = {
+			limit = { check_variable = { active_national_opportunity = nopp_num_temp } }
+			set_variable = { active_national_opportunity = 0 }
+		}
+		remove_from_array = { national_opportunities = nopp_num_temp }
+		clear_variable = nopp_type@var:nopp_num_temp
+		clear_variable = nopp_state@var:nopp_num_temp
+		clear_variable = nopp_hq_state@var:nopp_num_temp
+		clear_variable = nopp_focus@var:nopp_num_temp
+		clear_variable = nopp_holding_size@var:nopp_num_temp
+		clear_variable = nopp_cost@var:nopp_num_temp
+		clear_variable = nopp_reimburse@var:nopp_num_temp
+		clear_variable = nopp_investment@var:nopp_num_temp
+		clear_variable = nopp_subsidy@var:nopp_num_temp
+		clear_variable = nopp_attractiveness@var:nopp_num_temp
+		clear_variable = nopp_months_left@var:nopp_num_temp
+	}
+
+	# Country scope. Proposes ONE founding if none is currently active. Loose selection: any
+	# controlled state holding a profitable, locally-owned industry. Picks the best by founding
+	# attractiveness, sizes the seed slice (half the local holding), and records the opportunity.
+	national_opportunity_select = {
+		# Only one founding in flight at a time.
+		set_temp_variable = { founding_active_temp = 0 }
+		for_each_loop = {
+			array = national_opportunities
+			value = nopp_scan_temp
+			if = {
+				limit = { check_variable = { nopp_type@var:nopp_scan_temp = token:nopp_founding } }
+				set_temp_variable = { founding_active_temp = 1 }
+			}
+		}
+
+		if = {
+			limit = { check_variable = { founding_active_temp = 0 } }
+
+			# Progressive cost penalty for this country (read by both score and cost below).
+			calc_founding_cost_mult = yes
+
+			set_temp_variable = { best_score_temp = 0 }
+			set_temp_variable = { best_state_temp = 0 }
+			set_temp_variable = { best_focus_temp = 0 }
+			set_temp_variable = { has_candidate_temp = 0 }
+
+			# Phase 1 (industry-first, country scope): pick the most productive PRIVATE building type.
+			# global.building_token_array excludes govt buildings AND RGOs, so RGO founding is naturally
+			# deferred until exploit/prospect handling exists. A type already focused by one of this country's
+			# companies is penalized (placeholder until market share exists) so foundings spread across sectors.
+			set_temp_variable = { founding_industry_temp = 0 }
+			set_temp_variable = { founding_best_prod_temp = 0 }
+			for_each_loop = {
+				array = global.building_token_array
+				value = industry_token
+				if = {
+					limit = {
+						check_variable = { highest_productivity@var:industry_token > 1 }
+						check_variable = { size@var:industry_token > 10 }
+					}
+					set_temp_variable = { fi_score_temp = highest_productivity@var:industry_token }
+					# Penalty if a company already focuses this industry.
+					set_temp_variable = { fi_taken_temp = 0 }
+					for_each_loop = {
+						array = companies
+						value = fi_cid_temp
+						if = { limit = { check_variable = { global.company_focus@var:fi_cid_temp = industry_token } } set_temp_variable = { fi_taken_temp = 1 } }
+					}
+					if = { limit = { check_variable = { fi_taken_temp = 1 } } multiply_temp_variable = { fi_score_temp = 0.25 } }
+					if = {
+						limit = { check_variable = { fi_score_temp > founding_best_prod_temp } }
+						set_temp_variable = { founding_best_prod_temp = fi_score_temp }
+						set_temp_variable = { founding_industry_temp = industry_token }
+					}
+				}
+			}
+
+			# Phase 2 (state, country scope): the best controlled state to seed that one industry, by ROI fit.
+			if = {
+				limit = { NOT = { check_variable = { founding_industry_temp = 0 } } }
+				every_controlled_state = {
+					if = {
+						limit = {
+							check_variable = { owner_sizes_local@var:founding_industry_temp > 0 }
+							check_variable = { profitability@var:founding_industry_temp > 0.1 }
+						}
+						set_temp_variable = { industry_token = founding_industry_temp }
+						set_temp_variable = { nopp_type_temp = token:nopp_founding }
+						score_national_opportunity = yes
+						if = {
+							limit = { check_variable = { nopp_attr_temp > best_score_temp } }
+							set_temp_variable = { best_score_temp = nopp_attr_temp }
+							set_temp_variable = { best_state_temp = THIS }
+							set_temp_variable = { best_focus_temp = founding_industry_temp }
+							set_temp_variable = { has_candidate_temp = 1 }
+						}
+					}
+				}
+			}
+
+			if = {
+				limit = { check_variable = { has_candidate_temp = 1 } }
+
+				# How much GROSS the fund can plausibly pool toward one founding: a few months of its target
+				# spending. Sizing must use the gross cost (not the net) because the entire asset value has to
+				# be fronted before the founding-completion reimbursement lands - that upfront pool, not the
+				# eventual net cost, is the real constraint. Kept modest since the founding competes with IOs
+				# for the fund and must finish within the ~12-month clock.
+				set_temp_variable = { founding_budget_temp = investment_fund_target_spending }
+				multiply_temp_variable = { founding_budget_temp = 3 } # tunable: months of fund budget per founding
+
+				# Size the seed slice to that budget and price it inside the chosen state.
+				var:best_state_temp = {
+					set_temp_variable = { industry_token = best_focus_temp }
+					set_temp_variable = { nopp_type_temp = token:nopp_founding }
+
+					# Gross per-size cost = asset/size * (1 + start_construction_cost_multiplier * progressive penalty).
+					set_temp_variable = { gross_ps_temp = asset_value@var:best_focus_temp }
+					if = { limit = { check_variable = { size@var:best_focus_temp > 0 } } divide_temp_variable = { gross_ps_temp = size@var:best_focus_temp } }
+					set_temp_variable = { net_mult_temp = global.start_construction_cost_multiplier }
+					multiply_temp_variable = { net_mult_temp = founding_cost_mult_temp }
+					add_to_temp_variable = { net_mult_temp = 1 }
+					multiply_temp_variable = { gross_ps_temp = net_mult_temp }
+
+					# size = 50% * budget / gross-per-size, clamped to what's locally available.
+					set_temp_variable = { nopp_size_temp = founding_budget_temp }
+					if = { limit = { check_variable = { gross_ps_temp > 0 } } divide_temp_variable = { nopp_size_temp = gross_ps_temp } }
+					multiply_temp_variable = { nopp_size_temp = 0.5 }
+					round_temp_variable = nopp_size_temp
+					clamp_temp_variable = { var = nopp_size_temp min = 1 max = owner_sizes_local@var:best_focus_temp }
+
+					calc_national_opportunity_cost = yes
+				}
+
+				# Pick the HQ state SEPARATELY: the country's standout financial hub (most industrialised +
+				# wealthiest capitalists), which is often not the seed building's state (e.g. UK -> London).
+				# Dividends will flow to this state's capitalists. Weighting of the two terms is tunable.
+				set_temp_variable = { hq_state_temp = best_state_temp } # fallback: the build state
+				set_temp_variable = { hq_best_temp = -1 }
+				every_controlled_state = {
+					set_temp_variable = { hq_score_temp = total_industry_size }
+					if = {
+						limit = { check_variable = { pops@token:capitalists > 0 } }
+						set_temp_variable = { cap_pc_temp = pops_earnings@token:capitalists }
+						divide_temp_variable = { cap_pc_temp = pops@token:capitalists } # capitalist per-capita earnings
+						add_to_temp_variable = { hq_score_temp = cap_pc_temp }
+					}
+					if = {
+						limit = { check_variable = { hq_score_temp > hq_best_temp } }
+						set_temp_variable = { hq_best_temp = hq_score_temp }
+						set_temp_variable = { hq_state_temp = THIS }
+					}
+				}
+
+				set_temp_variable = { nopp_type_temp = token:nopp_founding }
+				set_temp_variable = { nopp_state_temp = best_state_temp }
+				set_temp_variable = { nopp_hq_state_temp = hq_state_temp }
+				set_temp_variable = { nopp_focus_temp = best_focus_temp }
+				set_temp_variable = { nopp_attr_temp = best_score_temp }
+				add_national_opportunity = yes
+			}
+		}
+	}
+
+	# Country scope. Input: nopp_num_temp. Re-validates stringent continuation conditions and
+	# ticks the clock; refreshes cost/attractiveness. On failure refunds pooled money + subsidy
+	# to the fund and removes the record.
+	check_national_opportunity = {
+		set_temp_variable = { nopp_type_temp = nopp_type@var:nopp_num_temp }
+		set_temp_variable = { nopp_invalid_temp = 0 }
+
+		# Clock.
+		subtract_from_variable = { nopp_months_left@var:nopp_num_temp = 1 }
+		if = {
+			limit = { NOT = { check_variable = { nopp_months_left@var:nopp_num_temp > 0 } } }
+			set_temp_variable = { nopp_invalid_temp = 1 }
+		}
+
+		if = {
+			limit = { check_variable = { nopp_type_temp = token:nopp_founding } }
+			set_temp_variable = { nopp_size_temp = nopp_holding_size@var:nopp_num_temp }
+			set_temp_variable = { nopp_focus_temp = nopp_focus@var:nopp_num_temp }
+			set_temp_variable = { nopp_state_temp = nopp_state@var:nopp_num_temp }
+
+			# Progressive cost penalty (read by score & cost inside the state scope below).
+			calc_founding_cost_mult = yes
+
+			var:nopp_state_temp = {
+				set_temp_variable = { industry_token = nopp_focus_temp }
+				# Stringent: seed must stay solidly profitable
+				if = {
+					limit = { NOT = { check_variable = { profitability@var:industry_token > 0.05 } } }
+					set_temp_variable = { nopp_invalid_temp = 1 }
+				}
+				# Seed slice must still be available locally (could have been acquired/sold off).
+				if = {
+					limit = { check_variable = { nopp_size_temp > owner_sizes_local@var:industry_token } }
+					set_temp_variable = { nopp_invalid_temp = 1 }
+				}
+				# Refresh attractiveness & cost from current state.
+				set_temp_variable = { nopp_type_temp = token:nopp_founding }
+				score_national_opportunity = yes
+				calc_national_opportunity_cost = yes
+			}
+
+			# Stringent: attractiveness must remain positive.
+			if = {
+				limit = { NOT = { check_variable = { nopp_attr_temp > 0 } } }
+				set_temp_variable = { nopp_invalid_temp = 1 }
+			}
+			set_variable = { nopp_attractiveness@var:nopp_num_temp = nopp_attr_temp }
+			set_variable = { nopp_cost@var:nopp_num_temp = nopp_cost_temp }
+			set_variable = { nopp_reimburse@var:nopp_num_temp = nopp_reimburse_temp }
+		}
+
+		if = {
+			limit = { check_variable = { nopp_invalid_temp = 1 } }
+			# Refund the pooled capitalist money and any govt subsidy before dropping.
+			add_to_variable = { investment_fund = nopp_investment@var:nopp_num_temp }
+			add_to_variable = { investment_fund = nopp_subsidy@var:nopp_num_temp }
+			remove_national_opportunity = yes
+		}
+	}
+
+	# Country scope. Input: nopp_num_temp. Carries out a fully-funded opportunity.
+	fulfill_national_opportunity = {
+		set_temp_variable = { nopp_type_temp = nopp_type@var:nopp_num_temp }
+		if = {
+			limit = { check_variable = { nopp_type_temp = token:nopp_founding } }
+
+			set_temp_variable = { company_hq_state_temp = nopp_hq_state@var:nopp_num_temp } # HQ = financial hub, not the build state
+			set_temp_variable = { company_focus_temp = nopp_focus@var:nopp_num_temp }
+			set_temp_variable = { company_type_temp = token:company_type_private }
+			found_company = yes # outputs cid
+
+			# Incorporate the seed slice from local ownership (company_add_holding's local clamp is
+			# correct here - the slice genuinely comes from owner_sizes_local).
+			set_temp_variable = { company_temp = cid }
+			set_temp_variable = { holding_state_temp = nopp_state@var:nopp_num_temp }
+			set_temp_variable = { holding_building_temp = nopp_focus@var:nopp_num_temp }
+			set_temp_variable = { holding_size_temp = nopp_holding_size@var:nopp_num_temp }
+			company_add_holding = yes
+
+			# The fund just bought these assets off the locals - that money flows back into the fund (it's
+			# circular, which is what makes founding cheap: only the investment portion is truly spent).
+			add_to_variable = { investment_fund = nopp_reimburse@var:nopp_num_temp }
+
+			# State-share stub: the govt subsidy should buy equity in the new company. The stock /
+			# ownership-split system doesn't exist yet, so nopp_subsidy is just dropped for now.
+			# TODO: convert nopp_subsidy@var:nopp_num_temp into state-held shares of cid once stocks exist.
+		}
+		remove_national_opportunity = yes
+	}
+
+	# Country scope. Monthly driver. The actual money pooling lives in investment_funds_monthly (where the
+	# fund's spending cap is, so foundings compete with IOs and respect the target spend). This runs AFTER
+	# it in the tick and: validates/ticks the clock on active opportunities, fulfils any that got fully
+	# funded this tick, and proposes a new founding if none is active.
+	# Reverse-walk by index so check/fulfill removals don't shift entries we haven't visited.
+	national_opportunities_monthly = {
+		set_temp_variable = { nom_idx_temp = national_opportunities^num }
+		while_loop_effect = {
+			limit = { check_variable = { nom_idx_temp > 0 } }
+			subtract_from_temp_variable = { nom_idx_temp = 1 }
+			set_temp_variable = { nopp_num_temp = national_opportunities^nom_idx_temp }
+
+			if = {
+				# Fully funded -> fulfill BEFORE any cost/clock recalc, so a risen cost (or the clock
+				# expiring this very month) can't rob a founding that already raised its money.
+				limit = { NOT = { check_variable = { nopp_cost@var:nopp_num_temp > nopp_investment@var:nopp_num_temp } } }
+				fulfill_national_opportunity = yes
+			}
+			else = {
+				# Not yet funded: validate, tick the clock, and refresh cost/attractiveness for next month.
+				check_national_opportunity = yes # stringent + clock; may drop+refund (removes from array)
+			}
+		}
+        
+		if = {
+			limit = {
+				check_variable = { active_national_opportunity = 0 }
+				check_variable = { national_opportunities^num > 0 }
+			}
+			set_variable = { active_national_opportunity = national_opportunities^0 }
+		}
+
+		# Propose a new founding if none is active. After fulfilment, so a fresh proposal gets a full clock.
+		national_opportunity_select = yes
+	}
 #
