@@ -13,42 +13,83 @@ country_event = {
 
 	option = {
 		name = economy.1.o1
-		found_company = yes
-
-		log = "New Company! ID: [?cid]"
+		random_owned_state = {
+			limit = {
+				NOT = { has_variable = corp_name }
+			}
+			add_to_array = { PREV.corporations = THIS }
+			set_variable = { corp_name = random }
+			divide_variable = { corp_name = 1.4 } #Combo Names more common
+			round_variable = corp_name
+			if = {
+				limit = {
+					check_variable = { corp_name = 1 }
+				}
+				randomize_variable = {
+					var = corp_first_name
+					distribution = uniform
+					min = 0
+					max = 23
+				}
+				round_variable = corp_first_name
+			}
+			else_if = {
+				limit = {
+					check_variable = { corp_name = 0 }
+				}
+				randomize_variable = {
+					var = corp_first_name
+					distribution = uniform
+					min = 0
+					max = 27
+				}
+				randomize_variable = {
+					var = corp_last_name
+					distribution = uniform
+					min = 1
+					max = 12
+				}
+				round_variable = corp_first_name
+				round_variable = corp_last_name
+				if = {
+					limit = {
+						check_variable = { random < 0.3 }
+					}
+					set_variable = { corp_first_name = 0 }
+				}
+			}
+		}
 	}
 	option = {
 		name = economy.1.o2
-		
-		companies_update = yes
-		
-		set_temp_variable = { cid = 1 }
-		log = "Company: [?id]"
-		log = "- Building Count: [?global.company_holding_industry@var:cid^num]"
-		log = "- Revenue: [?global.company_revenue@var:cid]"
-		log = "- Expenses: [?global.company_expenses@var:cid]"
-		log = "- Profit: [?global.company_profit@var:cid|=]"
-		log = "- Gross Dividends: [?global.company_gross_dividends@var:cid]"
-		log = "- Treasury: [?global.company_treasury@var:cid]"
-		log = "- Dividends: [?global.company_dividends@var:cid]"
+		clear_array = corporations
+		every_owned_state = {
+			clear_variable = corp_name
+			clear_variable = corp_first_name
+			clear_variable = corp_last_name
+		}
 	}
 	option = {
 		name = economy.1.o3
 		
-		set_temp_variable = { company_temp = 1 }
-		set_temp_variable = { holding_state_temp = 953 }
-		set_temp_variable = { holding_building_temp = token:tooling_workshop }
-		set_temp_variable = { holding_size_temp = 1 }
-		company_add_holding = yes
+		# 1078 = {
+        #     add_dynamic_modifier = { modifier = additional_state_production }
+		# }
 	}
 	option = {
 		name = economy.1.o4
-		
-		set_temp_variable = { company_temp = 1 }
-		set_temp_variable = { holding_state_temp = 953 }
-		set_temp_variable = { holding_building_temp = token:tooling_workshop }
-		set_temp_variable = { holding_size_temp = 1 }
-		company_remove_holding = yes
+		create_ship = {
+			type = ship_hull_frigate_0
+			equipment_variant = "Early Frigate Hull"
+			creator = ENG
+			name = "Outdated Ship"
+		}
+		create_ship = {
+			type = ship_hull_frigate_1
+			equipment_variant = "1st Rate Steam Frigate"
+			creator = ENG
+			name = "Modern Ship"
+		}
 	}
 	option = {
 		name = economy.1.o5
