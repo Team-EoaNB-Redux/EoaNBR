@@ -2257,8 +2257,30 @@
 
 		add_to_variable = { size@var:industry_token = x_temp }
 		if = { limit = { check_variable = { size@var:industry_token < 0 } } set_variable = { size@var:industry_token = 0 } }
-			
-		if = { # Remove if it's size 0
+
+		# Add building to array if it doesn't exist yet
+		if = {
+			limit = {
+				NOT = { is_in_array = { industries = industry_token } }
+			}
+			add_to_array = { industries = industry_token }
+			set_variable = { production_method@var:industry_token = production_method_temp }
+			set_variable = { automation_method@var:industry_token = automation_method_temp }
+				
+			# Setting industry target employment
+			set_temp_variable = { portion_temp = x_temp }
+			multiply_temp_variable = { portion_temp = 100 }
+			divide_temp_variable = { portion_temp = size@var:industry_token }
+			subtract_from_variable = { employment_target@var:industry_token = portion_temp }
+			clamp_variable = { var = employment_target@var:industry_token max = 100 min = 0 }
+
+			# Update industry
+			set_temp_variable = { bu_token = industry_token }
+			set_variable = { industry_dirty_var@var:r_token = 1 }
+			industry_update_size_jobs = yes
+			industry_update = yes
+		}
+		else_if = { # Remove if it's size 0
 			limit = {
 				check_variable = { size@var:industry_token = 0 }
 			}
@@ -2277,52 +2299,6 @@
 					check_variable = { money@var:industry_token > money_limit@var:industry_token }
 				}
 				set_variable = { money@var:industry_token = money_limit@var:industry_token }
-			}
-		}
-		else = {
-			# Add building to array if it doesn't exist yet
-			if = {
-				limit = {
-					NOT = { is_in_array = { industries = industry_token } }
-				}
-				add_to_array = { industries = industry_token }
-				set_variable = { production_method@var:industry_token = production_method_temp }
-				set_variable = { automation_method@var:industry_token = automation_method_temp }
-			}
-
-			# Setting industry target employment
-			set_temp_variable = { portion_temp = x_temp }
-			multiply_temp_variable = { portion_temp = 100 }
-			divide_temp_variable = { portion_temp = size@var:industry_token }
-			subtract_from_variable = { employment_target@var:industry_token = portion_temp }
-			clamp_variable = { var = employment_target@var:industry_token max = 100 min = 0 }
-
-			# Update industry
-			set_temp_variable = { bu_token = industry_token }
-			set_variable = { industry_dirty_var@var:r_token = 1 }
-			industry_update_size_jobs = yes
-			industry_update = yes
-		}
-
-		# Corporation-financed change: attribute the size delta to the funding company.
-		# Positive x_temp = the company gains that size; negative = it sheds it.
-		if = {
-			limit = {
-				check_variable = { financer_temp > 0 }
-				NOT = { check_variable = { financer_temp > 10500 } }
-			}
-			set_temp_variable = { company_temp = financer_temp }
-			set_temp_variable = { holding_state_temp = THIS }
-			set_temp_variable = { holding_building_temp = industry_token }
-			if = {
-				limit = { check_variable = { x_temp > 0 } }
-				set_temp_variable = { holding_size_temp = x_temp }
-				company_add_holding = yes
-			}
-			else = {
-				set_temp_variable = { holding_size_temp = x_temp }
-				multiply_temp_variable = { holding_size_temp = -1 }
-				company_remove_holding = yes
 			}
 		}
 	}
@@ -2528,7 +2504,12 @@
 				multiply_temp_variable = { initial_cost_temp = global.start_construction_cost_multiplier }
 				if = {
 					limit = {
-						check_variable = { financer_temp > 10500 } #Government (country scope)
+						check_variable = { financer_temp < 0 } #Corporation
+					}
+				}
+				else_if = {
+					limit = {
+						check_variable = { financer_temp > 0 } #Government
 					}
 					divide_temp_variable = { initial_cost_temp = financer_temp:modifier@government_investment_efficiency_factor }
 					subtract_from_variable = { financer_temp:treasury = initial_cost_temp }
@@ -2536,13 +2517,7 @@
 						spending_update = yes
 					}
 				}
-				else_if = {
-					limit = {
-						check_variable = { financer_temp > 0 } #Corporation (company id 1..10000)
-					}
-					subtract_from_variable = { global.company_treasury@var:financer_temp = initial_cost_temp }
-				}
-				else = { #Local (0; negative = legacy state ref, treated as local)
+				else = { #Local
 					subtract_from_variable = { controller:investment_fund = initial_cost_temp }
 				}
 				add_to_variable = { construction_investment@var:industry_token = initial_cost_temp }

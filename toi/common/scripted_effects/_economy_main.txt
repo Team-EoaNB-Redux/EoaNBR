@@ -107,7 +107,6 @@ _country_advance_time = {
     # payout/retained from this tick's (freshly updated) building finances, consumed next tick by the pull in
     # industries_update and by next month's companies_monthly. Same one-tick lag as local dividends.
     companies_monthly = yes
-    companies_invest = yes
     companies_update = yes
 
 	# Investment Fund
@@ -439,16 +438,13 @@ on_monthly_industries = {
             add_to_temp_variable = { construction_speed_temp = industry_construction_speed_factor }
             multiply_temp_variable = { const_speed = construction_speed_temp }
 
-			add_to_variable = { construction_progress@var:om_building = const_speed }
-			subtract_from_variable = { construction_time_left@var:om_building = construction_speed_temp }
+            add_to_variable = { construction_progress@var:om_building = const_speed }
+            subtract_from_variable = { construction_time_left@var:om_building = construction_speed_temp }
             if = {
                 limit = {
                     check_variable = { construction_time_left@var:om_building < 0.001 }
                 }
-				set_temp_variable = { x_temp = construction@var:om_building }
-				set_temp_variable = { financer_temp = construction_financier@var:om_building }
-				set_temp_variable = { industry_token = om_building }
-				add_x_industry_internal = yes
+                add_to_variable = { size@var:om_building = construction@var:om_building }
                 if = {
                     limit = {
                         check_variable = { global.building_rgo@var:om_building = 1 }
@@ -457,7 +453,7 @@ on_monthly_industries = {
 					set_temp_variable = { deposit_temp = known_temp }
 					multiply_temp_variable = { known_temp = -1 }
 					set_temp_variable = { r_token = om_building }
-					add_rgo_internal = yes # NOTE: add_x_industry_internal and this should work fine together
+					add_rgo_internal = yes
                 }
                 else_if = {
                     limit = {
@@ -492,18 +488,6 @@ on_monthly_industries = {
                         instant_build = yes
                     }
                 }
-
-                # Clear the financing company's active-build marker so it can start a new project.
-                if = {
-                    limit = {
-                        check_variable = { financer_temp > 0 }
-                        NOT = { check_variable = { financer_temp > 10500 } }
-                    }
-                    set_variable = { global.company_project_state@var:financer_temp = 0 }
-					set_variable = { global.company_project_industry@var:financer_temp = 0 }
-                }
-
-                set_variable = { construction_financier@var:om_building = 0 }
                 set_variable = { construction@var:om_building = 0 }
             }
         }
