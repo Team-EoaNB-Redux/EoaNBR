@@ -426,14 +426,17 @@ _country_fin = {
     update_country_pop_stats = yes
 
     # Investment Opportunities Setup
+	investment_fund_update = yes
     industries_highest_productivity_update = yes
     industries_retoolable_update = yes
-    investment_opportunities_update = yes
-    for_loop_effect = {
-        end = investment_opportunities_cap
-        generate_investment_opportunity = yes
-    }
-    investment_fund_update = yes
+	investment_opportunities_cap_calc = yes
+	set_temp_variable = { needed_temp = investment_opportunities_cap }
+	io_add_random = yes
+	sort_io_list = yes
+    io_update = yes
+	investment_funds_monthly = yes
+	investment_opportunities_monthly = yes
+    io_update = yes
     
     # Initializes debt
 	#bank_update = yes - disable until bank system is done
@@ -505,6 +508,14 @@ _country_fin = {
         net_budget_update = yes
     }
 
+	# Starting Treasury
+    if = { limit = { has_debt = yes } }
+    else = {
+        set_variable = { treasury = gdp_amount }
+        divide_variable = { treasury = 4 }
+        add_to_variable = { treasury = 100 }
+    }
+
     # Graphs & Displays
     initialize_country_gdp_graph = yes
     initialize_country_budget_graph = yes
@@ -539,6 +550,61 @@ _country_reset = {
 
     # Country Finalization
     _country_fin = yes
+}
+# Initialize a new country mid-game
+initialize_country = {
+	_init_country = yes
+	_update_market = yes
+
+    # Update country pop stats
+    update_country_pop_stats = yes
+	
+    # Budget
+    set_variable = { military_spending_percentage = 100 }
+    set_variable = { sales_tax_percentage = 0 }
+    set_variable = { income_tax_lower_strata_percentage = 0 }
+    set_variable = { income_tax_middle_strata_percentage = 0 }
+    set_variable = { income_tax_upper_strata_percentage = 0 }
+    budget_update = yes
+    while_loop_effect = {
+        limit = {
+            AND = {
+                check_variable = { net_budget < 0 }
+                OR = {
+                    check_variable = { sales_tax_percentage < sales_tax_max }
+                    check_variable = { income_tax_lower_strata_percentage < income_tax_lower_strata_max }
+                    check_variable = { income_tax_middle_strata_percentage < income_tax_middle_strata_max }
+                    check_variable = { income_tax_upper_strata_percentage < income_tax_upper_strata_max }
+                }
+            }
+        }
+
+        if = { limit = { check_variable = { sales_tax_percentage < sales_tax_max } } 
+            add_to_variable = { sales_tax_percentage = 10 }
+        }
+        else_if = { limit = { check_variable = { income_tax_lower_strata_percentage < income_tax_lower_strata_max } } 
+            add_to_variable = { income_tax_lower_strata_percentage = 10 }
+        }
+        else_if = { limit = { check_variable = { income_tax_middle_strata_percentage < income_tax_middle_strata_max } } 
+            add_to_variable = { income_tax_middle_strata_percentage = 10 }
+        }
+        else_if = { limit = { check_variable = { income_tax_upper_strata_percentage < income_tax_upper_strata_max } } 
+            add_to_variable = { income_tax_upper_strata_percentage = 10 }
+        }
+        
+        budget_clamp = yes
+        taxes_update = yes
+        net_budget_update = yes
+    }
+
+	# Starting Treasury
+	set_variable = { treasury = gdp_amount }
+	divide_variable = { treasury = 2 }
+
+    # Graphs & Displays
+    initialize_country_gdp_graph = yes
+    initialize_country_budget_graph = yes
+    country_update_trade_display = yes
 }
 
 # Global Variable Init
@@ -682,7 +748,9 @@ _country_reset = {
             set_variable = { global.pops_maximum_starvation_death_rate = 25.0 } #Per year rate
 
 			set_variable = { global.peasant_market_interaction = 0.2 } # How much output from subsistence farms is sold in the market. Also determines peasant consumption effect on market demand
-			set_variable = { global.base_pop_earnings = 0.1 } # Base earnings per pop(k) per month 
+			set_variable = { global.base_pop_earnings = 0.1 } # Base earnings per pop(k) per month
+
+			set_variable = { global.company_retention_factor = 0.3 } # Fraction of a company's gross dividends retained to its treasury (rest paid to HQ-state capitalists)
             set_variable = { global.pops_unemployment_bleed = 0.2 } #What % of unemployed pops become laborers each month
             set_variable = { global.pops_underpaid_start = 0.5 } #What % of a pop's SoL expenditure will they start to be less inclined to be employed
             set_variable = { global.pops_underpaid_min = 0.3 } #Minimum % of pops willing to be employed
@@ -1535,6 +1603,7 @@ _country_reset = {
         clear_array = global.special_token_array
         clear_array = global.building_token_array
         clear_array = global.industry_token_array
+        clear_array = global.private_building_token_array # All expandable industries that private individuals can own
         add_to_array = { global.special_token_array = token:subsistence_farm }
         add_to_array = { global.special_token_array = token:infrastructure }
         add_to_array = { global.special_token_array = token:railway }
@@ -1578,6 +1647,13 @@ _country_reset = {
             array = global.building_token_array
             value = b_token
             add_to_array = { global.industry_token_array = b_token }
+			if = {
+				limit = {
+					NOT = { check_variable = { global.building_unexpandable@var:b_token = 1 } }
+					NOT = { check_variable = { global.building_government_control@var:b_token = 1 } }
+				}
+            	add_to_array = { global.private_building_token_array = b_token }
+			}
 
             # Base Output Value
             set_variable = { global.building_base_output_value@var:b_token = 0 }
@@ -1595,6 +1671,13 @@ _country_reset = {
             array = global.special_token_array
             value = b_token
             add_to_array = { global.industry_token_array = b_token }
+			if = {
+				limit = {
+					NOT = { check_variable = { global.building_unexpandable@var:b_token = 1 } }
+					NOT = { check_variable = { global.building_government_control@var:b_token = 1 } }
+				}
+            	add_to_array = { global.private_building_token_array = b_token }
+			}
 
             # Base Output Value
             set_variable = { global.building_base_output_value@var:b_token = 0 }
@@ -2194,6 +2277,10 @@ _country_reset = {
         }
 
         # Special
+			# Subsistence Farms
+			set_variable = { production_method@token:subsistence_farm = token:pm_subsistence_farming }
+			set_variable = { automation_method@token:subsistence_farm = token:pm_manual_farming }
+
             # Railway
             if = {
                 limit = { NOT = { has_variable = starting_pm@token:railway } }
@@ -2323,7 +2410,7 @@ _country_reset = {
                 }
                 set_variable = { pops_workforce@var:pop_token = pops_workforce@token:peasants }
                 set_variable = { pops_workforce@token:peasants = 0 }
-            }
+			}
             else = {
                 set_variable = { pops_workforce@var:pop_token = pops_jobs@var:pop_token }
                 subtract_from_variable = { pops_workforce@token:peasants = pops_workforce@var:pop_token }
@@ -2468,8 +2555,8 @@ _country_reset = {
         # Calculates building vals based on latest available
         #buildings_update_base_latest_vals = yes 
 
-        # Initializes IO cap (requires pop stats), IO generation (requires GDP), and updates IO cost & attractiveness & sorts them (requires latest vals)
-        investment_opportunities_update = yes
+        # Initializes IO cap (requires pop stats), IO generation (requires GDP)
+        investment_opportunities_cap_calc = yes
 
         budget_update = yes
         national_debt_update = yes

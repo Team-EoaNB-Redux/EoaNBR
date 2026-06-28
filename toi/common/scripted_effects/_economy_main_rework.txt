@@ -501,9 +501,9 @@
 			array = industries
 			value = bu_token
 
+			industry_update_size_jobs = yes
 			if = {
 				limit = { NOT = { check_variable = { bu_token = token:subsistence_farm } } }
-				industry_update_size_jobs = yes
 				
 				add_to_temp_variable = { e_laborers_jobs = i_laborers_jobs }
 				add_to_temp_variable = { e_laborers_jobs_available = i_laborers_jobs_available }
@@ -673,14 +673,6 @@
 				multiply_temp_variable = { replace_amount = controller:price@var:replace_token }
 				#log = "Replacing [?global.pops_spending_need_at_sol@var:pop_r_token^sol_temp] [?pop_r_token.GetTokenLocalizedKey] with [?replace_amount] [?replace_token.GetTokenLocalizedKey]"
 				add_to_temp_variable = { needs_spending_temp = replace_amount }
-				if = {
-					limit = {
-						state = 219
-						check_variable = { current_pop_token = token:laborers }
-					}
-					#log_pop_vals = yes
-					log = "    [?replace_token.GetTokenKey]: [?replace_amount]"
-				}
 			}
 			else_if = {
 				limit = {
@@ -710,22 +702,6 @@
 
 				add_to_temp_variable = { needs_spending_temp = resource_amount }
 				add_to_temp_variable = { needs_spending_temp = replace_amount }
-				if = {
-					limit = {
-						state = 219
-						check_variable = { current_pop_token = token:laborers }
-					}
-					#log_pop_vals = yes
-					log = "    [?replace_token.GetTokenKey]: [?replace_amount]"
-				}
-				if = {
-					limit = {
-						state = 219
-						check_variable = { current_pop_token = token:laborers }
-					}
-					#log_pop_vals = yes
-					log = "    [?pop_r_token.GetTokenKey]: [?resource_amount]"
-				}
 			}
 			else_if = {
 				limit = {
@@ -754,42 +730,12 @@
 
 				add_to_temp_variable = { needs_spending_temp = resource_amount }
 				add_to_temp_variable = { needs_spending_temp = replace_amount }
-				if = {
-					limit = {
-						state = 219
-						check_variable = { current_pop_token = token:laborers }
-					}
-					#log_pop_vals = yes
-					log = "    [?replace_token.GetTokenKey]: [?replace_amount]"
-				}
-				if = {
-					limit = {
-						state = 219
-						check_variable = { current_pop_token = token:laborers }
-					}
-					#log_pop_vals = yes
-					log = "    [?pop_r_token.GetTokenKey]: [?resource_amount]"
-				}
 			}
 			else = {
-				if = {
-					limit = {
-						check_variable = { pop_token = token:workers }
-					}
-					# log = "[?pop_r_token.GetTokenKey] amount: [?global.pops_spending_need_at_sol@var:pop_r_token^sol_temp]"
-				}
 				set_temp_variable = { resource_amount = global.pops_spending_need_at_sol@var:pop_r_token^sol_temp }
 				add_to_temp_variable = { pops_need_t@var:pop_r_token = resource_amount }
 				multiply_temp_variable = { resource_amount = controller:price@var:pop_r_token }
 				add_to_temp_variable = { needs_spending_temp = resource_amount }
-				if = {
-					limit = {
-						state = 219
-						check_variable = { current_pop_token = token:laborers }
-					}
-					#log_pop_vals = yes
-					log = "    [?pop_r_token.GetTokenKey]: [?resource_amount] | [?controller:price@var:pop_r_token] | [?global.pops_spending_need_at_sol@var:pop_r_token^sol_temp]"
-				}
 			}
 		}
 
@@ -1190,6 +1136,14 @@
 			set_variable = { pops_investment@var:pop_token = 0 }
 		}
 
+		for_each_loop = {
+			array = global.industry_token_array
+			value = industry_token
+
+			set_variable = { count@var:industry_token = 0 }
+			set_variable = { size@var:industry_token = 0 }
+		}
+
 		every_controlled_state = {
 			#Pops
 			for_each_loop = {
@@ -1208,6 +1162,15 @@
 				multiply_temp_variable = { stat_temp = pops@var:pop_token }
 				divide_temp_variable = { stat_temp = 1000 }
 				add_to_variable = { PREV.pops_sol@var:pop_token = stat_temp }
+			}
+
+			# Industries
+			for_each_loop = {
+				array = industries
+				value = industry_token
+
+				add_to_variable = { PREV.count@var:industry_token = 1 }
+				add_to_variable = { PREV.size@var:industry_token = size@var:industry_token }
 			}
 		}
 		
@@ -1366,6 +1329,7 @@
 				check_variable = { tech_dirty_var_pm_unlock = 1 }
 			}
 			clear_variable = tech_dirty_var_pm_unlock
+			clear_array = unlocked_ams
 
 			for_each_loop = { # Industries
 				array = global.industry_token_array
@@ -1411,6 +1375,12 @@
 						}
 						add_to_array = { building_unlocked_ams@var:industry_token = pm_token }
 						set_variable = { latest_automation_method@var:industry_token = pm_token }
+						if = {
+							limit = {
+								NOT = { is_in_array = { unlocked_ams = pm_token } }
+							}
+							add_to_array = { unlocked_ams = pm_token }
+						}
 					}
 				}
 			}

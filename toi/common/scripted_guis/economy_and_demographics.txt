@@ -261,15 +261,18 @@ scripted_gui = {
 			}
 			rgo_prospecting_button_active_click_enabled = {
 				is_fully_controlled_by = ROOT
+				check_variable = { prospecting_financier@var:v = ROOT }
 			}
 			rgo_employment_icon_visible = {
 				check_variable = { size@var:v > 0 }
 			}
 			rgo_prospecting_button_visible = {
 				check_variable = { prospecting@var:v = 0 }
+				check_variable = { known_reserves@var:v = 0 }
 			}
 			rgo_prospecting_button_active_visible = {
 				check_variable = { prospecting@var:v = 1 }
+				check_variable = { known_reserves@var:v = 0 }
 			}
 
 			building_increase_size_button_click_enabled = {
@@ -817,16 +820,34 @@ scripted_gui = {
 			}
 			rgo_prospecting_button_click = {
 				set_variable = { prospecting@var:v = 1 }
+				set_variable = { prospecting_financier@var:v = ROOT }
+
 				set_temp_variable = { r_token = v }
 				update_prospecting = yes
-				ROOT = { budget_update = yes }
+				
+				set_temp_variable = { x_temp = prospecting_cost@var:v }
+				multiply_temp_variable = { x_temp = global.start_construction_cost_multiplier }
+				multiply_temp_variable = { x_temp = -1 }
+
+				ROOT = { 
+					add_treasury = yes
+					budget_update = yes 
+				}
 				add_to_variable = { update_state_econ_window = 1 }
 			}
 			rgo_prospecting_button_active_click = {
 				set_variable = { prospecting@var:v = 0 }
+				clear_variable = prospecting_financier@var:v
 				set_temp_variable = { r_token = v }
 				update_prospecting = yes
-				ROOT = { budget_update = yes }
+
+				set_temp_variable = { x_temp = prospecting_cost@var:v }
+				multiply_temp_variable = { x_temp = global.start_construction_cost_multiplier }
+				
+				ROOT = { 
+					add_treasury = yes
+					budget_update = yes
+				}
 				add_to_variable = { update_state_econ_window = 1 }
 			}
 			building_production_method_button_click = {
@@ -3865,17 +3886,15 @@ scripted_gui = {
 		triggers = {
 			add_new_opportunity_button_click_enabled = {
 				check_variable = { treasury > investment_opportunity_generation_cost }
-				check_variable = { investment_opportunities^num < investment_opportunities_cap }
-				any_controlled_state = {
-					NOT = { has_state_flag = current_investment_opportunity_flag }
-				}
+				check_variable = { active_investment_opportunities^num < investment_opportunities_cap }
+				NOT = { check_variable = { active_investment_opportunities^num = investment_opportunities^num } }
 			}
 			fund_all_opportunities_button_click_enabled = {
 				check_variable = { investment_fund_spending < investment_fund_target_spending }
 
 				check_variable = { treasury > investment_opportunity_fund_all_cost }
 				check_variable = { investment_opportunity_fund_all_cost > 0 }
-				check_variable = { investment_opportunities^num > 0 }
+				check_variable = { active_investment_opportunities^num > 0 }
 			}
 			fund_opportunity_button_click_enabled = {
 				check_variable = { investment_fund_spending < investment_fund_target_spending }
@@ -3885,17 +3904,32 @@ scripted_gui = {
 				check_variable = { treasury > cost_temp }
 				check_variable = { cost_temp > 0 }
 			}
+			company_project_currency_icon_visible = {
+				NOT = { check_variable = { global.company_project_type@var:v = 0 } }
+			}
+			company_project_cost_visible = {
+				NOT = { check_variable = { global.company_project_type@var:v = 0 } }
+			}
+			company_project_location_visible = {
+				NOT = { check_variable = { global.company_project_type@var:v = 0 } }
+			}
+			company_project_attractiveness_visible = {
+				NOT = { check_variable = { global.company_project_type@var:v = 0 } }
+			}
 		}
 
 		effects = {
 			add_new_opportunity_button_click = {
 				subtract_from_variable = { treasury = investment_opportunity_generation_cost }
-				create_investment_opportunity = yes
+				set_temp_variable = { needed_temp = 1 }
+				io_add_random = yes
+				io_update = yes
+				sort_io_list = yes
 			}
 			fund_all_opportunities_button_click = {
 				subtract_from_variable = { treasury = investment_opportunity_fund_all_cost }
 				for_each_loop = {
-					array = investment_opportunities
+					array = active_investment_opportunities
 					value = io_num_temp
 					index = ii
 					if = {
@@ -3910,12 +3944,12 @@ scripted_gui = {
 					limit = {
 						check_variable = { i_temp < investment_opportunities_cap }
 					}
-					set_temp_variable = { io_num_temp = investment_opportunities^0 }
+					set_temp_variable = { io_num_temp = active_investment_opportunities^0 }
 					evaluate_investment_opportunity = yes
 
 					add_to_temp_variable = { i_temp = 1 }
 				}
-				investment_opportunities_update = yes
+				io_update = yes
 			}
 			fund_opportunity_button_click = {
 				set_temp_variable = { cost_temp = investment_opportunity_cost@var:v }
@@ -3949,21 +3983,27 @@ scripted_gui = {
 			fund_opportunity_button = {
 				image = "[GetCurrencyButton]"
 			}
+			company_focus = {
+				image = "[GetCompanyIcon]"
+			}
+			company_project_currency_icon = {
+				image = "[GetCurrencyIcon]"
+			}
 		}
 
 		dynamic_lists = {
-			project_entries = {
-				array = proj_id
-				entry_container = project_entry
+			# project_entries = {
+			# 	array = proj_id
+			# 	entry_container = project_entry
+			# 	change_scope = no
+			# }
+			company_entries = {
+				array = companies
+				entry_container = company_entry
 				change_scope = no
 			}
-			corporation_entries = {
-				array = corporations
-				entry_container = corporation_entry
-				change_scope = yes
-			}
 			investment_opportunities_entries = {
-				array = investment_opportunities
+				array = active_investment_opportunities
 				entry_container = investment_opportunity_entry
 			}
 			economy_graph = {

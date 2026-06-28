@@ -689,7 +689,166 @@ Point of Pop Types:
 	Working Class (Peasants/Laborers/Workers)
 		- 50-90% of population
 
+Companies
+	Important enough to deal with
+	Fund specific interest groups
+	Bribe the legislature
+		Change taxes
+		Change laws
+	
+	Specific Focus
+		One building type/industry
+		And possibly related industries (with vertical integration)
+		Specific R&D for advantages? Patents? Help do researches for you?
+			Throughput, Output, Input, construction, retooling, tech bonuses
+	
+	Have their own budget system
+		Revenue/Expenses/Profit
+
+		Raise capital via:
+			non-divident profit
+			equity sale
+			taking on debt
+			Government grants 
+
+	Headquartered in a specific state
+		Dividends distributed to capitalists in that state
+	
+	Stock Valuation
+		Valuation = Owned Assets + Revenue Trajectory + Profit Margin + Modifiers
+		Stock Price = Valuation / Stock Count
+
+		Companies can issue stock that will then be bought up either by the state or the Investment Fund (via IO)
+		This is one way they can raise capital
+		Ownership split between % owned private, % owned by the state, % owned by creditors, and % owned by the company itself
+			Creditor and company stock are automatically traded.
+
+	Investment
+		Independent of the normal Investment Fund
+
+		If they want to invest in a foreign country, they must open a branch. That creates a new "company" in that country and the branch invests on behalf of the main company.
+
+	Departments
+		Allows ownership, investment, and R&D into a specific indusry type
+
+		Actions:
+			Acquire assets
+			Liquidate Assets
+			Vertical Integration - production bonuses to owning up & down the supply chain (Reduced input costs)
+			Horizontal Integration - production bonuses to owning a whole sector (Increased throughput)
+			Hostile Takeover - Buying out the publically available shares of another company
+			Acquisition - Buying out the stockholders of a company to acquire it
+			Merger - A deal to merge two related companies into one (so long as departments match)
+			Lobby / Bribe - Spend money on interest groups to influence laws/budget
+
+	Founding a Company
+		Need a profitable industry &
+		Unique IO to start a new company
+		OR
+		Wealthy enough capitalists in one state
+	
+	Failing Companies
+		Company may declare bankruptcy if debt burden is too high and/or company cannot continue to operate.
+		Chapter 11 (Reorganization):
+			At will (though only done if company is in Crisis Management), but must be allowed by laws
+			Lasts 6-24 Months (depending on how much debt)
+			R&D reducd to 0%
+			Dividends suspended
+			Throughput bonuses cut in half
+			Cannot open new branches, acquire assets, or start new departments 
+			
+			Valuation (modifier) hit of 25-50%
+			Asset sales used to cover debt
+			Old shares are heavily diluted
+
+			Proceeds go to creditors (Banking System). 
+			Any value that cannot be made up by the end of reorganization will result in shares being transferred to "creditors." 
+				This is then immediately put onto the market to sell to investors. It is nominally owned by the "Banking System" and the money will end up there 
+		
+		Chapter 7 (Liquidation):
+			Total liquidation of the company. Standard way a company dies. 
+			Assets sold to investors at favorable rates (via IOs)
+			Shareholders get nothing
+		
+		Upon declaring bankruptcy, the player may choose to bail it out.
+
+	
+	Company Types:
+		Private
+			- Does not use the stock market, cannot issue shares. But less obligations to shareholders
+		Publically Traded
+			- Standard Company. Beholden to shareholders
+			- Complacency drives demand for dividends
+		State Owned Enterprise
+			- Not mere majority-state owned but state-controlled.
+			- Naturally generates complacency
+			- Players may directly interact with how the company operates
+	
+	Company Behavior
+		Companies have different behavior states
+
+		Rapid Growth - Heavy R&D + aggressive buildout + acquisition if possible. High debt tolerance. Low dividends. Requires low complacency.
+		Monopolization - Focus on acquisition, mergers, buyouts. Requires low complacency.
+		Expansion - Invest in new opportunities. Moderate risk tolerance.
+		Optimization - Focus on efficiency, dividends, optimizing profitability, cutting unprofitable industries.
+		Crisis Management - Dramatically cut costs, pay down debt, liquidate assets.
+
+		Complacency 
+			- Higher complacency makes company want to take less risk & invest less in R&D and allocate more dividends
+			- Complacency is generated when a company 1. has high market share, 2. is the largest in its respective market, 3. is continuously profitable, 4. has state backing
+			- Complacency is removed when a company 1. Is relatively new, 2. is unprofitable, 3. is actively losing market share
+
+	Company Setup:
+		Companies at setup (start of game) is done seperately to all countries & the normal company creation mechanic. 
+		This is so when IDs are initialized, they are done in one location (so order of IDs stays the same).
+		Companies are given unique IDs to start (e.g. Great Western Railway might be given an ID of 1, Lloyds of London if they are to exist might be 2, etc.) 
+			and arrays are initialized in state history files for what industries are assigned to each.
+		Great Western Railway can be given a railway in Gloucestershire the following way:
+			add_to_array = { owner_companies@token:railway = 1 } # Great Western Railway
+			add_to_array = { owner_sizes@token:railway = 2 }
+
+	Notes:
+		High company presence in a state should suppress wages (should it spend money to do so)
+		State issued monopolies raise prices
+
+	From AI:
+		global.companies_array            # all company IDs
+		company_owner@var:id              # country that hosts it
+		company_hq_state@var:id           # dividends land here
+		company_type@var:id               # private / public / soe  (tokens)
+		company_behavior@var:id           # rapid_growth / monopolization / ... (tokens)
+		company_complacency@var:id
+		company_treasury@var:id           # retained capital pool
+		company_debt@var:id               # ties into existing banking/debt effects
+		company_buildings@var:id          # array of bu-instances it owns (state+building pairs)
+		company_departments@var:id        # array of industry tokens it operates in
+		company_revenue@var:id / _expenses / _profit / _profit_margin
+		company_revenue_array@var:id      # rolling history for trajectory
+		company_valuation@var:id / _stock_price / _stock_count
+		company_shares_private@var:id / _state / _creditor / _treasury   # the 4-way split
+
+
+		owner_companies@var:bu_token   # array of company IDs owning a slice here
+		owner_sizes@var:bu_token        # parallel array of sizes
+
+		company_holding_state@var:cid            # parallel arrays:
+		company_holding_industry@var:cid          #   which state,
+		company_holding_size@var:cid              #   which building token, how much
+		company_treasury@var:cid  /  _debt@var:cid
+		company_revenue@var:cid / _expenses / _profit / _profit_margin
+		company_revenue_array@var:cid             # rolling history (reuse the gdp_amount_array pattern)
+		company_owner@var:cid  /  _hq_state@var:cid  /  _type@var:cid
+
 TODO List
+	AI Prospecting
+	Smart Mapmodes (One eco mapmode to swap between national/state)
+	Building Mapmode
+	Ways to enter/leave markets
+	Embargo
+	Trade Technology
+	Fix construction slider
+	Subsidies
+	
 	Government factories affected by employment
 	Qualifications & Literacy
 	Self-employment
@@ -703,11 +862,9 @@ TODO List
 	Overview & Analytics
 	Industry Screen
 	Fixing AI Bankruptcy
-	Fix rail/port tooltips
-	Prospecting
 	Surge/Limited Production
 	Markets Mapmode - Trade Screen interaction
-	Smart Mapmodes (One eco mapmode to swap between national/state)
+	Corporations
 
 	Invest in other countries
 	Industry ownership
@@ -718,3 +875,6 @@ TODO List
 		Industries under construction list
 	
 	Unsorted Population list (State UI)
+
+	Investment Opportunity Bugs
+	AI needs to build fuel depots/civs/mils/dockyards using eco
