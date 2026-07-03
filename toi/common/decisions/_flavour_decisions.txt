@@ -2,13 +2,13 @@
 
 eoanb_category_world_fairs = {
 
-	#Hold a World Fair
-	eoanb_decision_hold_world_fair = {
+	#Submit Bid on holding the Worlds Fair
+	eoanb_decision_bid_world_fair_int = {
 		icon = generic_form_nation
 
 		available = {
 			NOT = { has_global_flag = eoanb_world_fair_held_flag }
-			has_idea = institution_centralization
+			#has_idea = institution_centralization
 			NOT = { has_idea = closed_economy }
 			OR = {
 				AND = {
@@ -20,6 +20,146 @@ eoanb_category_world_fairs = {
 					has_political_power > 300
 				}
 			}
+		}
+		visible={
+			NOT = {	
+				has_country_flag = worlds_fair_bidder 
+				has_global_flag = eoanb_world_fair_held_flag
+			}
+		}
+
+		fire_only_once = no
+
+		custom_cost_trigger = {
+			if = {
+				limit = { is_great_power = yes }
+				has_political_power > 199.9
+			}
+			else = {
+				has_political_power > 299.9
+			}
+		}
+
+		custom_cost_text = eoanb_decision_hold_world_fair_cost_tt
+		
+		ai_hint_pp_cost = 300
+
+		complete_effect = {
+			set_country_flag = worlds_fair_bidder
+			custom_effect_tooltip = eoanb_tt_bidding_on_world_fair
+			hidden_effect = {
+				if = {
+					limit = { is_great_power = yes }
+					add_political_power = -200
+				}
+				else = {
+					add_political_power = -300
+				}
+				set_variable = { wf_bid_amount = 200}
+			}
+			if={##check if new bid leader
+				limit={
+					OR={
+						check_variable = {global.wf_current_winning_bid < wf_bid_amount}
+						NOT = {has_variable = global.wf_current_winning_bid}
+					}
+				}
+				save_global_event_target_as = wf_current_holder
+				set_country_flag = worlds_fair_leader
+				set_variable = {global.wf_current_winning_bid = wf_bid_amount}
+			}
+		}
+
+		ai_will_do = {
+			base = 1
+			modifier = {
+				factor = 0.5
+				has_political_power < 500
+			}
+			modifier = {
+				factor = 0.1
+				has_political_power < global.wf_current_winning_bid
+			}
+			modifier = {
+				factor = 0
+				has_national_crisis = yes
+			}
+			
+			modifier = {
+				factor = 0
+				tag = PRS
+				NOT = { PRS_trigger_formed_germany = yes }
+			}
+			modifier = {
+				factor = 0
+				OR={
+					tag = PIE
+					tag = TUS
+				}
+				NOT = { has_country_flag = is_literally_italy }
+			}
+		}
+	}
+	eoanb_decision_bid_world_fair_100 = {
+		icon = generic_form_nation
+
+		available = {
+			
+		}
+		visible = {
+			has_country_flag = worlds_fair_bidder
+			NOT={has_global_flag = eoanb_world_fair_held_flag}
+		}
+
+		fire_only_once = no
+		
+		#days_remove = 15
+
+		cost = 100
+
+		complete_effect = {
+			add_to_variable = { 
+				var = wf_bid_amount 
+				value = 100
+				tooltip = wf_bid_increase
+			}
+			if={##check if new bid leader
+				limit={
+					check_variable = {global.wf_current_winning_bid < wf_bid_amount}
+				}
+				save_global_event_target_as = wf_current_holder
+				set_country_flag = worlds_fair_leader
+				set_variable = {global.wf_current_winning_bid = wf_bid_amount}
+			}
+		}
+
+		ai_will_do = {
+			base = 10
+			modifier = {
+				factor = 0.1
+				has_political_power < 500
+			}
+			modifier = {
+				factor = 0.1
+				event_target:wf_current_holder = {
+					tag = ROOT
+				}
+			}
+			modifier = {
+				factor = 0
+				has_national_crisis = yes
+			}
+		}
+	}
+	#Hold a World Fair
+	eoanb_decision_hold_world_fair = {
+		icon = generic_form_nation
+
+		available = {
+			always = no
+		}
+		visible = {
+			always = no
 		}
 
 		fire_only_once = no

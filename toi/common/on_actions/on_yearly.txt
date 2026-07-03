@@ -28,7 +28,40 @@ on_actions = {
 					country_event = { id = pssystem.16 }
 					eoanbr_pops_country_update = yes
 				}
-				clr_global_flag = eoanb_world_fair_held_flag
+				#Worlds Fair Switch
+				if={#fair was hosted, clean up for the next bidding year
+					limit ={
+						has_global_flag = eoanb_world_fair_held_flag
+					}
+					clr_variable = global.wf_current_winning_bid
+					event_target:wf_current_holder={
+						clr_country_flag = worlds_fair_leader
+						clr_variable = world_fair_preparation_var
+					}
+					clear_global_event_target = wf_current_holder
+				
+				}
+				else_if={##Bidding year has ended, clean up for hosting year
+					limit={
+						has_event_target = wf_current_holder
+					}
+					every_country={
+						limit={
+							has_country_flag = worlds_fair_bidder
+						}
+						clr_country_flag = worlds_fair_bidder
+						clr_variable = wf_bid_amount
+					}
+					set_global_flag = eoanb_world_fair_held_flag
+					event_target:wf_current_holder = {
+						country_event = eoanbworldfair.1
+						set_variable = { world_fair_preparation_var = 0 }
+					}
+				}
+				else={#no host found
+				
+				}
+				
 			}
 		}
 	}
