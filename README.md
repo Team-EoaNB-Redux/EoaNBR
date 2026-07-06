@@ -98,7 +98,7 @@ Have more questions, comments or feedback? You can contact us by joining our dis
 If you wish to contribute to the development of the mod, support us on Patreon or join the team. The links to support/apply can be found in our `#faq` channel on Discord. Donators will be given the special Patreonus role on Discord which gives backdoor access to most of our development process/work and given special personalized easter eggs in our mod. Applicant Developers will be given the `Patrician` Team Member Role and the `Disciplio` Trial Role. After passing the Trial Period, members will be fully accepted into the team and be given GitHub write access if applicable.
 
 ### Rules for Developers
-- Current General Development for EoaNBR shall be pushed onto the `(0.3)-Ars-Bellica` branch.
+- Current General Development for EoaNBR shall be pushed onto the `Fine-et-Fide-(0.4)` branch.
 - All code should be error-checked before pushed onto the Github
 - Merging should be done carefully and procedurely. Do not override other developers' work without acknowledgment of the team.
 - If procedural pushing (including incomplete content) is crucial to development, request a new branch.
@@ -111,10 +111,6 @@ If you wish to contribute to the development of the mod, support us on Patreon o
 <td align="center">
   <p><img src="https://avatars.githubusercontent.com/u/67761668?v=4)" width="80px;" alt="Energywelder"/></p>
   <p></p><a href = "https://github.com/Energywelder"><strong>Energywelder</strong></a></p>
-</td>
-<td align="center">
-  <p><img src="https://avatars.githubusercontent.com/u/35199533?v=4" width="80px;" alt="Lancer2201"/></p>
-  <p><a href = "https://github.com/condor93"><strong>Lancer2201</strong></a></p>
 </td>
 <td align="center">
   <p><img src="https://avatars.githubusercontent.com/u/67757372?v=4" width="80px;" alt="Vanadium"/></p>
