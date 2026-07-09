@@ -1,0 +1,64 @@
+scripted_diplomatic_actions = {
+	diplo_action_tribal_border_raid = {
+		allowed = {
+			any_country_of = {
+				target = constant:country_groups.tribal_countries
+			}
+		}
+
+		visible = {
+			is_neighbor_of = ROOT
+			ROOT = {
+				has_war = no
+				has_country_flag = is_tribal_country_flag
+				NOT = {
+					has_country_flag = has_recently_launched_tribal_border_raid_flag
+				}
+			}
+		}
+
+		selectable = {
+			NOT = { is_ally_with = ROOT }
+			ROOT = {
+				NOT = { has_non_aggression_pact_with = PREV }
+			}
+			ROOT = {
+				NOT = { has_truce_with = PREV }
+			}
+			ROOT = {
+				NOT = { has_border_war_with = PREV }
+			}
+			ROOT = {
+				set_temp_variable = { x_temp = 1000 }
+				has_x_tribal_levy_size = yes
+			}
+			ROOT = {
+				set_temp_variable = { x_temp = 5 }
+				has_x_war_exhaustion = no
+			}
+		}
+
+		command_power = 15
+
+		icon = 3
+
+		requires_acceptance = no
+		shows_acceptance_on_action_button = no
+
+		complete_effect = {
+			hidden_effect = {
+				ROOT = {
+					set_country_flag = {
+						flag = has_recently_launched_tribal_border_raid_flag
+						days = 120
+					}
+				}
+				country_event = { generic_tribal_events.31 }
+			}
+
+			ROOT = {
+				country_event = generic_tribal_events.30
+			}
+		}
+	}
+}
