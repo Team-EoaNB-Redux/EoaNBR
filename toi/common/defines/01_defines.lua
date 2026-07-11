@@ -100,6 +100,7 @@ NDefines.NMilitary.DIVISION_SIZE_FOR_XP = 6                   -- how many battal
 NDefines.NMilitary.FIELD_MARSHAL_ARMIES_CAP = 2				-- how many armies a field marshall is limited to. 0 = inf, < 0 = blocked
 NDefines.NMilitary.MIN_DIVISION_BRIGADE_HEIGHT = 2		-- Min height of regiments in division designer, set to 2, 3 with starting victorian doctrine
 NDefines.NMilitary.SLOWEST_SPEED = 1 -- slowest designed div speed?
+NDefines.NMilitary.SPEED_REINFORCEMENT_BONUS = 0.0033              -- was 0.01 chance to join combat bonus by each 100% larger than infantry base (up to 200%) -- because base slowest speed is 1kmh, marching at 3kmh gives +2% reinforce rate
 
 NDefines.NAir.TOP_SPEED_DAMAGE_BONUS_FACTOR = 0.02 -- 0.025
 NDefines.NAir.COMBAT_BETTER_SPEED_DAMAGE_INCREASE = 0.45 -- 0.60
