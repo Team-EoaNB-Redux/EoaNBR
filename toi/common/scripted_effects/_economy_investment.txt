@@ -2462,6 +2462,37 @@
     }
 #
 
+# Incentives
+	calculate_investment_appetite = {
+		# Inputs (temp):
+		#   top_attractiveness_temp - attractiveness of the best available IO (top of the descending-sorted
+		#                             controller:active_investment_opportunities; up to 1 month stale; base ~100)
+		#   incentives_temp         - modifier@incentives_modifier (base 100)
+		# Output (temp):
+		#   investment_appetite_temp
+
+		set_temp_variable = {
+			incentives_mod_temp = {
+				value = incentives_temp
+				add = 200
+			}
+		}
+		set_temp_variable = {
+			investment_appetite_temp = {
+				value = top_attractiveness_temp
+				max = 10 # Just so people still throw in some money & no errors if <=0
+				log = 10
+				multiply = incentives_temp
+				multiply = 3
+				divide = incentives_mod_temp
+				divide = 2 # Making it so 100 attractiveness & 100 incentives ~= 1.0
+				max = 0
+				min = 2
+			}
+		}
+	}
+#
+
 # NATIONAL OPPORTUNITIES ----------------------------------------------------------
 # Country-level investment actions funded by the investment fund, SEPARATE from the
 # state-tied IO list (active_investment_opportunities). Generic typed-record frame; only

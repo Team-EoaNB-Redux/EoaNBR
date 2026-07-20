@@ -37,3 +37,167 @@ change_interest_rate = {
         }
     }
 }
+
+reset_trade_rework = {
+	clear_array = global.tr_arr
+	add_to_array = { global.tr_arr = ENG }
+	add_to_array = { global.tr_arr = FRA }
+	add_to_array = { global.tr_arr = USA }
+	add_to_array = { global.tr_arr = QNG }
+
+	ENG = {
+		set_variable = { tr_production = 80 }
+		set_variable = { tr_consumption = 50 }
+		set_variable = { tr_total_trade = 0 }
+		set_variable = { tr_profits = 0 }
+		
+		clear_array = tr_partners
+		add_to_array = { tr_arr = FRA }
+		add_to_array = { tr_arr = USA }
+		add_to_array = { tr_arr = QNG }
+
+		set_variable = { tr_strength@FRA = 0.9 }
+		set_variable = { tr_strength@USA = 0.7 }
+		set_variable = { tr_strength@QNG = 0.5 }
+
+		set_variable = { tr_leverage@FRA = 1.1 }
+		set_variable = { tr_leverage@USA = 1.2 }
+		set_variable = { tr_leverage@QNG = 1.7 }
+	}
+	FRA = {
+		set_variable = { tr_production = 55 }
+		set_variable = { tr_consumption = 70 }
+		set_variable = { tr_total_trade = 0 }
+		set_variable = { tr_profits = 0 }
+
+		clear_array = tr_partners
+		add_to_array = { tr_arr = ENG }
+		add_to_array = { tr_arr = USA }
+
+		set_variable = { tr_strength@ENG = 0.9 }
+		set_variable = { tr_strength@USA = 0.5 }
+
+		set_variable = { tr_leverage@ENG = 0.7 }
+		set_variable = { tr_leverage@USA = 1.1 }
+	}
+	USA = {
+		set_variable = { tr_production = 60 }
+		set_variable = { tr_consumption = 40 }
+		set_variable = { tr_total_trade = 0 }
+		set_variable = { tr_profits = 0 }
+
+		clear_array = tr_partners
+		add_to_array = { tr_arr = ENG }
+		add_to_array = { tr_arr = FRA }
+
+		set_variable = { tr_strength@ENG = 0.8 }
+		set_variable = { tr_strength@FRA = 0.8 }
+
+		set_variable = { tr_leverage@ENG = 0.7 }
+		set_variable = { tr_leverage@FRA = 1.0 }
+	}
+	QNG = {
+		set_variable = { tr_production = 180 }
+		set_variable = { tr_consumption = 210 }
+		set_variable = { tr_total_trade = 0 }
+		set_variable = { tr_profits = 0 }
+	}
+}
+calc_trade_rework = {
+	# FulL Reset
+	for_each_scope_loop = {
+		array = global.tr_arr
+	
+		set_variable = { tr_supply = tr_production }
+		set_variable = { tr_demand = tr_consumption }
+
+		set_variable = {
+			tr_price = {
+				value = tr_demand
+				divide = tr_supply
+				pow = 2
+				min = 4
+				max = 0.25
+			}
+		}
+	}
+
+
+	# Adjust Trade Volumes
+	for_each_scope_loop = {
+		array = global.tr_arr
+
+		# Add last month trade volume
+		if = {
+			limit = { check_variable = { tr_total_trade > 0 } }
+			add_to_variable = { tr_supply = tr_total_trade }
+		}
+		else = {
+			add_to_variable = { tr_demand = tr_total_trade }
+		}
+
+		for_each_loop = {
+			array = tr_arr
+			value = country_temp
+			if = {
+				limit = { check_variable = { tr_trade@var:country_temp > 0 } }
+				add_to_variable = { country_temp:tr_supply = tr_trade@var:country_temp }
+			}
+			else = {
+				add_to_variable = { country_temp:tr_demand = tr_trade@var:country_temp }
+			}
+			var:country_temp = {
+				set_variable = {
+					tr_price = {
+						value = tr_demand
+						divide = tr_supply
+						pow = 2
+						min = 4
+						max = 0.25
+					}
+				}
+			}
+		}
+
+		set_variable = { tr_total_trade = 0 }
+		set_variable = { tr_profits = 0 }
+
+		for_each_loop = {
+			array = tr_arr
+			value = country_temp
+
+			# Export = S_production * sqrt( global_price ) - D_consumption
+
+			set_temp_variable = {
+				export_margin_temp = {
+					value = country_temp:tr_price
+					root = 2
+					multiply = tr_supply
+					subtract = tr_demand
+				}
+				import_margin_temp = {
+					value = country_temp:tr_price
+					root = 2
+					multiply = tr_demand
+					subtract = tr_supply
+				}
+			}
+			if = {
+				limit = {
+					check_variable = { margin_temp > 0.1 }
+				}
+				add_to_variable = { tr_trade@var:country_temp = 1 }
+			}
+			else = {
+				subtract_from_variable = { tr_trade@var:country_temp = 1 }
+			}
+			add_to_variable = { tr_total_trade = tr_trade@var:country_temp }
+			multiply_temp_variable = { margin_temp = tr_trade@var:country_temp }
+			add_to_variable = { tr_profits = margin_temp }
+		}
+
+		
+		
+		log = "[THIS.GetName]: [?tr_supply] | tr_profits"
+	}
+}

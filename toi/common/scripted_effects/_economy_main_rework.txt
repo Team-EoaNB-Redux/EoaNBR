@@ -258,6 +258,22 @@
 				
 				clamp_temp_variable = { var = p_pops_investment max = 0.8 min = 0 }
 				multiply_temp_variable = { p_pops_investment = p_pops_earnings }
+
+				# Scale the diverted share by investment appetite: structural incentives x the best
+				# available opportunity's attractiveness (sorted list top; up to 1 month stale - fine).
+				set_temp_variable = { incentives_temp = controller:modifier@incentives_modifier }
+				if = {
+					limit = { check_variable = { controller:active_investment_opportunities^num > 0 } }
+					set_temp_variable = { top_io_id_temp = controller:active_investment_opportunities^0 }
+					set_temp_variable = { top_attractiveness_temp = controller:investment_opportunity_attractiveness@var:top_io_id_temp }
+				}
+				else = {
+					set_temp_variable = { top_attractiveness_temp = 100 }
+				}
+				calculate_investment_appetite = yes
+				multiply_temp_variable = { p_pops_investment = investment_appetite_temp }
+				log = "[?current_pop_token.GetTokenKey] Investment: [?p_pops_investment] / [?p_pops_earnings] | [?investment_appetite_temp]"
+
 				subtract_from_temp_variable = { p_pops_earnings = p_pops_investment }
 			}
 		}

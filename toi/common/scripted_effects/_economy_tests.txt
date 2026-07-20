@@ -1,0 +1,236 @@
+# Finance / economy unit-test harness (DEBUG ONLY - not part of the monthly tick)
+#
+# HOW TO RUN
+#   Console:        effect finance_tests
+#   Debug decision: "Run Finance Tests" (Developer Debugging Commands category)
+#   Results are written to game.log as [PASS]/[FAIL] lines plus a summary.
+#
+# WHY THIS WORKS
+#   The economy's idempotent calculate_*/_update effects are pure functions of their temp-var
+#   inputs (see [[economy-effect-conventions]]): set inputs -> call -> assert the output. State-
+#   mutating _monthly/loan effects are tested by snapshotting a var, running once, and asserting
+#   the delta. assert_temp compares an actual against an expected within a tolerance (HOI4 math is
+#   fixed-point, so exact equality is unsafe). Pass/fail counters are temp vars, so nothing is
+#   written to the save.
+#
+# ADDING TESTS
+#   Write a test_<thing> effect that logs a label, sets inputs, calls the effect under test, then
+#   sets { assert_expected, assert_actual, assert_tol } and calls assert_temp. Register it in
+#   finance_tests below. Keep tests OUT of _advance_time.
+
+finance_tests = {
+    # COUNTRY SCOPE
+    set_temp_variable = { finance_test_pass = 0 }
+    set_temp_variable = { finance_test_fail = 0 }
+
+    log = "===== FINANCE TESTS: START ====="
+
+    test_creditworthiness = yes
+    test_investment_appetite = yes
+    # test_credit_rating = yes      # TODO once credit_rating_update lands
+    # test_borrow_limit = yes       # TODO once borrow_limit_update lands
+    # test_inflation = yes          # TODO once inflation_update lands
+    # test_bank_loan_money = yes    # TODO state-transition test per bank_status tier
+
+    log = "===== FINANCE TESTS: DONE - [?finance_test_pass] passed, [?finance_test_fail] failed ====="
+}
+
+assert_temp = {
+    # Inputs (temp):
+    #   assert_expected - expected value
+    #   assert_actual   - value produced by the effect under test
+    #   assert_tol      - absolute tolerance; <= 0 defaults to 0.01
+    # Mutates (temp): finance_test_pass / finance_test_fail
+
+    if = {
+        limit = { check_variable = { assert_tol < 0.0001 } }
+        set_temp_variable = { assert_tol = 0.01 }
+    }
+
+    # abs(actual - expected)
+    set_temp_variable = { assert_diff = assert_actual }
+    subtract_from_temp_variable = { assert_diff = assert_expected }
+    if = {
+        limit = { check_variable = { assert_diff < 0 } }
+        multiply_temp_variable = { assert_diff = -1 }
+    }
+
+    if = {
+        limit = { check_variable = { assert_diff > assert_tol } }
+        add_to_temp_variable = { finance_test_fail = 1 }
+        log = "  [FAIL] expected [?assert_expected], got [?assert_actual]"
+    }
+    else = {
+        add_to_temp_variable = { finance_test_pass = 1 }
+        log = "  [PASS] [?assert_actual] ~= [?assert_expected]"
+    }
+
+    set_temp_variable = { assert_tol = 0 }
+}
+
+test_creditworthiness = {
+    # Pure function (calculate_creditworthiness in _economy_banking.txt):
+    #   cw = clamp(-500, 500){ 100 + 10*(savings/income) - 5*(debt/income) - 200*(debt_spending/income) }
+    log = "TEST: calculate_creditworthiness"
+
+    # neutral -> 100
+    log = " - neutral (income=100, no savings/debt) -> 100"
+    set_temp_variable = { income_temp = 100 }
+    set_temp_variable = { savings_temp = 0 }
+    set_temp_variable = { debt_temp = 0 }
+    set_temp_variable = { debt_spending_temp = 0 }
+    calculate_creditworthiness = yes
+    set_temp_variable = { assert_expected = 100 }
+    set_temp_variable = { assert_actual = creditworthiness_temp }
+    set_temp_variable = { assert_tol = 0.01 }
+    assert_temp = yes
+
+    # savings = income -> 100 + 10*1 = 110
+    log = " - savings=income -> 110"
+    set_temp_variable = { income_temp = 100 }
+    set_temp_variable = { savings_temp = 100 }
+    set_temp_variable = { debt_temp = 0 }
+    set_temp_variable = { debt_spending_temp = 0 }
+    calculate_creditworthiness = yes
+    set_temp_variable = { assert_expected = 110 }
+    set_temp_variable = { assert_actual = creditworthiness_temp }
+    set_temp_variable = { assert_tol = 0.01 }
+    assert_temp = yes
+
+    # debt = income -> 100 - 5*1 = 95
+    log = " - debt=income -> 95"
+    set_temp_variable = { income_temp = 100 }
+    set_temp_variable = { savings_temp = 0 }
+    set_temp_variable = { debt_temp = 100 }
+    set_temp_variable = { debt_spending_temp = 0 }
+    calculate_creditworthiness = yes
+    set_temp_variable = { assert_expected = 95 }
+    set_temp_variable = { assert_actual = creditworthiness_temp }
+    set_temp_variable = { assert_tol = 0.01 }
+    assert_temp = yes
+
+    # debt_spending = 10% of income -> 100 - 200*0.1 = 80
+    log = " - debt_spending=10% income -> 80"
+    set_temp_variable = { income_temp = 100 }
+    set_temp_variable = { savings_temp = 0 }
+    set_temp_variable = { debt_temp = 0 }
+    set_temp_variable = { debt_spending_temp = 10 }
+    calculate_creditworthiness = yes
+    set_temp_variable = { assert_expected = 80 }
+    set_temp_variable = { assert_actual = creditworthiness_temp }
+    set_temp_variable = { assert_tol = 0.01 }
+    assert_temp = yes
+
+    # combined: income=100, savings=200, debt=100, debt_spending=5
+    #   100 + 10*2 - 5*1 - 200*0.05 = 100 + 20 - 5 - 10 = 105
+    log = " - combined -> 105"
+    set_temp_variable = { income_temp = 100 }
+    set_temp_variable = { savings_temp = 200 }
+    set_temp_variable = { debt_temp = 100 }
+    set_temp_variable = { debt_spending_temp = 5 }
+    calculate_creditworthiness = yes
+    set_temp_variable = { assert_expected = 105 }
+    set_temp_variable = { assert_actual = creditworthiness_temp }
+    set_temp_variable = { assert_tol = 0.01 }
+    assert_temp = yes
+
+    # clamp low: huge debt_spending -> -500
+    log = " - clamp low -> -500"
+    set_temp_variable = { income_temp = 1 }
+    set_temp_variable = { savings_temp = 0 }
+    set_temp_variable = { debt_temp = 0 }
+    set_temp_variable = { debt_spending_temp = 100 }
+    calculate_creditworthiness = yes
+    set_temp_variable = { assert_expected = -500 }
+    set_temp_variable = { assert_actual = creditworthiness_temp }
+    set_temp_variable = { assert_tol = 0.01 }
+    assert_temp = yes
+
+    # clamp high: huge savings -> 500
+    log = " - clamp high -> 500"
+    set_temp_variable = { income_temp = 1 }
+    set_temp_variable = { savings_temp = 1000 }
+    set_temp_variable = { debt_temp = 0 }
+    set_temp_variable = { debt_spending_temp = 0 }
+    calculate_creditworthiness = yes
+    set_temp_variable = { assert_expected = 500 }
+    set_temp_variable = { assert_actual = creditworthiness_temp }
+    set_temp_variable = { assert_tol = 0.01 }
+    assert_temp = yes
+}
+
+test_investment_appetite = {
+    # Pure function (calculate_investment_appetite in _economy_incentives.txt):
+    #   appetite = 3r/(r+2),  r = top_attractiveness x incentives / 10000
+    log = "TEST: calculate_investment_appetite"
+
+    # reference (attr=100, inc=100) -> r=1 -> 1.0
+    log = " - reference (100 x 100) -> 1.0"
+    set_temp_variable = { top_attractiveness_temp = 100 }
+    set_temp_variable = { incentives_temp = 100 }
+    calculate_investment_appetite = yes
+    set_temp_variable = { assert_expected = 1.0 }
+    set_temp_variable = { assert_actual = investment_appetite_temp }
+    set_temp_variable = { assert_tol = 0.01 }
+    assert_temp = yes
+
+    # low incentives (attr=100, inc=50) -> r=0.5 -> 0.6
+    log = " - low incentives (100 x 50) -> 0.6"
+    set_temp_variable = { top_attractiveness_temp = 100 }
+    set_temp_variable = { incentives_temp = 50 }
+    calculate_investment_appetite = yes
+    set_temp_variable = { assert_expected = 0.6 }
+    set_temp_variable = { assert_actual = investment_appetite_temp }
+    set_temp_variable = { assert_tol = 0.01 }
+    assert_temp = yes
+
+    # high incentives (attr=100, inc=200) -> r=2 -> 1.5
+    log = " - high incentives (100 x 200) -> 1.5"
+    set_temp_variable = { top_attractiveness_temp = 100 }
+    set_temp_variable = { incentives_temp = 200 }
+    calculate_investment_appetite = yes
+    set_temp_variable = { assert_expected = 1.5 }
+    set_temp_variable = { assert_actual = investment_appetite_temp }
+    set_temp_variable = { assert_tol = 0.01 }
+    assert_temp = yes
+
+    # poor opportunity (attr=50, inc=100) -> r=0.5 -> 0.6
+    log = " - poor opportunity (50 x 100) -> 0.6"
+    set_temp_variable = { top_attractiveness_temp = 50 }
+    set_temp_variable = { incentives_temp = 100 }
+    calculate_investment_appetite = yes
+    set_temp_variable = { assert_expected = 0.6 }
+    set_temp_variable = { assert_actual = investment_appetite_temp }
+    set_temp_variable = { assert_tol = 0.01 }
+    assert_temp = yes
+
+    # both high (attr=150, inc=150) -> r=2.25 -> 6.75/4.25 = 1.588
+    log = " - both high (150 x 150) -> 1.588"
+    set_temp_variable = { top_attractiveness_temp = 150 }
+    set_temp_variable = { incentives_temp = 150 }
+    calculate_investment_appetite = yes
+    set_temp_variable = { assert_expected = 1.588 }
+    set_temp_variable = { assert_actual = investment_appetite_temp }
+    set_temp_variable = { assert_tol = 0.01 }
+    assert_temp = yes
+
+    # zero incentives -> 0
+    log = " - zero incentives -> 0"
+    set_temp_variable = { top_attractiveness_temp = 100 }
+    set_temp_variable = { incentives_temp = 0 }
+    calculate_investment_appetite = yes
+    set_temp_variable = { assert_expected = 0 }
+    set_temp_variable = { assert_actual = investment_appetite_temp }
+    set_temp_variable = { assert_tol = 0.01 }
+    assert_temp = yes
+
+    # no opportunities -> 0
+    log = " - no opportunity (attr=0) -> 0"
+    set_temp_variable = { top_attractiveness_temp = 0 }
+    set_temp_variable = { incentives_temp = 100 }
+    calculate_investment_appetite = yes
+    set_temp_variable = { assert_expected = 0 }
+    set_temp_variable = { assert_actual = investment_appetite_temp }
+    set_temp_variable = { assert_tol = 0.01 }
+    assert_temp = yes
+}
