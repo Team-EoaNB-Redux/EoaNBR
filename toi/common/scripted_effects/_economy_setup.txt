@@ -136,9 +136,9 @@ _init_state = {
     # Sets up initial employment & population workforce scheme
     state_eco_employment_init = yes
 
-    # Calculate Base Wage - will mean that industries have to be updated for proper profit margins
+    # Seed the persistent base wage (state/country history or productivity fallback) - industries updated after for proper margins
     industry_productivity_sort = yes
-    base_wage_calculation = yes
+    base_wage_seed = yes
 	industries_update = yes
 	pops_update = yes
 
@@ -344,8 +344,8 @@ _state_fin = {
     subsist_and_arable_update = yes
     industries_update = yes
     industry_productivity_sort = yes
-    base_wage_calculation = yes
-    
+    base_wage_seed = yes
+
     # Max out cash reserves for all industries
     for_each_loop = {
         array = industries
@@ -733,6 +733,13 @@ initialize_country = {
             set_variable = { global.wage_multiplier@token:landowners = 10 }
             set_variable = { global.wage_multiplier@token:bureaucrats = 8 }
             set_variable = { global.wage_multiplier@token:soldiers = 4 }
+
+            # Floating wages: monthly base_wage evolves via labor utilization (jobs/workforce).
+            set_variable = { global.wage_labor_util_high = 0.99 } # Utilization above this raises wages
+            set_variable = { global.wage_labor_util_low = 0.95 } # Utilization below this lowers wages (95-99 = stable, structural unemployment band)
+            set_variable = { global.wage_labor_gain_up = 0.5 } # Upward responsiveness per unit of utilization above high
+            set_variable = { global.wage_labor_gain_down = 0.1 } # Downward responsiveness (deliberately ~5x stickier than up)
+            set_variable = { global.wage_change_cap = 0.02 } # Clamp monthly wage change to +/-2%
 
             set_variable = { global.pops_workforce_participation = 0.35 }
             set_variable = { global.pops_literacy_percentage = 100 } #Unlocks Workers

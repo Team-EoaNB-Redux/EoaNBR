@@ -136,7 +136,7 @@
 		}
 
 		if = {
-			limit = { NOT = { prev_size@var:bu_token = size_temp } }
+			limit = { NOT = { check_variable = { prev_size@var:bu_token = size_temp } } }
 			set_variable = { industry_dirty_var@var:bu_token = 1 }
 		}
 		else = {
@@ -259,6 +259,7 @@
 		set_variable = { specialists_jobs_available@var:bu_token = i_specialists_jobs_available }
 
 	}
+	
 	industry_update_employment = {
 		# Employment
 		set_temp_variable = { i_employment_target = employment_target@var:bu_token }
@@ -332,12 +333,13 @@
 			divide_temp_variable = { total_prod_temp = size@var:bu_token }
 		}
 		if = {
-			limit = { NOT = { production_percentage@var:bu_token = total_prod_temp } }
+			limit = { NOT = { check_variable = { production_percentage@var:bu_token = total_prod_temp } } }
 			set_variable = { industry_dirty_var@var:bu_token = 1 }
 		}
 		
 		set_variable = { production_percentage@var:bu_token = total_prod_temp }
 	}
+	
 	industry_update_employment_pop_type = {
 		# Inputs:
 		# - i_pop_token
@@ -1121,6 +1123,7 @@
 			set_variable = { base_am_cost@var:pm_temp = total_retooling_cost_temp }
 		}
 	}
+	
 #
 
 # Other Update
@@ -2150,32 +2153,81 @@
 		set_variable = { specialists_wage = base_wage }
 		multiply_variable = { specialists_wage = global.wage_multiplier@token:specialists }
 	}
-	base_wage_calculation_rework = {
-		set_temp_variable = { subs_farm_productivity = 1 }
+	base_wage_seed = {
+		# State scope. Seeds the persistent base_wage ONCE at startup (called from _init_state / _state_fin).
+		# Priority: state-history base_wage > controller (country history / set_tech_* default) > productivity formula.
+		# History runs before on_startup, so an authored base_wage is already present here.
 		if = {
-			limit = {
-				check_variable = { productivity@token:subsistence_farm > subs_farm_productivity }
-			}
-			set_temp_variable = { subs_farm_productivity = productivity@token:subsistence_farm }
-		}
-
-		# Average of weighted productivity by available jobs
-		set_temp_variable = { base_wage_counting = 0 }
-		
-		for_each_loop = {
-			array = industries
-			value = bu_token
-
-			set_temp_variable = { jobs_wage_to_count = jobs_available@var:bu_token }
+			limit = { NOT = { has_variable = base_wage } }
 			if = {
-				limit = { check_variable = { productivity@var:bu_token > subs_farm_productivity } }
-				multiply_temp_variable = { jobs_wage_to_count = productivity@var:bu_token }
+				limit = { controller = { has_variable = base_wage } }
+				set_variable = { base_wage = controller:base_wage }
 			}
 			else = {
-				multiply_temp_variable = { jobs_wage_to_count = subs_farm_productivity }
+				base_wage_calculation = yes # productivity fallback (keeps legacy behaviour)
 			}
-			add_to_temp_variable = { base_wage_counting = jobs_wage_to_count }
 		}
+
+		base_wage_finalize = yes
+	}
+	base_wage_update = {
+		# State scope. Monthly floating wage: base_wage *= (1 + labor_pressure), clamped to +/-wage_change_cap.
+		# labor_pressure is piecewise on labor_utilization (jobs/workforce): rises >high, sticky-falls <low, flat between.
+		# Uses LAST tick's labor_utilization (employment_update runs later in the monthly flow) - deliberate one-tick lag.
+		# (Inflation pressure to be added here once the money-supply system provides a real inflation rate.)
+		if = {
+			limit = { check_variable = { industrial_workforce > 0 } }
+
+			# The multiply arg builds the change from 0 (the two util branches are mutually exclusive since
+			# high > low), clamps it, then +1 -> the growth factor applied to base_wage.
+			set_variable = { base_wage = {
+				value = base_wage
+				multiply = {
+					value = 0
+					if = {
+						limit = { value = labor_utilization  greater_than = global.wage_labor_util_high }
+						add = labor_utilization
+						subtract = global.wage_labor_util_high
+						multiply = global.wage_labor_gain_up
+					}
+					if = {
+						limit = { value = labor_utilization  less_than = global.wage_labor_util_low }
+						add = labor_utilization
+						subtract = global.wage_labor_util_low
+						multiply = global.wage_labor_gain_down
+					}
+					clamp = { min = { value = global.wage_change_cap  multiply = -1 }  max = global.wage_change_cap }
+					add = 1
+				}
+			} }
+		}
+
+		base_wage_finalize = yes
+	}
+	base_wage_finalize = {
+		# State scope. Applies the wage floor and derives per-type wages. Shared by seed + update.
+		# Floor = max(1, subsistence_productivity / 2). Laborers earn 2x base, so laborers floor at >= subsistence.
+		set_temp_variable = { wage_floor_temp = {
+			value = productivity@token:subsistence_farm
+			divide = 2
+			max = 1
+		} }
+		if = {
+			limit = { check_variable = { base_wage < wage_floor_temp } }
+			set_variable = { base_wage = wage_floor_temp }
+		}
+
+		set_variable = { laborers_wage = base_wage }
+		multiply_variable = { laborers_wage = global.wage_multiplier@token:laborers }
+
+		set_variable = { workers_wage = base_wage }
+		multiply_variable = { workers_wage = global.wage_multiplier@token:workers }
+
+		set_variable = { professionals_wage = base_wage }
+		multiply_variable = { professionals_wage = global.wage_multiplier@token:professionals }
+
+		set_variable = { specialists_wage = base_wage }
+		multiply_variable = { specialists_wage = global.wage_multiplier@token:specialists }
 	}
 
 	industry_get_highest_pm = {

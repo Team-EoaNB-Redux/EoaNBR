@@ -272,7 +272,7 @@
 				}
 				calculate_investment_appetite = yes
 				multiply_temp_variable = { p_pops_investment = investment_appetite_temp }
-				log = "[?current_pop_token.GetTokenKey] Investment: [?p_pops_investment] / [?p_pops_earnings] | [?investment_appetite_temp]"
+				#log = "[?current_pop_token.GetTokenKey] Investment: [?p_pops_investment] / [?p_pops_earnings] | [?investment_appetite_temp]"
 
 				subtract_from_temp_variable = { p_pops_earnings = p_pops_investment }
 			}
@@ -517,9 +517,9 @@
 			array = industries
 			value = bu_token
 
-			industry_update_size_jobs = yes
 			if = {
 				limit = { NOT = { check_variable = { bu_token = token:subsistence_farm } } }
+				industry_update_size_jobs = yes
 				
 				add_to_temp_variable = { e_laborers_jobs = i_laborers_jobs }
 				add_to_temp_variable = { e_laborers_jobs_available = i_laborers_jobs_available }
@@ -615,10 +615,33 @@
 		
 		set_variable = { available_workforce = pops_workforce }
 		subtract_from_variable = { available_workforce = pops_jobs_available }
-		
+
 		set_variable = { net_workforce = pops_workforce }
 		add_to_variable = { net_workforce = pops_jobs@token:peasants }
 		subtract_from_variable = { net_workforce = pops_jobs }
+
+		## LABOR UTILIZATION (drives floating wages in base_wage_update)
+		# Industrial pop types only: laborers, workers, professionals, specialists.
+		set_variable = { industrial_workforce = pops_workforce@token:laborers }
+		add_to_variable = { industrial_workforce = pops_workforce@token:workers }
+		add_to_variable = { industrial_workforce = pops_workforce@token:professionals }
+		add_to_variable = { industrial_workforce = pops_workforce@token:specialists }
+
+		set_variable = { industrial_jobs_available = pops_jobs_available@token:laborers }
+		add_to_variable = { industrial_jobs_available = pops_jobs_available@token:workers }
+		add_to_variable = { industrial_jobs_available = pops_jobs_available@token:professionals }
+		add_to_variable = { industrial_jobs_available = pops_jobs_available@token:specialists }
+
+		# Utilization = available jobs / workforce (effective employment/availability ratio).
+		# Neutral 0.97 (mid stable band) when there is no industrial workforce.
+		if = {
+			limit = { check_variable = { industrial_workforce > 0 } }
+			set_variable = { labor_utilization = industrial_jobs_available }
+			divide_variable = { labor_utilization = industrial_workforce }
+		}
+		else = {
+			set_variable = { labor_utilization = 0.97 }
+		}
 
 		## INDUSTRY EMPLOYMENT
 		for_each_loop = {
@@ -865,6 +888,7 @@
 			set_temp_variable = { first_percent_done = negative_change_total }
 			multiply_temp_variable = { first_percent_done = 10 }
 			divide_temp_variable = { first_percent_done = positive_change_total }
+			set_temp_variable = { scale_positive_temp = 1 } # More additions than removals: scale the additions down to match
 		}
 		else_if = {
 			limit = {
@@ -873,6 +897,7 @@
 			set_temp_variable = { first_percent_done = positive_change_total }
 			multiply_temp_variable = { first_percent_done = 10 }
 			divide_temp_variable = { first_percent_done = negative_change_total }
+			set_temp_variable = { scale_positive_temp = 0 } # More removals than additions: scale the REMOVALS down to match (else pops leak)
 		}
 
 
@@ -887,8 +912,14 @@
 				array = global.pops_array
 				value = pop_cvt_token
 
-				if = { limit = { check_variable = { pops_change@var:pop_cvt_token > 0 } } 
-					multiply_temp_variable = { pops_change@var:pop_cvt_token = first_percent_done } 
+				if = {
+					limit = {
+						OR = {
+							AND = { check_variable = { scale_positive_temp = 1 } check_variable = { pops_change@var:pop_cvt_token > 0 } }
+							AND = { NOT = { check_variable = { scale_positive_temp = 1 } } check_variable = { pops_change@var:pop_cvt_token < 0 } }
+						}
+					}
+					multiply_temp_variable = { pops_change@var:pop_cvt_token = first_percent_done }
 					round_temp_variable = pops_change@var:pop_cvt_token
 					divide_temp_variable = { pops_change@var:pop_cvt_token = 10 }
 				}
@@ -1031,6 +1062,26 @@
 				# if = { limit = { NOT = { check_variable = { soldiers_workforce = 0 } } }  log = "Soldiers Workforce: [?soldiers_workforce]" }
 				# log = "AFTER:"
 			#
+
+			# Guarantee exact pop conservation: scaling + qualification rounding can leave a small residual.
+			# Net change across all types must be zero; fold any residual into the largest-magnitude change.
+			set_temp_variable = { net_change_temp = 0 }
+			set_temp_variable = { max_change_mag_temp = -1 }
+			set_temp_variable = { max_change_token_temp = token:laborers }
+			for_each_loop = {
+				array = global.pops_array
+				value = pop_cvt_token
+
+				add_to_temp_variable = { net_change_temp = pops_change@var:pop_cvt_token }
+				set_temp_variable = { pops_mag_temp = pops_change@var:pop_cvt_token }
+				if = { limit = { check_variable = { pops_mag_temp < 0 } } multiply_temp_variable = { pops_mag_temp = -1 } }
+				if = {
+					limit = { check_variable = { pops_mag_temp > max_change_mag_temp } }
+					set_temp_variable = { max_change_mag_temp = pops_mag_temp }
+					set_temp_variable = { max_change_token_temp = pop_cvt_token }
+				}
+			}
+			subtract_from_temp_variable = { pops_change@var:max_change_token_temp = net_change_temp }
 
 			# Changes to Workforce
 			for_each_loop = {

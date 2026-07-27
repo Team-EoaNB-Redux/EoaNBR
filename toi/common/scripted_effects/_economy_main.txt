@@ -77,7 +77,7 @@ _country_advance_time = {
         on_monthly_pops = yes # Pop Finances & Growth
 
         industry_productivity_sort = yes
-        base_wage_calculation = yes
+        base_wage_update = yes # Floating wage: evolves base_wage from labor utilization + inflation (was base_wage_calculation)
         on_monthly_industry_ai = yes # Adjusts employment_target
 
         pops_balance = yes
@@ -614,12 +614,35 @@ on_monthly_pops = {
     pops_peasant_job_migration = yes
 }
 
+pops_test = {
+	set_temp_variable = { pops_workforce_temp = 0 }
+	for_each_loop = {
+		array = global.pops_array
+		value = pop_token
+
+		add_to_temp_variable = { pops_workforce_temp = pops_workforce@var:pop_token }
+	}
+	log = "Pops Actual/Ideal: [?pops_workforce_temp] | [?pops_workforce]"
+}
+
 pops_population_growth = {
 	# Adds additional population from between months
 	set_temp_variable = { pop_growth_temp = state_population_k }
 	subtract_from_temp_variable = { pop_growth_temp = pops }
 	multiply_temp_variable = { pop_growth_temp = pops_workforce_participation }
+	
+	# # Correcting from possible pop losses from lossy calculations
+	# NOTE: Unnecessary atm, but keeping the commented out version until further notice
+	# set_temp_variable = { pops_workforce_temp = 0 }
+	# for_each_loop = {
+	# 	array = global.pops_array
+	# 	value = pop_token
 
+	# 	add_to_temp_variable = { pops_workforce_temp = pops_workforce@var:pop_token }
+	# }
+
+	# add_to_temp_variable = { pop_growth_temp = pops_workforce }
+	# subtract_from_temp_variable = { pop_growth_temp = pops_workforce_temp }
 	add_to_variable = { pops_workforce = pop_growth_temp }
 	for_each_loop = {
 		array = global.pops_array
