@@ -29,41 +29,66 @@ scripted_gui = {
 		}
 
 		triggers = {
-			political_legitimacy_bar_arrow_left_visible = {
-				check_variable = { political_legitimacy > political_legitimacy_target }
-			}
-			political_legitimacy_bar_arrow_right_visible = {
-				check_variable = { political_legitimacy < political_legitimacy_target }
-			}
-			political_rigidity_bar_arrow_left_visible = {
-				check_variable = { political_rigidity > political_rigidity_target }
-			}
-			political_rigidity_bar_arrow_right_visible = {
-				check_variable = { political_rigidity < political_rigidity_target }
-			}
-			political_cohesion_bar_arrow_left_visible = {
-				check_variable = { political_cohesion > political_cohesion_target }
-			}
-			political_cohesion_bar_arrow_right_visible = {
-				check_variable = { political_cohesion < political_cohesion_target }
-			}
+			# Political Legitimacy
+				political_legitimacy_bar_arrow_left_visible = {
+					check_variable = { political_legitimacy > political_legitimacy_target }
+				}
+				political_legitimacy_bar_arrow_right_visible = {
+					check_variable = { political_legitimacy < political_legitimacy_target }
+				}
+				political_legitimacy_bar_very_low_visible = {
+					check_variable = { political_legitimacy < 20.01 }
+				}
+				political_legitimacy_bar_low_visible = {
+					check_variable = { political_legitimacy > 20.01 }
+					check_variable = { political_legitimacy < 40.01 }
+				}
+				political_legitimacy_bar_medium_visible = {
+					check_variable = { political_legitimacy > 40.01 }
+					check_variable = { political_legitimacy < 60.01 }
+				}
+				political_legitimacy_bar_high_visible = {
+					check_variable = { political_legitimacy > 60.01 }
+					check_variable = { political_legitimacy < 80.01 }
+				}
+				political_legitimacy_bar_very_high_visible = {
+					check_variable = { political_legitimacy > 80.01 }
+				}
+			#
+			# Political Rigidity
+				political_rigidity_bar_arrow_left_visible = {
+					check_variable = { political_rigidity > political_rigidity_target }
+				}
+				political_rigidity_bar_arrow_right_visible = {
+					check_variable = { political_rigidity < political_rigidity_target }
+				}
+			#
+			# Coalition Cohesion
+				political_cohesion_bar_arrow_left_visible = {
+					check_variable = { political_cohesion > political_cohesion_target }
+				}
+				political_cohesion_bar_arrow_right_visible = {
+					check_variable = { political_cohesion < political_cohesion_target }
+				}
+			#
 
-
-			selected_political_group_button_visible = {
-				NOT = { has_variable = internal_politics_overview_selected_party }
-			}
-			selected_political_group_button_visible = {
-				check_variable = { internal_politics_overview_selected_party  = v }
-			}
-			political_group_ruling_coalition_hue_visible = {
-				check_variable = { v = token:ruling_coalition }
-			}
-			political_group_oppositional_parties_hue_visible = {
-				check_variable = { v = token:oppositional_parties }
-			}
-			political_group_marginalized_parties_hue_visible = {
-				check_variable = { v = token:marginalized_parties }
-			}
+			#Political Groups
+				selected_political_group_button_visible = {
+					NOT = { has_variable = internal_politics_overview_selected_party }
+				}
+				selected_political_group_button_visible = {
+					check_variable = { internal_politics_overview_selected_party  = v }
+				}
+				political_group_ruling_coalition_hue_visible = {
+					check_variable = { v = token:ruling_coalition }
+				}
+				political_group_oppositional_parties_hue_visible = {
+					check_variable = { v = token:oppositional_parties }
+				}
+				political_group_marginalized_parties_hue_visible = {
+					check_variable = { v = token:marginalized_parties }
+				}
+			#
 		}
 
 		effects = {
@@ -97,30 +122,21 @@ scripted_gui = {
 			}
 			debug_overview5_click = {
 				update_political_legitimacy = yes
-				clear_array = politics_laws_array
-				add_to_array = { politics_laws_array = token:political_legitimacy_very_low }
-				add_to_array = { politics_laws_array = token:political_legitimacy_low }
-				add_to_array = { politics_laws_array = token:political_legitimacy_medium }
-				add_to_array = { politics_laws_array = token:political_legitimacy_high }
-				add_to_array = { politics_laws_array = token:political_legitimacy_very_high }
 				#clear_politics = yes 
 			}
 		} 
 
-		properties = { 
+		properties = {
+			# Political Legitimacy
+			political_legitimacy_icon = {
+				icon = "[GetPoliticalLegitimacyStatusIcon]"
+			}
 			political_legitimacy_positional_marker = {
 				x = ?political_legitimacy_x_position
-				frame = 2
+				frame = "[GetPoliticalLegitimacy]"
 			}
-			coalition_strength_trend_icon = {
-				image = "[GetCoalitionStrengthTrendInList]"
-			} 
-			political_group_strength_trend_icon = {
-				image = "[GetPoliticalGroupStrengthTrendInList]"
-			}
-			political_group_strength_progress_bar = { 
-				frame = strength@var:v
-				image = "[GetPoliticalGroupCoalitionStrengthBar]"
+			political_legitimacy_bar_very_low = {
+				frame = "Get"
 			}
 		}
 
@@ -160,7 +176,7 @@ scripted_gui = {
 			has_country_flag = internal_politics_laws_flag
 		}
 		effects = {
-			unselected_political_group_button_click = {
+			unselected_political_law_button_click = {
 
 				meta_effect = {
 					text = {
@@ -168,6 +184,18 @@ scripted_gui = {
 					}
 					institution_token = "[?v.GetTokenKey]"
 				}
+			}
+			selected_law_category_title_click = {
+				custom_effect_tooltip = idea_desc|political_legitimacy_medium
+			}
+
+			debug_overview5_click = {
+				clear_array = politics_laws_array
+				add_to_array = { politics_laws_array = token:political_legitimacy_very_low }
+				add_to_array = { politics_laws_array = token:political_legitimacy_low }
+				add_to_array = { politics_laws_array = token:political_legitimacy_medium }
+				add_to_array = { politics_laws_array = token:political_legitimacy_high }
+				add_to_array = { politics_laws_array = token:political_legitimacy_very_high }
 			}
 		}
 		dynamic_lists = {

@@ -1,4 +1,3 @@
-
 	# party_temp - <party_token> (Optional) Token for Party to be created.
 	# name_override_temp - <party_token> (Optional) Token for an override party name. Party value is still party_temp
 	# color_temp - <color_token> (Optional) Token for color used for party's symbol
@@ -117,12 +116,11 @@ add_party_to_country = {
 		set_temp_variable = { leader_temp = 0 }
 		set_temp_variable = { marginalized_temp = 0 }
 		set_temp_variable = { treasury_temp = 0 }
-		clear_temp_array = { interest_groups_temp = 0 }
+		clear_temp_array = interest_groups_temp
 		set_temp_variable = { ig_override_temp = 0 }
 	#
 }
 remove_party_from_country = {
-
 }
 add_ig_to_party = {
 
@@ -130,6 +128,7 @@ add_ig_to_party = {
 remove_ig_from_party = {
 
 }
+
 
 # Helper Effects
 	get_party_name_from_interest_groups = {
@@ -202,9 +201,7 @@ remove_ig_from_party = {
 			}
 			if = {
 				limit = {
-					check_variable = {
-						strength_perc@var:ig_temp > 0.075
-					}
+					check_variable = { strength_perc@var:ig_temp > 0.075 }
 				}
 				add_to_temp_variable = { ig_establishment_count = strength@var:ig_temp }
 			}
@@ -213,7 +210,7 @@ remove_ig_from_party = {
 			}
 		}
 		set_temp_variable = { total_temp = ig_institutional_count }
-		add_temp_variable = { total_temp = ig_ideological_count }
+		add_to_temp_variable = { total_temp = ig_ideological_count }
 		set_temp_variable = { divide_temp = ig_institutional_count }
 		set_temp_variable = { divide_temp = total_temp }
 		if = {
@@ -246,6 +243,7 @@ remove_ig_from_party = {
 		
 		log = "[?type_temp.GetTokenLocalizedKey] selected from interest_groups_temp"
 	}
+
 	get_party_color_from_interest_groups = {
 		# interest_groups_temp - list of <ig_token> - (Required)
 
@@ -1586,7 +1584,7 @@ reset_politics_overview = {
 			check_variable = { parties@token:oppositional_parties^num > 0 }
 		}
 		set_variable = { political_overview_open@token:oppositional_parties = 1 }
-		add_to_array = { 
+		add_to_array = {
 			array = politics_overview_array
 			value = token:oppositional_parties
 		}
@@ -1628,7 +1626,6 @@ reset_politics_overview = {
 		}
 	}
 }
-
 generate_parties = {
 	clear_array =  parties_array
 
@@ -1997,82 +1994,83 @@ reset_internal_politics = {
 	update_political_legitimacy = {
 		set_variable = { political_legitimacy_target = modifier@political_legitimacy_modifier }
 
-		add_to_variable = { political_legitimacy = political_legitimacy_drift }
-
-		set_variable = { political_legitimacy_x_position = political_legitimacy }
-		multiply_variable = { political_legitimacy_x_position = 2.55 }
-
+		if = {
+			limit = {
+				set_temp_variable = {
+					political_legitimacy2 = {
+						value = political_legitimacy_target
+						subtract = political_legitimacy
+						round = yes
+					}
+				}
+				check_variable = { political_legitimacy2 = 0 }
+			}
+			set_variable = { political_legitimacy = political_legitimacy_target }
+		}
+		else = {
+			add_to_variable = { political_legitimacy = political_legitimacy_drift }
+		}
+		clamp_variable = {
+			var = political_legitimacy
+			min = 0
+			max = 100
+		}
 		update_political_legitimacy_drift = yes
 	}
 	update_political_legitimacy_drift = {
-		set_variable = { political_legitimacy_drift = political_legitimacy_target }
-		subtract_from_variable = { political_legitimacy_drift = political_legitimacy }
-		divide_variable = { political_legitimacy_drift = 12 }
+		set_variable = {
+			political_legitimacy_drift = {
+				value = political_legitimacy_target
+				subtract = political_legitimacy
+				if = {
+					limit = { value = political_legitimacy greater_than = political_legitimacy_target }
+					multiply = -1
+				}
+				root = 2
+				divide = 6
+				if = {
+					limit = { value = political_legitimacy greater_than = political_legitimacy_target }
+					multiply = -1
+				}
+			}
+		}
+		set_variable = {
+			political_legitimacy_x_position = {
+				value = political_legitimacy
+				multiply = 2.55
+				add = 10
+			}
+		}
 
-		if = {
-			limit = {
-				check_variable = { political_legitimacy_drift > 0 }
-			}
-			clamp_variable = {
-				var = political_legitimacy_drift
-				min = 0.025
-				max = 0.5
-			}
-			if = {
-				limit = {
-					set_temp_variable = { political_legitimacy_target_2 = political_legitimacy }
-					add_to_temp_variable = { political_legitimacy_target_2 = political_legitimacy_drift }
-					check_variable = { political_legitimacy_target_2 > political_legitimacy_target }
-				}
-				set_variable = { political_legitimacy_drift = political_legitimacy_target }
-				subtract_from_variable = { political_legitimacy_drift = political_legitimacy }
-			}
-		}
-		else_if = {
-			limit = {
-				check_variable = { political_legitimacy_drift < 0 }
-			}
-			clamp_variable = {
-				var = political_legitimacy_drift
-				min = -0.5
-				max = -0.025
-			}
-			if = {
-				limit = {
-					set_temp_variable = { political_legitimacy_target_2 = political_legitimacy }
-					add_to_temp_variable = { political_legitimacy_target_2 = political_legitimacy_drift }
-					check_variable = { political_legitimacy_target_2 < political_legitimacy_target }
-				}
-				set_variable = { political_legitimacy_drift = political_legitimacy_target }
-				subtract_from_variable = { political_legitimacy_drift = political_legitimacy }
-			}
-		}
 
 		if = {
 			limit = { check_variable = { political_legitimacy < 20.01 } }
 			if = {
-				limit = { has_ideas = political_legitimacy_low }
+				limit = { has_idea = political_legitimacy_very_low }
+			}
+			else_if = {
+				limit = { has_idea = political_legitimacy_low }
 				swap_ideas = {
 					add_idea = political_legitimacy_very_low
 					remove_idea = political_legitimacy_low
 				}
 			}
 			else_if = {
-				limit = { has_ideas = political_legitimacy_medium }
+				limit = { has_idea = political_legitimacy_medium }
 				swap_ideas = {
 					add_idea = political_legitimacy_very_low
 					remove_idea = political_legitimacy_medium
 				}
 			}
 			else_if = {
-				limit = { has_ideas = political_legitimacy_high }
+				limit = { has_idea = political_legitimacy_high }
 				swap_ideas = {
 					add_idea = political_legitimacy_very_low
 					remove_idea = political_legitimacy_high
 				}
 			}
 			else_if = {
-				limit = { has_ideas = political_legitimacy_very_high }
+				limit = { has_idea = political_legitimacy_very_high }
 				swap_ideas = {
 					add_idea = political_legitimacy_very_low
 					remove_idea = political_legitimacy_very_high
@@ -2082,28 +2080,31 @@ reset_internal_politics = {
 		else_if = {
 			limit = { check_variable = { political_legitimacy < 40.01 } }
 			if = {
-				limit = { has_ideas = political_legitimacy_very_low }
+				limit = { has_idea = political_legitimacy_low }
+			}
+			else_if = {
+				limit = { has_idea = political_legitimacy_very_low }
 				swap_ideas = {
 					add_idea = political_legitimacy_low
 					remove_idea = political_legitimacy_very_low
 				}
 			}
 			else_if = {
-				limit = { has_ideas = political_legitimacy_medium }
+				limit = { has_idea = political_legitimacy_medium }
 				swap_ideas = {
 					add_idea = political_legitimacy_low
 					remove_idea = political_legitimacy_medium
 				}
 			}
 			else_if = {
-				limit = { has_ideas = political_legitimacy_high }
+				limit = { has_idea = political_legitimacy_high }
 				swap_ideas = {
 					add_idea = political_legitimacy_low
 					remove_idea = political_legitimacy_high
 				}
 			}
 			else_if = {
-				limit = { has_ideas = political_legitimacy_very_high }
+				limit = { has_idea = political_legitimacy_very_high }
 				swap_ideas = {
 					add_idea = political_legitimacy_low
 					remove_idea = political_legitimacy_very_high
@@ -2113,28 +2114,31 @@ reset_internal_politics = {
 		else_if = {
 			limit = { check_variable = { political_legitimacy < 60.01 } }
 			if = {
-				limit = { has_ideas = political_legitimacy_very_low }
+				limit = { has_idea = political_legitimacy_medium }
+			}
+			else_if = {
+				limit = { has_idea = political_legitimacy_very_low }
 				swap_ideas = {
 					add_idea = political_legitimacy_medium
 					remove_idea = political_legitimacy_very_low
 				}
 			}
 			else_if = {
-				limit = { has_ideas = political_legitimacy_low }
+				limit = { has_idea = political_legitimacy_low }
 				swap_ideas = {
 					add_idea = political_legitimacy_medium
 					remove_idea = political_legitimacy_low
 				}
 			}
 			else_if = {
-				limit = { has_ideas = political_legitimacy_high }
+				limit = { has_idea = political_legitimacy_high }
 				swap_ideas = {
 					add_idea = political_legitimacy_medium
 					remove_idea = political_legitimacy_high
 				}
 			}
 			else_if = {
-				limit = { has_ideas = political_legitimacy_very_high }
+				limit = { has_idea = political_legitimacy_very_high }
 				swap_ideas = {
 					add_idea = political_legitimacy_medium
 					remove_idea = political_legitimacy_very_high
@@ -2144,28 +2148,31 @@ reset_internal_politics = {
 		else_if = {
 			limit = { check_variable = { political_legitimacy < 80.01 } }
 			if = {
-				limit = { has_ideas = political_legitimacy_very_low }
+				limit = { has_idea = political_legitimacy_high }
+			}
+			else_if = {
+				limit = { has_idea = political_legitimacy_very_low }
 				swap_ideas = {
 					add_idea = political_legitimacy_high
 					remove_idea = political_legitimacy_very_low
 				}
 			}
 			else_if = {
-				limit = { has_ideas = political_legitimacy_low }
+				limit = { has_idea = political_legitimacy_low }
 				swap_ideas = {
 					add_idea = political_legitimacy_high
 					remove_idea = political_legitimacy_low
 				}
 			}
 			else_if = {
-				limit = { has_ideas = political_legitimacy_medium }
+				limit = { has_idea = political_legitimacy_medium }
 				swap_ideas = {
 					add_idea = political_legitimacy_high
 					remove_idea = political_legitimacy_medium
 				}
 			}
 			else_if = {
-				limit = { has_ideas = political_legitimacy_very_high }
+				limit = { has_idea = political_legitimacy_very_high }
 				swap_ideas = {
 					add_idea = political_legitimacy_high
 					remove_idea = political_legitimacy_very_high
@@ -2174,28 +2181,31 @@ reset_internal_politics = {
 		}
 		else = {
 			if = {
-				limit = { has_ideas = political_legitimacy_very_low }
+				limit = { has_idea = political_legitimacy_very_high }
+			}
+			else_if = {
+				limit = { has_idea = political_legitimacy_very_low }
 				swap_ideas = {
 					add_idea = political_legitimacy_very_high
 					remove_idea = political_legitimacy_very_low
 				}
 			}
 			else_if = {
-				limit = { has_ideas = political_legitimacy_low }
+				limit = { has_idea = political_legitimacy_low }
 				swap_ideas = {
 					add_idea = political_legitimacy_very_high
 					remove_idea = political_legitimacy_low
 				}
 			}
 			else_if = {
-				limit = { has_ideas = political_legitimacy_medium }
+				limit = { has_idea = political_legitimacy_medium }
 				swap_ideas = {
 					add_idea = political_legitimacy_very_high
 					remove_idea = political_legitimacy_medium
 				}
 			}
 			else_if = {
-				limit = { has_ideas = political_legitimacy_very_high }
+				limit = { has_idea = political_legitimacy_very_high }
 				swap_ideas = {
 					add_idea = political_legitimacy_very_high
 					remove_idea = political_legitimacy_high
@@ -2217,7 +2227,5 @@ reset_internal_politics = {
 			max = 100
 		}
 		
-		set_variable = { political_legitimacy_x_position = political_legitimacy }
-		multiply_variable = { political_legitimacy_x_position = 2.55 }
 		update_political_legitimacy_drift = yes
 	}
