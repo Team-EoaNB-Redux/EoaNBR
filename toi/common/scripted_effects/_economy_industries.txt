@@ -263,113 +263,109 @@
 	industry_update_employment = {
 		# Employment
 		set_temp_variable = { i_employment_target = employment_target@var:bu_token }
-		set_temp_variable = { i_employed = 0 }
 
-		set_temp_variable = { i_pop_jobs = laborers_jobs@var:bu_token }
-		set_temp_variable = { i_pop_token = token:laborers }
-		industry_update_employment_pop_type = yes
-		set_variable = { laborers_employed@var:bu_token = i_pop_employed }
-		add_to_temp_variable = { i_employed = i_pop_employed }
+		set_variable = {
+			laborers_employed@var:bu_token = {
+				value = 0
+				if = { limit = { value = laborers_jobs@var:bu_token greater_than = 0 }
+					add = laborers_jobs@var:bu_token
+					multiply = i_employment_target
+					divide = 100
+					multiply = job_fulfillment@token:laborers
+					divide = 100
+				}
+			}
+		}
 
-		set_temp_variable = { i_pop_jobs = workers_jobs@var:bu_token }
-		set_temp_variable = { i_pop_token = token:workers }
-		industry_update_employment_pop_type = yes
-		set_variable = { workers_employed@var:bu_token = i_pop_employed }
-		add_to_temp_variable = { i_employed = i_pop_employed }
-
-		set_temp_variable = { i_pop_jobs = professionals_jobs@var:bu_token }
-		set_temp_variable = { i_pop_token = token:professionals }
-		industry_update_employment_pop_type = yes
-		set_variable = { professionals_employed@var:bu_token = i_pop_employed }
-		add_to_temp_variable = { i_employed = i_pop_employed }
-
-		set_temp_variable = { i_pop_jobs = specialists_jobs@var:bu_token }
-		set_temp_variable = { i_pop_token = token:specialists }
-		industry_update_employment_pop_type = yes
-		set_variable = { specialists_employed@var:bu_token = i_pop_employed }
-		add_to_temp_variable = { i_employed = i_pop_employed }
+		set_variable = {
+			workers_employed@var:bu_token = {
+				value = 0
+				if = { limit = { value = workers_jobs@var:bu_token greater_than = 0 }
+					add = workers_jobs@var:bu_token
+					multiply = i_employment_target
+					divide = 100
+					multiply = job_fulfillment@token:workers
+					divide = 100
+				}
+			}
+		}
 		
-		set_variable = { employed@var:bu_token = i_employed }
+		set_variable = {
+			professionals_employed@var:bu_token = {
+				value = 0
+				if = { limit = { value = professionals_jobs@var:bu_token greater_than = 0 }
+					add = professionals_jobs@var:bu_token
+					multiply = i_employment_target
+					divide = 100
+					multiply = job_fulfillment@token:professionals
+					divide = 100
+				}
+			}
+		}
+		
+		set_variable = {
+			specialists_employed@var:bu_token = {
+				value = 0
+				if = { limit = { value = specialists_jobs@var:bu_token greater_than = 0 }
+					add = specialists_jobs@var:bu_token
+					multiply = i_employment_target
+					divide = 100
+					multiply = job_fulfillment@token:specialists
+					divide = 100
+				}
+			}
+		}
+		
+		set_variable = { employed@var:bu_token = {
+			value = laborers_employed@var:bu_token
+			add = workers_employed@var:bu_token
+			add = professionals_employed@var:bu_token
+			add = specialists_employed@var:bu_token
+		} }
 
 		#Employment/Production Percentage
-		set_temp_variable = { i_employment_percentage = i_employed }
-		if = {
-			limit = {
-				check_variable = { i_employed < 1000 }
-			}
-			multiply_temp_variable = { i_employment_percentage = 100 }
-			divide_temp_variable = { i_employment_percentage = jobs@var:bu_token }
-		}
-		else = {
-			divide_temp_variable = { i_employment_percentage = jobs@var:bu_token }
-			multiply_temp_variable = { i_employment_percentage = 100 }
-		}
-		set_variable = { employment_percentage@var:bu_token = i_employment_percentage }
-
-		set_temp_variable = { total_prod_temp = 0 }
-		set_temp_variable = { production_temp = laborers_employed@var:bu_token }
-		multiply_temp_variable = { production_temp = 2 }
-		add_to_temp_variable = { total_prod_temp = production_temp }
-		set_temp_variable = { production_temp = workers_employed@var:bu_token }
-		multiply_temp_variable = { production_temp = 5 }
-		add_to_temp_variable = { total_prod_temp = production_temp }
-		set_temp_variable = { production_temp = professionals_employed@var:bu_token }
-		multiply_temp_variable = { production_temp = 10 }
-		add_to_temp_variable = { total_prod_temp = production_temp }
-		set_temp_variable = { production_temp = specialists_employed@var:bu_token }
-		multiply_temp_variable = { production_temp = 20 }
-		add_to_temp_variable = { total_prod_temp = production_temp }
-		if = {
-			limit = {
-				check_variable = { total_prod_temp > 10000 }
-			}
-			divide_temp_variable = { total_prod_temp = payroll_multiplier@var:bu_token }
-			divide_temp_variable = { total_prod_temp = size@var:bu_token }
-			multiply_temp_variable = { total_prod_temp = 100 }
-		}
-		else = {
-			multiply_temp_variable = { total_prod_temp = 100 }
-			divide_temp_variable = { total_prod_temp = payroll_multiplier@var:bu_token }
-			divide_temp_variable = { total_prod_temp = size@var:bu_token }
-		}
-		if = {
-			limit = { NOT = { check_variable = { production_percentage@var:bu_token = total_prod_temp } } }
-			set_variable = { industry_dirty_var@var:bu_token = 1 }
-		}
-		
-		set_variable = { production_percentage@var:bu_token = total_prod_temp }
-	}
-	
-	industry_update_employment_pop_type = {
-		# Inputs:
-		# - i_pop_token
-		# - i_pop_jobs
-		# - i_employment_target
-
-		if = {
-			limit = {
-				check_variable = { i_pop_jobs > 0 }
-			}
-			if = {
-				limit = {
-					check_variable = { i_pop_jobs > 10000 }
+		set_temp_variable = {
+			total_prod_temp = {
+				value = 0
+				add = {
+					value = laborers_employed@var:bu_token
+					multiply = 2
 				}
-				set_temp_variable = { i_pop_employed = i_pop_jobs }
-				divide_temp_variable = { i_pop_employed = 100 }
-				multiply_temp_variable = { i_pop_employed = i_employment_target }
-				divide_temp_variable = { i_pop_employed = 100 }
-				multiply_temp_variable = { i_pop_employed = job_fulfillment@var:i_pop_token }
-			}
-			else = {
-				set_temp_variable = { i_pop_employed = i_pop_jobs }
-				multiply_temp_variable = { i_pop_employed = i_employment_target }
-				divide_temp_variable = { i_pop_employed = 100 }
-				multiply_temp_variable = { i_pop_employed = job_fulfillment@var:i_pop_token }
-				divide_temp_variable = { i_pop_employed = 100 }
+				add = {
+					value = workers_employed@var:bu_token
+					multiply = 5
+				}
+				add = {
+					value = professionals_employed@var:bu_token
+					multiply = 10
+				}
+				add = {
+					value = specialists_employed@var:bu_token
+					multiply = 20
+				}
+				divide = payroll_multiplier@var:bu_token
+				divide = size@var:bu_token
+				clamp = { min = 0 max = 1 }
 			}
 		}
-		else = {
-			set_temp_variable = { i_pop_employed = 0 }
+		set_variable = { 
+			employment_percentage@var:bu_token = {
+				value = total_prod_temp
+				multiply = 100
+			} 
+		}
+		set_variable = {
+			production_percentage@var:bu_token = {
+				value = total_prod_temp
+				multiply = {
+					value = 120
+					subtract = {
+						value = total_prod_temp
+						pow = 3
+						multiply = 20
+					}
+				}
+			}
 		}
 	}
 
@@ -654,7 +650,7 @@
 			multiply_variable = { expenses_industrial_capacity@var:bu_token = price_industrial_capacity }
 
 			set_variable = { expenses_payroll@var:bu_token = size@var:bu_token }
-			multiply_variable = { expenses_payroll@var:bu_token = production_percentage@var:bu_token }
+			multiply_variable = { expenses_payroll@var:bu_token = employment_percentage@var:bu_token }
 			divide_variable = { expenses_payroll@var:bu_token = 100 }
 			multiply_variable = { expenses_payroll@var:bu_token = base_wage }
 			multiply_variable = { expenses_payroll@var:bu_token = payroll_multiplier@var:bu_token }
@@ -682,7 +678,7 @@
 				multiply_temp_variable = { bonus_total = 0.33 }
 
 				set_temp_variable = { i_divisor_temp = i_size }
-				multiply_temp_variable = { i_divisor_temp = production_percentage@var:bu_token }
+				multiply_temp_variable = { i_divisor_temp = employment_percentage@var:bu_token }
 				divide_temp_variable = { i_divisor_temp = 100 }
 				multiply_temp_variable = { i_divisor_temp = payroll_multiplier@var:bu_token }
 
@@ -1364,148 +1360,102 @@
 
 		set_variable = { employment_target@var:bu_token = 100 }
 
-		if = { # Laborers
-			limit = {
-				check_variable = { laborers_jobs@var:bu_token > 0 }
-			}
-			if = {
-				limit = {
-					check_variable = { laborers_jobs@var:bu_token > 10000 }
+		set_variable = {
+			laborers_employed@var:bu_token = {
+				value = 0
+				if = { limit = { value = laborers_jobs@var:bu_token greater_than = 0 }
+					add = laborers_jobs@var:bu_token
+					multiply = job_fulfillment@token:laborers
+					divide = 100
 				}
-				set_variable = { laborers_employed@var:bu_token = laborers_jobs@var:bu_token }
-				divide_variable = { laborers_employed@var:bu_token = 100 }
-				multiply_variable = { laborers_employed@var:bu_token = job_fulfillment@token:laborers }
 			}
-			else = {
-				set_variable = { laborers_employed@var:bu_token = laborers_jobs@var:bu_token }
-				multiply_variable = { laborers_employed@var:bu_token = job_fulfillment@token:laborers }
-				divide_variable = { laborers_employed@var:bu_token = 100 }
-			}
-
-			add_to_variable = { jobs@var:bu_token = laborers_jobs@var:bu_token }
-			add_to_variable = { employed@var:bu_token = laborers_employed@var:bu_token }
-		}
-		else = {
-			set_variable = { laborers_employed@var:bu_token = 0 }
 		}
 
-		if = { # Workers
-			limit = {
-				check_variable = { workers_jobs@var:bu_token > 0 }
-			}
-			if = {
-				limit = {
-					check_variable = { workers_jobs@var:bu_token > 10000 }
+		set_variable = {
+			workers_employed@var:bu_token = {
+				value = 0
+				if = { limit = { value = workers_jobs@var:bu_token greater_than = 0 }
+					add = workers_jobs@var:bu_token
+					multiply = job_fulfillment@token:workers
+					divide = 100
 				}
-				set_variable = { workers_employed@var:bu_token = workers_jobs@var:bu_token }
-				divide_variable = { workers_employed@var:bu_token = 100 }
-				multiply_variable = { workers_employed@var:bu_token = job_fulfillment@token:workers }
 			}
-			else = {
-				set_variable = { workers_employed@var:bu_token = workers_jobs@var:bu_token }
-				multiply_variable = { workers_employed@var:bu_token = job_fulfillment@token:workers }
-				divide_variable = { workers_employed@var:bu_token = 100 }
-			}
-
-			add_to_variable = { jobs@var:bu_token = workers_jobs@var:bu_token }
-			add_to_variable = { employed@var:bu_token = workers_employed@var:bu_token }
 		}
-		else = {
-			set_variable = { workers_employed@var:bu_token = 0 }
-		}
-
-		if = { # Professionals
-			limit = {
-				check_variable = { professionals_jobs@var:bu_token > 0 }
-			}
-			if = {
-				limit = {
-					check_variable = { professionals_jobs@var:bu_token > 10000 }
+		
+		set_variable = {
+			professionals_employed@var:bu_token = {
+				value = 0
+				if = { limit = { value = professionals_jobs@var:bu_token greater_than = 0 }
+					add = professionals_jobs@var:bu_token
+					multiply = job_fulfillment@token:professionals
+					divide = 100
 				}
-				set_variable = { professionals_employed@var:bu_token = professionals_jobs@var:bu_token }
-				divide_variable = { professionals_employed@var:bu_token = 100 }
-				multiply_variable = { professionals_employed@var:bu_token = job_fulfillment@token:professionals }
 			}
-			else = {
-				set_variable = { professionals_employed@var:bu_token = professionals_jobs@var:bu_token }
-				multiply_variable = { professionals_employed@var:bu_token = job_fulfillment@token:professionals }
-				divide_variable = { professionals_employed@var:bu_token = 100 }
-			}
-
-			add_to_variable = { jobs@var:bu_token = professionals_jobs@var:bu_token }
-			add_to_variable = { employed@var:bu_token = professionals_employed@var:bu_token }
 		}
-		else = {
-			set_variable = { professionals_employed@var:bu_token = 0 }
-		}
-
-		if = { # Specialists
-			limit = {
-				check_variable = { specialists_jobs@var:bu_token > 0 }
-			}
-			if = {
-				limit = {
-					check_variable = { specialists_jobs@var:bu_token > 10000 }
+		
+		set_variable = {
+			specialists_employed@var:bu_token = {
+				value = 0
+				if = { limit = { value = specialists_jobs@var:bu_token greater_than = 0 }
+					add = specialists_jobs@var:bu_token
+					multiply = job_fulfillment@token:specialists
+					divide = 100
 				}
-				set_variable = { specialists_employed@var:bu_token = specialists_jobs@var:bu_token }
-				divide_variable = { specialists_employed@var:bu_token = 100 }
-				multiply_variable = { specialists_employed@var:bu_token = job_fulfillment@token:specialists }
 			}
-			else = {
-				set_variable = { specialists_employed@var:bu_token = specialists_jobs@var:bu_token }
-				multiply_variable = { specialists_employed@var:bu_token = job_fulfillment@token:specialists }
-				divide_variable = { specialists_employed@var:bu_token = 100 }
-			}
-
-			add_to_variable = { jobs@var:bu_token = specialists_jobs@var:bu_token }
-			add_to_variable = { employed@var:bu_token = specialists_employed@var:bu_token }
 		}
-		else = {
-			set_variable = { specialists_employed@var:bu_token = 0 }
-		}
+		
+		set_variable = { employed@var:bu_token = {
+			value = laborers_employed@var:bu_token
+			add = workers_employed@var:bu_token
+			add = professionals_employed@var:bu_token
+			add = specialists_employed@var:bu_token
+		} }
 
 		#Employment/Production Percentage
-			set_variable = { employment_percentage@var:bu_token = employed@var:bu_token }
-			if = {
-				limit = {
-					check_variable = { employment_percentage@var:bu_token < 1000 }
-				}
-				multiply_variable = { employment_percentage@var:bu_token = 100 }
-				divide_variable = { employment_percentage@var:bu_token = jobs@var:bu_token }
-			}
-			else = {
-				divide_variable = { employment_percentage@var:bu_token = jobs@var:bu_token }
-				multiply_variable = { employment_percentage@var:bu_token = 100 }
-			}
 
-			set_temp_variable = { total_prod_temp = 0 }
-			set_temp_variable = { production_temp = laborers_employed@var:bu_token }
-			multiply_temp_variable = { production_temp = 2 }
-			add_to_temp_variable = { total_prod_temp = production_temp }
-			set_temp_variable = { production_temp = workers_employed@var:bu_token }
-			multiply_temp_variable = { production_temp = 5 }
-			add_to_temp_variable = { total_prod_temp = production_temp }
-			set_temp_variable = { production_temp = professionals_employed@var:bu_token }
-			multiply_temp_variable = { production_temp = 10 }
-			add_to_temp_variable = { total_prod_temp = production_temp }
-			set_temp_variable = { production_temp = specialists_employed@var:bu_token }
-			multiply_temp_variable = { production_temp = 20 }
-			add_to_temp_variable = { total_prod_temp = production_temp }
-			if = {
-				limit = {
-					check_variable = { total_prod_temp > 10000 }
+		set_temp_variable = {
+			total_prod_temp = {
+				value = 0
+				add = {
+					value = laborers_employed@var:bu_token
+					multiply = 2
 				}
-				divide_temp_variable = { total_prod_temp = payroll_multiplier@var:bu_token }
-				divide_temp_variable = { total_prod_temp = size@var:bu_token }
-				multiply_temp_variable = { total_prod_temp = 100 }
+				add = {
+					value = workers_employed@var:bu_token
+					multiply = 5
+				}
+				add = {
+					value = professionals_employed@var:bu_token
+					multiply = 10
+				}
+				add = {
+					value = specialists_employed@var:bu_token
+					multiply = 20
+				}
+				divide = payroll_multiplier@var:bu_token
+				divide = size@var:bu_token
+				clamp = { min = 0 max = 1 }
 			}
-			else = {
-				multiply_temp_variable = { total_prod_temp = 100 }
-				divide_temp_variable = { total_prod_temp = payroll_multiplier@var:bu_token }
-				divide_temp_variable = { total_prod_temp = size@var:bu_token }
+		}
+		set_variable = { 
+			employment_percentage@var:bu_token = {
+				value = total_prod_temp
+				multiply = 100
+			} 
+		}
+		set_variable = {
+			production_percentage@var:bu_token = {
+				value = total_prod_temp
+				multiply = {
+					value = 120
+					subtract = {
+						value = total_prod_temp
+						pow = 3
+						multiply = 20
+					}
+				}
 			}
-			set_variable = { production_percentage@var:bu_token = total_prod_temp }
-		#
+		}
 
 		#Capacities
 			set_variable = { industrial_capacity_use@var:bu_token = controller:pm_industrial_capacity_use@var:production_method_temp }
@@ -1552,7 +1502,7 @@
 			multiply_variable = { expenses_industrial_capacity@var:bu_token = price_industrial_capacity }
 
 			set_variable = { expenses_payroll@var:bu_token = size@var:bu_token }
-			multiply_variable = { expenses_payroll@var:bu_token = production_percentage@var:bu_token }
+			multiply_variable = { expenses_payroll@var:bu_token = employment_percentage@var:bu_token }
 			divide_variable = { expenses_payroll@var:bu_token = 100 }
 			multiply_variable = { expenses_payroll@var:bu_token = base_wage }
 			multiply_variable = { expenses_payroll@var:bu_token = payroll_multiplier@var:bu_token }
