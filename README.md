@@ -68,7 +68,7 @@ Here's a useful installation video by one of our lead developers, Vanadium:
 
 If you would like to work on the mod but do not wish to apply for the team, you are free to fork the repository and modify it, and redistribute it for private use. Content of EoaNBR is licensed under the `GNU General Public License 3.0`, which means you have to alert users you are redistributing a modified, unofficial version of EoaNBR.
 
-We do not tolerate using content developed for EoaNBR for other purposes. Any other source doing such things without our explicit permision and/or are claiming ownership/profiting from our work may be liable to legal disputes.
+We do not tolerate using content developed for EoaNBR for other purposes. Any other source doing such things without our explicit permission and/or are claiming ownership/profiting from our work may be liable to legal disputes.
 
 <hr>
 
@@ -99,10 +99,10 @@ If you wish to contribute to the development of the mod, support us on Patreon o
 
 ### Rules for Developers
 - Current General Development for EoaNBR shall be pushed onto the `Fine-et-Fide-(0.4)` branch.
-- All code should be error-checked before pushed onto the Github
-- Merging should be done carefully and procedurely. Do not override other developers' work without acknowledgment of the team.
+- All code should be error-checked before pushed onto the Github.
+- Merging should be done carefully and procedurally. Do not override other developers' work without acknowledgment of the team.
 - If procedural pushing (including incomplete content) is crucial to development, request a new branch.
-- Merging any branch into the master branch (the distributed branch) will require a pull request which can only be initialised by a *Centurion*, and requires the approval of at least another Centurion. Errors are to be checked and minimalised by the Centurion who does the request.
+- Merging any branch into the master branch (the distributed branch) will require a pull request which can only be initialized by a *Centurion*, and requires the approval of at least another Centurion. Errors are to be checked and minimalized by the Centurion who does the request.
 
 ### Meet the Lead-Developers
 *aka Senatores*
@@ -115,6 +115,10 @@ If you wish to contribute to the development of the mod, support us on Patreon o
 <td align="center">
   <p><img src="https://avatars.githubusercontent.com/u/67757372?v=4" width="80px;" alt="Vanadium"/></p>
   <p><a href = "https://github.com/vanaidum-oxide"><strong>Vanadium</strong></a></p>
+</td>
+<td align="center">
+  <p><img src="https://avatars.githubusercontent.com/u/37280112?v=4" width="80px;" alt="Strat"/></p>
+  <p><a href = "https://github.com/Strategy-Gamer"><strong>Strat</strong></a></p>
 </td>
 <td align="center">
   <p><img src="https://avatars.githubusercontent.com/u/74386084?v=4" width="80px;" alt="Mountain"/></p>
