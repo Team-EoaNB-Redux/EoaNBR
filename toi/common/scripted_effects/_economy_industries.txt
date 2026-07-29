@@ -715,29 +715,8 @@
 				set_variable = { specialists_bonuses@var:bu_token = 0 }
 			}
 
-			# Money Accumulation
-			set_variable = { money_accumulation@var:bu_token = profit@var:bu_token }
-			divide_variable = { money_accumulation@var:bu_token = 2 }
-			set_variable = { dividends@var:bu_token = profit@var:bu_token }
-			divide_variable = { dividends@var:bu_token = 2 }
-
-			set_temp_variable = { money_temp = money@var:bu_token }
-			add_to_temp_variable = { money_temp = money_accumulation@var:bu_token }
-			if = {
-				limit = {
-					check_variable = { money_temp > money_limit@var:bu_token }
-				}
-				subtract_from_temp_variable = { money_temp = money_limit@var:bu_token }
-				subtract_from_variable = { money_accumulation@var:bu_token = money_temp }
-				add_to_variable = { dividends@var:bu_token = money_temp }
-			}
-			if = {
-				limit = {
-					check_variable = { money_temp < 0 }
-				}
-				subtract_from_variable = { money_accumulation@var:bu_token = money_temp }
-				add_to_variable = { dividends@var:bu_token = money_temp }
-			}
+			# (Money accumulation, dividends & downsizing are computed below, after asset_value - the downsize
+			# amount needs it.)
 
 			# Profitability
 			set_variable = { profitability@var:bu_token = profit@var:bu_token }
@@ -780,6 +759,80 @@
 			multiply_temp_variable = { asset_value_temp = asset_mult_temp }
 
 			set_variable = { asset_value@var:bu_token = asset_value_temp }
+
+			# Money Accumulation, Dividends & Downsizing plan
+			# money_accumulation is applied to money@bu (cash reserves) next tick in on_monthly_industries;
+			# downsize_amount@bu is executed there too. dividends@bu routes to owner pops in industries_update.
+			set_variable = { downsize_amount@var:bu_token = 0 }
+			if = {
+				limit = { check_variable = { profit@var:bu_token < 0 } }
+				# Unprofitable: draw the FULL loss from cash reserves, and pay NO negative dividends while cash covers it.
+				set_variable = { money_accumulation@var:bu_token = profit@var:bu_token }
+				set_variable = { dividends@var:bu_token = 0 }
+
+				set_temp_variable = { cash_after_temp = money@var:bu_token }
+				add_to_temp_variable = { cash_after_temp = profit@var:bu_token }
+				if = {
+					limit = { check_variable = { cash_after_temp < 0 } }
+					# Cash can't cover the loss this tick. Downsize if the plant is under-utilised enough
+					# (employment_target <= 75) AND has locally-owned capacity worth scrapping (RGOs flip active extraction to known reserves);
+					# otherwise the owners cover the shortfall as negative dividends.
+					if = {
+						limit = {
+							NOT = { check_variable = { employment_target@var:bu_token > 75 } }
+							check_variable = { owner_sizes_local@var:bu_token > 0 } # companies downsize at the company level
+							check_variable = { asset_value@var:bu_token > 0 }
+						}
+						# Downsize LOCAL capacity (creative destruction). money_accumulation stays = profit, so cash
+						# goes negative this tick; the downsizing scrap value refills it in on_monthly_industries,
+						# paying off the loss first. scrap per size = 0.1 * asset_value / size ; n = ceil(-profit / scrap_per_size)
+						set_temp_variable = { scrap_per_size_temp = asset_value@var:bu_token }
+						multiply_temp_variable = { scrap_per_size_temp = 0.1 }
+						divide_temp_variable = { scrap_per_size_temp = size@var:bu_token }
+
+						set_temp_variable = { downsize_temp = profit@var:bu_token }
+						multiply_temp_variable = { downsize_temp = -1 }
+						divide_temp_variable = { downsize_temp = scrap_per_size_temp }
+
+						# ceiling(downsize_temp)
+						set_temp_variable = { downsize_ceil_temp = downsize_temp }
+						round_temp_variable = downsize_ceil_temp
+						if = {
+							limit = { check_variable = { downsize_ceil_temp < downsize_temp } }
+							add_to_temp_variable = { downsize_ceil_temp = 1 }
+						}
+						# cap at locally-owned size (never shed company holdings)
+						if = {
+							limit = { check_variable = { downsize_ceil_temp > owner_sizes_local@var:bu_token } }
+							set_temp_variable = { downsize_ceil_temp = owner_sizes_local@var:bu_token }
+						}
+						set_variable = { downsize_amount@var:bu_token = downsize_ceil_temp }
+					}
+					else = {
+						# No downsizing (over-staffed, or nothing local/non-RGO to scrap): owners cover the
+						# uncovered loss as negative dividends; drain cash reserves to 0.
+						set_variable = { money_accumulation@var:bu_token = money@var:bu_token }
+						multiply_variable = { money_accumulation@var:bu_token = -1 }
+						set_variable = { dividends@var:bu_token = cash_after_temp }
+					}
+				}
+			}
+			else = {
+				# Profitable: half to cash reserves (capped at money_limit, excess to dividends), half to dividends.
+				set_variable = { money_accumulation@var:bu_token = profit@var:bu_token }
+				divide_variable = { money_accumulation@var:bu_token = 2 }
+				set_variable = { dividends@var:bu_token = profit@var:bu_token }
+				divide_variable = { dividends@var:bu_token = 2 }
+
+				set_temp_variable = { money_temp = money@var:bu_token }
+				add_to_temp_variable = { money_temp = money_accumulation@var:bu_token }
+				if = {
+					limit = { check_variable = { money_temp > money_limit@var:bu_token } }
+					subtract_from_temp_variable = { money_temp = money_limit@var:bu_token }
+					subtract_from_variable = { money_accumulation@var:bu_token = money_temp }
+					add_to_variable = { dividends@var:bu_token = money_temp }
+				}
+			}
 		}
 	}
 	industry_update_construction_retooling = {
@@ -2321,12 +2374,15 @@
 				set_variable = { automation_method@var:industry_token = automation_method_temp }
 			}
 
-			# Setting industry target employment
-			set_temp_variable = { portion_temp = x_temp }
-			multiply_temp_variable = { portion_temp = 100 }
-			divide_temp_variable = { portion_temp = size@var:industry_token }
-			subtract_from_variable = { employment_target@var:industry_token = portion_temp }
-			clamp_variable = { var = employment_target@var:industry_token max = 100 min = 0 }
+			# Adjust employment target to preserve ABSOLUTE employment across the resize (headcount sticks with
+			# the old plant): new_ET = old_ET * old_size / new_size, where old_size = new_size - x_temp.
+			# Adding idle capacity dilutes ET; shedding idle capacity (downsize, x<0) concentrates it.
+			set_variable = { employment_target@var:industry_token = {
+				value = employment_target@var:industry_token
+				multiply = { value = size@var:industry_token  subtract = x_temp }
+				divide = size@var:industry_token
+				clamp = { min = 0 max = 100 }
+			} }
 
 			# Update industry
 			set_temp_variable = { bu_token = industry_token }
@@ -2370,6 +2426,9 @@
 		# production_method_temp - if relevant
 		# automation_method_temp - if relevant
 
+		# Capture the pre-change active size (deposit_temp is the active-size delta) for the ET & ownership updates below.
+		set_temp_variable = { rgo_old_size_temp = base_resource@var:r_token }
+
 		if = {
 			limit = {
 				check_variable = { base_resource@var:r_token = 0 }
@@ -2406,9 +2465,61 @@
 		}
 		if = { limit = { NOT = { check_variable = { potential_temp = 0 } } }
 			add_to_variable = { potential_reserves@var:r_token = potential_temp }
-			
+
 			if = { limit = { check_variable = { potential_reserves@var:r_token < 0 } }
 				set_variable  = { potential_reserves@var:r_token = 0 }
+			}
+		}
+
+		# Employment target & ownership follow the active-size change (deposit_temp), so add_rgo_internal is
+		# self-sufficient for RGOs (no add_x_industry_internal needed). Mirrors add_x_industry_internal.
+		if = {
+			limit = { NOT = { check_variable = { deposit_temp = 0 } } }
+			set_temp_variable = { rgo_new_size_temp = rgo_old_size_temp }
+			add_to_temp_variable = { rgo_new_size_temp = deposit_temp }
+
+			# Preserve absolute employment on a resize: new_ET = old_ET * old_size / new_size. On full removal
+			# (new size <= 0) zero it out; a fresh exploit (old size 0) keeps its current target and ramps up.
+			if = {
+				limit = {
+					check_variable = { rgo_new_size_temp > 0 }
+					check_variable = { rgo_old_size_temp > 0 }
+				}
+				set_variable = { employment_target@var:r_token = {
+					value = employment_target@var:r_token
+					multiply = rgo_old_size_temp
+					divide = rgo_new_size_temp
+					clamp = { min = 0 max = 100 }
+				} }
+			}
+			else_if = {
+				limit = { check_variable = { rgo_new_size_temp < 1 } }
+				set_variable = { employment_target@var:r_token = 0 }
+			}
+
+			# Local ownership tracks the active-size delta.
+			add_to_variable = { owner_sizes_local@var:r_token = deposit_temp }
+			if = { limit = { check_variable = { owner_sizes_local@var:r_token < 0 } } set_variable = { owner_sizes_local@var:r_token = 0 } }
+
+			# Corporation-financed change: attribute the size delta to the funding company (same as add_x_industry_internal).
+			if = {
+				limit = {
+					check_variable = { financer_temp > 0 }
+					NOT = { check_variable = { financer_temp > 10500 } }
+				}
+				set_temp_variable = { company_temp = financer_temp }
+				set_temp_variable = { holding_state_temp = THIS }
+				set_temp_variable = { holding_building_temp = r_token }
+				if = {
+					limit = { check_variable = { deposit_temp > 0 } }
+					set_temp_variable = { holding_size_temp = deposit_temp }
+					company_add_holding = yes
+				}
+				else = {
+					set_temp_variable = { holding_size_temp = deposit_temp }
+					multiply_temp_variable = { holding_size_temp = -1 }
+					company_remove_holding = yes
+				}
 			}
 		}
 
@@ -2436,6 +2547,7 @@
 		set_temp_variable = { known_temp = resource_amount_temp }
 		set_temp_variable = { potential_temp = resource_amount_temp }
 		multiply_temp_variable = { potential_temp = -1 }
+		set_temp_variable = { deposit_temp = 0 } # discovery only moves potential->known; no active-size change
 		add_rgo_internal = yes
 	}
 	rgo_major_discovery = {
@@ -2458,6 +2570,7 @@
 		add_to_variable = { major_discoveries@var:r_token = 1 }
 		set_temp_variable = { known_temp = major_discovery_known }
 		set_temp_variable = { potential_temp = major_discovery_potential }
+		set_temp_variable = { deposit_temp = 0 } # discovery only adds known/potential; no active-size change
 		add_rgo_internal = yes
 		if = {
 			limit = {
