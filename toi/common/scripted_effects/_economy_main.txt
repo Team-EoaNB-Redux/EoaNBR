@@ -448,7 +448,11 @@ on_monthly_industries = {
 				set_temp_variable = { x_temp = construction@var:om_building }
 				set_temp_variable = { financer_temp = construction_financier@var:om_building }
 				set_temp_variable = { industry_token = om_building }
-				add_x_industry_internal = yes
+				# RGOs are deposit-based: add_rgo_internal (below) handles size/jobs/ET/ownership. Only non-RGOs use add_x.
+				if = {
+					limit = { NOT = { check_variable = { global.building_rgo@var:om_building = 1 } } }
+					add_x_industry_internal = yes
+				}
                 if = {
                     limit = {
                         check_variable = { global.building_rgo@var:om_building = 1 }
@@ -457,7 +461,7 @@ on_monthly_industries = {
 					set_temp_variable = { deposit_temp = known_temp }
 					multiply_temp_variable = { known_temp = -1 }
 					set_temp_variable = { r_token = om_building }
-					add_rgo_internal = yes # NOTE: add_x_industry_internal and this should work fine together
+					add_rgo_internal = yes
                 }
                 else_if = {
                     limit = {
@@ -535,6 +539,39 @@ on_monthly_industries = {
         value = om_building
 
         add_to_variable = { money@var:om_building = money_accumulation@var:om_building }
+
+        # Downsizing (creative destruction): shed the planned LOCAL sizes and add scrap value to cash.
+        # add_x_industry_internal recomputes size/jobs/finances (incl. money_limit) for the new size, so the
+        # money cap below applies to the downsized plant - any scrap beyond it is wasted.
+        if = {
+            limit = {
+                check_variable = { downsize_amount@var:om_building > 0 }
+            }
+            # scrap = 0.1 * (asset_value / size) per size shed (equipment & materials sold off)
+            set_temp_variable = { scrap_temp = asset_value@var:om_building }
+            multiply_temp_variable = { scrap_temp = 0.1 }
+            divide_temp_variable = { scrap_temp = size@var:om_building }
+            multiply_temp_variable = { scrap_temp = downsize_amount@var:om_building }
+            add_to_variable = { money@var:om_building = scrap_temp }
+
+            set_temp_variable = { financer_temp = 0 } # local owner (companies downsize at the company level)
+            if = {
+                limit = { check_variable = { global.building_rgo@var:om_building = 1 } }
+                # RGO: flip the shed active extraction back to KNOWN reserves (deposit -n, known +n) - not destroyed.
+                set_temp_variable = { deposit_temp = downsize_amount@var:om_building }
+                multiply_temp_variable = { deposit_temp = -1 }
+                set_temp_variable = { known_temp = downsize_amount@var:om_building }
+                set_temp_variable = { r_token = om_building }
+                add_rgo_internal = yes
+            }
+            else = {
+                set_temp_variable = { x_temp = downsize_amount@var:om_building }
+                multiply_temp_variable = { x_temp = -1 }
+                set_temp_variable = { industry_token = om_building }
+                add_x_industry_internal = yes
+            }
+        }
+
         if = { #Excess goes to owners
             limit = {
                 check_variable = { money@var:om_building > money_limit@var:om_building }
