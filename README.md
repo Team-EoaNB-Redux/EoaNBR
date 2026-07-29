@@ -122,7 +122,7 @@ If you wish to contribute to the development of the mod, support us on Patreon o
 </td>
 <td align="center">
   <p><img src="https://avatars.githubusercontent.com/u/74386084?v=4" width="80px;" alt="Mountain"/></p>
-  <p><a href = "https://github.com/mountain-zippped"><strong>Mountain</strong></a></p>
+  <p><a href = "https://github.com/yushu02"><strong>Mountain</strong></a></p>
 </td>
 </tr>
 </table>
