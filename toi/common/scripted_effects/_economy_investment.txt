@@ -19,6 +19,22 @@
 		io_add_random = yes
 		io_update = yes
 		sort_io_list = yes
+        # Prune opportunities that have fallen below 0 attractiveness (genuinely bad now): refund any pooled
+        # money and drop them so the active list stays clean. Reverse-walk so removals don't shift unvisited entries.
+        set_temp_variable = { ioprune_idx_temp = active_investment_opportunities^num }
+        while_loop_effect = {
+            limit = { check_variable = { ioprune_idx_temp > 0 } }
+            subtract_from_temp_variable = { ioprune_idx_temp = 1 }
+            set_temp_variable = { io_num_temp = active_investment_opportunities^ioprune_idx_temp }
+            if = {
+                limit = { check_variable = { investment_opportunity_attractiveness@var:io_num_temp < 0 } }
+                if = {
+                    limit = { check_variable = { investment_opportunity_investment@var:io_num_temp > 0 } }
+                    add_to_variable = { investment_fund = investment_opportunity_investment@var:io_num_temp }
+                }
+                remove_investment_opportunity = yes
+            }
+        }
         while_loop_effect = {
             limit = {
                 check_variable = { active_investment_opportunities^num > investment_opportunities_cap }
@@ -2325,13 +2341,19 @@
         set_variable = { investment_fund_spending_interest = 0 }
 
         # Spending
-        set_variable = { investment_fund_target_spending = modifier@investment_confidence_modifier }
-        divide_variable = { investment_fund_target_spending = 100 }
-        multiply_variable = { investment_fund_target_spending = investment_fund_income }
+        set_variable = { investment_fund_target_spending = {
+			value = modifier@investment_confidence_modifier
+			divide = 100
+			max = 0
+			multiply = investment_fund_income
 
-        set_temp_variable = { ifts_temp = investment_fund } # Add 5% of stored funds to target spending
-        multiply_temp_variable = { ifts_temp = 0.05 }
-        add_to_variable = { investment_fund_target_spending = ifts_temp }
+			add = {
+				value = gdp_amount
+				multiply = 0.1
+				min = investment_fund
+				multiply = 0.2
+			}
+		} }
 
         set_variable = { investment_fund_spending = investment_fund_spending_construction }
         add_to_variable = { investment_fund_spending = investment_fund_spending_retooling }
@@ -2395,7 +2417,10 @@
                 limit = { check_variable = { active_investment_opportunities^num > 0 } }
                 set_temp_variable = { io_num_temp = active_investment_opportunities^0 }
                 if = {
-                    limit = { has_variable = investment_opportunity_state@var:io_num_temp }
+                    limit = {
+                        has_variable = investment_opportunity_state@var:io_num_temp
+                        NOT = { check_variable = { investment_opportunity_attractiveness@var:io_num_temp < 100 } } # Gate: capitalists won't fund IOs under 100 attractiveness
+                    }
                     set_temp_variable = { io_available_temp = 1 }
                 }
             }
@@ -2448,9 +2473,19 @@
                     set_temp_variable = { spending_cap_temp = 0 }
                 }
             }
+            else = {
+                # Nothing worth funding this pass (no national opportunity, and the top IO is under the
+                # 100-attractiveness floor). Stop and leave the money in the fund - the unspent surplus below
+                # accumulates in investment_fund and feeds back into a lower pop investment appetite.
+                set_temp_variable = { spending_cap_temp = 0 }
+            }
 
             add_to_temp_variable = { ifm_temp = 1 }
         }
+
+        # Target spending that couldn't be deployed this tick (it stays in investment_fund, growing the pool).
+        # Made permanent so pops can damp their contribution when the fund can't put money to work.
+        set_variable = { investment_fund_unspent = spending_cap_temp }
 
         if = {
             limit = {
@@ -2479,17 +2514,30 @@
 		}
 		set_temp_variable = {
 			investment_appetite_temp = {
-				value = top_attractiveness_temp
-				max = 10 # Just so people still throw in some money & no errors if <=0
-				log = 10
-				multiply = incentives_temp
+				value = incentives_temp
 				multiply = 3
 				divide = incentives_mod_temp
-				divide = 2 # Making it so 100 attractiveness & 100 incentives ~= 1.0
 				max = 0
 				min = 2
 			}
 		}
+
+		# Pool-overhang damping: if the fund is accumulating undeployed capital (can't put money to work),
+		# pops throw in less. overhang = investment_fund / monthly target spend (months of idle capital).
+		set_temp_variable = { pool_damping_temp = {
+			value = controller:investment_fund
+			if = { limit = { value = controller:gdp_amount greater_than = 0 }
+				divide = controller:gdp_amount
+				multiply = global.investment_pool_tolerance
+				multiply = -1
+				add = 1
+			}
+			else = {
+				multiply = 0
+			}
+			clamp = { min = global.investment_pool_appetite_floor  max = 1 }
+		} }
+		multiply_temp_variable = { investment_appetite_temp = pool_damping_temp }
 	}
 #
 
