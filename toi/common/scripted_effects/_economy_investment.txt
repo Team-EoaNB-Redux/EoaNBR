@@ -1893,12 +1893,23 @@
 		}
 
 		# Labor
-		set_temp_variable = { attr_labor_temp = available_workforce }
-		divide_temp_variable = { attr_labor_temp = pops_workforce }
-		multiply_temp_variable = { attr_labor_temp = 50 }
 		if = {
+			limit = { check_variable = { io_type = token:io_build } }
+			set_temp_variable = { attr_labor_temp = {
+				value = available_workforce
+				subtract = 25
+				divide = global.building_base_employees@var:industry_token
+				multiply = 5
+				clamp = { min = -100 max = 100 }
+			} }
+		}
+		else_if = {
 			limit = { check_variable = { io_type = token:io_upgrade_am } }
-			multiply_temp_variable = { attr_labor_temp = -2 }
+			set_temp_variable = { attr_labor_temp = {
+				value = available_workforce
+				divide = pops_workforce
+				multiply = -100
+			} }
 		}
 		else_if = {
 			limit = {
@@ -1907,7 +1918,23 @@
 					check_variable = { io_type = token:io_prospect }
 				}
 			}
-			multiply_temp_variable = { attr_labor_temp = 0 }
+			set_temp_variable = { attr_labor_temp = 0 }
+		}
+		else_if = {
+			limit = { 
+				check_variable = { size@var:industry_token > 0 }
+			}
+			set_temp_variable = { attr_labor_temp = {
+				value = available_workforce
+				divide = pops_workforce
+				multiply = 100
+
+				add = {
+					value = employment_percentage@var:industry_token
+					subtract = 100
+					multiply = 5
+				}
+			} }
 		}
 
 		set_temp_variable = { attr_factor_temp = controller:building_attractiveness_factor@var:industry_token }
