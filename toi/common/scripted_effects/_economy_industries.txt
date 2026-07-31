@@ -560,6 +560,15 @@
 				set_variable = { input_amount@var:bu_token^ii = prod_temp }
 			}
 		#
+
+		# Maintenance - flat per-size upkeep (idle capacity included). Base authored per PM (~5% of output),
+		# scaled by the national regulatory_burden_factor. Depends on size ONLY (not production/employment %).
+		set_variable = { expenses_maintenance@var:bu_token = global.pm_maintenance@var:production_method_temp }
+		multiply_variable = { expenses_maintenance@var:bu_token = global.building_base_output_value@var:bu_token }
+		multiply_variable = { expenses_maintenance@var:bu_token = i_size }
+		set_temp_variable = { reg_burden_temp = controller:modifier@regulatory_burden_factor }
+		add_to_temp_variable = { reg_burden_temp = 1 }
+		multiply_variable = { expenses_maintenance@var:bu_token = reg_burden_temp }
 	}
 	industry_update = {
 		set_temp_variable = { i_size = size@var:bu_token }
@@ -658,6 +667,7 @@
 			set_variable = { expenses@var:bu_token = expenses_payroll@var:bu_token }
 			add_to_variable = { expenses@var:bu_token = expenses_input@var:bu_token }
 			add_to_variable = { expenses@var:bu_token = expenses_industrial_capacity@var:bu_token }
+			add_to_variable = { expenses@var:bu_token = expenses_maintenance@var:bu_token }
 
 			# Profit
 			set_variable = { profit@var:bu_token = revenue@var:bu_token }
@@ -733,17 +743,31 @@
 			#multiply_temp_variable = { rev_temp = controller:price_shipping_capacity }
 			add_to_temp_variable = { revenue_temp = rev_temp }
 
-			set_variable = { productivity@var:bu_token = revenue_temp }
-			subtract_from_variable = { productivity@var:bu_token = expenses_temp }
-			divide_variable = { productivity@var:bu_token = payroll_multiplier@var:bu_token }
+			# Maintenance (per size-1) also drags down the per-worker productivity metric
+			set_temp_variable = { maint_pm_temp = production_method@var:bu_token }
+			set_temp_variable = { exp_temp = global.pm_maintenance@var:maint_pm_temp }
+			multiply_temp_variable = { exp_temp = global.building_base_output_value@var:bu_token }
+			set_temp_variable = { reg_burden_temp = controller:modifier@regulatory_burden_factor }
+			add_to_temp_variable = { reg_burden_temp = 1 }
+			multiply_temp_variable = { exp_temp = reg_burden_temp }
 			if = {
 				limit = {
 					check_variable = { employment_percentage@var:bu_token > 0 }
 				}
-				divide_variable = { productivity@var:bu_token = employment_percentage@var:bu_token }
-				multiply_variable = { productivity@var:bu_token = production_percentage@var:bu_token }
-
+				divide_temp_variable = { exp_temp = employment_percentage@var:bu_token }
+				multiply_temp_variable = { exp_temp = 100 }
+				
+				divide_temp_variable = { expenses_temp = employment_percentage@var:bu_token }
+				multiply_temp_variable = { expenses_temp = production_percentage@var:bu_token }
+				
+				divide_temp_variable = { revenue_temp = employment_percentage@var:bu_token }
+				multiply_temp_variable = { revenue_temp = production_percentage@var:bu_token }
 			}
+			add_to_temp_variable = { expenses_temp = exp_temp }
+
+			set_variable = { productivity@var:bu_token = revenue_temp }
+			subtract_from_variable = { productivity@var:bu_token = expenses_temp }
+			divide_variable = { productivity@var:bu_token = payroll_multiplier@var:bu_token }
 
 			# Asset value - what the industry is worth as an asset (drives acquisition cost & company valuation).
 			# = cost to construct it as it stands (current size & PM/AM) scaled by profitability: a profitable
