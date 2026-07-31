@@ -10,6 +10,7 @@ scripted_gui = {
 		effects = {
 			close_click = {
 				clr_country_flag = internal_politics_tab_flag
+				clr_country_flag = internal_politics_laws_selection_flag
 			}
 		}
 	}
@@ -177,9 +178,21 @@ scripted_gui = {
 			has_country_flag = internal_politics_laws_flag
 		}
 		effects = {
-			selected_political_group_button_click = {
+			law_category_button_click = { 
 				set_variable = { current_viewed_law_category = var:v }
 				set_country_flag = internal_politics_laws_selection_flag
+			}
+			law_category_button_alt_click = { 
+				set_variable = { ongoing_law_debate = var:v }
+			}
+			law_category_icon_click = {
+				set_temp_variable = { law_temp = current_law@var:v }
+				meta_effect = {
+					text = {
+						show_ideas_tooltip = [law_token]
+					}
+					law_token = "[?law_temp.GetTokenKey]"
+				}
 			}
 
 			debug5_click = {
@@ -187,46 +200,58 @@ scripted_gui = {
 				# clear_array = global.politics_law_categories_array
 			}
 		}
+		triggers = {
+			law_category_button_click_enabled = {
+				set_temp_variable = { tech_temp = global.tech_unlock@var:v }
+				OR = {
+					check_variable = { tech_temp = 0 }
+					has_tech = var:tech_temp
+				}
+			}
+			law_category_ungoing_hue_visible = {
+				check_variable = { ongoing_law_debate = v }
+			}
+		}
 		dynamic_lists = {
 			politics_law_list = {
 				array = global.politics_law_categories_array
 				# array = parties_array
-				entry_container = political_group_item
+				entry_container = law_category_item
 				value = v
 				index = i
 			}
 			foreign_affairs_law_list = {
 				array = global.foreign_affairs_law_categories_array
 				# array = parties_array
-				entry_container = political_group_item
+				entry_container = law_category_item
 				value = v
 				index = i
 			}
 			economy_law_list = {
 				array = global.economy_law_categories_array
 				# array = parties_array
-				entry_container = political_group_item
+				entry_container = law_category_item
 				value = v
 				index = i
 			}
 			regulations_law_list = {
 				array = global.regulations_law_categories_array
 				# array = parties_array
-				entry_container = political_group_item
+				entry_container = law_category_item
 				value = v
 				index = i
 			}
 			civil_services_law_list = {
 				array = global.civil_services_law_categories_array
 				# array = parties_array
-				entry_container = political_group_item
+				entry_container = law_category_item
 				value = v
 				index = i
 			}
 			humanities_law_list = {
 				array = global.humanities_law_categories_array
 				# array = parties_array
-				entry_container = political_group_item
+				entry_container = law_category_item
 				value = v
 				index = i
 			}
@@ -292,6 +317,11 @@ scripted_gui = {
 			}
 			political_law_unavailable_hue_visible = {
 				NOT = { has_idea = var:v }
+			}
+		}
+		properties = {
+			political_law_icon = {
+				image = "[GetLawCategoryIconInList]"
 			}
 		}
 		dynamic_lists = {
