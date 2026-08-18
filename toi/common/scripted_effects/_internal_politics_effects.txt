@@ -1,3 +1,4 @@
+# Parties
 	# party_temp - <party_token> (Optional) Token for Party to be created.
 	# name_override_temp - <party_token> (Optional) Token for an override party name. Party value is still party_temp
 	# color_temp - <color_token> (Optional) Token for color used for party's symbol
@@ -7,127 +8,127 @@
 	# interest_groups_temp - list of <ig_token> - (Required)
 	# ig_override_temp - <boolean> (Optional) - (1) will cause the party to 'steal' ig, if there are overlaps with current parties
 	# treasury_temp - <float> (Optional)
-add_party_to_country = {
-	if = {
-		limit = {
-			check_variable = { party_temp = 0 }
-		}
-		get_party_name_from_interest_groups = yes
-	}
-	if = {
-		limit = {
-			check_variable = { name_override_temp > 0 }
-		}
-		set_variable = { name_override@var:party_temp = name_override_temp }
-	}
-	if = {
-		limit = {
-			check_variable = { color_temp = 0 }
-		}
-		get_party_color_from_interest_groups = yes
-	}
-	set_variable = { color@var:party_temp = color_temp }
-	if = {
-		limit = {
-			check_variable = { type_temp = 0 }
-		}
-		get_party_type_from_interest_groups = yes
-	}
-	set_variable = { pol_range@var:party_temp = type_temp }
-	var:leader_temp = {
-		set_variable = { PREV.leader@var:party_temp = THIS }
-	}
-	set_variable = { marginalized@var:party_temp = marginalized_temp }
-	set_variable = { treasury@var:party_temp = treasury_temp }
-
-	if = {
-		limit = {
-			check_variable = { ig_override_temp > 0 }
-		}
-		for_each_loop = {
-			array = interest_groups_temp
-			value = ig_temp
-			add_to_array = {
-				array = interest_groups@var:party_temp
-				value = ig_temp
+	add_party_to_country = {
+		if = {
+			limit = {
+				check_variable = { party_temp = 0 }
 			}
-			if = {
-				limit = {
-					any_of = {
+			get_party_name_from_interest_groups = yes
+		}
+		if = {
+			limit = {
+				check_variable = { name_override_temp > 0 }
+			}
+			set_variable = { name_override@var:party_temp = name_override_temp }
+		}
+		if = {
+			limit = {
+				check_variable = { color_temp = 0 }
+			}
+			get_party_color_from_interest_groups = yes
+		}
+		set_variable = { color@var:party_temp = color_temp }
+		if = {
+			limit = {
+				check_variable = { type_temp = 0 }
+			}
+			get_party_type_from_interest_groups = yes
+		}
+		set_variable = { pol_range@var:party_temp = type_temp }
+		var:leader_temp = {
+			set_variable = { PREV.leader@var:party_temp = THIS }
+		}
+		set_variable = { marginalized@var:party_temp = marginalized_temp }
+		set_variable = { treasury@var:party_temp = treasury_temp }
+
+		if = {
+			limit = {
+				check_variable = { ig_override_temp > 0 }
+			}
+			for_each_loop = {
+				array = interest_groups_temp
+				value = ig_temp
+				add_to_array = {
+					array = interest_groups@var:party_temp
+					value = ig_temp
+				}
+				if = {
+					limit = {
+						any_of = {
+							array = parties_array
+							value = p
+							is_in_array = {
+								array = interest_groups@var:p
+								value = ig_temp
+							}
+						}
+					}
+					for_each_loop = {
 						array = parties_array
 						value = p
-						is_in_array = {
+						remove_from_array = {
 							array = interest_groups@var:p
 							value = ig_temp
 						}
 					}
 				}
-				for_each_loop = {
-					array = parties_array
-					value = p
-					remove_from_array = {
-						array = interest_groups@var:p
-						value = ig_temp
-					}
-				}
 			}
-		}
-		else = {
-			for_each_loop = {
-				array = interest_groups_temp
-				value = ig_temp
-				if = {
-					limit = {
-						NOT = {
-							any_of = {
-								array = parties_array
-								value = p
-								is_in_array = {
-									array = interest_groups@var:p
-									value = ig_temp
+			else = {
+				for_each_loop = {
+					array = interest_groups_temp
+					value = ig_temp
+					if = {
+						limit = {
+							NOT = {
+								any_of = {
+									array = parties_array
+									value = p
+									is_in_array = {
+										array = interest_groups@var:p
+										value = ig_temp
+									}
 								}
 							}
 						}
-					}
-					add_to_array = {
-						array = interest_groups@var:party_temp
-						value = ig_temp
+						add_to_array = {
+							array = interest_groups@var:party_temp
+							value = ig_temp
+						}
 					}
 				}
 			}
 		}
+		# Log
+			log = "Forming [?party_temp.GetTokenLocalizedKey] in [THIS.GetTag]."
+			log = " [?party_temp.GetTokenLocalizedKey] is using [?color_temp.GetTokenLocalizedKey].."
+			log = " [?party_temp.GetTokenLocalizedKey] is [?type_temp.GetTokenLocalizedKey]..."
+			log = " [?party_temp.GetTokenLocalizedKey] has selected [?leader_temp.GetTokenLocalizedKey] as their leader...."
+			for_each_loop = {
+				array = interest_groups_temp
+				value = ig_temp
+				log = " Recruiting [?ig_temp_GetTokenLocalizedKey] Voters to [?party_temp.GetTokenLocalizedKey]"
+			}
+		#
+		# Clear Values
+			set_temp_variable = { party_temp = 0 }
+			set_temp_variable = { name_override_temp = 0 }
+			set_temp_variable = { color_temp = 0 }
+			set_temp_variable = { type_temp = 0 }
+			set_temp_variable = { leader_temp = 0 }
+			set_temp_variable = { marginalized_temp = 0 }
+			set_temp_variable = { treasury_temp = 0 }
+			clear_temp_array = interest_groups_temp
+			set_temp_variable = { ig_override_temp = 0 }
+		#
 	}
-	# Log
-		log = "Forming [?party_temp.GetTokenLocalizedKey] in [THIS.GetTag]."
-		log = " [?party_temp.GetTokenLocalizedKey] is using [?color_temp.GetTokenLocalizedKey].."
-		log = " [?party_temp.GetTokenLocalizedKey] is [?type_temp.GetTokenLocalizedKey]..."
-		log = " [?party_temp.GetTokenLocalizedKey] has selected [?leader_temp.GetTokenLocalizedKey] as their leader...."
-		for_each_loop = {
-			array = interest_groups_temp
-			value = ig_temp
-			log = " Recruiting [?ig_temp_GetTokenLocalizedKey] Voters to [?party_temp.GetTokenLocalizedKey]"
-		}
-	#
-	# Clear Values
-		set_temp_variable = { party_temp = 0 }
-		set_temp_variable = { name_override_temp = 0 }
-		set_temp_variable = { color_temp = 0 }
-		set_temp_variable = { type_temp = 0 }
-		set_temp_variable = { leader_temp = 0 }
-		set_temp_variable = { marginalized_temp = 0 }
-		set_temp_variable = { treasury_temp = 0 }
-		clear_temp_array = interest_groups_temp
-		set_temp_variable = { ig_override_temp = 0 }
-	#
-}
-remove_party_from_country = {
-}
-add_ig_to_party = {
+	remove_party_from_country = {
+	}
+	add_ig_to_party = {
 
-}
-remove_ig_from_party = {
+	}
+	remove_ig_from_party = {
 
-}
+	}
 
 
 # Helper Effects
