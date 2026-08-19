@@ -20,6 +20,10 @@
 				check_variable = { name_override_temp > 0 }
 			}
 			set_variable = { name_override@var:party_temp = name_override_temp }
+			custom_effect_tooltip = add_party_to_country_tt2
+		}
+		else = {
+			custom_effect_tooltip = add_party_to_country_tt
 		}
 		if = {
 			limit = {
@@ -122,9 +126,39 @@
 		#
 	}
 	remove_party_from_country = {
+		if = {
+			limit = {
+				is_in_array = {
+					array = parties_array
+					value = party_temp
+				}
+			}
+			clear_variable = name_override@var:party_temp
+			clear_variable = color@var:party_temp
+			clear_variable = pol_range@var:party_temp
+			clear_variable = leadervar:party_temp
+			clear_variable = marginalized@var:party_temp
+			clear_variable = type@var:party_temp
+			clear_array = interest_groups@var:party_temp
+			clear_variable = treasury@var:party_temp
+			custom_effect_tooltip = remove_party_from_country_tt
+		}
 	}
 	add_ig_to_party = {
-
+		if = {
+			limit = {
+				check_variable = { ig_override_temp > 0 }
+				any_of = {
+					array = parties_array
+					is_in_array
+				}
+			}
+			
+			custom_effect_tooltip = add_ig_to_party_tt
+		}
+		else = {
+			custom_effect_tooltip = add_ig_to_party_tt2
+		}
 	}
 	remove_ig_from_party = {
 
@@ -972,595 +1006,210 @@
 	}
 #
 
-add_party_old = {
-	# party_temp - <party_token> any of the parties to be used in code
-	# name_override_temp - <party_token> override name
-	# color_temp - <color_token>
-	# type_temp - <party_range_token>
-
-	if = {
-		limit = { check_variable = { party_temp = 0 } }
-		log = "party"
-		random_list = {
-			5 = {
-				modifier = {
-					is_in_array = {
-						array = parties_array
-						value = token:party_liberal_party
-					}
-					factor = 0
-				}
-				set_temp_variable = { party_temp = token:party_liberal_party }
-			}
-			5 = {
-				modifier = {
-					is_in_array = {
-						array = parties_array
-						value = token:party_conservative_party
-					}
-					factor = 0
-				}
-				set_temp_variable = { party_temp = token:party_conservative_party }
-			}
-			5 = {
-				modifier = {
-					is_in_array = {
-						array = parties_array
-						value = token:party_reactionary_party
-					}
-					factor = 0
-				}
-				set_temp_variable = { party_temp = token:party_reactionary_party }
-			}
-			5 = {
-				modifier = {
-					is_in_array = {
-						array = parties_array
-						value = token:party_fundamentalist_party
-					}
-					factor = 0
-				}
-				set_temp_variable = { party_temp = token:party_fundamentalist_party }
-			}
-			5 = {
-				modifier = {
-					is_in_array = {
-						array = parties_array
-						value = token:party_socialist_party
-					}
-					factor = 0
-				}
-				set_temp_variable = { party_temp = token:party_socialist_party }
-			}
-		}
-		log = "[?party_temp]"
-	}
-	if = {
-		limit = { check_variable = { type_temp = 0 } }
-		random_list = {
-			5 = {
-				set_temp_variable = { type_temp = token:pr_big_tent }
-			}
-			5 = {
-				set_temp_variable = { type_temp = token:pr_ideological }
-			}
-			5 = {
-				set_temp_variable = { type_temp = token:pr_institutional }
-			}
-			5 = {
-				set_temp_variable = { type_temp = token:pr_establishment }
-			}
-			5 = {
-				set_temp_variable = { type_temp = token:pr_oppositional }
-			}
-			5 = {
-				set_temp_variable = { type_temp = token:pr_single_issue }
-			}
-		}
-	}
-	if = {
-		limit = { check_variable = { color_temp = 0 } }
-		random_list = {
-			5 = {
-				modifier = {
-					any_of = {
-						array = parties_array
-						value = p_temp
-						check_variable = { color@var:p_temp = token:color_dark_red }
-					}
-					factor = 0
-				}
-				set_temp_variable = { color_temp = token:color_dark_red }
-			}
-			5 = {
-				modifier = {
-					any_of = {
-						array = parties_array
-						value = p_temp
-						check_variable = { color@var:p_temp = token:color_red }
-					}
-					factor = 0
-				}
-				set_temp_variable = { color_temp = token:color_red }
-			}
-			5 = {
-				modifier = {
-					any_of = {
-						array = parties_array
-						value = p_temp
-						check_variable = { color@var:p_temp = token:color_light_red }
-					}
-					factor = 0
-				}
-				set_temp_variable = { color_temp = token:color_light_red }
-			}
-			5 = {
-				modifier = {
-					any_of = {
-						array = parties_array
-						value = p_temp
-						check_variable = { color@var:p_temp = token:color_dark_orange }
-					}
-					factor = 0
-				}
-				set_temp_variable = { color_temp = token:color_dark_orange }
-			}
-			5 = {
-				modifier = {
-					any_of = {
-						array = parties_array
-						value = p_temp
-						check_variable = { color@var:p_temp = token:color_orange }
-					}
-					factor = 0
-				}
-				set_temp_variable = { color_temp = token:color_orange }
-			}
-			5 = {
-				modifier = {
-					any_of = {
-						array = parties_array
-						value = p_temp
-						check_variable = { color@var:p_temp = token:color_light_orange }
-					}
-					factor = 0
-				}
-				set_temp_variable = { color_temp = token:color_light_orange }
-			}
-			5 = {
-				modifier = {
-					any_of = {
-						array = parties_array
-						value = p_temp
-						check_variable = { color@var:p_temp = token:color_dark_yellow }
-					}
-					factor = 0
-				}
-				set_temp_variable = { color_temp = token:color_dark_yellow }
-			}
-			5 = {
-				modifier = {
-					any_of = {
-						array = parties_array
-						value = p_temp
-						check_variable = { color@var:p_temp = token:color_yellow }
-					}
-					factor = 0
-				}
-				set_temp_variable = { color_temp = token:color_yellow }
-			}
-			5 = {
-				modifier = {
-					any_of = {
-						array = parties_array
-						value = p_temp
-						check_variable = { color@var:p_temp = token:color_light_yellow }
-					}
-					factor = 0
-				}
-				set_temp_variable = { color_temp = token:color_light_yellow }
-			}
-			5 = {
-				modifier = {
-					any_of = {
-						array = parties_array
-						value = p_temp
-						check_variable = { color@var:p_temp = token:color_dark_green }
-					}
-					factor = 0
-				}
-				set_temp_variable = { color_temp = token:color_dark_green }
-			}
-			5 = {
-				modifier = {
-					any_of = {
-						array = parties_array
-						value = p_temp
-						check_variable = { color@var:p_temp = token:color_green }
-					}
-					factor = 0
-				}
-				set_temp_variable = { color_temp = token:color_green }
-			}
-			5 = {
-				modifier = {
-					any_of = {
-						array = parties_array
-						value = p_temp
-						check_variable = { color@var:p_temp = token:color_light_green }
-					}
-					factor = 0
-				}
-				set_temp_variable = { color_temp = token:color_light_green }
-			}
-			5 = {
-				modifier = {
-					any_of = {
-						array = parties_array
-						value = p_temp
-						check_variable = { color@var:p_temp = token:color_dark_blue }
-					}
-					factor = 0
-				}
-				set_temp_variable = { color_temp = token:color_dark_blue }
-			}
-			5 = {
-				modifier = {
-					any_of = {
-						array = parties_array
-						value = p_temp
-						check_variable = { color@var:p_temp = token:color_blue }
-					}
-					factor = 0
-				}
-				set_temp_variable = { color_temp = token:color_blue }
-			}
-			5 = {
-				modifier = {
-					any_of = {
-						array = parties_array
-						value = p_temp
-						check_variable = { color@var:p_temp = token:color_light_blue }
-					}
-					factor = 0
-				}
-				set_temp_variable = { color_temp = token:color_light_blue }
-			}
-			5 = {
-				modifier = {
-					any_of = {
-						array = parties_array
-						value = p_temp
-						check_variable = { color@var:p_temp = token:color_dark_purple }
-					}
-					factor = 0
-				}
-				set_temp_variable = { color_temp = token:color_dark_purple }
-			}
-			5 = {
-				modifier = {
-					any_of = {
-						array = parties_array
-						value = p_temp
-						check_variable = { color@var:p_temp = token:color_purple }
-					}
-					factor = 0
-				}
-				set_temp_variable = { color_temp = token:color_purple }
-			}
-			5 = {
-				modifier = {
-					any_of = {
-						array = parties_array
-						value = p_temp
-						check_variable = { color@var:p_temp = token:color_light_purple }
-					}
-					factor = 0
-				}
-				set_temp_variable = { color_temp = token:color_light_purple }
-			}
-			5 = {
-				modifier = {
-					any_of = {
-						array = parties_array
-						value = p_temp
-						check_variable = { color@var:p_temp = token:color_dark_grey }
-					}
-					factor = 0
-				}
-				set_temp_variable = { color_temp = token:color_dark_grey }
-			}
-			5 = {
-				modifier = {
-					any_of = {
-						array = parties_array
-						value = p_temp
-						check_variable = { color@var:p_temp = token:color_grey }
-					}
-					factor = 0
-				}
-				set_temp_variable = { color_temp = token:color_grey }
-			}
-			5 = {
-				modifier = {
-					any_of = {
-						array = parties_array
-						value = p_temp
-						check_variable = { color@var:p_temp = token:color_light_grey }
-					}
-					factor = 0
-				}
-				set_temp_variable = { color_temp = token:color_light_grey }
-			}
-			5 = {
-				modifier = {
-					any_of = {
-						array = parties_array
-						value = p_temp
-						check_variable = { color@var:p_temp = token:color_dark_brown }
-					}
-					factor = 0
-				}
-				set_temp_variable = { color_temp = token:color_dark_brown }
-			}
-			5 = {
-				modifier = {
-					any_of = {
-						array = parties_array
-						value = p_temp
-						check_variable = { color@var:p_temp = token:color_brown }
-					}
-					factor = 0
-				}
-				set_temp_variable = { color_temp = token:color_brown }
-			}
-			5 = {
-				modifier = {
-					any_of = {
-						array = parties_array
-						value = p_temp
-						check_variable = { color@var:p_temp = token:color_light_brown }
-					}
-					factor = 0
-				}
-				set_temp_variable = { color_temp = token:color_light_brown }
-			}
-			5 = {
-				modifier = {
-					any_of = {
-						array = parties_array
-						value = p_temp
-						check_variable = { color@var:p_temp = token:color_black }
-					}
-					factor = 0
-				}
-				set_temp_variable = { color_temp = token:color_black }
-			}
-			5 = {
-				modifier = {
-					any_of = {
-						array = parties_array
-						value = p_temp
-						check_variable = { color@var:p_temp = token:color_white }
-					}
-					factor = 0
-				}
-				set_temp_variable = { color_temp = token:color_white }
-			}
-			5 = {
-				modifier = {
-					any_of = {
-						array = parties_array
-						value = p_temp
-						check_variable = { color@var:p_temp = token:color_magenta }
-					}
-					factor = 0
-				}
-				set_temp_variable = { color_temp = token:color_magenta }
-			}
-			5 = {
-				modifier = {
-					any_of = {
-						array = parties_array
-						value = p_temp
-						check_variable = { color@var:p_temp = token:color_aqua }
-					}
-					factor = 0
-				}
-				set_temp_variable = { color_temp = token:color_aqua }
-			}
-			5 = {
-				modifier = {
-					any_of = {
-						array = parties_array
-						value = p_temp
-						check_variable = { color@var:p_temp = token:color_pink }
-					}
-					factor = 0
-				}
-				set_temp_variable = { color_temp = token:color_pink }
-			}
-			5 = {
-				modifier = {
-					any_of = {
-						array = parties_array
-						value = p_temp
-						check_variable = { color@var:p_temp = token:color_beige }
-					}
-					factor = 0
-				}
-				set_temp_variable = { color_temp = token:color_beige }
-			}
-			5 = {
-				modifier = {
-					any_of = {
-						array = parties_array
-						value = p_temp
-						check_variable = { color@var:p_temp = token:color_burgundy }
-					}
-					factor = 0
-				}
-				set_temp_variable = { color_temp = token:color_burgundy }
-			}
-			5 = {
-				modifier = {
-					any_of = {
-						array = parties_array
-						value = p_temp
-						check_variable = { color@var:p_temp = token:color_lime }
-					}
-					factor = 0
-				}
-				set_temp_variable = { color_temp = token:color_lime }
-			}
-		}
-	}
-	
-	log = "[?color_temp.GetTokenLocalizedKey] [?party_temp.GetTokenLocalizedKey] [?type_temp.GetTokenLocalizedKey]"
-	set_variable = { color@var:party_temp = var:color_temp }
-	set_variable = { type@var:party_temp = var:type_temp }
-	# set_variable = { name_override@var:party_temp = var: }
-
-	clear_array =  interest_groups@var:party_temp
-
-	add_to_array = { parties_array = var:party_temp }
-}
-internal_politics_overview_party_interest_groups_toggle = {
-	if = {
-		limit = { check_variable = { political_overview_open@var:v = 1 } }
+# GUI Helper Methods
+	internal_politics_strength_bar_toggle = {
 		for_each_loop = {
-			array = parties@var:v
-			value = p
-			remove_from_array = {
-				array = political_overview_array
+			array = parties@token:ruling_coalition
+
+			set_temp_variable = { strength_temp = strength_perc@var:p }
+
+			for_loop_effect = {
+				end = strength_temp
+			}
+		}
+	}
+	internal_politics_overview_party_interest_groups_toggle = {
+		if = {
+			limit = { check_variable = { political_overview_open@var:v = 1 } }
+			for_each_loop = {
+				array = parties@var:v
 				value = p
+				remove_from_array = {
+					array = political_overview_selection_array
+					value = p
+				}
+				for_each_loop = {
+					array = interest_groups@var:p
+					value = ig
+					remove_from_array = {
+						array = political_overview_selection_array
+						value = ig
+					}
+				}
 			}
 			for_each_loop = {
-				array = interest_groups@var:p
-				value = ig
+				array = interest_groups@var:v
+				value = p
 				remove_from_array = {
-					array = political_overview_array
-					value = ig
+					array = political_overview_selection_array
+					value = p
 				}
 			}
+			set_variable = { political_overview_open@var:v = 0 }
 		}
-		for_each_loop = {
-			array = interest_groups@var:v
-			value = p
-			remove_from_array = {
-				array = political_overview_array
-				value = p
-			}
-		}
-		set_variable = { political_overview_open@var:v = 0 }
-	}
-	else = {
-		set_temp_variable = { ii = i }
-		add_to_temp_variable = { ii = 1 }
-		for_each_loop = {
-			array = parties@var:v
-			value = p
-			add_to_array = {
-				array = political_overview_array
-				value = p
-				index = ii
-			}
+		else = {
+			set_temp_variable = { ii = i }
 			add_to_temp_variable = { ii = 1 }
-		}
-		for_each_loop = {
-			array = interest_groups@var:v
-			value = ig
-			add_to_array = {
-				array = political_overview_array
+			for_each_loop = {
+				array = parties@var:v
+				value = p
+				add_to_array = {
+					array = political_overview_selection_array
+					value = p
+					index = ii
+				}
+				add_to_temp_variable = { ii = 1 }
+			}
+			for_each_loop = {
+				array = interest_groups@var:v
 				value = ig
-				index = ii
+				add_to_array = {
+					array = political_overview_selection_array
+					value = ig
+					index = ii
+				}
+				add_to_temp_variable = { ii = 1 }
 			}
-			add_to_temp_variable = { ii = 1 }
+			set_variable = { political_overview_open@var:v = 1 }
 		}
-		set_variable = { political_overview_open@var:v = 1 }
 	}
-}
-government_setup = {
-	if = {
-		limit = {
-			check_variable = { party@token:ideology_communist = 0 }
+	government_setup = {
+		if = {
+			limit = {
+				check_variable = { party@token:ideology_communist = 0 }
+			}
+			set_variable = { party@token:ideology_communist = token:party_communist_party }
 		}
-		set_variable = { party@token:ideology_communist = token:party_communist_party }
-	}
-	if = {
-		limit = {
-			check_variable = { party@token:ideology_socialist = 0 }
+		if = {
+			limit = {
+				check_variable = { party@token:ideology_socialist = 0 }
+			}
+			set_variable = { party@token:ideology_socialist = token:party_socialist_party }
 		}
-		set_variable = { party@token:ideology_socialist = token:party_socialist_party }
-	}
-	if = {
-		limit = {
-			check_variable = { party@token:ideology_liberal = 0 }
+		if = {
+			limit = {
+				check_variable = { party@token:ideology_liberal = 0 }
+			}
+			set_variable = { party@token:ideology_liberal = token:party_liberal_party }
 		}
-		set_variable = { party@token:ideology_liberal = token:party_liberal_party }
-	}
-	if = {
-		limit = {
-			check_variable = { party@token:ig_conservatives = 0 }
+		if = {
+			limit = {
+				check_variable = { party@token:ig_conservatives = 0 }
+			}
+			set_variable = { party@token:ig_conservatives = token:party_reactionary_party }
 		}
-		set_variable = { party@token:ig_conservatives = token:party_reactionary_party }
-	}
-	if = {
-		limit = {
-			check_variable = { party@token:ig_reactionaries = 0 }
+		if = {
+			limit = {
+				check_variable = { party@token:ig_reactionaries = 0 }
+			}
+			set_variable = { party@token:ig_reactionaries = token:party_reactionary_party }
 		}
-		set_variable = { party@token:ig_reactionaries = token:party_reactionary_party }
-	}
-	if = {
-		limit = {
-			check_variable = { party@token:ideology_egalitarian = 0 }
+		if = {
+			limit = {
+				check_variable = { party@token:ideology_egalitarian = 0 }
+			}
+			set_variable = { party@token:ideology_egalitarian = token:party_egalitarian_party }
 		}
-		set_variable = { party@token:ideology_egalitarian = token:party_egalitarian_party }
-	}
-	if = {
-		limit = {
-			check_variable = { party@token:ig_clergy = 0 }
+		if = {
+			limit = {
+				check_variable = { party@token:ig_clergy = 0 }
+			}
+			set_variable = { party@token:ig_clergy = token:party_fundamentalist_party }
 		}
-		set_variable = { party@token:ig_clergy = token:party_fundamentalist_party }
-	}
-	if = {
-		limit = {
-			check_variable = { party@token:ig_monarchists = 0 }
+		if = {
+			limit = {
+				check_variable = { party@token:ig_monarchists = 0 }
+			}
+			set_variable = { party@token:ig_monarchists = token:party_monarchist_party }
 		}
-		set_variable = { party@token:ig_monarchists = token:party_monarchist_party }
-	}
-	if = {
-		limit = {
-			check_variable = { party@token:ideology_fascist = 0 }
+		if = {
+			limit = {
+				check_variable = { party@token:ideology_fascist = 0 }
+			}
+			set_variable = { party@token:ideology_fascist = token:party_fascist_party }
 		}
-		set_variable = { party@token:ideology_fascist = token:party_fascist_party }
-	}
-	if = {
-		limit = {
-			check_variable = { party@token:ideology_stratocrat = 0 }
+		if = {
+			limit = {
+				check_variable = { party@token:ideology_stratocrat = 0 }
+			}
+			set_variable = { party@token:ideology_stratocrat = token:party_stratocratic_party }
 		}
-		set_variable = { party@token:ideology_stratocrat = token:party_stratocratic_party }
-	}
-	if = {
-		limit = {
-			check_variable = { party@token:ideology_agrarian = 0 }
+		if = {
+			limit = {
+				check_variable = { party@token:ideology_agrarian = 0 }
+			}
+			set_variable = { party@token:ideology_agrarian = token:party_agrarian_party }
 		}
-		set_variable = { party@token:ideology_agrarian = token:party_agrarian_party }
 	}
-}
 
 reset_politics_overview = {
-	clear_array = political_overview_array
+	clear_array = political_overview_selection_array
+	clear_variable = total_political_strength
+	clear_variable = total_political_popularity
 	set_variable = { political_overview_open@token:ruling_coalition = 0 }
 	set_variable = { political_overview_open@token:oppositional_parties = 0 }
 	set_variable = { political_overview_open@token:marginalized_parties = 0 }
+
+	for_each_loop = {
+		array = parties_array
+		value = p
+
+		add_to_variable = { total_political_strength = strength@var:p }
+		add_to_variable = { total_political_popularity = popularity@var:p }
+	}
+	divide_variable = { total_political_strength = 100 }
+	divide_variable = { total_political_popularity = 100 }
+
+	clear_array = parties_array_temp
+	for_each_loop = {
+		array = parties_array
+		value = p
+		
+		for_each_loop = {
+			array = parties_array_temp
+			value = pp
+			index = ii
+			break = bb
+
+			if = {
+				limit = { check_variable = { strength_perc@var:p > strength_perc@var:pp } }
+				add_to_array = {
+					array = parties_array_temp
+					value = p
+					index = ii
+				}
+				set_temp_variable = { bb = 1 }
+			}
+		}
+		if = {
+			limit = { check_variable = { bb = 0 } }
+			add_to_array = {
+				array = parties_array_temp
+				value = p
+			}
+		}
+	}
+
+	clear_array = parties_array
+	for_each_loop = {
+		array = parties_array_temp
+		value = p
+
+		add_to_array = { parties_array = p }
+		set_variable = { popularity_perc@var:p = popularity@var:p }
+		divide_variable = { popularity_perc@var:p = total_popularity_temp }
+		
+		set_variable = { strength_perc@var:p = strength@var:p }
+		divide_variable = { strength_perc@var:p = total_political_strength }
+	}
+
 	if = {
 		limit = {
 			check_variable = { parties@token:ruling_coalition^num > 0 }
 		}
 		set_variable = { political_overview_open@token:ruling_coalition = 1 }
 		add_to_array = {
-			array = political_overview_array
+			array = political_overview_selection_array
 			value = token:ruling_coalition
 		}
 		set_variable = { strength@token:ruling_coalition = 0 }
@@ -1568,7 +1217,7 @@ reset_politics_overview = {
 			array = parties@token:ruling_coalition
 			value = p
 			add_to_array = {
-				array = political_overview_array
+				array = political_overview_selection_array
 				value = p
 			}
 			add_to_variable = {
@@ -1583,7 +1232,7 @@ reset_politics_overview = {
 		}
 		set_variable = { political_overview_open@token:oppositional_parties = 1 }
 		add_to_array = {
-			array = political_overview_array
+			array = political_overview_selection_array
 			value = token:oppositional_parties
 		}
 		set_variable = { strength@token:oppositional_parties = 0 }
@@ -1591,7 +1240,7 @@ reset_politics_overview = {
 			array = parties@token:oppositional_parties
 			value = p
 			add_to_array = {
-				array = political_overview_array
+				array = political_overview_selection_array
 				value = p
 			}
 			add_to_variable = {
@@ -1606,7 +1255,7 @@ reset_politics_overview = {
 		}
 		set_variable = { political_overview_open@token:marginalized_parties = 1 }
 		add_to_array = {
-			array = political_overview_array
+			array = political_overview_selection_array
 			value = token:marginalized_parties
 		}
 		set_variable = { strength@token:marginalized_parties = 0 }
@@ -1614,12 +1263,98 @@ reset_politics_overview = {
 			array = parties@token:marginalized_parties
 			value = p
 			add_to_array = {
-				array = political_overview_array
+				array = political_overview_selection_array
 				value = p
 			}
 			add_to_variable = {
 				var = strength@token:marginalized_parties
 				value = strength@var:p
+			}
+		}
+	}
+
+	if = {
+		limit = { has_country_flag = internal_politics_coalition_setting_flag }
+		if = {
+			limit = { has_country_flag = internal_politics_popularity_setting_flag }
+			# TODO
+		}
+		else = {
+			# TODO
+		}
+	}
+	else_if = {
+		limit = { has_country_flag = internal_politics_interest_group_setting_flag }
+		if = {
+			limit = { has_country_flag = internal_politics_popularity_setting_flag }
+			# TODO
+		}
+		else = {
+			# TODO
+		}
+	}
+	else = {
+		if = {
+			limit = { has_country_flag = internal_politics_popularity_setting_flag }
+			# TODO
+		}
+		else = {
+			clear_array = political_overview_bar_array
+			for_each_loop = {
+				array = parties@token:ruling_coalition
+				value = p
+				set_temp_variable = { strength_temp = strength_perc@var:p }
+				add_to_temp_variable = { strength_temp = 0.45 }
+				round_temp_variable = strength_temp
+				for_loop_effect = {
+					end = strength_temp
+					add_to_array = {
+						array = political_overview_bar_array
+						value = p
+					}
+				}
+			}
+			for_loop_effect = {
+				end = 20
+				add_to_array = {
+					array = political_overview_bar_array
+					value = 1
+				}
+			}
+			for_each_loop = {
+				array = parties@token:oppositional_parties
+				value = p
+				set_temp_variable = { strength_temp = strength_perc@var:p }
+				add_to_temp_variable = { strength_temp = 0.45 }
+				round_temp_variable = strength_temp
+				for_loop_effect = {
+					end = strength_temp
+					add_to_array = {
+						array = political_overview_bar_array
+						value = p
+					}
+				}
+			}
+			for_loop_effect = {
+				end = 20
+				add_to_array = {
+					array = political_overview_bar_array
+					value = 1
+				}
+			}
+			for_each_loop = {
+				array = parties@token:marginalized_parties
+				value = p
+				set_temp_variable = { strength_temp = strength_perc@var:p }
+				add_to_temp_variable = { strength_temp = 0.45 }
+				round_temp_variable = strength_temp
+				for_loop_effect = {
+					end = strength_temp
+					add_to_array = {
+						array = political_overview_bar_array
+						value = p
+					}
+				}
 			}
 		}
 	}
@@ -1968,6 +1703,7 @@ debug_generate_government = {
 			}
 		}
 	}
+	
 }
 set_internal_politics = {
 	randomize_variable = {
