@@ -91,6 +91,10 @@ _init_country = {
     set_variable = { controller = THIS }
     set_variable = { owner = THIS }
 
+    # get_pm_values also runs in country scope, where there's no state infrastructure to read
+    set_variable = { infrastructure_efficiency = 1 }
+    set_variable = { price_industrial_capacity = global.base_price_industrial_capacity }
+
     # Initializes PMs based on tech
     update_all_national_pms = yes
     
@@ -429,14 +433,17 @@ _country_fin = {
 	investment_fund_update = yes
     industries_highest_productivity_update = yes
     industries_retoolable_update = yes
-	investment_opportunities_cap_calc = yes
-	set_temp_variable = { needed_temp = investment_opportunities_cap }
-	io_add_random = yes
-	sort_io_list = yes
-    io_update = yes
-	investment_funds_monthly = yes
-	investment_opportunities_monthly = yes
-    io_update = yes
+	if = {
+		limit = { check_variable = { global.eco_investment_enabled = 1 } }
+		investment_opportunities_cap_calc = yes
+		set_temp_variable = { needed_temp = investment_opportunities_cap }
+		io_add_random = yes
+		sort_io_list = yes
+		io_update = yes
+		investment_funds_monthly = yes
+		investment_opportunities_monthly = yes
+		io_update = yes
+	}
     
     # Initializes debt
 	#bank_update = yes - disable until bank system is done
@@ -731,7 +738,7 @@ initialize_country = {
             set_variable = { global.wage_multiplier@token:slaves = 1 }
             set_variable = { global.wage_multiplier@token:peasants = 1 }
             set_variable = { global.wage_multiplier@token:laborers = 2 }
-            set_variable = { global.wage_multiplier@token:workers = 5 }
+            set_variable = { global.wage_multiplier@token:workers = 4 }
             set_variable = { global.wage_multiplier@token:professionals = 10 }
             set_variable = { global.wage_multiplier@token:specialists = 20 }
             set_variable = { global.wage_multiplier@token:capitalists = 20 }
@@ -1289,14 +1296,36 @@ initialize_country = {
         set_variable = { global.minimum_base_wage = 0.01 } #Minimum base wage (not average) for an building
         set_variable = { global.buildings_economy_of_scale_factor = 0.01 } #What bonus gets added to throughput for each size building in a state
         set_variable = { global.buildings_economy_of_scale_max = 20 } # Maximum economy of scale bonus
-        set_variable = { global.base_industrial_capacity = 5 } #Base amount of IC that each state gets
+        set_variable = { global.base_industrial_capacity = 5 } #Base amount of transport supply that each state gets
+        set_variable = { global.base_infrastructure_per_pop = 0.0055 } # Extra base transport supply per K pops, scaled by the base_infrastructure_factor modifier
+        set_variable = { global.port_transport_share = 0.23 } # Share of a port's shipping that also counts as state transport supply
+        set_variable = { global.infrastructure_efficiency_floor = 0.25 } # Lowest Infrastructure Efficiency a transport shortage can cause
+        set_variable = { global.infrastructure_efficiency_bonus = 0.2 } # Highest bonus a transport surplus approaches (half of it at double the needed supply)
+        set_variable = { global.transport_pay_floor = 0.25 } # Lowest rate paid to railways & ports, as a multiple of the base price
+        set_variable = { global.transport_pay_cap = 2 } # Highest rate paid to railways & ports, as a multiple of the base price
+        set_variable = { global.maintenance_rate = 0.0025 } # Monthly upkeep as a share of an industry's construction cost at base prices
+        set_variable = { global.eco_investment_enabled = 0 } # Investment opportunities, the fund's spending & national opportunities. Off until the investment rework
+
+        # Infrastructure dependence by global.building_type (0 = no type set: RGOs of factory goods)
+        clear_array = global.infrastructure_dependence_by_type
+        add_to_array = { global.infrastructure_dependence_by_type = 1 }
+        add_to_array = { global.infrastructure_dependence_by_type = 0 } # Govt
+        add_to_array = { global.infrastructure_dependence_by_type = 0 } # Transport
+        add_to_array = { global.infrastructure_dependence_by_type = 0.6 } # Resource
+        add_to_array = { global.infrastructure_dependence_by_type = 0.3 } # Farming
+        add_to_array = { global.infrastructure_dependence_by_type = 1 } # Factories
+        add_to_array = { global.infrastructure_dependence_by_type = 0.5 } # Urban
         set_variable = { global.start_construction_cost_multiplier = 0.25 } #Multiplier on total cost on how much you need to put down to start construction
+
+        # Investment bucket system
+        set_variable = { global.investment_national_fraction_base = 0.5 } # Base share of raised capital sent to the national fund (rest stays in state buckets); financial-system law tilts via modifier@investment_national_fraction
+        set_variable = { global.investment_state_min_action = 100 } # Min investment_pool before a state bucket bothers scanning for a local action (perf gate - tune to typical build cost)
+        set_variable = { global.investment_saturation_ref = 1000 } # Category saturation reference: score /= (1 + pending_investment/ref). Higher = weaker diminishing-returns suppression (TUNE)
 
         set_variable = { global.base_govt_building_productivity = 1.5 } # Base productivity of Mil/Civ/Dockyards
         set_variable = { global.additional_base_industrial_complex_building_productivity = 1.5 } # Base productivity of Mil/Civ/Dockyards
 
         # Define Buildings
-        define_infrastructure = yes
         define_railway = yes
         define_port = yes
 
@@ -1375,241 +1404,8 @@ initialize_country = {
         define_entertainment_rgo = yes
         
         # Define PMs
-        define_pm_industrial_complex = yes
-        define_pm_arms_factory = yes
-        define_pm_dockyard = yes
-
-        define_pm_dirt_paths = yes
-        define_pm_gravel_roads = yes
-        define_pm_paved_streets = yes
-        define_pm_highways = yes
-        define_pm_motorways = yes
-
-        define_pm_steam_locomotives = yes
-        define_pm_diesel_locomotives = yes
-        define_pm_electric_locomotives = yes
-        define_pm_high_speed_rail = yes
-        define_pm_maglev_rail = yes
-        
-        define_pm_no_automation = yes
-        define_pm_semaphores = yes
-        define_pm_color_light_signals = yes
-        define_pm_rail_computerization = yes
-        define_pm_rail_automation = yes
-
-        define_pm_anchorage = yes
-        define_pm_cargo_port = yes
-        define_pm_industrial_port = yes
-        define_pm_container_port = yes
-        define_pm_smart_port = yes
-
-        define_pm_simple_forestry = yes
-        define_pm_saw_mills = yes
-        define_pm_chainsaws = yes
-        define_pm_precision_forestry = yes
-
-        define_pm_muscle_power = yes
-        define_pm_river_power = yes
-        define_pm_steam_power = yes
-        define_pm_diesel_power = yes
-        define_pm_electrical_power = yes
-        define_pm_logging_machines = yes
-
-        define_pm_basic_extraction = yes
-        define_pm_shaft_mining = yes
-        define_pm_blasting = yes
-        define_pm_drilling = yes
-        define_pm_excavation = yes
-        define_pm_precision_mining = yes
-        define_pm_mantle_extraction = yes
-
-        define_pm_hand_picks_and_tools = yes
-        define_pm_steam_pump = yes
-        define_pm_conveyor_belts = yes
-        define_pm_mine_electrification = yes
-        define_pm_mine_computerization = yes
-        define_pm_autonomous_mining = yes
-        
-        define_pm_basic_oil_production = yes
-        define_pm_crude_oil_distillation = yes
-        define_pm_cracking = yes
-        define_pm_catalytic_cracking = yes
-        
-        define_pm_basic_oil_extraction = yes
-        define_pm_oil_drilling = yes
-        define_pm_steam_powered_derricks = yes
-        define_pm_diesel_powered_derricks = yes
-        define_pm_smart_drilling = yes
-
-        define_pm_subsistence_farming = yes
-        
-        define_pm_basic_planting = yes
-        define_pm_intensive_agriculture = yes
-        define_pm_chemical_fertilizers = yes
-        define_pm_precision_agriculture = yes
-
-        define_pm_manual_farming = yes
-        define_pm_farm_equipment = yes
-        define_pm_automatic_irrigation = yes
-        define_pm_plantation_machinery = yes
-        define_pm_automated_agriculture = yes
-        
-        define_pm_traction_engine = yes
-        define_pm_tractors = yes
-        define_pm_agricultural_machines = yes
-        
-        define_pm_animal_husbandry = yes
-        define_pm_slaughterhouses = yes
-        define_pm_factory_farms = yes
-        define_pm_lab_grown_meat = yes
-
-        define_pm_open_field = yes
-        define_pm_ranching = yes
-        define_pm_barbed_wire = yes
-        define_pm_milking_machines = yes
-        
-        define_pm_manual_sewing = yes
-        define_pm_spinning_machines = yes
-        define_pm_sewing_machines = yes
-        define_pm_electric_sewing_machines = yes
-        define_pm_laser_printers = yes
-        define_pm_3d_printed_textiles = yes
-        
-        define_pm_primitive_steelmaking = yes
-        define_pm_blister_steel_process = yes
-        define_pm_hot_blast_process = yes
-        define_pm_bessemer_process = yes
-        define_pm_electric_arc_process = yes
-        define_pm_oxygen_converter_process = yes
-        define_pm_energy_optimizing_process = yes
-        define_pm_hydrogen_steel_process = yes
-
-        define_pm_machine_tools = yes
-        define_pm_specialized_machinery = yes
-        define_pm_modern_machinery = yes
-        define_pm_machining_robots = yes
-        define_pm_assembly_robots = yes
-        define_pm_smart_robots = yes
-        define_pm_mobile_robots = yes
-        define_pm_intelligent_robots = yes
-        
-        define_pm_crude_tools = yes
-        define_pm_iron_tools = yes
-        define_pm_steel_tools = yes
-        define_pm_power_tools = yes
-        define_pm_cordless_tools = yes
-        define_pm_smart_tools = yes
-
-        define_pm_lightbulbs = yes
-        define_pm_vacuum_tubes = yes
-        define_pm_transistors = yes
-        define_pm_integrated_circuits = yes
-        
-        define_pm_lead_acid_battery = yes
-        define_pm_nickel_cadmium_battery = yes
-        define_pm_alkaline_battery = yes
-        define_pm_lithium_ion_battery = yes
-        define_pm_portable_generators = yes
-        
-        define_pm_basic_consumer_goods = yes
-        define_pm_luxury_goods = yes
-        define_pm_mechanical_goods = yes
-        define_pm_plasticware = yes
-        define_pm_modern_goods = yes
-        
-        define_pm_telephones = yes
-        define_pm_radios = yes
-        define_pm_television = yes
-        define_pm_mobile_phones = yes
-        define_pm_haptics = yes
-        
-        define_pm_automobiles = yes
-        define_pm_propeller_aircraft = yes
-        define_pm_jet_aircraft = yes
-        define_pm_hybrid_cars = yes
-        define_pm_electric_cars = yes
-        
-        define_pm_electro_mechanical_computers = yes
-        define_pm_electronic_computers = yes
-        define_pm_supercomputers = yes
-        define_pm_quantum_computers = yes
-        
-        define_pm_polymer_synthesis = yes
-        define_pm_polyethylene_synthesis = yes
-        define_pm_polypropylene_synthesis = yes
-        define_pm_electroactive_polymer_synthesis = yes
-        define_pm_bioplastic_synthesis = yes
-        
-        define_pm_nylon = yes
-        define_pm_polyester = yes
-        define_pm_carbon_fiber = yes
-        define_pm_smart_fabric = yes
-        
-        define_pm_methyl_isoprene = yes
-        define_pm_neoprene = yes
-        define_pm_silicone = yes
-        define_pm_thermoplastic_elastomers = yes
-        
-        define_pm_lead_chamber_process = yes
-        define_pm_leblanc_process = yes
-        define_pm_ammonia_soda_process = yes
-        define_pm_brine_electrolysis = yes
-        define_pm_haber_bosch_process = yes
-        define_pm_petrochemicals = yes
-        
-        define_pm_fiberglass = yes
-        define_pm_nanomaterials = yes
-        define_pm_smart_materials = yes
-        
-        define_pm_coal_liquefaction = yes
-        
-        define_pm_hydroelectric_dam = yes
-        define_pm_coal_fired_plant = yes
-        define_pm_steam_turbine_plant = yes
-        define_pm_oil_fired_plant = yes
-        define_pm_fission_reactor_plant = yes
-        define_pm_fusion_reactor_plant = yes
-        
-        define_pm_steam_engine = yes
-        define_pm_industrial_machinery = yes
-        define_pm_industrial_electrification = yes
-        define_pm_assembly_lines = yes
-        define_pm_robots = yes
-        define_pm_data_servers = yes
-        define_pm_artificial_intelligence = yes
-        define_pm_mass_automation = yes
-        
-        define_pm_wooden_buildings = yes
-        define_pm_brick_buildings = yes
-        define_pm_iron_frame_buildings = yes
-        define_pm_steel_frame_buildings = yes
-        define_pm_high_rise_buildings = yes
-        define_pm_skyscrapers = yes
-        define_pm_megatall_skyscrapers = yes
-        define_pm_starscrapers = yes
-        
-        define_pm_gas_streetlights = yes
-        define_pm_public_transit = yes
-        define_pm_urban_electrification = yes
-        define_pm_subways = yes
-        define_pm_airports = yes
-        define_pm_integrated_transit_network = yes
-        define_pm_smart_city = yes
-        
-        define_pm_live_theater = yes
-        define_pm_exhibits = yes
-        define_pm_photography = yes
-        define_pm_movies = yes
-        define_pm_sports = yes
-        define_pm_video_games = yes
-        define_pm_virtual_reality = yes
-        
-        define_pm_newspapers = yes
-        define_pm_electrification = yes
-        define_pm_radio_broadcasting = yes
-        define_pm_television_broadcasting = yes
-        define_pm_internet_broadcasting = yes
-        define_pm_ai_generated_media = yes
+        define_all_production_methods = yes
+        define_all_building_methods = yes
 
         # Initialize special_token_array, building_token_array, industry_token_array
         clear_array = global.special_token_array
@@ -1617,7 +1413,6 @@ initialize_country = {
         clear_array = global.industry_token_array
         clear_array = global.private_building_token_array # All expandable industries that private individuals can own
         add_to_array = { global.special_token_array = token:subsistence_farm }
-        add_to_array = { global.special_token_array = token:infrastructure }
         add_to_array = { global.special_token_array = token:railway }
         add_to_array = { global.special_token_array = token:port }
 
@@ -1667,17 +1462,6 @@ initialize_country = {
             	add_to_array = { global.private_building_token_array = b_token }
 			}
 
-            # Base Output Value
-            set_variable = { global.building_base_output_value@var:b_token = 0 }
-            for_each_loop = {
-                array = global.building_base_production@var:b_token
-                value = r_token
-                index = i_temp
-                    
-                set_temp_variable = { base_output_val_temp = global.building_base_production_amount@var:b_token^i_temp }
-                multiply_temp_variable = { base_output_val_temp = global.base_price@var:r_token }
-                add_to_variable = { global.building_base_output_value@var:b_token = base_output_val_temp }
-            }
         }
         for_each_loop = {
             array = global.special_token_array
@@ -1691,22 +1475,7 @@ initialize_country = {
             	add_to_array = { global.private_building_token_array = b_token }
 			}
 
-            # Base Output Value
-            set_variable = { global.building_base_output_value@var:b_token = 0 }
-            for_each_loop = {
-                array = global.building_base_production@var:b_token
-                value = r_token
-                index = i_temp
-                    
-                set_temp_variable = { base_output_val_temp = global.building_base_production_amount@var:b_token^i_temp }
-                multiply_temp_variable = { base_output_val_temp = global.base_price@var:r_token }
-                add_to_variable = { global.building_base_output_value@var:b_token = base_output_val_temp }
-            }
         }
-        set_variable = { global.building_base_output_value@token:industrial_complex = 10 }
-        set_variable = { global.building_base_output_value@token:arms_factory = 10 }
-        set_variable = { global.building_base_output_value@token:dockyard = 10 }
-
         # Initialize rgo_token_array
         clear_array = global.rgo_token_array
         for_each_loop = {
@@ -1722,23 +1491,10 @@ initialize_country = {
 
                 # Base Production
                 clear_array = global.building_base_production@var:r_token
-                clear_array = global.building_base_production_amount@var:r_token
                 add_to_array = { global.building_base_production@var:r_token = r_token }
-                add_to_array = { global.building_base_production_amount@var:r_token = 1 }
-
-                # Base Output Value
-                set_variable = { global.building_base_output_value@var:r_token = global.base_price@var:r_token }
             }
         }
 		
-		# Tech Categories
-		clear_array = global.pm_token_array_govt
-		clear_array = global.pm_token_array_transport
-		clear_array = global.pm_token_array_resource
-		clear_array = global.pm_token_array_agriculture
-		clear_array = global.pm_token_array_factory
-		clear_array = global.pm_token_array_urban
-
         # Initialize pm_token_array
         clear_array = global.pm_token_array
         add_to_array = { global.pm_token_array = token:pm_subsistence_farming }
@@ -1765,52 +1521,39 @@ initialize_country = {
 				set_variable = { global.industry_owner@var:ind_token = token:landowners }
 			}
             
-			set_temp_variable = { industry_type_temp = global.building_type@var:ind_token }
             for_each_loop = {
                 array = global.building_production_methods@var:ind_token
                 value = pm_token
 
                 if = { limit = { NOT = { is_in_array = { global.pm_token_array = pm_token } } } add_to_array = { global.pm_token_array = pm_token } }
-                if = { limit = { check_variable = { industry_type_temp = 1 } NOT = { is_in_array = { global.pm_token_array_govt = pm_token } } } add_to_array = { global.pm_token_array_govt = pm_token } }
-                else_if = { limit = { check_variable = { industry_type_temp = 2 } NOT = { is_in_array = { global.pm_token_array_transport = pm_token } } } add_to_array = { global.pm_token_array_transport = pm_token } }
-                else_if = { limit = { check_variable = { industry_type_temp = 3 } NOT = { is_in_array = { global.pm_token_array_resource = pm_token } } } add_to_array = { global.pm_token_array_resource = pm_token } }
-                else_if = { limit = { check_variable = { industry_type_temp = 4 } NOT = { is_in_array = { global.pm_token_array_agriculture = pm_token } } } add_to_array = { global.pm_token_array_agriculture = pm_token } }
-                else_if = { limit = { check_variable = { industry_type_temp = 5 } NOT = { is_in_array = { global.pm_token_array_factory = pm_token } } } add_to_array = { global.pm_token_array_factory = pm_token } }
-                else_if = { limit = { check_variable = { industry_type_temp = 6 } NOT = { is_in_array = { global.pm_token_array_urban = pm_token } } } add_to_array = { global.pm_token_array_urban = pm_token } }
             }
             for_each_loop = {
                 array = global.building_automation_methods@var:ind_token
                 value = pm_token
 
                 if = { limit = { NOT = { is_in_array = { global.pm_token_array = pm_token } } } add_to_array = { global.pm_token_array = pm_token } }
-                if = { limit = { check_variable = { industry_type_temp = 1 } NOT = { is_in_array = { global.pm_token_array_govt = pm_token } } } add_to_array = { global.pm_token_array_govt = pm_token } }
-                else_if = { limit = { check_variable = { industry_type_temp = 2 } NOT = { is_in_array = { global.pm_token_array_transport = pm_token } } } add_to_array = { global.pm_token_array_transport = pm_token } }
-                else_if = { limit = { check_variable = { industry_type_temp = 3 } NOT = { is_in_array = { global.pm_token_array_resource = pm_token } } } add_to_array = { global.pm_token_array_resource = pm_token } }
-                else_if = { limit = { check_variable = { industry_type_temp = 4 } NOT = { is_in_array = { global.pm_token_array_agriculture = pm_token } } } add_to_array = { global.pm_token_array_agriculture = pm_token } }
-                else_if = { limit = { check_variable = { industry_type_temp = 5 } NOT = { is_in_array = { global.pm_token_array_factory = pm_token } } } add_to_array = { global.pm_token_array_factory = pm_token } }
-                else_if = { limit = { check_variable = { industry_type_temp = 6 } NOT = { is_in_array = { global.pm_token_array_urban = pm_token } } } add_to_array = { global.pm_token_array_urban = pm_token } }
-            }
-        }
-        
-        for_each_loop = { # Loop through PM token array to set locations of resources in list
-            array = global.pm_token_array
-            value = pm_token
-            
-            clear_array = global.pm_input_location@var:pm_token
-            for_each_loop = { # Add inputs
-                array = global.resource_token_array
-                value = r_token
-                index = pm_resource_i
-                add_to_array = { global.pm_input_location@var:pm_token = -1 }
             }
 
+            # How much Infrastructure Efficiency affects this industry
+            set_temp_variable = { industry_type_temp = global.building_type@var:ind_token }
+            set_variable = { global.building_infrastructure_dependence@var:ind_token = global.infrastructure_dependence_by_type^industry_type_temp }
+        }
+        set_variable = { global.building_infrastructure_dependence@token:subsistence_farm = 0 }
+
+        # What a method cost to build at base prices, per K of base workforce. Maintenance is based off of this
+        for_each_loop = {
+            array = global.pm_token_array
+            value = pm_token
+
+            set_variable = { global.pm_construction_value@var:pm_token = 0 }
             for_each_loop = {
-                array = global.pm_input@var:pm_token
+                array = global.pm_construction_input@var:pm_token
                 value = input_token
                 index = pm_input_i
 
-                set_temp_variable = { r_token_loc = global.resource_id@var:input_token }
-                set_variable = { global.pm_input_location@var:pm_token^r_token_loc = pm_input_i }
+                set_temp_variable = { input_value_temp = global.pm_construction_input_amount@var:pm_token^pm_input_i }
+                multiply_temp_variable = { input_value_temp = global.base_price@var:input_token }
+                add_to_variable = { global.pm_construction_value@var:pm_token = input_value_temp }
             }
         }
 
@@ -1953,43 +1696,43 @@ initialize_country = {
         
         # Raw material costs are based off of per 200 pounds (in 1900s dollars)
         # Note, price comparison between 1900 and 1930 are about a factor of 2, and between 1930 and today are a factor of 18
-        set_variable = { global.base_price@token:food = 2.5 } # Wheat: 1 bushel = 60 pounds, $1.40 per bushel (1929), $49 cents (1931), $46.7 per ton
-        set_variable = { global.base_price@token:luxuries = 4.0 } # Sugarcane: 7c/pound, $140 per ton (1919)
-        set_variable = { global.base_price@token:wood = 1.0 } # $19.6 per thousand board feet, 2.1 million thousand board feet sold, 400K cut, $15.9 per ton
-        set_variable = { global.base_price@token:fiber = 4.0 } # Cotton: 9.9 cents per pound, $198 per ton
-        set_variable = { global.base_price@token:iron = 2.0 } # $4.50 per short ton of iron ore (1930), $19.19 per ton of Pig Iron
-        set_variable = { global.base_price@token:coal = 2.0 } # Bitumous Coal: $1.78 per short ton, Anthracite Coal: ~$10 per short ton in 1930s dollars
-        set_variable = { global.base_price@token:copper = 6.0 } # 13.2 cents per pound, $264 per ton
-        set_variable = { global.base_price@token:valuables = 25 } # Gold: $23 per ounce (1930), Silver: $1 per ounce (1930), $552,000 per ton, $276 per pound
+        set_variable = { global.base_price@token:food = 2 }
+        set_variable = { global.base_price@token:luxuries = 6 }
+        set_variable = { global.base_price@token:wood = 2 }
+        set_variable = { global.base_price@token:fiber = 3 }
+        set_variable = { global.base_price@token:iron = 3 }
+        set_variable = { global.base_price@token:coal = 2 }
+        set_variable = { global.base_price@token:copper = 4 }
+        set_variable = { global.base_price@token:valuables = 25 }
 
-        set_variable = { global.base_price@token:oil = 2.0 } # $1.27 a barrel in 1929, 65 cents in 1931, 300 pounds per barrel, $8.47 per ton
-        set_variable = { global.base_price@token:rubber = 4.0 } # 20 cents a pound (1929), 11.9 cents a pound (1930), $400/$238 per ton
-        set_variable = { global.base_price@token:aluminum = 5.0 } # 23 cents a pound (1930), $460 per ton
-        set_variable = { global.base_price@token:tungsten = 10.0 } # $1,851 per short ton (1930)
-        set_variable = { global.base_price@token:chromium = 10.0 } # Chromium: $2,040 per short ton, Manganese: $261 per short ton.
-        set_variable = { global.base_price@token:titanium = 10.0 } # $10,000 per short ton (Today), $500 per ton (1930s dollars)
-        set_variable = { global.base_price@token:silicon = 20.0 } # $34,224 per short ton (Today), $1,901 per ton (1930s dollars)
-        set_variable = { global.base_price@token:rare_earths = 25.0 } # Cobalt: $1.29 per pound (1937), $2580 per ton
+        set_variable = { global.base_price@token:oil = 12 }
+        set_variable = { global.base_price@token:rubber = 14 }
+        set_variable = { global.base_price@token:aluminum = 45 }
+        set_variable = { global.base_price@token:tungsten = 28 }
+        set_variable = { global.base_price@token:chromium = 22 }
+        set_variable = { global.base_price@token:titanium = 55 }
+        set_variable = { global.base_price@token:silicon = 20 }
+        set_variable = { global.base_price@token:rare_earths = 60 }
 
-        set_variable = { global.base_price@token:steel = 5.0 } # $2.06 per 100 pounds in 1900, $40 per ton, $80 per ton in 1930
-        set_variable = { global.base_price@token:tools = 10.0 }
-        set_variable = { global.base_price@token:machinery = 25.0 } # Going price for new locomotives in 1900 was ~$20-40 per pound. $60,000 per ton ... probably not a good price XD
-        set_variable = { global.base_price@token:chemicals = 2.0 } # Sulfuric Acid: $150 per tonne in 1998 dollars, $165 per ton, $8.25 per ton in 1900 dollars. Fertilizer - ~$500/t today, $13/t in 1900 dollars
-        set_variable = { global.base_price@token:plastics = 4.0 } # $1,285 per ton in 2021, $35.69 per ton in 1900
-        set_variable = { global.base_price@token:composites = 5.0 } # Fiberglass: $7,565 per ton in 2023, $210.1 per ton in 1900
-        set_variable = { global.base_price@token:electronics = 5.0 }
-        set_variable = { global.base_price@token:portable_power = 10.0 }
+        set_variable = { global.base_price@token:steel = 8 }
+        set_variable = { global.base_price@token:tools = 6 }
+        set_variable = { global.base_price@token:machinery = 20 }
+        set_variable = { global.base_price@token:chemicals = 9 }
+        set_variable = { global.base_price@token:plastics = 30 }
+        set_variable = { global.base_price@token:composites = 40 }
+        set_variable = { global.base_price@token:electronics = 15 }
+        set_variable = { global.base_price@token:portable_power = 20 }
 
-        set_variable = { global.base_price@token:consumer_goods = 8.0 }
-        set_variable = { global.base_price@token:textiles = 8.0 }
-        set_variable = { global.base_price@token:vehicles = 20.0 } # Modern car price ~$40k, weight is 2 tons, so about $500 per ton in 1900
-        set_variable = { global.base_price@token:appliances = 10.0 }
-        set_variable = { global.base_price@token:computers = 25.0 }
-        set_variable = { global.base_price@token:electricity = 5 } # Per MWh
-        set_variable = { global.base_price@token:services = 5.0 }
-        set_variable = { global.base_price@token:entertainment = 5.0 }
+        set_variable = { global.base_price@token:consumer_goods = 5 }
+        set_variable = { global.base_price@token:textiles = 4 }
+        set_variable = { global.base_price@token:vehicles = 50 }
+        set_variable = { global.base_price@token:appliances = 40 }
+        set_variable = { global.base_price@token:computers = 80 }
+        set_variable = { global.base_price@token:electricity = 20 }
+        set_variable = { global.base_price@token:services = 2 }
+        set_variable = { global.base_price@token:entertainment = 5 }
 
-        set_variable = { global.base_price_industrial_capacity = 5 }
+        set_variable = { global.base_price_industrial_capacity = 1 }
         set_variable = { global.base_price_shipping_capacity = 1 }
 
         # In Units per 1K employees                                             # Value per 1k employees. Higher this is, the more lucrative it is to trade
@@ -2156,11 +1899,8 @@ initialize_country = {
         # Sets initial building sizes & pms
 
         # Infrastructure
-        set_variable = { size@token:infrastructure = pops }
-        divide_variable = { size@token:infrastructure = 100 }
-        round_variable = size@token:infrastructure
-        add_to_variable = { size@token:infrastructure = 1 }
         set_variable = { price_industrial_capacity = global.base_price_industrial_capacity }
+        set_variable = { infrastructure_efficiency = 1 }
         
         # Industries
         for_each_loop = {

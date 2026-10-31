@@ -569,13 +569,23 @@
 	}
 
 	calc_industrial_capacity = {
-		set_variable = { industrial_capacity = global.base_industrial_capacity }
-		set_variable = { industrial_capacity_use = 0 }
+		# State Scope
+		# Transport supply & demand -> Infrastructure Efficiency, and the rate railways & ports get paid.
+		# Runs before this month's industries update, so it works off of last month's demand.
 
-		add_to_variable = { industrial_capacity = modifier@local_industrial_capacity_modifier }
-		#add_to_variable = { industrial_capacity = controller:modifier@industrial_capacity_modifier }
-		add_to_variable = { industrial_capacity_use = modifier@local_industrial_capacity_use_modifier }
-		#add_to_variable = { industrial_capacity_use = controller:modifier@industrial_capacity_use_modifier }
+		set_variable = {
+			industrial_capacity = {
+				value = pops
+				multiply = global.base_infrastructure_per_pop
+				multiply = {
+					value = 1
+					add = controller:modifier@base_infrastructure_factor
+				}
+				add = global.base_industrial_capacity
+				add = modifier@local_industrial_capacity_modifier
+			}
+		}
+		set_variable = { industrial_capacity_use = modifier@local_industrial_capacity_use_modifier }
 
 		for_each_loop = {
 			array = industries
@@ -585,73 +595,52 @@
 			add_to_variable = { industrial_capacity = industrial_capacity@var:b_type }
 		}
 
-
-		set_variable = { price_industrial_capacity = global.base_price_industrial_capacity }
+		# Both ratios are guarded: a math expression doesn't return 0 when dividing by 0
 		if = {
 			limit = {
-				check_variable = { industrial_capacity_use > industrial_capacity }
-			}
-			set_variable = { industrial_capacity_service = industrial_capacity }
-			divide_variable = { industrial_capacity_service = industrial_capacity_use }
-			# multiply_variable = { industrial_capacity_service = industrial_capacity }
-			# divide_variable = { industrial_capacity_service = industrial_capacity_use }
-		}
-		else = {
-			set_variable = { industrial_capacity_service = 1 }
-		}
-
-		set_temp_variable = { industrial_capacity_use_temp = industrial_capacity_use }
-		multiply_temp_variable = { industrial_capacity_use_temp = 1.25 }
-		if = {
-			limit = {
-				check_variable = { industrial_capacity_use > industrial_capacity }
+				check_variable = { industrial_capacity_use > 0 }
+				check_variable = { industrial_capacity > 0 }
 			}
 			if = {
-				limit = {
-					check_variable = { industrial_capacity > 0.0 }
-				}
-				set_temp_variable = { grp_multiplier = industrial_capacity_use_temp }
-				divide_temp_variable = { grp_multiplier = industrial_capacity }
-				add_to_temp_variable = { grp_multiplier = 1 }
-				divide_temp_variable = { grp_multiplier = 2 }
-
-				if = {
-					limit = {
-						check_variable = { grp_multiplier > 2.0 }
+				limit = { check_variable = { industrial_capacity < industrial_capacity_use } }
+				set_variable = {
+					infrastructure_efficiency = {
+						value = industrial_capacity
+						divide = industrial_capacity_use
+						max = global.infrastructure_efficiency_floor
 					}
-					set_temp_variable = { grp_multiplier = 2.0 }
 				}
 			}
 			else = {
-				set_temp_variable = { grp_multiplier = 2.0 }
-			}
-
-			multiply_variable = { price_industrial_capacity = grp_multiplier }
-		}
-		else = {
-			if = {
-				limit = {
-					check_variable = { industrial_capacity_use_temp > 0.0 }
-				}
-				set_temp_variable = { grp_sd = industrial_capacity }
-				divide_temp_variable = { grp_sd = industrial_capacity_use_temp }
-
-				set_temp_variable = { grp_multiplier = 3 }
-				subtract_from_temp_variable = { grp_multiplier = grp_sd }
-				divide_temp_variable = { grp_multiplier = 2 }
-
-				if = {
-					limit = {
-						check_variable = { grp_multiplier < 0.25 }
+				set_variable = {
+					infrastructure_efficiency = {
+						value = 1
+						subtract = {
+							value = industrial_capacity_use
+							divide = industrial_capacity
+						}
+						multiply = global.infrastructure_efficiency_bonus
+						add = 1
 					}
-					set_temp_variable = { grp_multiplier = 0.25 }
 				}
 			}
-			else = {
-				set_temp_variable = { grp_multiplier = 0.25 }
+			set_variable = {
+				price_industrial_capacity = {
+					value = industrial_capacity_use
+					divide = industrial_capacity
+					clamp = { min = global.transport_pay_floor max = global.transport_pay_cap }
+					multiply = global.base_price_industrial_capacity
+				}
 			}
-
-			multiply_variable = { price_industrial_capacity = grp_multiplier } #P = B * ((3 - S/D) / 2)
+		}
+		else_if = { # No transport supply at all
+			limit = { check_variable = { industrial_capacity_use > 0 } }
+			set_variable = { infrastructure_efficiency = global.infrastructure_efficiency_floor }
+			set_variable = { price_industrial_capacity = { value = global.transport_pay_cap multiply = global.base_price_industrial_capacity } }
+		}
+		else = { # No transport demand at all
+			set_variable = { infrastructure_efficiency = { value = 1 add = global.infrastructure_efficiency_bonus } }
+			set_variable = { price_industrial_capacity = { value = global.transport_pay_floor multiply = global.base_price_industrial_capacity } }
 		}
 	}
 	calc_shipping_capacity = {

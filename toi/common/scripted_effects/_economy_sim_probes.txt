@@ -1,0 +1,400 @@
+# Debug-only helpers for redux-eco-sim calibration. NOTHING calls these automatically; safe to delete.
+#
+#   effect eco_sim_probes = yes          engine-behaviour probes  -> EOPROBE|name|value lines in logs/game.log
+#   effect eco_sim_parity_dump = yes     eco snapshot             -> EOSIM|key|value lines in logs/game.log
+#   effect eco_sim_pm_audit = yes        every building's methods -> EOPM lines, see documentation/scripts/verify_pm_audit.py
+#
+# Then, from redux-eco-sim/:
+#   bin\ecosim_cli.exe calibrate        (compares EOPROBE lines with the simulator)
+#   bin\ecosim_cli.exe parity           (compares the first EOSIM dump with the simulator's startup)
+#   bin\ecosim_cli.exe parity --dump 2 --months 1   (second dump vs. the simulator after one monthly tick)
+
+eco_sim_probes = {
+	log = "EOPROBE|BEGIN|1"
+
+	# Arithmetic: truncation, division by zero, modulo, overflow
+	set_temp_variable = { a = 1 }
+	divide_temp_variable = { a = 3 }
+	log = "EOPROBE|div_1_3|[?a]"
+	multiply_temp_variable = { a = 3 }
+	log = "EOPROBE|div_1_3_times_3|[?a]"
+	set_temp_variable = { a = -1 }
+	divide_temp_variable = { a = 3 }
+	log = "EOPROBE|div_neg1_3|[?a]"
+	set_temp_variable = { a = 2 }
+	divide_temp_variable = { a = 3 }
+	log = "EOPROBE|div_2_3|[?a]"
+	set_temp_variable = { a = 0.00001 }
+	multiply_temp_variable = { a = 0.5 }
+	log = "EOPROBE|mul_tiny_half|[?a]"
+	set_temp_variable = { a = 5 }
+	divide_temp_variable = { a = 0 }
+	log = "EOPROBE|div_by_zero|[?a]"
+	set_temp_variable = { a = { value = 5 divide = 0 } }
+	log = "EOPROBE|mathexpr_div_by_zero|[?a]"
+	set_temp_variable = { a = -7 }
+	modulo_temp_variable = { a = 3 }
+	log = "EOPROBE|mod_neg7_3|[?a]"
+	set_temp_variable = { a = 2147483647 }
+	add_to_temp_variable = { a = 1 }
+	log = "EOPROBE|overflow_add|[?a]"
+	set_temp_variable = { a = 100000 }
+	multiply_temp_variable = { a = 100000 }
+	log = "EOPROBE|overflow_mul|[?a]"
+	set_temp_variable = { a = -2.5 }
+	round_temp_variable = a
+	log = "EOPROBE|round_neg_2_5|[?a]"
+
+	# Text formatting
+	set_temp_variable = { a = 2.3 }
+	log = "EOPROBE|fmt_default_2_3|[?a]"
+	set_temp_variable = { a = 7 }
+	log = "EOPROBE|fmt_default_7|[?a]"
+	set_temp_variable = { a = 2.36 }
+	log = "EOPROBE|fmt_1_2_36|[?a|1]"
+	set_temp_variable = { a = -2.36 }
+	log = "EOPROBE|fmt_1_neg2_36|[?a|1]"
+	set_temp_variable = { a = 2.7 }
+	log = "EOPROBE|fmt_0_2_7|[?a|0]"
+
+	# Math expressions
+	set_temp_variable = { a = { value = 2 pow = 0.5 } }
+	log = "EOPROBE|pow_2_half|[?a]"
+	set_temp_variable = { a = { value = 1.1 pow = 3 } }
+	log = "EOPROBE|pow_1_1_cubed|[?a]"
+	set_temp_variable = { a = { value = 100 log = 10 } }
+	log = "EOPROBE|log10_100|[?a]"
+	set_temp_variable = { a = { value = 7 clamp = { max = 5 min = 6 } } }
+	log = "EOPROBE|clamp_max_then_min|[?a]"
+
+	# Temp vs. scope variable with the same name
+	set_variable = { eosim_shadow = 1 }
+	set_temp_variable = { eosim_shadow = 2 }
+	log = "EOPROBE|temp_shadows_var|[?eosim_shadow]"
+	clear_variable = eosim_shadow
+
+	# Arrays: elements past ^num, stale elements after removal, clear_array
+	clear_array = eosim_arr
+	add_to_array = { eosim_arr = 1 }
+	set_variable = { eosim_arr^5 = 42 }
+	log = "EOPROBE|ghost_read|[?eosim_arr^5]"
+	log = "EOPROBE|ghost_num|[?eosim_arr^num]"
+	add_to_array = { eosim_arr = 2 }
+	add_to_array = { eosim_arr = 3 }
+	remove_from_array = { array = eosim_arr index = 2 }
+	log = "EOPROBE|stale_after_remove|[?eosim_arr^2]"
+	clear_array = eosim_arr
+	log = "EOPROBE|ghost_after_clear|[?eosim_arr^5]"
+
+	# Values of scopes and tokens stored in variables
+	set_temp_variable = { a = THIS }
+	log = "EOPROBE|country_value|[?a]"
+	capital_scope = { set_temp_variable = { a = THIS } }
+	log = "EOPROBE|state_value|[?a]"
+	set_temp_variable = { a = token:food }
+	log = "EOPROBE|token_value_is_number|[?a]"
+
+	# x@bare_identifier: token or variable?
+	set_variable = { eosim_probe@token:industrial_complex = 7 }
+	log = "EOPROBE|bare_at_known_token|[?eosim_probe@industrial_complex]"
+	set_temp_variable = { eosim_tok = token:food }
+	set_variable = { eosim_probe@token:food = 3 }
+	log = "EOPROBE|bare_at_temp_holding_token|[?eosim_probe@eosim_tok]"
+	clear_variable = eosim_probe@token:industrial_complex
+	clear_variable = eosim_probe@token:food
+
+	# Array loop as a trigger, adding up into a temp. The get_pm_values family relies on this
+	clear_array = eosim_loop
+	add_to_array = { eosim_loop = 2 }
+	add_to_array = { eosim_loop = 3 }
+	add_to_array = { eosim_loop = 5 }
+	set_temp_variable = { eosim_sum = 0 }
+	set_temp_variable = { eosim_all_of = 0 }
+	if = {
+		limit = {
+			all_of = {
+				array = eosim_loop
+				value = eosim_v
+				index = eosim_i
+				add_to_temp_variable = { eosim_sum = { value = eosim_v multiply = 2 } }
+			}
+		}
+		set_temp_variable = { eosim_all_of = 1 }
+	}
+	log = "EOPROBE|all_of_sum|[?eosim_sum]"
+	log = "EOPROBE|all_of_result|[?eosim_all_of]"
+
+	# Array element with a temp index inside a math expression
+	set_temp_variable = { eosim_i = 1 }
+	set_temp_variable = { a = { value = eosim_loop^eosim_i multiply = 10 } }
+	log = "EOPROBE|array_in_expression|[?a]"
+	eco_sim_probes_math = yes
+	clear_array = eosim_loop
+
+	log = "EOPROBE|END|1"
+}
+
+eco_sim_probes_math = {
+	# all_of_sum and array_in_expression read 0 from the console, but the same forms work in real ticks.
+	# Each line changes one thing, and `effect set_global_flag = eosim_tick_probes` runs them all on the next monthly tick.
+	# Then bin\ecosim_cli.exe calibrate --dump 1 is the console run and --dump 2 the tick run.
+
+	# Is it reading temps, or only array elements?
+	set_temp_variable = { eosim_i = 1 }
+	set_temp_variable = { a = { value = eosim_i multiply = 10 } }
+	log = "EOPROBE|temp_in_expression|[?a]"
+	set_variable = { eosim_scoped = 4 }
+	set_temp_variable = { a = { value = eosim_scoped multiply = 10 } }
+	log = "EOPROBE|scoped_var_in_expression|[?a]"
+	clear_variable = eosim_scoped
+
+	# Which array reads?
+	set_temp_variable = { a = { value = eosim_loop^1 multiply = 10 } }
+	log = "EOPROBE|array_literal_in_expression|[?a]"
+	set_temp_variable = { a = { value = eosim_loop^num multiply = 10 } }
+	log = "EOPROBE|array_num_in_expression|[?a]"
+	set_temp_variable = { ii = 1 }
+	set_temp_variable = { a = { value = eosim_loop^ii multiply = 10 } }
+	log = "EOPROBE|array_index_ii_in_expression|[?a]"
+	set_temp_variable = { a = 0 }
+	for_each_loop = {
+		array = eosim_loop
+		index = eosim_j
+		add_to_temp_variable = { a = { value = eosim_loop^eosim_j multiply = 10 } }
+	}
+	log = "EOPROBE|array_loop_index_in_expression|[?a]"
+
+	# pm_construction_value read 0 for every PM at startup with this form, and it's the only one that did
+	set_variable = { eosim_total = 1 }
+	add_to_variable = { eosim_total = { value = 2 multiply = 3 } }
+	log = "EOPROBE|add_to_variable_math|[?eosim_total]"
+	set_variable = { global.eosim_total@token:food = 1 }
+	add_to_variable = { global.eosim_total@token:food = { value = 2 multiply = 3 } }
+	log = "EOPROBE|add_to_global_token_math|[?global.eosim_total@token:food]"
+	set_variable = { global.eosim_total@token:food = 1 }
+	for_each_loop = {
+		array = eosim_loop
+		value = eosim_v
+		index = eosim_j
+		add_to_variable = { global.eosim_total@token:food = { value = eosim_loop^eosim_j multiply = eosim_v } }
+	}
+	log = "EOPROBE|add_to_global_array_math|[?global.eosim_total@token:food]"
+	clear_variable = eosim_total
+	clear_variable = global.eosim_total@token:food
+
+	# Trigger blocks. all_of_staged_read is the form the getters rely on
+	set_temp_variable = { eosim_sum = 0 }
+	if = {
+		limit = {
+			all_of = {
+				array = eosim_loop
+				value = eosim_v
+				index = eosim_j
+				set_temp_variable = { eosim_t = eosim_loop^eosim_j }
+				multiply_temp_variable = { eosim_t = eosim_v }
+				add_to_temp_variable = { eosim_sum = eosim_t }
+			}
+		}
+	}
+	log = "EOPROBE|all_of_staged_read|[?eosim_sum]"
+	set_temp_variable = { eosim_sum = 0 }
+	if = {
+		limit = {
+			all_of = {
+				array = eosim_loop
+				add_to_temp_variable = { eosim_sum = { value = 2 multiply = 2 } }
+			}
+		}
+	}
+	log = "EOPROBE|all_of_literal_math|[?eosim_sum]"
+	set_temp_variable = { a = 7 }
+	if = { limit = { set_temp_variable = { a = { value = 3 multiply = 2 } } } }
+	log = "EOPROBE|math_in_limit_literal|[?a]"
+	set_temp_variable = { a = 7 }
+	set_temp_variable = { eosim_t = 3 }
+	if = { limit = { set_temp_variable = { a = { value = eosim_t multiply = 2 } } } }
+	log = "EOPROBE|math_in_limit_temp|[?a]"
+}
+
+temp_log = {
+
+	# Array loop as a trigger, adding up into a temp. The get_pm_values family relies on this
+	clear_array = eosim_loop
+	add_to_array = { eosim_loop = 2 }
+	add_to_array = { eosim_loop = 3 }
+	add_to_array = { eosim_loop = 5 }
+	set_temp_variable = { eosim_sum = 0 }
+	set_temp_variable = { eosim_all_of = 0 }
+	if = {
+		limit = {
+			all_of = {
+				array = eosim_loop
+				value = eosim_v
+				index = eosim_i
+				set_temp_variable = { temp_v = eosim_v }
+				multiply_temp_variable = { temp_v = 2 }
+				add_to_temp_variable = { eosim_sum = temp_v }
+				#add_to_temp_variable = { eosim_sum = { value = eosim_v multiply = 2 } }
+				always = yes
+			}
+		}
+		set_temp_variable = { eosim_all_of = 1 }
+	}
+	log = "all_of_sum|[?eosim_sum]"
+	log = "all_of_result|[?eosim_all_of]"
+	clear_array = eosim_loop
+}
+
+eco_sim_parity_dump = {
+	log = "EOSIM|BEGIN|[?global.year]"
+	ENG = { eco_sim_dump_country = yes }
+	952 = { eco_sim_dump_state = yes }
+	128 = { eco_sim_dump_state = yes }
+	ENG = {
+		every_controlled_state = {
+			set_temp_variable = { eosim_s = THIS }
+			log = "EOSIM|[?eosim_s].gdp_amount|[?gdp_amount]"
+			log = "EOSIM|[?eosim_s].pops|[?pops]"
+			log = "EOSIM|[?eosim_s].base_wage|[?base_wage]"
+			log = "EOSIM|[?eosim_s].labor_utilization|[?labor_utilization]"
+		}
+	}
+	log = "EOSIM|END|0"
+}
+
+eco_sim_dump_country = {
+	log = "EOSIM|[THIS.GetTag].gdp_amount|[?gdp_amount]"
+	log = "EOSIM|[THIS.GetTag].gdp_per_capita|[?gdp_per_capita]"
+	log = "EOSIM|[THIS.GetTag].pops|[?pops]"
+	log = "EOSIM|[THIS.GetTag].treasury|[?treasury]"
+	log = "EOSIM|[THIS.GetTag].national_debt|[?national_debt]"
+	log = "EOSIM|[THIS.GetTag].net_budget|[?net_budget]"
+	log = "EOSIM|[THIS.GetTag].revenue|[?revenue]"
+	log = "EOSIM|[THIS.GetTag].spending|[?spending]"
+	log = "EOSIM|[THIS.GetTag].sales_tax_revenue|[?sales_tax_revenue]"
+	log = "EOSIM|[THIS.GetTag].corporate_tax_revenue|[?corporate_tax_revenue]"
+	log = "EOSIM|[THIS.GetTag].tariff_revenue|[?tariff_revenue]"
+	log = "EOSIM|[THIS.GetTag].mandatory_spending|[?mandatory_spending]"
+	log = "EOSIM|[THIS.GetTag].military_payroll_spending|[?military_payroll_spending]"
+	log = "EOSIM|[THIS.GetTag].investment_fund|[?investment_fund]"
+	log = "EOSIM|[THIS.GetTag].market_gdp|[?market_gdp]"
+	log = "EOSIM|[THIS.GetTag].market_countries^num|[?market_countries^num]"
+	log = "EOSIM|[THIS.GetTag].base_wage|[?base_wage]"
+	log = "EOSIM|[THIS.GetTag].num_researched_techs|[?researched_techs^num]"
+	log = "EOSIM|[THIS.GetTag].modifier@incentives_modifier|[?modifier@incentives_modifier]"
+	log = "EOSIM|[THIS.GetTag].modifier@consumer_confidence_modifier|[?modifier@consumer_confidence_modifier]"
+	log = "EOSIM|[THIS.GetTag].modifier@investment_confidence_modifier|[?modifier@investment_confidence_modifier]"
+	log = "EOSIM|[THIS.GetTag].modifier@tax_efficiency_factor|[?modifier@tax_efficiency_factor]"
+	log = "EOSIM|[THIS.GetTag].modifier@bureaucratic_efficiency_factor|[?modifier@bureaucratic_efficiency_factor]"
+	for_each_loop = {
+		array = global.resource_token_array
+		value = eosim_r
+		log = "EOSIM|[THIS.GetTag].price@[?eosim_r.GetTokenKey]|[?price@var:eosim_r]"
+		log = "EOSIM|[THIS.GetTag].supply@[?eosim_r.GetTokenKey]|[?supply@var:eosim_r]"
+		log = "EOSIM|[THIS.GetTag].demand@[?eosim_r.GetTokenKey]|[?demand@var:eosim_r]"
+		log = "EOSIM|[THIS.GetTag].production@[?eosim_r.GetTokenKey]|[?production@var:eosim_r]"
+		log = "EOSIM|[THIS.GetTag].need@[?eosim_r.GetTokenKey]|[?need@var:eosim_r]"
+		log = "EOSIM|[THIS.GetTag].trade@[?eosim_r.GetTokenKey]|[?trade@var:eosim_r]"
+		log = "EOSIM|[THIS.GetTag].resource@[?eosim_r.GetTokenKey]|[?resource@var:eosim_r]"
+		log = "EOSIM|[THIS.GetTag].global.base_price@[?eosim_r.GetTokenKey]|[?global.base_price@var:eosim_r]"
+	}
+}
+
+eco_sim_dump_state = {
+	set_temp_variable = { eosim_s = THIS }
+	log = "EOSIM|[?eosim_s].gdp_amount|[?gdp_amount]"
+	log = "EOSIM|[?eosim_s].pops|[?pops]"
+	log = "EOSIM|[?eosim_s].base_wage|[?base_wage]"
+	log = "EOSIM|[?eosim_s].labor_utilization|[?labor_utilization]"
+	log = "EOSIM|[?eosim_s].industrial_workforce|[?industrial_workforce]"
+	log = "EOSIM|[?eosim_s].industrial_jobs_available|[?industrial_jobs_available]"
+	log = "EOSIM|[?eosim_s].pops_sol|[?pops_sol]"
+	log = "EOSIM|[?eosim_s].arable_land|[?arable_land]"
+	log = "EOSIM|[?eosim_s].total_industry_size|[?total_industry_size]"
+	log = "EOSIM|[?eosim_s].industrial_capacity|[?industrial_capacity]"
+	log = "EOSIM|[?eosim_s].industrial_capacity_use|[?industrial_capacity_use]"
+	log = "EOSIM|[?eosim_s].industries^num|[?industries^num]"
+	log = "EOSIM|[?eosim_s].state_population_k|[?state_population_k]"
+	log = "EOSIM|[?eosim_s].industrial_complex_level|[?industrial_complex_level]"
+	log = "EOSIM|[?eosim_s].modifier@local_industry_slots|[?modifier@local_industry_slots]"
+	for_each_loop = {
+		array = global.pops_array
+		value = eosim_p
+		log = "EOSIM|[?eosim_s].pops@[?eosim_p.GetTokenKey]|[?pops@var:eosim_p]"
+		log = "EOSIM|[?eosim_s].pops_workforce@[?eosim_p.GetTokenKey]|[?pops_workforce@var:eosim_p]"
+		log = "EOSIM|[?eosim_s].pops_employed@[?eosim_p.GetTokenKey]|[?pops_employed@var:eosim_p]"
+		log = "EOSIM|[?eosim_s].pops_earnings@[?eosim_p.GetTokenKey]|[?pops_earnings@var:eosim_p]"
+		log = "EOSIM|[?eosim_s].pops_spending@[?eosim_p.GetTokenKey]|[?pops_spending@var:eosim_p]"
+		log = "EOSIM|[?eosim_s].pops_savings@[?eosim_p.GetTokenKey]|[?pops_savings@var:eosim_p]"
+		log = "EOSIM|[?eosim_s].pops_sol@[?eosim_p.GetTokenKey]|[?pops_sol@var:eosim_p]"
+	}
+	for_each_loop = {
+		array = industries
+		value = eosim_i
+		log = "EOSIM|[?eosim_s].size@[?eosim_i.GetTokenKey]|[?size@var:eosim_i]"
+		log = "EOSIM|[?eosim_s].employed@[?eosim_i.GetTokenKey]|[?employed@var:eosim_i]"
+		log = "EOSIM|[?eosim_s].employment_target@[?eosim_i.GetTokenKey]|[?employment_target@var:eosim_i]"
+		log = "EOSIM|[?eosim_s].productivity@[?eosim_i.GetTokenKey]|[?productivity@var:eosim_i]"
+		log = "EOSIM|[?eosim_s].payroll_multiplier@[?eosim_i.GetTokenKey]|[?payroll_multiplier@var:eosim_i]"
+		log = "EOSIM|[?eosim_s].revenue@[?eosim_i.GetTokenKey]|[?revenue@var:eosim_i]"
+		log = "EOSIM|[?eosim_s].profit@[?eosim_i.GetTokenKey]|[?profit@var:eosim_i]"
+		log = "EOSIM|[?eosim_s].dividends@[?eosim_i.GetTokenKey]|[?dividends@var:eosim_i]"
+		log = "EOSIM|[?eosim_s].money_accumulation@[?eosim_i.GetTokenKey]|[?money_accumulation@var:eosim_i]"
+		set_temp_variable = { eosim_pm = production_method@var:eosim_i }
+		set_temp_variable = { eosim_am = automation_method@var:eosim_i }
+		log = "EOSIM|[?eosim_s].production_method@[?eosim_i.GetTokenKey]|[?eosim_pm.GetTokenKey]"
+		log = "EOSIM|[?eosim_s].automation_method@[?eosim_i.GetTokenKey]|[?eosim_am.GetTokenKey]"
+	}
+	for_each_loop = {
+		array = global.resource_token_array
+		value = eosim_r
+		log = "EOSIM|[?eosim_s].production@[?eosim_r.GetTokenKey]|[?production@var:eosim_r]"
+		log = "EOSIM|[?eosim_s].demand_input@[?eosim_r.GetTokenKey]|[?demand_input@var:eosim_r]"
+		log = "EOSIM|[?eosim_s].demand@[?eosim_r.GetTokenKey]|[?demand@var:eosim_r]"
+		log = "EOSIM|[?eosim_s].base_resource@[?eosim_r.GetTokenKey]|[?base_resource@var:eosim_r]"
+		log = "EOSIM|[?eosim_s].resource@[?eosim_r.GetTokenKey]|[?resource@var:eosim_r]"
+	}
+}
+
+eco_sim_pm_audit = {
+	# Every building + method, per K of base workforce at base prices. verify_pm_audit.py diffs this against the sheet.
+	for_each_loop = {
+		array = global.industry_token_array
+		value = eosim_b
+
+		for_each_loop = {
+			array = global.building_production_methods@var:eosim_b
+			value = eosim_m
+			eco_sim_pm_audit_line = yes
+		}
+		for_each_loop = {
+			array = global.building_automation_methods@var:eosim_b
+			value = eosim_m
+			eco_sim_pm_audit_line = yes
+		}
+	}
+}
+
+eco_sim_pm_audit_line = {
+	set_temp_variable = { eosim_rev = 0 }
+	for_each_loop = {
+		array = global.building_base_production@var:eosim_b
+		value = eosim_g
+		index = eosim_i
+		set_temp_variable = { eosim_amount = global.building_base_production_amount@var:eosim_b^eosim_i }
+		multiply_temp_variable = { eosim_amount = global.building_production_multiplier@var:eosim_b }
+		multiply_temp_variable = { eosim_amount = global.pm_output_amount@var:eosim_m }
+		multiply_temp_variable = { eosim_amount = global.base_price@var:eosim_g }
+		add_to_temp_variable = { eosim_rev = eosim_amount }
+	}
+	set_temp_variable = { eosim_in = 0 }
+	for_each_loop = {
+		array = global.pm_input@var:eosim_m
+		value = eosim_g
+		index = eosim_i
+		set_temp_variable = { eosim_amount = global.pm_input_amount@var:eosim_m^eosim_i }
+		multiply_temp_variable = { eosim_amount = global.base_price@var:eosim_g }
+		add_to_temp_variable = { eosim_in = eosim_amount }
+	}
+	log = "EOPM|[?eosim_b.GetTokenKey]|[?eosim_m.GetTokenKey]|[?eosim_rev]|[?eosim_in]|[?global.pm_workforce_laborers@var:eosim_m]|[?global.pm_workforce_workers@var:eosim_m]|[?global.pm_industrial_capacity_use@var:eosim_m]|[?global.pm_industrial_capacity@var:eosim_m]|[?global.pm_shipping_capacity@var:eosim_m]|[?global.pm_construction_value@var:eosim_m]|[?global.pm_construction_duration@var:eosim_m]"
+}

@@ -1,0 +1,576 @@
+# =============================================================================
+# Investment Bucket System
+# -----------------------------------------------------------------------------
+# Replaces the opportunity-list system (io_add_random / io_refresh_list /
+# io_update / sort_io_list / remove_worst) with capital-flow buckets.
+#
+# Capital is PUSHED DOWN into per-(state,category) buckets - there is no
+# cross-state "best location" search. Money only reaches a bucket because its
+# category (national score) and its state (cached state_target) both ranked well.
+#
+# Flow (monthly, country scope):
+#   1. invest_raise_and_split   - raise each state's pops_investment; split into
+#                                 the national inflow and per-state local pools.
+#   2. update_state_targets_all - refresh the cached, cheap per-(state,category)
+#                                 state_target weights (+ cat_target_sum totals).
+#   3. invest_distribute_national - score categories, push national inflow down to
+#                                 (state,category) buckets by state_target. No sort.
+#   4. invest_withdraw_stale    - drain buckets of negative-score categories back.
+#   5. per state: invest_distribute_local (local pool -> EXISTING-category buckets)
+#                 + invest_fire_buckets (buckets over threshold act locally).
+#
+# Buckets are dumb: investment@<cat> (state scope) = money in the bucket. Firing
+# retools to best PM first, then builds/expands/exploits with the remainder,
+# paying only the DOWN PAYMENT (investment_cost). Ongoing construction upkeep is
+# paid by the state pools - that (+ debt, financier rework) lands at integration.
+#
+# Reuses: score_io_attractiveness (only inside score_category_roi's cost calc),
+# construct_x_industries_no_update / retool_industry_no_update, investment_fund.
+# Companies keep their own system.
+#
+# NOTE: not yet wired into the monthly tick - call invest_buckets_monthly
+# manually to test alongside the still-live old system.
+# =============================================================================
+
+	# Step 1: raise this tick's capital per state and split national vs. local.
+	invest_raise_and_split = {
+		# Country scope. Raise this tick's capital and split national vs local. Revenues only - the pools
+		# get their balances/targets in invest_pools_update.
+		set_temp_variable = { national_fraction_temp = global.investment_national_fraction_base }
+		add_to_temp_variable = { national_fraction_temp = modifier@investment_national_fraction }
+		clamp_temp_variable = { var = national_fraction_temp min = 0 max = 1 }
+
+		set_variable = { invest_nat_revenue = 0 }
+		every_controlled_state = {
+			set_temp_variable = { state_capital_temp = pops_investment }
+			if = {
+				limit = { check_variable = { state_capital_temp < 0 } }
+				set_temp_variable = { state_capital_temp = 0 }
+			}
+
+			set_temp_variable = { national_share_temp = state_capital_temp }
+			multiply_temp_variable = { national_share_temp = national_fraction_temp }
+			add_to_variable = { PREV.invest_nat_revenue = national_share_temp }
+
+			set_variable = { investment_pool_revenue = state_capital_temp }
+			subtract_from_variable = { investment_pool_revenue = national_share_temp }
+		}
+	}
+
+	# Pools mirror investment_fund: revenue in, a target-spending per tick, and spending split into
+	# ACTIVE (new commitments this tick) and ONGOING (recurring construction/retool upkeep - populated by
+	# the financing rework at integration). The national pool becomes investment_fund at integration
+	# (central cash + debt); kept separate now for parallel testing.
+	invest_pools_update = {
+		# Country scope
+		add_to_variable = { invest_nat_pool = invest_nat_revenue }
+		set_variable = { invest_nat_target = {
+			value = modifier@investment_confidence_modifier
+			divide = 100
+			max = 0
+			multiply = invest_nat_revenue
+			add = { value = gdp_amount multiply = 0.1 min = invest_nat_pool multiply = 0.2 }
+		} }
+		set_variable = { invest_nat_spending_active = 0 }
+		set_variable = { invest_nat_spending_ongoing = 0 }
+
+		every_controlled_state = {
+			add_to_variable = { investment_pool = investment_pool_revenue }
+			set_variable = { investment_pool_target = {
+				value = controller:modifier@investment_confidence_modifier
+				divide = 100
+				max = 0
+				multiply = investment_pool_revenue
+				add = { value = gdp_amount multiply = 0.1 min = investment_pool multiply = 0.2 }
+			} }
+			set_variable = { investment_pool_spending_active = 0 }
+			set_variable = { investment_pool_spending_ongoing = 0 }
+		}
+	}
+
+	# Aggregate the state buckets to a country-level total per category (pending investment): a permanent
+	# stat AND the saturation signal that suppresses over-invested categories. Also resets the monthly
+	# investment-flow stat (invest_cat_monthly), which the distributions below accumulate into.
+	invest_aggregate_categories = {
+		# Country scope
+		for_each_loop = {
+			array = global.industry_token_array
+			value = industry_token
+			set_variable = { investment@var:industry_token = 0 }
+			set_variable = { invest_cat_monthly@var:industry_token = 0 }
+		}
+		every_controlled_state = {
+			for_each_loop = {
+				array = global.industry_token_array
+				value = industry_token
+				add_to_variable = { PREV.investment@var:industry_token = investment@var:industry_token }
+			}
+		}
+	}
+
+	# Representative national attractiveness of a category (country scope). Input: industry_token.
+	# Output: cat_score_temp. ROI of a fresh best-PM build (country base_wage + highest_productivity_*
+	# cache) + output scarcity + modifiers. Decides how national capital splits ACROSS categories only.
+	score_category_roi = {
+		set_temp_variable = { latest_am_temp = latest_automation_method@var:industry_token }
+		set_temp_variable = { am_mult_temp = base_am_wage_mult@var:latest_am_temp }
+		multiply_temp_variable = { am_mult_temp = global.building_base_employees@var:industry_token }
+		set_temp_variable = { am_expenses_temp = base_am_expenses@var:latest_am_temp }
+		multiply_temp_variable = { am_expenses_temp = global.building_base_output_value@var:industry_token }
+
+		set_temp_variable = { roi_temp = highest_productivity_revenue@var:industry_token }
+		set_temp_variable = { expenses_temp = highest_productivity_wage_mult@var:industry_token }
+		add_to_temp_variable = { expenses_temp = am_mult_temp }
+		multiply_temp_variable = { expenses_temp = base_wage }
+		add_to_temp_variable = { expenses_temp = highest_productivity_expenses@var:industry_token }
+		add_to_temp_variable = { expenses_temp = am_expenses_temp }
+		subtract_from_temp_variable = { roi_temp = expenses_temp } # monthly profit
+		multiply_temp_variable = { roi_temp = 0.67 } # after worker bonuses
+
+		set_temp_variable = { io_type = token:io_build }
+		set_temp_variable = { pm_temp = highest_productivity_pm@var:industry_token }
+		set_temp_variable = { am_temp = latest_automation_method@var:industry_token }
+		calc_io_cost = yes # -> total_cost_temp
+		if = {
+			limit = { check_variable = { total_cost_temp > 0 } }
+			divide_temp_variable = { roi_temp = total_cost_temp }
+		}
+		else = { set_temp_variable = { roi_temp = 0 } }
+		multiply_temp_variable = { roi_temp = 120 } # monthly ROI * 12 / 10% baseline
+		clamp_temp_variable = { var = roi_temp min = -10 max = 10 }
+
+		set_temp_variable = { cat_score_temp = roi_temp }
+		multiply_temp_variable = { cat_score_temp = 100 }
+
+		# Output scarcity: market price above base pulls investment, gluts repel it.
+		set_temp_variable = { attr_price_temp = 0 }
+		set_temp_variable = { attr_price_count_temp = global.building_base_production@var:industry_token^num }
+		for_each_loop = {
+			array = global.building_base_production@var:industry_token
+			value = br_token
+			set_temp_variable = { attr_temp = price_compared_to_base@var:br_token }
+			if = {
+				limit = { check_variable = { attr_temp > 0 } }
+				multiply_temp_variable = { attr_temp = 10 }
+			}
+			else = { multiply_temp_variable = { attr_temp = 50 } }
+			add_to_temp_variable = { attr_price_temp = attr_temp }
+		}
+		if = {
+			limit = { check_variable = { attr_price_count_temp > 0 } }
+			divide_temp_variable = { attr_price_temp = attr_price_count_temp }
+		}
+		add_to_temp_variable = { cat_score_temp = attr_price_temp }
+
+		add_to_temp_variable = { cat_score_temp = building_attractiveness_modifier@var:industry_token }
+		set_temp_variable = { attr_factor_temp = building_attractiveness_factor@var:industry_token }
+		add_to_temp_variable = { attr_factor_temp = 1 }
+		multiply_temp_variable = { cat_score_temp = attr_factor_temp }
+
+		# Saturation: the more capital already pooled nationally in this category (investment@cat, aggregated
+		# from the state buckets), the lower the score - diminishing returns that spread capital around.
+		set_temp_variable = { saturation_temp = investment@var:industry_token }
+		divide_temp_variable = { saturation_temp = global.investment_saturation_ref }
+		add_to_temp_variable = { saturation_temp = 1 }
+		divide_temp_variable = { cat_score_temp = saturation_temp }
+	}
+
+	# Step 2: refresh the per-(state,category) targets and their per-category totals. CHEAP (arithmetic
+	# only, no scoring), so recomputed every tick - its inputs (employment, profitability, reserves,
+	# workforce) move month to month, so there is nothing stable to dirty-flag.
+	update_state_targets_all = {
+		# Country scope
+		for_each_loop = {
+			array = global.industry_token_array
+			value = industry_token
+			set_variable = { cat_target_sum@var:industry_token = 0 }
+		}
+		every_controlled_state = {
+			update_state_targets = yes
+		}
+	}
+	update_state_targets = {
+		# State scope. state_target@cat = how much this state wants investment in cat.
+		# Consts below are magic numbers - TUNE to balance term magnitudes.
+		for_each_loop = {
+			array = global.industry_token_array
+			value = industry_token
+			if = {
+				limit = {
+					is_valid_industry = yes
+					NOT = { check_variable = { global.building_government_control@var:industry_token = 1 } }
+				}
+				# Available workforce (any industry can draw idle labour)
+				set_temp_variable = { st_temp = available_workforce }
+				multiply_temp_variable = { st_temp = 1 } # c_workforce (TUNE)
+
+				# Existing employment x profitability (agglomeration / proven viability)
+				if = {
+					limit = { check_variable = { size@var:industry_token > 0 } }
+					set_temp_variable = { term_temp = employed@var:industry_token }
+					multiply_temp_variable = { term_temp = profitability@var:industry_token }
+					multiply_temp_variable = { term_temp = 1 } # c_empprof (TUNE)
+					add_to_temp_variable = { st_temp = term_temp }
+				}
+
+				# Industrial capacity service (infrastructure)
+				set_temp_variable = { term_temp = industrial_capacity_service }
+				multiply_temp_variable = { term_temp = 1 } # c_ic (TUNE)
+				add_to_temp_variable = { st_temp = term_temp }
+
+				# RGO reserves x base employees
+				if = {
+					limit = { check_variable = { global.building_rgo@var:industry_token > 0 } }
+					set_temp_variable = { term_temp = known_reserves@var:industry_token }
+					add_to_temp_variable = { term_temp = reserves_potential@var:industry_token }
+					multiply_temp_variable = { term_temp = global.building_base_employees@var:industry_token }
+					multiply_temp_variable = { term_temp = 1 } # c_reserves (TUNE)
+					add_to_temp_variable = { st_temp = term_temp }
+				}
+
+				# Arable land x base employees (farms)
+				if = {
+					limit = { check_variable = { global.building_arable_land_use@var:industry_token > 0 } }
+					set_temp_variable = { term_temp = arable_land_available }
+					multiply_temp_variable = { term_temp = global.building_base_employees@var:industry_token }
+					multiply_temp_variable = { term_temp = 1 } # c_arable (TUNE)
+					add_to_temp_variable = { st_temp = term_temp }
+				}
+
+				# Hard gate: an RGO category is impossible where there is no deposit at all.
+				if = {
+					limit = {
+						check_variable = { global.building_rgo@var:industry_token > 0 }
+						check_variable = { base_resource@var:industry_token = 0 }
+						check_variable = { known_reserves@var:industry_token = 0 }
+						check_variable = { reserves_potential@var:industry_token = 0 }
+					}
+					set_temp_variable = { st_temp = 0 }
+				}
+				# Discourage spreading an already-present industry into states that lack it (favour agglomeration):
+				# controller:size@industry is the nationally-accumulated size of the category.
+				if = {
+					limit = {
+						check_variable = { controller:size@var:industry_token > 0 }
+						check_variable = { size@var:industry_token = 0 }
+					}
+					multiply_temp_variable = { st_temp = 0.25 } # new-state spread reduction (TUNE)
+				}
+
+				if = { limit = { check_variable = { st_temp < 0 } } set_temp_variable = { st_temp = 0 } }
+				set_variable = { state_target@var:industry_token = st_temp }
+				add_to_variable = { PREV.cat_target_sum@var:industry_token = st_temp }
+			}
+			else = {
+				set_variable = { state_target@var:industry_token = 0 }
+			}
+		}
+	}
+
+	# Step 3: score categories, then push the national inflow down to (state,category) buckets weighted
+	# by state_target. Two cheap passes; the state pass is pure cached arithmetic (no scoring).
+	invest_distribute_national = {
+		# Country scope. Weight each category by score * footprint (cat_target_sum) so a high-ROI category
+		# that only a few states can host (e.g. valuables) can't soak up national capital. This nets out to
+		# each bucket getting inflow * cat_score * state_target / Sum(cat_score * state_target).
+		set_variable = { invest_weight_sum = 0 }
+		for_each_loop = {
+			array = global.industry_token_array
+			value = industry_token
+			if = {
+				limit = {
+					is_valid_industry = yes
+					NOT = { check_variable = { global.building_government_control@var:industry_token = 1 } }
+				}
+				score_category_roi = yes # -> cat_score_temp
+				set_variable = { investment_score@var:industry_token = cat_score_temp }
+				if = {
+					limit = {
+						check_variable = { cat_score_temp > 0 }
+						check_variable = { cat_target_sum@var:industry_token > 0 }
+					}
+					set_temp_variable = { weight_temp = cat_score_temp }
+					multiply_temp_variable = { weight_temp = cat_target_sum@var:industry_token }
+					add_to_variable = { invest_weight_sum = weight_temp }
+				}
+			}
+			else = { set_variable = { investment_score@var:industry_token = 0 } }
+		}
+
+		# Deploy this tick's national target spending (capped by the balance) down to the buckets.
+		set_temp_variable = { deploy_temp = invest_nat_target }
+		if = {
+			limit = { check_variable = { deploy_temp > invest_nat_pool } }
+			set_temp_variable = { deploy_temp = invest_nat_pool }
+		}
+		if = {
+			limit = {
+				check_variable = { invest_weight_sum > 0 }
+				check_variable = { deploy_temp > 0 }
+			}
+			every_controlled_state = {
+				for_each_loop = {
+					array = global.industry_token_array
+					value = industry_token
+					if = {
+						limit = {
+							check_variable = { PREV.investment_score@var:industry_token > 0 }
+							check_variable = { state_target@var:industry_token > 0 }
+						}
+						# bucket += deploy * cat_score * state_target / Sum(cat_score * state_target)
+						set_temp_variable = { alloc_temp = deploy_temp }
+						multiply_temp_variable = { alloc_temp = PREV.investment_score@var:industry_token }
+						multiply_temp_variable = { alloc_temp = state_target@var:industry_token }
+						divide_temp_variable = { alloc_temp = PREV.invest_weight_sum }
+						add_to_variable = { investment@var:industry_token = alloc_temp }
+						add_to_variable = { PREV.invest_cat_monthly@var:industry_token = alloc_temp }
+					}
+				}
+			}
+			set_variable = { invest_nat_spending_active = deploy_temp }
+			subtract_from_variable = { invest_nat_pool = deploy_temp }
+		}
+	}
+
+	# Step 4: drain buckets of categories that have turned into bad investments (negative national score),
+	# national share back to the fund and local share to the state pool.
+	invest_withdraw_stale = {
+		# Country scope
+		set_temp_variable = { national_fraction_temp = global.investment_national_fraction_base }
+		add_to_temp_variable = { national_fraction_temp = modifier@investment_national_fraction }
+		clamp_temp_variable = { var = national_fraction_temp min = 0 max = 1 }
+
+		every_controlled_state = {
+			for_each_loop = {
+				array = global.industry_token_array
+				value = industry_token
+				if = {
+					limit = {
+						check_variable = { PREV.investment_score@var:industry_token < 0 }
+						check_variable = { investment@var:industry_token > 0 }
+					}
+					set_temp_variable = { drain_temp = investment@var:industry_token }
+					set_variable = { investment@var:industry_token = 0 }
+
+					set_temp_variable = { nat_back_temp = drain_temp }
+					multiply_temp_variable = { nat_back_temp = national_fraction_temp }
+					add_to_variable = { PREV.invest_nat_pool = nat_back_temp }
+
+					set_temp_variable = { loc_back_temp = drain_temp }
+					subtract_from_temp_variable = { loc_back_temp = nat_back_temp }
+					add_to_variable = { investment_pool = loc_back_temp }
+				}
+			}
+		}
+	}
+
+	# Step 5a: local pool -> buckets of EXISTING categories only (deepening), weighted by state_target.
+	invest_distribute_local = {
+		# State scope
+		set_temp_variable = { local_target_sum_temp = 0 }
+		for_each_loop = {
+			array = industries
+			value = industry_token
+			if = {
+				limit = {
+					is_valid_industry = yes
+					NOT = { check_variable = { global.building_government_control@var:industry_token = 1 } }
+				}
+				add_to_temp_variable = { local_target_sum_temp = state_target@var:industry_token }
+			}
+		}
+		set_temp_variable = { deploy_temp = investment_pool_target }
+		if = {
+			limit = { check_variable = { deploy_temp > investment_pool } }
+			set_temp_variable = { deploy_temp = investment_pool }
+		}
+		if = {
+			limit = {
+				check_variable = { local_target_sum_temp > 0 }
+				check_variable = { deploy_temp > 0 }
+			}
+			for_each_loop = {
+				array = industries
+				value = industry_token
+				if = {
+					limit = {
+						is_valid_industry = yes
+						NOT = { check_variable = { global.building_government_control@var:industry_token = 1 } }
+					}
+					set_temp_variable = { local_share_temp = deploy_temp }
+					multiply_temp_variable = { local_share_temp = state_target@var:industry_token }
+					divide_temp_variable = { local_share_temp = local_target_sum_temp }
+					add_to_variable = { investment@var:industry_token = local_share_temp }
+					add_to_variable = { controller:invest_cat_monthly@var:industry_token = local_share_temp }
+				}
+			}
+			set_variable = { investment_pool_spending_active = deploy_temp }
+			subtract_from_variable = { investment_pool = deploy_temp }
+		}
+	}
+
+	# Step 5b: fire every bucket that has crossed the state-wide threshold.
+	invest_fire_buckets = {
+		# State scope
+		for_each_loop = {
+			array = global.industry_token_array
+			value = industry_token
+			if = {
+				limit = {
+					check_variable = { investment@var:industry_token > global.investment_state_min_action }
+					is_valid_industry = yes
+					NOT = { check_variable = { global.building_government_control@var:industry_token = 1 } }
+				}
+				invest_bucket_act = yes
+			}
+		}
+	}
+
+	# Spend a bucket locally: retool to best PM first (if applicable), then build/expand/exploit with the
+	# remainder. Down-payment cost only. No scoring here - the money only arrived because this state+category
+	# already ranked well upstream.
+	invest_bucket_act = {
+		# State scope. Input: industry_token.
+		# --- Retool first: PM upgrade takes priority, else an AM upgrade (one retool per building/tick) ---
+		if = {
+			limit = {
+				check_variable = { size@var:industry_token > 0 }
+				check_variable = { retooling_pm@var:industry_token = 0 }
+				check_variable = { controller:building_unlocked_pms@var:industry_token^num > 1 }
+				NOT = { check_variable = { production_method@var:industry_token = controller:highest_productivity_pm@var:industry_token } }
+			}
+			set_temp_variable = { io_type = token:io_upgrade_pm }
+			calc_io_cost = yes # -> investment_cost_temp (per size)
+			set_temp_variable = { retool_spend_temp = investment_cost_temp }
+			multiply_temp_variable = { retool_spend_temp = size@var:industry_token }
+			if = {
+				limit = {
+					check_variable = { investment_cost_temp > 0 }
+					check_variable = { investment@var:industry_token > retool_spend_temp }
+				}
+				set_temp_variable = { financer_temp = 0 }
+				set_temp_variable = { production_method_temp = controller:highest_productivity_pm@var:industry_token }
+				set_temp_variable = { automation_method_temp = 0 }
+				set_temp_variable = { no_cost_temp = 1 }
+				retool_industry_no_update = yes
+				subtract_from_variable = { investment@var:industry_token = retool_spend_temp }
+			}
+		}
+		else_if = {
+			limit = {
+				check_variable = { size@var:industry_token > 0 }
+				check_variable = { retooling_pm@var:industry_token = 0 }
+				check_variable = { controller:building_unlocked_ams@var:industry_token^num > 1 }
+				NOT = { check_variable = { automation_method@var:industry_token = controller:latest_automation_method@var:industry_token } }
+			}
+			set_temp_variable = { io_type = token:io_upgrade_am }
+			set_temp_variable = { pm_temp = controller:latest_automation_method@var:industry_token } # calc_io_cost io_upgrade_am reads base_am_cost@pm_temp
+			calc_io_cost = yes # -> investment_cost_temp (per size)
+			set_temp_variable = { retool_spend_temp = investment_cost_temp }
+			multiply_temp_variable = { retool_spend_temp = size@var:industry_token }
+			if = {
+				limit = {
+					check_variable = { investment_cost_temp > 0 }
+					check_variable = { investment@var:industry_token > retool_spend_temp }
+				}
+				set_temp_variable = { financer_temp = 0 }
+				set_temp_variable = { production_method_temp = 0 }
+				set_temp_variable = { automation_method_temp = controller:latest_automation_method@var:industry_token }
+				set_temp_variable = { no_cost_temp = 1 }
+				retool_industry_no_update = yes
+				subtract_from_variable = { investment@var:industry_token = retool_spend_temp }
+			}
+		}
+
+		# --- Capacity with the remaining bucket ---
+		if = {
+			limit = { check_variable = { global.building_rgo@var:industry_token > 0 } }
+			if = {
+				limit = {
+					OR = {
+						check_variable = { base_resource@var:industry_token > 0 }
+						check_variable = { known_reserves@var:industry_token > 0 }
+					}
+				}
+				set_temp_variable = { io_type = token:io_exploit }
+			}
+			else = { set_temp_variable = { io_type = token:io_prospect } }
+		}
+		else_if = {
+			limit = { check_variable = { size@var:industry_token > 0 } }
+			set_temp_variable = { io_type = token:io_expand }
+		}
+		else = { set_temp_variable = { io_type = token:io_build } }
+
+		if = {
+			limit = { check_variable = { io_type = token:io_prospect } }
+			if = {
+				limit = { check_variable = { investment@var:industry_token > prospecting_cost@var:industry_token } }
+				set_variable = { prospecting@var:industry_token = 1 }
+				set_variable = { prospecting_financier@var:industry_token = 0 }
+				subtract_from_variable = { investment@var:industry_token = prospecting_cost@var:industry_token }
+			}
+		}
+		else = {
+			if = {
+				limit = { check_variable = { io_type = token:io_build } }
+				set_temp_variable = { production_method_temp = controller:highest_productivity_pm@var:industry_token }
+				set_temp_variable = { automation_method_temp = controller:latest_automation_method@var:industry_token }
+			}
+			else = {
+				set_temp_variable = { production_method_temp = production_method@var:industry_token }
+				set_temp_variable = { automation_method_temp = automation_method@var:industry_token }
+			}
+			calc_io_cost = yes # -> investment_cost_temp (per size)
+			if = {
+				limit = { check_variable = { investment_cost_temp > 0 } }
+				set_temp_variable = { size_raw_temp = investment@var:industry_token }
+				divide_temp_variable = { size_raw_temp = investment_cost_temp }
+				set_temp_variable = { size_count_temp = size_raw_temp }
+				round_temp_variable = size_count_temp
+				if = {
+					limit = { check_variable = { size_count_temp > size_raw_temp } }
+					subtract_from_temp_variable = { size_count_temp = 1 }
+				}
+
+				set_temp_variable = { size_max_temp = pops_workforce }
+				divide_temp_variable = { size_max_temp = 10.0 }
+				divide_temp_variable = { size_max_temp = global.building_base_employees@var:industry_token }
+				add_to_temp_variable = { size_max_temp = 1.0 }
+				round_temp_variable = size_max_temp
+				clamp_temp_variable = { var = size_count_temp min = 0 max = size_max_temp }
+				if = {
+					limit = { check_variable = { io_type = token:io_exploit } }
+					clamp_temp_variable = { var = size_count_temp min = 0 max = known_reserves@var:industry_token }
+				}
+				clamp_temp_variable = { var = size_count_temp min = 0 max = 20 }
+
+				if = {
+					limit = { check_variable = { size_count_temp > 0 } }
+					set_temp_variable = { x_temp = size_count_temp }
+					set_temp_variable = { financer_temp = 0 }
+					set_temp_variable = { no_cost_temp = 1 }
+					construct_x_industries_no_update = yes
+					set_temp_variable = { spend_temp = investment_cost_temp }
+					multiply_temp_variable = { spend_temp = size_count_temp }
+					subtract_from_variable = { investment@var:industry_token = spend_temp }
+				}
+			}
+		}
+	}
+
+	# Bundled monthly entry point. NOT wired into the on_action tick - call manually (e.g. console
+	# `effect invest_buckets_monthly = yes` on a country) to test alongside the still-live old system.
+	invest_buckets_monthly = {
+		# Country scope
+		invest_raise_and_split = yes
+		invest_pools_update = yes
+		update_state_targets_all = yes
+		invest_aggregate_categories = yes
+		invest_distribute_national = yes
+		invest_withdraw_stale = yes
+		every_controlled_state = {
+			invest_distribute_local = yes
+			invest_fire_buckets = yes
+		}
+	}
