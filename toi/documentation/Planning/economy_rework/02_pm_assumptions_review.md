@@ -1,12 +1,12 @@
 # Segment 02: PM assumptions review
 
-Reviewed by Strat 2026-10-30. Most assumptions stand. "PM calculations look way off" turned out not to be these assumptions: production in-game matched the sim, and the getters that feed the GUI were the likely cause (segment 01). One decision is still open: RGO employees.
+Reviewed by Strat 2026-10-30. Most assumptions stand. "PM calculations look way off" turned out not to be these assumptions: production in-game matched the sim, and the getters that feed the GUI were the likely cause (segment 01). The RGO employees decision is done. How AMs cut workers is still open.
 
 ## Strat's answers
 | Assumption | Answer | Status |
 |---|---|---|
 | Quantity is per K of **base** workforce | Right | Closed |
-| RGO `base_employees` kept at old values | Needs revisiting | **Open, below** |
+| RGO `base_employees` kept at old values | Needs revisiting | Done 2026-10-31, below |
 | A building's multiplier is one scalar | Applies to all outputs, one scalar | Done, below |
 | AM shares add to PM shares, floored at 0 | Wanted more detail | Explained below. Open design choice |
 | Base tier PMs with no data are 100% Wrk | Generally fine. Not happy with *all*, tune later | Later |
@@ -23,31 +23,31 @@ Strat's earlier explicit decisions still stand: Wrk = laborers, Mid = workers, w
 
 So `output[i] = pm_output_amount × multiplier × amount[i] × employees × modifiers`. Only subsistence `[1, 0.2, 0.04]` and livestock `[0.5, 0.06667, 0.2]` have more than one amount, and both have multiplier 1. Generator table: `OUTPUT_AMOUNTS`. Sim results moved by at most 0.17%, from truncation order.
 
-## Open: RGO base employees
-**Rule at HEAD:** `base_employees = 0.5 × price` for every RGO except valuables (5, not 12.5). At $2 per K that made **1 size = 1 unit a month**. The prices moved and the employees didn't.
+## Done: RGO base employees
+**Rule now, for the eight pre-1900 RGOs:** `base_employees = 0.5 × base price`, set in `_economy_definitions_industries.txt`. That's the inverse of the value parity multiplier, so employees × multiplier = 1. One size makes the PM's quantity per K whatever the good (2 a month on Basic Extraction or Simple Forestry, 1.5 on Basic Planting). Jobs and value per size both scale with the price, and they now agree with `_init_resources`, which divides reserves by the same price. "Pre-1900" means the RGOs with 1857 consumption in the sheet's C-1857 column.
 
-**The inconsistency:** `_init_resources` divides reserves by the **new** price, but employees still follow the **old** one. So oil reserves fell 6× while oil jobs per size stayed put, and potential oil value fell 6×. Aluminum fell 9×.
+Valuables used to be an exception (5, not 12.5). The rule now covers them.
 
-**Recommendation:** `base_employees = 0.5 × new base price` for mined and farmed RGOs (types 3 and 4). Then employees × multiplier = 1 for those goods, so qty per size equals the PM's qty again, and reserves and jobs agree.
+World jobs at the current map's sizes (sim, startup):
 
-Refined goods in `rgo_token_array` (`chemicals` 983 sizes, `textiles` 123, a few others) run factory PMs with multiplier 1, so the rule doesn't fit them. Leave them for now. They follow the old rule too, so `chemicals` has 1K jobs per size where factories have 10K.
+| Good | Base price | Employees, old → new | World sizes | World jobs (K), old → new |
+|---|---:|---|---:|---:|
+| wood | 2 | 0.5 → 1 | 26,635 | 13,167 → 26,333 |
+| iron | 3 | 1 → 1.5 | 1,964 | 1,799 → 2,699 |
+| coal | 2 | 1 → 1 | 2,616 | 2,300 |
+| copper | 4 | 3 → 2 | 602 | 1,794 → 1,196 |
+| fiber | 3 | 2 → 1.5 | 568 | 1,123 → 842 |
+| food | 2 | 1.25 → 1 | 564 | 704 → 563 |
+| luxuries | 6 | 2 → 3 | 149 | 281 → 422 |
+| valuables | 25 | 5 → 12.5 | 123 | 610 → 1,524 |
 
-Effect on existing sizes, from the live save (sizes aren't changing, so jobs follow):
+That's 21.8M to 35.9M jobs, almost all of it wood. On the current map wood is then badly oversupplied (103K against 42K demand, price at the $0.50 floor), and ENG's startup GDP rises to 98.9K but still collapses to about 25K within a year. Neither matters: the map is being rebuilt (segment 03).
 
-| Good | Employees, old → new | World sizes | World jobs (K), old → new |
-|---|---|---:|---:|
-| wood | 0.5 → 1 | 26,696 | 13,348 → 26,696 |
-| iron | 1 → 1.5 | 1,964 | 1,964 → 2,946 |
-| coal | 1 → 1 | 2,616 | 2,616 |
-| copper | 3 → 2 | 602 | 1,806 → 1,204 |
-| fiber | 2 → 1.5 | 568 | 1,136 → 852 |
-| food | 1.25 → 1 | 566 | 708 → 566 |
-| luxuries | 2 → 3 | 149 | 298 → 447 |
-| oil | 1 → 6 | 31 | 31 → 186 |
+**What this doesn't change:** value per K. Mines and wood still gross $4/K and farms $3/K. `base_employees` sets jobs and value per size only. An asymmetry, such as oil being really good, belongs in the multiplier or the PM's output, not here.
 
-Mined and farmed RGO jobs go from about 22.6M to about 36.2M worldwide, almost all of it wood. Wood is the catch. It may be welcome, since ENG's wood demand runs well above output, but 13M extra jobs is a lot. Halving wood's history sizes, or keeping wood as an exception, are the alternatives.
-
-It's one table, but it changes every state's startup jobs, so do it as the first step of segment 03. It was left out of this pass so the next in-game test isn't mixing two changes.
+**Left on the old rule:**
+- Oil onward (`oil`, `rubber`, `aluminum`, `tungsten`, `chromium`, `titanium`, `silicon`, `rare_earths`). Oil is still 1K per size, which makes 0.33 a month. Its reserves are still divided by the new price, so reserves and jobs disagree there until these get their pass.
+- Refined goods in `rgo_token_array` (`chemicals` 983 sizes, `textiles` 124, a few others). They run factory PMs with multiplier 1, so the rule doesn't fit them. `chemicals` has 1K jobs per size where factories have 10K.
 
 ## Explained: why the late-game ROI tab won't hold
 The ROI tab adds AM wage deltas straight onto the PM: total = E + N. The game can't have negative workers, so each tier floors at 0. Factory AMs cut Wrk by a flat amount: −0.22, −0.40, −0.60, −0.75, −0.82, −0.86, −0.90.

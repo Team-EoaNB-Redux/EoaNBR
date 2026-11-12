@@ -16,7 +16,7 @@ This segment said `arr^i` read 0 in math expressions, so production was 0 and th
 
 The two failing probes are the only ones where a math expression reads a temp, and they ran from the console. The other math probes use literals. So the console, or something about those lines, behaves differently from real ticks. `pm_construction_value` was the only `add_to_variable` with a math RHS in the economy, which may be why it failed. Neither is confirmed.
 
-**Production in-game matched the sim to about 10% after 4 months** (machinery +3%, chemicals 0%, fiber −2%, food +9%), and ENG's GDP had the same shape as the sim (game 80.7 / 62.0 / 52.5 / 79.7K, sim 72.4 / 52.6 / 46.5 / 56.7K with maintenance off). So the expensive market was never an array bug. It's real balance, covered in [segment 03](03_startup_balance.md). Forcing the array failure on in the sim gave 5.9K GDP, nothing like the game, which is what exposed the wrong diagnosis.
+**Production in-game matched the sim to about 10% after 4 months** (machinery +3%, chemicals 0%, fiber −2%, food +9%), and ENG's GDP had the same shape as the sim (game 80.7 / 62.0 / 52.5 / 79.7K, sim 72.4 / 52.6 / 46.5 / 56.7K with maintenance off). So the expensive market was never an array bug. Most of it comes from the July bankruptcy, covered in [segment 03](03_startup_balance.md). Forcing the array failure on in the sim gave 5.9K GDP, nothing like the game, which is what exposed the wrong diagnosis.
 
 `_economy_market.txt` 1462 and 1466 were also listed here as live and broken. They aren't: `add_to_array = { value = arr^ii }` is a plain operand, not a math expression. Trade sorting is fine.
 
