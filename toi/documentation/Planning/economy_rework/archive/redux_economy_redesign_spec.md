@@ -1,5 +1,7 @@
 # Redux Economy Redesign Specification
 
+> **Archived 2026-11-11.** Superseded by the milestone plan in [../00_README.md](../00_README.md), built on the new spec [EOANB_Redux_Economy_Redesign_Updated.md](../EOANB_Redux_Economy_Redesign_Updated.md). Kept for history: status and file references below are as they were when archived.
+
 ## Purpose
 
 This document summarizes the chosen design direction for the **End of a New Beginning Redux** economy overhaul.

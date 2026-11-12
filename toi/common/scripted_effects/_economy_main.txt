@@ -10,6 +10,7 @@
 _advance_time = {
     # Create econ order array 
     random_country = {
+        add_to_variable = { global.month = 1 }
         if = {
             limit = {
                 check_variable = { global.month > 11 }
@@ -27,6 +28,13 @@ _advance_time = {
     }
 
     global_economy_update = yes
+
+    # Prices move toward the targets the weekly trade tick set, before anyone is paid at them
+    for_each_scope_loop = {
+        array = global.markets
+        market_prices_monthly = yes
+    }
+
     for_each_scope_loop = {
         array = global.econ_order_array
 
@@ -235,10 +243,16 @@ _country_advance_time = {
                 check_variable = { global.month = 0 }
                 check_variable = { global.years_passed > 0 }
             }
-            set_temp_variable = { gdp_amount_temp = gdp_amount_quarterly^0 }
-            add_to_temp_variable = { gdp_amount_temp = gdp_amount_quarterly^1 }
-            add_to_temp_variable = { gdp_amount_temp = gdp_amount_quarterly^2 }
-            add_to_temp_variable = { gdp_amount_temp = gdp_amount_quarterly^3 }
+            # The last four quarters (the array starts with 41 seeded quarters of back-history)
+            set_temp_variable = { q_temp = gdp_amount_quarterly^num }
+            subtract_from_temp_variable = { q_temp = 1 }
+            set_temp_variable = { gdp_amount_temp = gdp_amount_quarterly^q_temp }
+            subtract_from_temp_variable = { q_temp = 1 }
+            add_to_temp_variable = { gdp_amount_temp = gdp_amount_quarterly^q_temp }
+            subtract_from_temp_variable = { q_temp = 1 }
+            add_to_temp_variable = { gdp_amount_temp = gdp_amount_quarterly^q_temp }
+            subtract_from_temp_variable = { q_temp = 1 }
+            add_to_temp_variable = { gdp_amount_temp = gdp_amount_quarterly^q_temp }
             add_to_array = {
                 array = gdp_amount_yearly
                 value = gdp_amount_temp
@@ -264,6 +278,7 @@ _country_advance_time = {
 
 	if = {
 		limit = {
+			check_variable = { global.eco_cycle_enabled = 1 }
 			check_variable = { global.years_passed > 0 }
 		}
 		check_economic_cycle = yes

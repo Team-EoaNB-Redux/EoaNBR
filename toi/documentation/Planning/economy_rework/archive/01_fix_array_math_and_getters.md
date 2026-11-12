@@ -1,5 +1,7 @@
 # Segment 01: array math and getters
 
+> **Archived 2026-11-11.** Superseded by the milestone plan in [../00_README.md](../00_README.md), built on the new spec [EOANB_Redux_Economy_Redesign_Updated.md](../EOANB_Redux_Economy_Redesign_Updated.md). Kept for history: status and file references below are as they were when archived.
+
 **Done in code, 2026-10-30.** One optional in-game check is left (see the end). It no longer blocks anything.
 
 ## The original diagnosis was wrong

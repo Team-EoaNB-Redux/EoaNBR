@@ -1,5 +1,7 @@
 # Production Method & Infrastructure Rework
 
+> **Archived 2026-11-11.** Superseded by the milestone plan in [../00_README.md](../00_README.md), built on the new spec [EOANB_Redux_Economy_Redesign_Updated.md](../EOANB_Redux_Economy_Redesign_Updated.md). Kept for history: status and file references below are as they were when archived.
+
 ## Context
 
 The PM system derives output from a value-based multiplier (`pm_output_multiplier × base_output_value / base_price`) and keeps per-country copies of every PM's inputs so 663 per-input modifiers can edit them. This pass replaces it with quantity-per-K PMs from `toi/documentation/Planning/EoaNBR Economy.xlsx`, adopts the sheet's 1857 base prices, replaces the state capacity market and roads with Infrastructure Efficiency (spec §7–9), and removes per-input modifiers.

@@ -1,5 +1,7 @@
 # Segment 05: country-level industries
 
+> **Archived 2026-11-11.** Superseded by the milestone plan in [../00_README.md](../00_README.md), built on the new spec [EOANB_Redux_Economy_Redesign_Updated.md](../EOANB_Redux_Economy_Redesign_Updated.md). Kept for history: status and file references below are as they were when archived.
+
 From the redesign spec (§1–6, 12, 31–32). Not started. Do once PMs work in-game and startup is sane. Strat's reason for the order: move PMs first so the data model isn't done twice.
 
 ## Principle

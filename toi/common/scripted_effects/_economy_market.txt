@@ -124,17 +124,26 @@
 			set_variable = { balance@var:r_type = supply@var:r_type }
 			subtract_from_variable = { balance@var:r_type = demand@var:r_type }
 
-			# Prices
+			# Target price. The actual price (price@) only moves toward it once a month, in market_prices_monthly
 			set_temp_variable = { s_temp = supply@var:r_type }
 			set_temp_variable = { d_temp = demand@var:r_type }
 			get_price = yes
-			set_variable = { price@var:r_type = p_return_temp }
-			
-			set_variable = { price_compared_to_base@var:r_type = price@var:r_type }
-			divide_variable = { price_compared_to_base@var:r_type = global.base_price@var:r_type }
-			subtract_from_variable = { price_compared_to_base@var:r_type = 1 }
+			set_variable = { target_price@var:r_type = p_return_temp }
+			if = { # While the economy is being set up (prices_snap_temp), and for a good with no price yet, the price starts at its target
+				limit = {
+					OR = {
+						check_variable = { prices_snap_temp = 1 }
+						NOT = { check_variable = { price@var:r_type > 0 } }
+					}
+				}
+				set_variable = { price@var:r_type = p_return_temp }
+			}
 		}
-		
+		if = {
+			limit = { check_variable = { prices_snap_temp = 1 } }
+			market_prices_update = yes
+		}
+
 		for_each_scope_loop = { # Apply to each country
 			array = market_countries
 
@@ -144,14 +153,10 @@
 				set_variable = { supply@var:r_type = market_leader_temp:supply@var:r_type }
 				set_variable = { demand@var:r_type = market_leader_temp:demand@var:r_type }
 				set_variable = { balance@var:r_type = market_leader_temp:balance@var:r_type }
+				# The price only moves monthly (market_prices_update copies it then). Copying it here too gives a country that just joined the market its prices within the week
 				set_variable = { price@var:r_type = market_leader_temp:price@var:r_type }
 				set_variable = { price_compared_to_base@var:r_type = market_leader_temp:price_compared_to_base@var:r_type }
 				set_variable = { price_shipping_capacity = market_leader_temp:price_shipping_capacity }
-				
-				every_controlled_state = {
-					set_variable = { price@var:r_type = PREV.price@var:r_type }
-					set_variable = { price_compared_to_base@var:r_type = PREV.price_compared_to_base@var:r_type }
-				}
 			}
 		}
 
@@ -282,6 +287,62 @@
 							set_temp_variable = { bbb = 1 }
 						}
 					}
+				}
+			}
+		}
+	}
+	market_prices_monthly = {
+		# Scope: Market Leader
+		# Runs once a month, at the start of the tick, so revenue, wages, pop spending and GDP all use the same prices.
+		# Moves the market price (price@) and the world price (global_market_price@) part of the way toward the targets
+		# the weekly trade tick last set (target_price@, global_market_target_price@). Trade itself works off the targets.
+
+		for_each_loop = {
+			array = global.resource_token_array
+			value = r_type
+
+			set_temp_variable = { p_return_temp = price@var:r_type }
+			set_temp_variable = { target_temp = target_price@var:r_type }
+			price_step = yes
+			set_variable = { price@var:r_type = p_return_temp }
+
+			set_temp_variable = { p_return_temp = global_market_price@var:r_type }
+			set_temp_variable = { target_temp = global_market_target_price@var:r_type }
+			price_step = yes
+			set_variable = { global_market_price@var:r_type = p_return_temp }
+		}
+
+		market_prices_update = yes
+	}
+	market_prices_update = {
+		# Scope: Market Leader
+		# Copies the actual prices to every country in the market and to their states, after they move (and at startup)
+
+		set_temp_variable = { market_leader_temp = THIS }
+
+		for_each_loop = {
+			array = global.resource_token_array
+			value = r_type
+
+			set_variable = { price_compared_to_base@var:r_type = { value = price@var:r_type divide = global.base_price@var:r_type subtract = 1 } }
+			set_variable = { global_market_price_compared_to_base@var:r_type = { value = global_market_price@var:r_type divide = global.base_price@var:r_type subtract = 1 } }
+		}
+
+		for_each_scope_loop = {
+			array = market_countries
+
+			for_each_loop = {
+				array = global.resource_token_array
+				value = r_type
+				set_variable = { price@var:r_type = market_leader_temp:price@var:r_type }
+				set_variable = { price_compared_to_base@var:r_type = market_leader_temp:price_compared_to_base@var:r_type }
+			}
+			every_controlled_state = {
+				for_each_loop = {
+					array = global.resource_token_array
+					value = r_type
+					set_variable = { price@var:r_type = PREV.price@var:r_type }
+					set_variable = { price_compared_to_base@var:r_type = PREV.price_compared_to_base@var:r_type }
 				}
 			}
 		}
@@ -565,6 +626,37 @@
 				check_variable = { r_type = token:valuables }
 			}
 			multiply_temp_variable = { p_return_temp = 2 }
+		}
+	}
+	price_step = {
+		# Moves a price part of the way toward its target. A wider gap closes a bigger share of itself each month,
+		# and a gap inside the dead band doesn't move the price at all.
+		# The gap is max(target/price, price/target) - 1, so a doubling and a halving count the same.
+		#Input: p_return_temp (actual price), target_temp (target price)
+		#Return: p_return_temp
+		#Any Scope
+
+		if = {
+			limit = { # Both are guarded: a math expression doesn't return 0 when dividing by 0
+				check_variable = { target_temp > 0 }
+				check_variable = { p_return_temp > 0 }
+			}
+			set_temp_variable = { gap_temp = { value = target_temp divide = p_return_temp max = { value = p_return_temp divide = target_temp } subtract = 1 } }
+			if = {
+				limit = { check_variable = { gap_temp > global.price_dead_band } }
+				add_to_temp_variable = {
+					p_return_temp = {
+						value = target_temp
+						subtract = p_return_temp
+						multiply = {
+							value = gap_temp
+							multiply = global.price_step_slope
+							add = global.price_step_base
+							min = global.price_step_max
+						}
+					}
+				}
+			}
 		}
 	}
 
@@ -917,9 +1009,10 @@
 				add_to_temp_variable = { trade_min_temp = need@var:resource_temp }
 				clamp_temp_variable = { var = trade_min_temp max = 0 }
 
+				set_temp_variable = { world_floor_temp = { value = global.base_price@var:resource_temp multiply = 0.25 } }
 				if = {
-					limit = {
-						check_variable = { global_market_price_compared_to_base@var:resource_temp > -0.75 }
+					limit = { # The target world price is above its floor
+						check_variable = { global_market_target_price@var:resource_temp > world_floor_temp }
 					}
 					clamp_temp_variable = { var = amount_temp max = trade_max_temp min = trade_min_temp }
 				}
@@ -1001,11 +1094,7 @@
 			set_temp_variable = { s_temp = global.market_supply@var:r_type }
 			set_temp_variable = { d_temp = global.market_demand@var:r_type }
 			get_price = yes
-			set_variable = { global.market_price@var:r_type = p_return_temp }
-			
-			set_variable = { global.market_price_compared_to_base@var:r_type = global.market_price@var:r_type }
-			divide_variable = { global.market_price_compared_to_base@var:r_type = global.base_price@var:r_type }
-			subtract_from_variable = { global.market_price_compared_to_base@var:r_type = 1 }
+			set_variable = { global.market_target_price@var:r_type = p_return_temp } # Trade uses each market leader's own view of the world (global_market_price@)
 		}
 	}
 
@@ -1174,7 +1263,7 @@
 			}
 			else_if = { # Importing with 1.1k employees
 				limit = {
-					check_variable = { global_market_price@var:r_type < price@var:r_type }
+					check_variable = { global_market_target_price@var:r_type < target_price@var:r_type }
 				}
 				set_temp_variable = { trade_temp = global.shipping_amount@var:r_type }
 			}
@@ -1248,11 +1337,25 @@
 				set_variable = { trade_profit@var:r_type = 0 }
 			}
 
+			# The money above is at actual prices. The trade AI judges the route at target prices instead,
+			# so trade answers a shortage within the week rather than waiting for the monthly price step
+			if = {
+				limit = { check_variable = { trade_temp > 0 } }
+				set_temp_variable = { trade_ai_profit_temp = { value = import_tariff_percentage_actual divide = -100 add = 1 multiply = target_price@var:r_type subtract = global_market_target_price@var:r_type multiply = trade_temp subtract = shipping_cost@var:r_type } }
+			}
+			else_if = {
+				limit = { check_variable = { trade_temp < 0 } }
+				set_temp_variable = { trade_ai_profit_temp = { value = export_tariff_percentage_actual divide = -100 add = 1 multiply = global_market_target_price@var:r_type subtract = target_price@var:r_type multiply = trade_temp multiply = -1 subtract = shipping_cost@var:r_type } }
+			}
+			else = {
+				set_temp_variable = { trade_ai_profit_temp = 0 }
+			}
+
 			if = { # If offers are set to 0, then act as though you have 1.1k employees, and reset all the variables above
 				limit = {
 					check_variable = { offers@var:r_type = 0 }
 				}
-				set_variable = { trade_productivity@var:r_type = trade_profit@var:r_type }
+				set_variable = { trade_productivity@var:r_type = trade_ai_profit_temp }
 				divide_variable = { trade_productivity@var:r_type = 1.01 }
 				
 				set_variable = { trade_value@var:r_type = 0 }
@@ -1271,7 +1374,7 @@
 				}
 				add_to_variable = { trade_jobs@var:r_type = 0.01 }
 
-				set_variable = { trade_productivity@var:r_type = trade_profit@var:r_type }
+				set_variable = { trade_productivity@var:r_type = trade_ai_profit_temp }
 				divide_variable = { trade_productivity@var:r_type = trade_jobs@var:r_type }
 
 				add_to_variable = { trade_jobs = trade_jobs@var:r_type }
@@ -1337,18 +1440,21 @@
 			set_variable = { global_market_balance@var:r_type = global_market_supply@var:r_type }
 			subtract_from_variable = { global_market_balance@var:r_type = global_market_demand@var:r_type }
 
+			# Target world price. The actual one (global_market_price@) moves toward it once a month, in market_prices_monthly
 			set_temp_variable = { s_temp = global_market_supply@var:r_type }
 			set_temp_variable = { d_temp = global_market_demand@var:r_type }
 			get_price = yes
-			set_variable = { global_market_price@var:r_type = p_return_temp }
-			
-			set_variable = { global_market_price_compared_to_base@var:r_type = global_market_price@var:r_type }
-			divide_variable = { global_market_price_compared_to_base@var:r_type = global.base_price@var:r_type }
-			subtract_from_variable = { global_market_price_compared_to_base@var:r_type = 1 }
-			
-			set_variable = { global_market_price_difference@var:r_type = price@var:r_type }
-			subtract_from_variable = { global_market_price_difference@var:r_type = global_market_price@var:r_type }
-			divide_variable = { global_market_price_difference@var:r_type = price@var:r_type }
+			set_variable = { global_market_target_price@var:r_type = p_return_temp }
+			if = { # While the economy is being set up (prices_snap_temp), and for a good with no price yet, the price starts at its target
+				limit = {
+					OR = {
+						check_variable = { prices_snap_temp = 1 }
+						NOT = { check_variable = { global_market_price@var:r_type > 0 } }
+					}
+				}
+				set_variable = { global_market_price@var:r_type = p_return_temp }
+				set_variable = { global_market_price_compared_to_base@var:r_type = { value = p_return_temp divide = global.base_price@var:r_type subtract = 1 } }
+			}
 		}
 	}
 
@@ -2124,7 +2230,8 @@
 	evaluate_best_trade_quantity = {
 		# resource_temp
 		# outputs trade_quantity_temp
-		
+		# Works off the target world price, like the rest of the trade AI: the volume that brings the market's target price to it
+
 		set_temp_variable = { trade_quantity_temp = 0 }
 
 		set_temp_variable = { balance_temp = need@var:resource_temp }
@@ -2174,7 +2281,7 @@
 				subtract_from_temp_variable = { tariffs_temp = export_tariff_percentage_actual }
 				divide_temp_variable = { tariffs_temp = 100 }
 
-				set_temp_variable = { sqrt_temp = global_market_price@var:resource_temp }
+				set_temp_variable = { sqrt_temp = global_market_target_price@var:resource_temp }
 				multiply_temp_variable = { sqrt_temp = tariffs_temp }
 				subtract_from_temp_variable = { sqrt_temp = prod_term }
 				subtract_from_temp_variable = { sqrt_temp = shipping_cost_temp }
@@ -2204,7 +2311,7 @@
 
 				set_temp_variable = { sqrt_temp = global.base_price@var:resource_temp }
 				multiply_temp_variable = { sqrt_temp = tariffs_temp }
-				set_temp_variable = { divisor_temp = global_market_price@var:resource_temp }
+				set_temp_variable = { divisor_temp = global_market_target_price@var:resource_temp }
 				add_to_temp_variable = { divisor_temp = prod_term }
 				add_to_temp_variable = { divisor_temp = shipping_cost_temp }
 				divide_temp_variable = { sqrt_temp = divisor_temp }
@@ -2318,14 +2425,16 @@
 				}
 			}
 			
+			# The two minimum trades check the market's own production and need, not supply and demand: those include
+			# last week's trade, so a route the evaluation above had just cut to 0 was only restored every other week
 			if = { # Minimum trade - sets exports to 1 (for 0 demand but any supply)
 				limit = {
 					check_variable = { trade_ai@var:resource_temp = 0 }
 					NOT = { is_in_array = { global.non_tradeable_resources = resource_temp } }
 
 					check_variable = { offers@var:resource_temp = 0 }
-					check_variable = { supply@var:resource_temp > 0 }
-					check_variable = { demand@var:resource_temp = 0 }
+					check_variable = { production@var:resource_temp > 0 }
+					check_variable = { need@var:resource_temp = 0 }
 				}
 				set_temp_variable = { amount_temp = -1 }
 				set_temp_variable = { no_update_temp = 1 }
@@ -2337,8 +2446,8 @@
 					NOT = { is_in_array = { global.non_tradeable_resources = resource_temp } }
 
 					check_variable = { offers@var:resource_temp = 0 }
-					check_variable = { supply@var:resource_temp = 0 }
-					check_variable = { demand@var:resource_temp > 0 }
+					check_variable = { production@var:resource_temp = 0 }
+					check_variable = { need@var:resource_temp > 0 }
 				}
 				set_temp_variable = { amount_temp = 1 }
 				set_temp_variable = { no_update_temp = 1 }

@@ -1,4 +1,4 @@
-"""Comment out the economy in the state history files, so the map starts as subsistence farming. See economy_rework/03.
+"""Comment out the economy in the state history files, so the map starts as subsistence farming. See economy_rework/archive/03_startup_balance.md.
 
     python toi/documentation/scripts/strip_state_economy.py toi/history/states [--keep-transport]
 

@@ -78,17 +78,19 @@ Industries unlock with technology. Every industry runs one production method and
 ### Markets and prices [LIVE]
 - Every independent country leads its own market. Subjects join their overlord's market, and other countries can be placed in another's market, like a customs union.
 - There is **one price per good per market.** Production and consumption from every state of every member are pooled.
-- **Price rule:** price = base price × (demand ÷ supply)², held between a quarter of base and four times base. A 10% shortage raises the price about 21%, and a large shortage pins it at 4×. Valuables are fixed at twice base, money-like.
+- **Target price:** base price × (demand ÷ supply)², held between a quarter of base and four times base. A 10% shortage raises it about 21%, and a large shortage pins it at 4×. Valuables are fixed at twice base, money-like.
+- **The actual price moves toward the target gradually,** once a month at the start of the tick, before anyone is paid. Each month it closes a share of the gap: 30% for a small gap, 20 points more for every 100% of gap, and at most 70%. A gap under 2% doesn't move it. The gap counts a doubling and a halving the same. A 4× shortage therefore lifts the price about 3.1× in its first month. An ordinary 10% gap halves in about two months and is inside the dead band after five. The four values are globals in `resources_global_var_setup`. At startup, and for a new country, prices start at their targets.
+- Revenue, wages, pop spending, GDP, trade income and tariffs all use the actual price. The trade AI uses the target (see Trade).
 - Supply is production plus imports. Demand is pops' needs, industry inputs, materials for construction and retooling, military demand, and exports.
-- Prices are recomputed weekly as trade changes. Production and consumption change monthly.
+- The target is recomputed weekly as trade changes, and monthly as production and consumption change.
 
 ### Trade [LIVE]
 - Each market sets a route per good: an amount to import or export, run weekly.
-- All markets together form a **global market** with a world price per good, priced by the same rule over world supply and demand.
+- All markets together form a **global market** with a world price per good, priced by the same rule over world supply and demand. Each market leader sees the world without the countries it can't trade with. The world price also has a weekly target and an actual price that moves monthly, by the same curve.
 - Imports add to a market's supply and exports add to its demand, which pulls local prices toward world prices.
 - Trade is limited by partners (you can't import more than others offer) and by shipping capacity from ports and convoys. If shipping is overloaded, all trade scales down.
 - Trade profit is the gap between local and world price, minus tariffs and shipping cost.
-- An automatic trade AI opens routes where trade profit per trade job is well above average earnings, resizes them, and closes unprofitable ones. National ideas such as Closed Economy shut trade off.
+- An automatic trade AI opens routes where trade profit per trade job is well above average earnings, and closes unprofitable ones. It doesn't nudge volumes: it solves for the volume that brings the market's target price to the world price plus costs. It judges routes at target prices, so trade answers a shortage within the week, while the money a route makes is counted at actual prices. A market with no production of a good but some need for it, or the reverse, keeps a 1-unit minimum route. National ideas such as Closed Economy shut trade off.
 
 ### Infrastructure Efficiency [LIVE, untuned]
 Infrastructure Efficiency replaced an older system, in which transport was a priced good, in October 2026.
@@ -100,7 +102,9 @@ Infrastructure Efficiency replaced an older system, in which transport was a pri
 
 ## 4. The monthly loop
 
-Each country, in rank order:
+First, every market leader moves its actual prices (market and world) toward the targets the last weekly tick set, and copies them to its members and their states.
+
+Then each country, in rank order:
 
 1. Last month's net budget goes into the treasury. AI countries adjust their budget, and the spending sliders' bonuses update.
 2. Technology unlocks and their modifiers refresh.
@@ -114,11 +118,11 @@ Each country, in rank order:
    7. Pops convert between types to fit the jobs on offer.
    8. Everything is recomputed: arable land and subsistence, jobs and employment, government buildings, production, finances and dividends, then each pop's earnings, needs, taxes, confidence and targets.
 4. Companies and investment-fund bookkeeping. Investment opportunities are off.
-5. Market leaders recompute supply, demand and prices for their whole market, and GDP.
+5. Market leaders recompute supply, demand and target prices for their whole market, and GDP.
 6. The budget is recomputed: taxes, spending, debt and interest.
-7. Statistics and graphs. The boom and recession check would run here, but it never triggers (see Known problems).
+7. Statistics and graphs. The boom and recession check would run here from the second year, but it's switched off during the rework.
 
-Weekly: markets re-price with current trade, the global market updates, the trade AI adjusts routes, and trade flows recompute.
+Weekly: markets recompute supply, demand and target prices with current trade, the global market updates, the trade AI adjusts routes, and trade flows recompute. Actual prices don't change during the month. Trade stays weekly so that HOI4's military factories get their resources within a week.
 
 **The lags matter.** Wages react to last month's labour market, hiring reacts to last month's profit, and pops act on last month's earnings. These one-month delays are a big part of why the economy can swing (see section 6).
 
@@ -151,7 +155,7 @@ Weekly: markets re-price with current trade, the global market updates, the trad
 ### Pops: income, spending, standard of living [LIVE]
 - **Income:** a small universal base income, plus wages (or the subsistence share for peasants), bonuses, and dividends for owners. Capitalists and landowners divert part of their income toward investment.
 - **Taxes:** income tax by bracket (lower, middle or upper, depending on a pop type's average earnings against the national average), sales tax on what they spend on goods, and corporate tax on dividends.
-- **Standard of living (SoL),** from 1 to 200, sets each pop type's basket of goods. Food comes first. Textiles, consumer goods and services follow, then luxuries from around SoL 21, and later electricity, appliances, vehicles and computers. The basket's value roughly doubles every 10 SoL. It's defined in base-price value and bought at market price, so expensive goods squeeze pops.
+- **Standard of living (SoL),** from 1 to 200, sets each pop type's basket of goods. The SoL-1 basket is worth `global.pops_base_spending` per thousand pops a month at base prices: 0.1 since M01, cut from 0.3, which had pinned food at its cap. Food comes first. Textiles, consumer goods and services follow, then luxuries from around SoL 21, and later electricity, appliances, vehicles and computers. The basket's value roughly doubles every 10 SoL. It's defined in base-price value and bought at market price, so expensive goods squeeze pops.
 - **Technology gates needs.** If a good isn't available yet, such as electricity, an older substitute fills the need. A state's electrification shifts the basket over time.
 - **Each month,** pops compare what they want to spend (income × consumer confidence) with what their basket costs. A surplus slowly raises SoL and a shortfall lowers it. Spare income goes into savings up to a target of about a year's income, scaled by banking confidence. When the target falls, they spend down their savings.
 - **Consumer confidence,** from 0.2 to 2, comes from national modifiers. Debt burdens and high interest rates lower it, and savings raise it. Below 1 pops save, and above 1 they spend more than they earn.
@@ -167,6 +171,7 @@ Weekly: markets re-price with current trade, the global market updates, the trad
 - **Spending:** administration (scales with earnings, population and GDP), military payroll (manpower × average earnings), military procurement (goods for equipment), research, construction (builds the government pays for), projects, subsidies, order and intelligence, and social spending.
 - **Sliders have political effects.** Taxes cost political power, stability, war support and *incentives*, a property-rights mood that drives investment appetite. Spending buys HOI4 bonuses: military spending improves army organisation and morale, research spending speeds research, and procurement raises production efficiency and lowers equipment cost.
 - **Debt:** a negative treasury becomes debt, domestic or foreign. Interest starts around 8%, is cheaper for great and secondary powers, and rises when the lending pool is scarce. The *debt level* tracks debt against annual GDP. Passing roughly 200% fires **bankruptcy**: debt is wiped and spending is cut, but stability takes a heavy hit. Lower stability means lower productivity and consumer confidence, so pops dump their savings and prices spike.
+- **Debt switch:** while the rework runs, `global.eco_debt_enabled = 0` skips every starting debt, sets both interest rates to 0 and stops bankruptcy. Deficits still borrow up to the lending cap (24 months of GDP). Past it, the treasury goes negative with no consequence. M14 turns the switch back on.
 - AI countries repay debt when they can and raise taxes when they're in deficit.
 
 ### GDP [LIVE]
@@ -197,12 +202,12 @@ How the old system works, which is still in the code behind a switch:
 ### Projects [LIVE]
 Projects are country-level works, such as work programmes, with a goods bill and a build speed. Each month a project buys as many goods as it can toward its bill, and when it finishes it fires an effect. Content uses them for reforms and public works.
 
-### Economic cycle [built, dormant]
-Every month, each state's GDP would be compared with its 3-year average, weighted by size. If most of the economy is falling, the country enters a recession, depression or free fall. If most is prospering, it gets a boom. Players get events, the AI gets the national idea directly, and stability moves. It never fires, because the month counter that should advance the years is never incremented.
+### Economic cycle [built, OFF]
+From the second year, every month, each state's GDP is compared with its 3-year average, weighted by size. If most of the economy is falling, the country enters a recession, depression or free fall. If most is prospering, it gets a boom. Players get events, the AI gets the national idea directly, and stability moves. M00 fixed the month counter it depended on, then put it behind `global.eco_cycle_enabled = 0` until M14. On the test bed it was driven by month-to-month GDP swings and added noise to every comparison: in the simulator, 14 of 130 countries were in a downturn or recession by month 60, and Britain's consumer confidence flipped by 5 points.
 
 ## 6. Feedback loops to know
 
-- **Price-employment swing (destabilising).** A shortage squares into a price spike, the producers' margins jump, they hire up to 20 points in one month, supply overshoots, the price crashes, and they fire. Revenue uses last month's price and hiring uses last month's profit, so the delays amplify the swing. In tests, capping the hiring steps at 5 to 10 points, or using a straight-line price curve, stopped it. Trade probably damps it in the real game. This is the biggest open stability problem.
+- **Price-employment swing (destabilising, much reduced by M01).** A shortage squares into a price spike, the producers' margins jump, they hire up to 20 points in one month, supply overshoots, the price crashes, and they fire. Revenue uses last month's price and hiring uses last month's profit, so the delays amplify the swing. On the test bed, most of the swing turned out to come from the trade AI toggling routes on and off every other week, which M01 fixed. Gradual prices damp the rest. Over 60 simulated months, ENG's GDP now settles instead of swinging ±5% a month, although on the stripped map many goods also sit still at their price cap. Hiring steps of up to 20 points are still faster than prices now close ordinary gaps. M04's target utilisation is meant to be slower.
 - **Wage-labour loop (stabilising).** Tight labour raises wages, which squeezes margins, which slows hiring. Wages are sticky downward, so a slump shows up as unemployment first, and wages fall later.
 - **Bankruptcy spiral.** Debt grows faster than GDP, bankruptcy follows, stability crashes, which cuts productivity and confidence, pops spend their savings, prices rise, real incomes fall, and GDP falls further.
 - **Infrastructure loop (partial).** Growth raises transport demand, Infrastructure Efficiency falls, and railways and ports earn more. The planned half, where investment then builds more railways and ports, needs investment back.
@@ -210,39 +215,36 @@ Every month, each state's GDP would be compared with its 3-year average, weighte
 
 ## 7. Current state (November 2026)
 
-- **The map has been stripped back to subsistence farming,** on purpose. Every state's industries and deposits are commented out of the history files, leaving only subsistence and HOI4's own factories. On the old map, Britain went bankrupt in its first July, in both the game and the simulator. The plan is to rebuild the world from scratch, sector by sector, so that world supply and demand start roughly equal for every good. Some asymmetry between goods, such as oil being very valuable, is wanted later. Historical targets for Britain and India are written as comments in the history files.
-- **The next step is fixing budgets and debt for the new, smaller GDPs.** Starting debts and spending were sized for the old map, so many countries go bankrupt early.
-- **Off:** investment, downsizing, banking, pop borrowing, the economic cycle.
-- **Recently done:** generated PMs, Infrastructure Efficiency, floating wages, maintenance costs, the companies MVP, incentives.
+- **The map has been stripped back to subsistence farming,** on purpose. Every state's industries and deposits are commented out of the history files, leaving only subsistence and HOI4's own factories. On the old map, Britain went bankrupt in its first July, in both the game and the simulator. Historical targets for Britain and India are written as comments in the history files.
+- **The plan, decided November 2026: redesign first, balance last.** The economy is being rebuilt to a new design (section 8) in a series of milestones. Only after that will the 1857 map be rebuilt sector by sector so world supply and demand start roughly equal. Until then, the M00 test bed is used to check mechanics: small test industries in five British states (in `# >>> rework test industries` blocks), and debt switched off for every country, so no one goes bankrupt (20 countries did within five years before).
+- **Off:** investment, downsizing, banking, pop borrowing, debt (starting debt, interest, bankruptcy) and the economic cycle.
+- **Recently done:** gradual prices (M01), generated PMs, Infrastructure Efficiency, floating wages, maintenance costs, the companies MVP, incentives.
 - **Testing:** a headless simulator called redux-eco-sim runs the mod's real economy scripts outside the game. It matched in-game British GDP to within about 0.5% at startup and after one month, so it's trusted for fast experiments. In-game testing is slow.
 
 ### Known problems
-1. Price-employment oscillation (section 6).
+1. Price-employment oscillation (section 6): much reduced by M01, but hiring still reacts faster than prices.
 2. Professionals and specialists have no jobs.
 3. Base wages drift down over the years (in one test, from 3.2 to about 1.3 over five years). Either they start too sticky or industries add too little value.
-4. Budgets and debt don't scale with GDP: some spending lines stay large when the economy is small.
+4. Budgets and debt don't scale with GDP: some spending lines stay large when the economy is small. On the test bed, Britain spends about twice its revenue (three times since M01's pop spending cut lowered sales tax), and Britain, France, Russia, Sweden and Spain hit the lending cap and run deeply negative treasuries.
 5. Railways lose money in busy hubs, while empty rural states get the full +20% Infrastructure Efficiency bonus for free.
 6. Many late automation upgrades are pointless: once an AM's labour cut hits zero, the extra input cost remains.
-7. The economic cycle never fires (month counter bug).
-8. Money pops divert to investment disappears while investment is off.
+7. Money pops divert to investment disappears while investment is off.
+8. **Peasants sit at SoL 1 and most goods at their price cap** on the stripped map. Peasants are about 98% of ENG's market and too poor for even the SoL-1 basket. M05's land should lift them. Military upkeep and the missing industry pin wood, fiber, iron, textiles, services, chemicals, machinery, consumer goods and coal. Food is about 1.8× base.
 
 ## 8. Where it's heading [PLANNED]
 
-The agreed direction for the next big rewrite:
+The target design is `documentation/Planning/economy_rework/EOANB_Redux_Economy_Redesign_Updated.md`, built in milestones listed in that folder's `00_README.md`. Strat's design decisions are in `decisions.md` there (Q1–Q72, all answered on 2026-11-12). In short:
 
-- **States host industry; countries do the repeated arithmetic.** States still decide where industry is, the local wage, employment, Infrastructure Efficiency, land and resources, which method is in use, and where capital sits. Shared calculations such as valuing a method's inputs and outputs at market prices move up to the country, grouped by industry and method combination. Colonies on old methods stay distinct from the core on new ones. Slow-changing state modifiers are baked in ahead of time and recomputed only when something changes. The aim is speed, not fewer goods or industries.
-- **Employment stays per state** and becomes the main calculation still done state by state.
-- **Investment as opportunity money in return tiers.** Each sector advertises how much money it could absorb at what return: Exceptional (over 20%), Good (10–20%), Fair (5–10%) and Marginal (−5% to 5%). Money goes to the best tier first, and only the tier is stored. It's fine if advertised opportunity far exceeds the money available.
-  - **Brownfield** (expanding an existing industry): the labour estimate is simply unemployment plus a small share of employment. Several industries may count the same workers, on purpose, and the simulation sorts it out. One expansion at a time per industry.
-  - **Greenfield** (a first industry of its kind in a state): a cheap rough check comes first, within a search budget that's smaller for small countries. New establishments are limited to about one per sector per month, and each unfinished one lowers the tier of further ones, so a new industry spreads gradually.
-  - **Hard caps** for finite sectors: deposits, arable land, forests, port sites. A gold mine at 40% ROI with $3M of room offers only $3M.
-- **Capital pools by investor type,** with no money held per industry:
-  - *Landowner, or "particular", capital* can only fund agriculture, plantations, livestock, forestry and ports. A rich farming economy shouldn't bootstrap modern factories on its own.
-  - *Capitalist, or "general", capital* funds factories, mining, railways and ports.
-  - As the non-agricultural share of GDP rises, landowner capital moves into the general pool.
-  - **Capital-market development** decides whether money stays local (money made in Illinois stays in Illinois) or can fund projects anywhere in the country. This is meant to be a central difference between economies such as Qing China, Meiji Japan and Britain.
-- **Attractiveness becomes the return tier.** There won't be a second profitability formula.
-- **Other planned work:** banking and inflation; finishing the employment overhaul (employment changes, pop-type changes, possibly merging into "working" and "middle" classes, education, qualifications); base prices that shift by era so early methods age out; and adding technology bonuses back to methods.
+- **Country-sectors decide; state-industries are where it physically happens.** Each country keeps one record per sector (capacity, a target utilisation, output, profit, retained capital). Each method's economics are cached once a month as high up as possible: per market at that market's prices, with country modifiers on top. States add only local wages, Infrastructure Efficiency and modifiers. Each industry keeps one PM/AM pair. Company bonuses are applied once, nationally, to each owner's slice. A national target utilisation replaces each industry's own hiring decision, with a small local adjustment. Industry size becomes a floating number, and chronically unprofitable capacity slowly decays.
+- **Gradual prices** (built in M01, see section 3). Supply and demand set a target price, and the actual price moves toward it once a month, slowly for small gaps and fast for big ones. Trade stays weekly so military production gets its resources. Prices move fastest, utilisation and employment slower, and capacity slowest.
+- **Five pop classes:** slaves, peasants, working class, middle class and upper class, with one floating wage per state. Unemployment is the gap between a class's labour pool and its jobs. Qualifications limit how fast pops move up, as a major barrier to industrialisation. Bureaucratic jobs come from bureaucratic strain and are paid by the government. Active manpower (fielded and training) is taken out of the civilian pools. SoL is renamed wealth, with the same baskets per level. Pops hold no savings: they spend toward a target set by consumer confidence, and overspending becomes debt to the banks.
+- **Land and resources as state data.** Arable land, land quality and crop eligibility are set in history, with the population formula kept as a fallback for land until every state has it. Subsistence follows a carrying capacity with half returns beyond it, and pays rent to the upper class. Deposits are potential, known and active, with quality kept separate from quantity.
+- **Manufacturing Base:** HOI4's civilian and military factories and dockyards become offmap buildings derived from the country's manufacturing sectors and split by a national allocation, rather than economic industries. The state pays a contract cost per factory. All on-map factories go.
+- **Investment from capital pools.** Retained capital tends to expand the sector that earned it, and incentives decide how much profit is retained. A share flows into a general pool set by financial laws, alongside pops' own investment, which is how capital crosses sectors. A sector new to a country needs the general pool, credit, government or foreign money. Opportunities are ranked in ROI tiers (Exceptional over 20%, Good 10–20%, Fair 5–10%, Marginal −5% to 5%), with hard caps from deposits and land, and throttles on new establishments.
+- **Companies** are national accounting entities layered over state industries through ownership shares, competing on productivity, methods and leverage.
+- **Finance as the source of booms and busts.** One bank per country holds reserves, loans and capital. Reserves come from base money × banking confidence. Sectors, companies and pops borrow. Credit is capped by both reserves and capital, defaults destroy bank capital, and credit then contracts. The real economy should otherwise settle toward equilibrium.
+- **Money and currency.** All stored values stay real (1857 pounds). One currency per market, and the price level concerns only money in circulation: P × Y = M × V. Inflation erodes stored money, loans and wages. Commodity reserves in valuables, fed by the trade balance, set a damped exchange-rate scalar. Monetary laws change coefficients, not formulas.
+- **Players act nationally.** Laws decide which controls a country has and who sets the targets. They come from the politics rework's law set (`_internal_politics_tokens.txt`): economic system, monetary system, financial system and others. Laws act on the economy only through modifiers, with yes/no modifiers for switches.
 
 ## 9. Design principles
 

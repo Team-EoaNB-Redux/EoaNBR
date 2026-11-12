@@ -1,5 +1,7 @@
 # Segment 07: content backlog
 
+> **Archived 2026-11-11.** Superseded by the milestone plan in [../00_README.md](../00_README.md), built on the new spec [EOANB_Redux_Economy_Redesign_Updated.md](../EOANB_Redux_Economy_Redesign_Updated.md). Kept for history: status and file references below are as they were when archived.
+
 Smaller items, in any order, after the game runs. Full lists are in `documentation/Planning/pm_generation_report.md`.
 
 - **Techs:** 63 PMs have no tech (`never`), mostly post-1900. Reassign `pm_professional_services` and `pm_industrial_molded_goods` in `TECH_OVERRIDES` once real techs exist. `tech_hot_blast_furnace` unlocks nothing, deliberately (it makes pig iron). `tech_shaft_mining` unlocks nothing now.

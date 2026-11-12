@@ -11,6 +11,9 @@
 # the master script specifically for the tribal->eco system switch
 
 _reset = {
+    # Prices snap to their targets while the economy settles, instead of moving gradually (market_prices_monthly)
+    set_temp_variable = { prices_snap_temp = 1 }
+
     # Global Variable Init
     #   Initializes every bit of global data that the economy uses
     global_variables = yes
@@ -83,6 +86,8 @@ _reset = {
         local_global_market_update = yes
         country_update_trade_display = yes
     }
+
+    set_temp_variable = { prices_snap_temp = 0 }
 }
 _init_country = {
     # Country
@@ -450,6 +455,7 @@ _country_fin = {
     national_debt_update = yes
     if = {
         limit = {
+            check_variable = { global.eco_debt_enabled = 1 }
             has_variable = starting_debt
         }
         set_temp_variable = { x_temp = starting_debt }
@@ -459,6 +465,7 @@ _country_fin = {
     }
     else_if = {
         limit = {
+            check_variable = { global.eco_debt_enabled = 1 }
             has_variable = starting_debt_gdp
         }
         set_temp_variable = { x_temp = starting_debt_gdp }
@@ -466,17 +473,20 @@ _country_fin = {
         set_temp_variable = { ignore_limits_temp = 1 }
         set_debt_to_gdp = yes
     }
-    for_each_loop = {
-        array = global.countries
-        value = country_temp
-        if = {
-            limit = { check_variable = { starting_debt@var:country_temp > 0 } }
-            set_temp_variable = { x_temp = starting_debt@var:country_temp }
-            set_temp_variable = { ignore_limits_temp = 1 }
-            set_debt = yes
+    if = {
+        limit = { check_variable = { global.eco_debt_enabled = 1 } }
+        for_each_loop = {
+            array = global.countries
+            value = country_temp
+            if = {
+                limit = { check_variable = { starting_debt@var:country_temp > 0 } }
+                set_temp_variable = { x_temp = starting_debt@var:country_temp }
+                set_temp_variable = { ignore_limits_temp = 1 }
+                set_debt = yes
+            }
         }
     }
-    
+
     # Budget
     set_variable = { military_spending_percentage = 100 }
     set_variable = { sales_tax_percentage = 0 }
@@ -530,8 +540,9 @@ _country_fin = {
 }
 
 _country_reset = {
-    
-    _init_country = yes    
+    set_temp_variable = { prices_snap_temp = 1 } # Prices start at their targets, as in _reset
+
+    _init_country = yes
 
     # Initialize States
     every_controlled_state = {
@@ -557,11 +568,15 @@ _country_reset = {
 
     # Country Finalization
     _country_fin = yes
+
+    set_temp_variable = { prices_snap_temp = 0 }
 }
 # Initialize a new country mid-game
 initialize_country = {
 	_init_country = yes
+	set_temp_variable = { prices_snap_temp = 1 } # Prices start at their targets, as in _reset
 	_update_market = yes
+	set_temp_variable = { prices_snap_temp = 0 }
 
     # Update country pop stats
     update_country_pop_stats = yes
@@ -618,6 +633,7 @@ initialize_country = {
     global_variables = {
         set_variable = { global.month = 0 }
         set_variable = { global.years_passed = 0 }
+        set_variable = { global.eco_cycle_enabled = 0 } # Economic booms & busts (check_economic_cycle). Off until the startup balance (M14)
         
         resources_global_var_setup = yes
 
@@ -689,6 +705,7 @@ initialize_country = {
             set_variable = { global.loan_scarcity_rate = 10.0 } #Percent per year - How much interest should be added when you use up all loans you can get
             set_variable = { global.base_international_interest_rate = 2.0 } #The additional rate that entities pay on getting loans from a foreign national bank
             set_variable = { global.loan_scarcity_increase_willingness = 0.25 } #When doing the autoborrow, how much scarcity increase is willing to be tolerated?
+            set_variable = { global.eco_debt_enabled = 0 } # Starting debt, interest on national debt & bankruptcy. Off until the startup balance (M14)
 
             #Credit Ratings & Interest Rates for Each
                 #NOTE - Credit Rating is determined by the system.
@@ -780,7 +797,7 @@ initialize_country = {
 
         #Spending Patterns
             #Note: Spending is multiplied by e^0.07s (doubles every 10 Standard of Living)
-            set_variable = { global.pops_base_spending = 0.3 } # At 1 SoL. This doubles every 10 SoL.
+            set_variable = { global.pops_base_spending = 0.1 } # At 1 SoL. This doubles every 10 SoL. Was 0.3, which pinned food at 4x base with every peasant at SoL 1 (M01)
 
             # Food - For living | 1.0
             clear_array = global.pops_spending_weight_val@token:food # How much weight to add
@@ -1734,6 +1751,13 @@ initialize_country = {
 
         set_variable = { global.base_price_industrial_capacity = 1 }
         set_variable = { global.base_price_shipping_capacity = 1 }
+
+        # Gradual prices. Supply & demand set a target price (get_price), and each month the actual price closes part of the
+        # gap to it (price_step): base + slope x gap, at most max. Gap = max(target/price, price/target) - 1
+        set_variable = { global.price_dead_band = 0.02 }  # Gaps below this don't move the price
+        set_variable = { global.price_step_base = 0.3 }   # Share of the gap closed in a month, for a small gap
+        set_variable = { global.price_step_slope = 0.2 }  # Extra share closed per 100% of gap
+        set_variable = { global.price_step_max = 0.7 }    # Most of the gap closed in one month
 
         # In Units per 1K employees                                             # Value per 1k employees. Higher this is, the more lucrative it is to trade
         set_variable = { global.shipping_amount@token:food = 50 }               # 125

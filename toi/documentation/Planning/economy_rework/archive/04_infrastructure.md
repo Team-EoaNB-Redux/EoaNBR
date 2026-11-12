@@ -1,5 +1,7 @@
 # Segment 04: Infrastructure Efficiency tuning
 
+> **Archived 2026-11-11.** Superseded by the milestone plan in [../00_README.md](../00_README.md), built on the new spec [EOANB_Redux_Economy_Redesign_Updated.md](../EOANB_Redux_Economy_Redesign_Updated.md). Kept for history: status and file references below are as they were when archived.
+
 Built and hand-checked against formulas in the sim (London, 2026-10-30). Not tuned. Code: `calc_industrial_capacity` in `_economy_market.txt`.
 
 ## As built

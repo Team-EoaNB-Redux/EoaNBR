@@ -1,5 +1,7 @@
 # Segment 03: startup balance (rebuild the map)
 
+> **Archived 2026-11-11.** Superseded by the milestone plan in [../00_README.md](../00_README.md), built on the new spec [EOANB_Redux_Economy_Redesign_Updated.md](../EOANB_Redux_Economy_Redesign_Updated.md). Kept for history: status and file references below are as they were when archived.
+
 ## Decision
 **Strat, 2026-10-31: don't balance the current map. Rebuild it.** Comment out the economy in the state history files, which leaves everything as subsistence farming. Then build the map back up from scratch, so that world supply and demand start roughly equal for every good.
 
@@ -58,7 +60,7 @@ Kept, on Strat's call: 152 arms factories, 79 industrial complexes and 72 dockya
 - **India:** levels are what makes the doc's value on each owner's PMs. The rest stay on subsistence, so it starts with few industries.
 - **Where it is:** a table in each of 19 British Isles and 48 Indian states. Totals are in `ENG - Britain.txt` and `RAJ - British Raj.txt`, and the 15 other Indian tags have their own, including SRS.
 - **The script:** the doc figures and splits are in `catalogue_1857_data.py`, and the steps in `catalogue_1857_targets.py`. A rerun replaces the blocks.
-- **Tuning:** the PM values, wages and remaining work are in [pm_1857_tuning.md](pm_1857_tuning.md).
+- **Tuning:** the PM values, wages and remaining work are in [pm_1857_tuning.md](../pm_1857_tuning.md).
 
 **Scale: 1,000 treasury = £1M, and doc figures are a year, so $ a month = £M × 1000 / 12.** £665M a year is 55.4K a month.
 

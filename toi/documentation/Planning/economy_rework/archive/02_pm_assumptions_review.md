@@ -1,5 +1,7 @@
 # Segment 02: PM assumptions review
 
+> **Archived 2026-11-11.** Superseded by the milestone plan in [../00_README.md](../00_README.md), built on the new spec [EOANB_Redux_Economy_Redesign_Updated.md](../EOANB_Redux_Economy_Redesign_Updated.md). Kept for history: status and file references below are as they were when archived.
+
 Reviewed by Strat 2026-10-30. Most assumptions stand. "PM calculations look way off" turned out not to be these assumptions: production in-game matched the sim, and the getters that feed the GUI were the likely cause (segment 01). The RGO employees decision is done. How AMs cut workers is still open.
 
 ## Strat's answers
