@@ -8,6 +8,7 @@
 	# interest_groups_temp - list of <ig_token> - (Required)
 	# ig_override_temp - <boolean> (Optional) - (1) will cause the party to 'steal' ig, if there are overlaps with current parties
 	# treasury_temp - <float> (Optional)
+	
 	add_party_to_country = {
 		if = {
 			limit = {
@@ -125,6 +126,7 @@
 			set_temp_variable = { ig_override_temp = 0 }
 		#
 	}
+	
 	remove_party_from_country = {
 		if = {
 			limit = {
@@ -144,26 +146,42 @@
 			custom_effect_tooltip = remove_party_from_country_tt
 		}
 	}
+
 	add_ig_to_party = {
 		if = {
 			limit = {
 				check_variable = { ig_override_temp > 0 }
 				any_of = {
 					array = parties_array
-					is_in_array
+					value = p_temp
+					is_in_array = { interest_groups@var:p_temp value = ig_temp }
 				}
 			}
-			
+			remove_from_array = {
+				array = interest_groups@var:p_temp
+				value = ig_temp
+			}
+			add_to_array = {
+				array = interest_groups@var:party_temp
+				value = ig_temp
+			}
 			custom_effect_tooltip = add_ig_to_party_tt
 		}
 		else = {
+			add_to_array = {
+				array = interest_groups@var:party_temp
+				value = ig_temp
+			}
 			custom_effect_tooltip = add_ig_to_party_tt2
 		}
 	}
 	remove_ig_from_party = {
-
+		remove_from_array = {
+			array = interest_groups@var:party_temp
+			value = ig_temp
+		}
+		custom_effect_tooltip = remove_ig_from_party_tt
 	}
-
 
 # Helper Effects
 	get_party_name_from_interest_groups = {
@@ -1142,7 +1160,348 @@
 		}
 	}
 
-reset_politics_overview = {
+	update_politics = {
+		clear_array = total_political_strength
+		clear_array = total_political_popularity
+
+		# Set Modifier Variables
+			# Interest Groups
+				set_variable = { strength_modifier@token:ig_type_institutional = modifier@ig_type_institutional_strength_modifier }
+				set_variable = { strength_factor@token:ig_type_institutional = modifier@ig_type_institutional_strength_factor }
+				set_variable = { popularity_modifier@token:ig_type_institutional = modifier@ig_type_institutional_popularity_modifier }
+				set_variable = { popularity_factor@token:ig_type_institutional = modifier@ig_type_institutional_popularity_factor }
+				if = {
+					limit = { is_in_array = { interest_group_array value = token:ig_monarchists } }
+					set_variable = { strength_modifier@token:ig_monarchists = modifier@ig_monarchists_strength_modifier }
+					set_variable = { strength_factor@token:ig_monarchists = modifier@ig_monarchists_strength_factor }
+					set_variable = { popularity_modifier@token:ig_monarchists = modifier@ig_monarchists_popularity_modifier }
+					set_variable = { popularity_factor@token:ig_monarchists = modifier@ig_monarchists_popularity_factor }
+				}
+				if = {
+					limit = { is_in_array = { interest_group_array value = token:ig_landowners } }
+					set_variable = { strength_modifier@token:ig_landowners = modifier@ig_landowners_strength_modifier }
+					set_variable = { strength_factor@token:ig_landowners = modifier@ig_landowners_strength_factor }
+					set_variable = { popularity_modifier@token:ig_landowners = modifier@ig_landowners_popularity_modifier }
+					set_variable = { popularity_factor@token:ig_landowners = modifier@ig_landowners_popularity_factor }
+				}
+				if = {
+					limit = { is_in_array = { interest_group_array value = token:ig_bureaucrats } }
+					set_variable = { strength_modifier@token:ig_bureaucrats = modifier@ig_bureaucrats_strength_modifier }
+					set_variable = { strength_factor@token:ig_bureaucrats = modifier@ig_bureaucrats_strength_factor }
+					set_variable = { popularity_modifier@token:ig_bureaucrats = modifier@ig_bureaucrats_popularity_modifier }
+					set_variable = { popularity_factor@token:ig_bureaucrats = modifier@ig_bureaucrats_popularity_factor }
+				}
+				if = {
+					limit = { is_in_array = { interest_group_array value = token:ig_intelligentsia } }
+					set_variable = { strength_modifier@token:ig_intelligentsia = modifier@ig_intelligentsia_strength_modifier }
+					set_variable = { strength_factor@token:ig_intelligentsia = modifier@ig_intelligentsia_strength_factor }
+					set_variable = { popularity_modifier@token:ig_intelligentsia = modifier@ig_intelligentsia_popularity_modifier }
+					set_variable = { popularity_factor@token:ig_intelligentsia = modifier@ig_intelligentsia_popularity_factor }
+				}
+				if = {
+					limit = { is_in_array = { interest_group_array value = token:ig_clergy } }
+					set_variable = { strength_modifier@token:ig_clergy = modifier@ig_clergy_strength_modifier }
+					set_variable = { strength_factor@token:ig_clergy = modifier@ig_clergy_strength_factor }
+					set_variable = { popularity_modifier@token:ig_clergy = modifier@ig_clergy_popularity_modifier }
+					set_variable = { popularity_factor@token:ig_clergy = modifier@ig_clergy_popularity_factor }
+				}
+				if = {
+					limit = { is_in_array = { interest_group_array value = token:ig_army } }
+					set_variable = { strength_modifier@token:ig_army = modifier@ig_army_strength_modifier }
+					set_variable = { strength_factor@token:ig_army = modifier@ig_army_strength_factor }
+					set_variable = { popularity_modifier@token:ig_army = modifier@ig_army_popularity_modifier }
+					set_variable = { popularity_factor@token:ig_army = modifier@ig_army_popularity_factor }
+				}
+				if = {
+					limit = { is_in_array = { interest_group_array value = token:ig_navy } }
+					set_variable = { strength_modifier@token:ig_navy = modifier@ig_navy_strength_modifier }
+					set_variable = { strength_factor@token:ig_navy = modifier@ig_navy_strength_factor }
+					set_variable = { popularity_modifier@token:ig_navy = modifier@ig_navy_popularity_modifier }
+					set_variable = { popularity_factor@token:ig_navy = modifier@ig_navy_popularity_factor }
+				}
+				if = {
+					limit = { is_in_array = { interest_group_array value = token:ig_securocrats } }
+					set_variable = { strength_modifier@token:ig_securocrats = modifier@ig_securocrats_strength_modifier }
+					set_variable = { strength_factor@token:ig_securocrats = modifier@ig_securocrats_strength_factor }
+					set_variable = { popularity_modifier@token:ig_securocrats = modifier@ig_securocrats_popularity_modifier }
+					set_variable = { popularity_factor@token:ig_securocrats = modifier@ig_securocrats_popularity_factor }
+				}
+				if = {
+					limit = { is_in_array = { interest_group_array value = token:ig_tribalists } }
+					set_variable = { strength_modifier@token:ig_tribalists = modifier@ig_tribalists_strength_modifier }
+					set_variable = { strength_factor@token:ig_tribalists = modifier@ig_tribalists_strength_factor }
+					set_variable = { popularity_modifier@token:ig_tribalists = modifier@ig_tribalists_popularity_modifier }
+					set_variable = { popularity_factor@token:ig_tribalists = modifier@ig_tribalists_popularity_factor }
+				}
+				if = {
+					limit = { is_in_array = { interest_group_array value = token:ig_capitalists } }
+					set_variable = { strength_modifier@token:ig_capitalists = modifier@ig_capitalists_strength_modifier }
+					set_variable = { strength_factor@token:ig_capitalists = modifier@ig_capitalists_strength_factor }
+					set_variable = { popularity_modifier@token:ig_capitalists = modifier@ig_capitalists_popularity_modifier }
+					set_variable = { popularity_factor@token:ig_capitalists = modifier@ig_capitalists_popularity_factor }
+				}
+				if = {
+					limit = { is_in_array = { interest_group_array value = token:ig_entrepreneurs } }
+					set_variable = { strength_modifier@token:ig_entrepreneurs = modifier@ig_entrepreneurs_strength_modifier }
+					set_variable = { strength_factor@token:ig_entrepreneurs = modifier@ig_entrepreneurs_strength_factor }
+					set_variable = { popularity_modifier@token:ig_entrepreneurs = modifier@ig_entrepreneurs_popularity_modifier }
+					set_variable = { popularity_factor@token:ig_entrepreneurs = modifier@ig_entrepreneurs_popularity_factor }
+				}
+				if = {
+					limit = { is_in_array = { interest_group_array value = token:ig_laborists } }
+					set_variable = { strength_modifier@token:ig_laborists = modifier@ig_laborists_strength_modifier }
+					set_variable = { strength_factor@token:ig_laborists = modifier@ig_laborists_strength_factor }
+					set_variable = { popularity_modifier@token:ig_laborists = modifier@ig_laborists_popularity_modifier }
+					set_variable = { popularity_factor@token:ig_laborists = modifier@ig_laborists_popularity_factor }
+				}
+				if = {
+					limit = { is_in_array = { interest_group_array value = token:ig_urbanists } }
+					set_variable = { strength_modifier@token:ig_urbanists = modifier@ig_urbanists_strength_modifier }
+					set_variable = { strength_factor@token:ig_urbanists = modifier@ig_urbanists_strength_factor }
+					set_variable = { popularity_modifier@token:ig_urbanists = modifier@ig_urbanists_popularity_modifier }
+					set_variable = { popularity_factor@token:ig_urbanists = modifier@ig_urbanists_popularity_factor }
+				}
+				if = {
+					limit = { is_in_array = { interest_group_array value = token:ig_ruralists } }
+					set_variable = { strength_modifier@token:ig_ruralists = modifier@ig_ruralists_strength_modifier }
+					set_variable = { strength_factor@token:ig_ruralists = modifier@ig_ruralists_strength_factor }
+					set_variable = { popularity_modifier@token:ig_ruralists = modifier@ig_ruralists_popularity_modifier }
+					set_variable = { popularity_factor@token:ig_ruralists = modifier@ig_ruralists_popularity_factor }
+				}
+				set_variable = { strength_modifier@token:ig_type_ideological = modifier@ig_type_ideological_strength_modifier }
+				set_variable = { strength_factor@token:ig_type_ideological = modifier@ig_type_ideological_strength_factor }
+				set_variable = { popularity_modifier@token:ig_type_ideological = modifier@ig_type_ideological_popularity_modifier }
+				set_variable = { popularity_factor@token:ig_type_ideological = modifier@ig_type_ideological_popularity_factor }
+				if = {
+					limit = { is_in_array = { interest_group_array value = token:ig_moralists } }
+					set_variable = { strength_modifier@token:ig_moralists = modifier@ig_moralists_strength_modifier }
+					set_variable = { strength_factor@token:ig_moralists = modifier@ig_moralists_strength_factor }
+					set_variable = { popularity_modifier@token:ig_moralists = modifier@ig_moralists_popularity_modifier }
+					set_variable = { popularity_factor@token:ig_moralists = modifier@ig_moralists_popularity_factor }
+				}
+				if = {
+					limit = { is_in_array = { interest_group_array value = token:ig_patriots } }
+					set_variable = { strength_modifier@token:ig_patriots = modifier@ig_patriots_strength_modifier }
+					set_variable = { strength_factor@token:ig_patriots = modifier@ig_patriots_strength_factor }
+					set_variable = { popularity_modifier@token:ig_patriots = modifier@ig_patriots_popularity_modifier }
+					set_variable = { popularity_factor@token:ig_patriots = modifier@ig_patriots_popularity_factor }
+				}
+				if = {
+					limit = { is_in_array = { interest_group_array value = token:ig_agrarians } }
+					set_variable = { strength_modifier@token:ig_agrarians = modifier@ig_agrarians_strength_modifier }
+					set_variable = { strength_factor@token:ig_agrarians = modifier@ig_agrarians_strength_factor }
+					set_variable = { popularity_modifier@token:ig_agrarians = modifier@ig_agrarians_popularity_modifier }
+					set_variable = { popularity_factor@token:ig_agrarians = modifier@ig_agrarians_popularity_factor }
+				}
+				if = {
+					limit = { is_in_array = { interest_group_array value = token:ig_anarchists } }
+					set_variable = { strength_modifier@token:ig_anarchists = modifier@ig_anarchists_strength_modifier }
+					set_variable = { strength_factor@token:ig_anarchists = modifier@ig_anarchists_strength_factor }
+					set_variable = { popularity_modifier@token:ig_anarchists = modifier@ig_anarchists_popularity_modifier }
+					set_variable = { popularity_factor@token:ig_anarchists = modifier@ig_anarchists_popularity_factor }
+				}
+				if = {
+					limit = { is_in_array = { interest_group_array value = token:ig_environmentalists } }
+					set_variable = { strength_modifier@token:ig_environmentalists = modifier@ig_environmentalists_strength_modifier }
+					set_variable = { strength_factor@token:ig_environmentalists = modifier@ig_environmentalists_strength_factor }
+					set_variable = { popularity_modifier@token:ig_environmentalists = modifier@ig_environmentalists_popularity_modifier }
+					set_variable = { popularity_factor@token:ig_environmentalists = modifier@ig_environmentalists_popularity_factor }
+				}
+				if = {
+					limit = { is_in_array = { interest_group_array value = token:ig_communists } }
+					set_variable = { strength_modifier@token:ig_communists = modifier@ig_communists_strength_modifier }
+					set_variable = { strength_factor@token:ig_communists = modifier@ig_communists_strength_factor }
+					set_variable = { popularity_modifier@token:ig_communists = modifier@ig_communists_popularity_modifier }
+					set_variable = { popularity_factor@token:ig_communists = modifier@ig_communists_popularity_factor }
+				}
+				if = {
+					limit = { is_in_array = { interest_group_array value = token:ig_vanguard_socialists } }
+					set_variable = { strength_modifier@token:ig_vanguard_socialists = modifier@ig_vanguard_socialists_strength_modifier }
+					set_variable = { strength_factor@token:ig_vanguard_socialists = modifier@ig_vanguard_socialists_strength_factor }
+					set_variable = { popularity_modifier@token:ig_vanguard_socialists = modifier@ig_vanguard_socialists_popularity_modifier }
+					set_variable = { popularity_factor@token:ig_vanguard_socialists = modifier@ig_vanguard_socialists_popularity_factor }
+				}
+				if = {
+					limit = { is_in_array = { interest_group_array value = token:ig_collectivist_socialists } }
+					set_variable = { strength_modifier@token:ig_collectivist_socialists = modifier@ig_collectivist_socialists_strength_modifier }
+					set_variable = { strength_factor@token:ig_collectivist_socialists = modifier@ig_collectivist_socialists_strength_factor }
+					set_variable = { popularity_modifier@token:ig_collectivist_socialists = modifier@ig_collectivist_socialists_popularity_modifier }
+					set_variable = { popularity_factor@token:ig_collectivist_socialists = modifier@ig_collectivist_socialists_popularity_factor }
+				}
+				if = {
+					limit = { is_in_array = { interest_group_array value = token:ig_egalitarians } }
+					set_variable = { strength_modifier@token:ig_egalitarians = modifier@ig_egalitarians_strength_modifier }
+					set_variable = { strength_factor@token:ig_egalitarians = modifier@ig_egalitarians_strength_factor }
+					set_variable = { popularity_modifier@token:ig_egalitarians = modifier@ig_egalitarians_popularity_modifier }
+					set_variable = { popularity_factor@token:ig_egalitarians = modifier@ig_egalitarians_popularity_factor }
+				}
+				if = {
+					limit = { is_in_array = { interest_group_array value = token:ig_solidarists } }
+					set_variable = { strength_modifier@token:ig_solidarists = modifier@ig_solidarists_strength_modifier }
+					set_variable = { strength_factor@token:ig_solidarists = modifier@ig_solidarists_strength_factor }
+					set_variable = { popularity_modifier@token:ig_solidarists = modifier@ig_solidarists_popularity_modifier }
+					set_variable = { popularity_factor@token:ig_solidarists = modifier@ig_solidarists_popularity_factor }
+				}
+				if = {
+					limit = { is_in_array = { interest_group_array value = token:ig_liberals } }
+					set_variable = { strength_modifier@token:ig_liberals = modifier@ig_liberals_strength_modifier }
+					set_variable = { strength_factor@token:ig_liberals = modifier@ig_liberals_strength_factor }
+					set_variable = { popularity_modifier@token:ig_liberals = modifier@ig_liberals_popularity_modifier }
+					set_variable = { popularity_factor@token:ig_liberals = modifier@ig_liberals_popularity_factor }
+				}
+				if = {
+					limit = { is_in_array = { interest_group_array value = token:ig_conservatives } }
+					set_variable = { strength_modifier@token:ig_conservatives = modifier@ig_conservatives_strength_modifier }
+					set_variable = { strength_factor@token:ig_conservatives = modifier@ig_conservatives_strength_factor }
+					set_variable = { popularity_modifier@token:ig_conservatives = modifier@ig_conservatives_popularity_modifier }
+					set_variable = { popularity_factor@token:ig_conservatives = modifier@ig_conservatives_popularity_factor }
+				}
+				if = {
+					limit = { is_in_array = { interest_group_array value = token:ig_reactionaries } }
+					set_variable = { strength_modifier@token:ig_reactionaries = modifier@ig_reactionaries_strength_modifier }
+					set_variable = { strength_factor@token:ig_reactionaries = modifier@ig_reactionaries_strength_factor }
+					set_variable = { popularity_modifier@token:ig_reactionaries = modifier@ig_reactionaries_popularity_modifier }
+					set_variable = { popularity_factor@token:ig_reactionaries = modifier@ig_reactionaries_popularity_factor }
+				}
+				if = {
+					limit = { is_in_array = { interest_group_array value = token:ig_chauvinists } }
+					set_variable = { strength_modifier@token:ig_chauvinists = modifier@ig_chauvinists_strength_modifier }
+					set_variable = { strength_factor@token:ig_chauvinists = modifier@ig_chauvinists_strength_factor }
+					set_variable = { popularity_modifier@token:ig_chauvinists = modifier@ig_chauvinists_popularity_modifier }
+					set_variable = { popularity_factor@token:ig_chauvinists = modifier@ig_chauvinists_popularity_factor }
+				}
+				if = {
+					limit = { is_in_array = { interest_group_array value = token:ig_fascists } }
+					set_variable = { strength_modifier@token:ig_fascists = modifier@ig_fascists_strength_modifier }
+					set_variable = { strength_factor@token:ig_fascists = modifier@ig_fascists_strength_factor }
+					set_variable = { popularity_modifier@token:ig_fascists = modifier@ig_fascists_popularity_modifier }
+					set_variable = { popularity_factor@token:ig_fascists = modifier@ig_fascists_popularity_factor }
+				}
+				set_variable = { strength_modifier@token:ig_type_particularist = modifier@ig_type_particularist_strength_modifier }
+				set_variable = { strength_factor@token:ig_type_particularist = modifier@ig_type_particularist_strength_factor }
+				set_variable = { popularity_modifier@token:ig_type_particularist = modifier@ig_type_particularist_popularity_modifier }
+				set_variable = { popularity_factor@token:ig_type_particularist = modifier@ig_type_particularist_popularity_factor }
+				if = {
+					limit = { is_in_array = { interest_group_array value = token:ig_independence } }
+					set_variable = { strength_modifier@token:ig_independence = modifier@ig_independence_strength_modifier }
+					set_variable = { strength_factor@token:ig_independence = modifier@ig_independence_strength_factor }
+					set_variable = { popularity_modifier@token:ig_independence = modifier@ig_independence_popularity_modifier }
+					set_variable = { popularity_factor@token:ig_independence = modifier@ig_independence_popularity_factor }
+				}
+				if = {
+					limit = { is_in_array = { interest_group_array value = token:ig_religious_minorities } }
+					set_variable = { strength_modifier@token:ig_religious_minorities = modifier@ig_religious_minorities_strength_modifier }
+					set_variable = { strength_factor@token:ig_religious_minorities = modifier@ig_religious_minorities_strength_factor }
+					set_variable = { popularity_modifier@token:ig_religious_minorities = modifier@ig_religious_minorities_popularity_modifier }
+					set_variable = { popularity_factor@token:ig_religious_minorities = modifier@ig_religious_minorities_popularity_factor }
+				}
+				if = {
+					limit = { is_in_array = { interest_group_array value = token:ig_cultural_minorities } }
+					set_variable = { strength_modifier@token:ig_cultural_minorities = modifier@ig_cultural_minorities_strength_modifier }
+					set_variable = { strength_factor@token:ig_cultural_minorities = modifier@ig_cultural_minorities_strength_factor }
+					set_variable = { popularity_modifier@token:ig_cultural_minorities = modifier@ig_cultural_minorities_popularity_modifier }
+					set_variable = { popularity_factor@token:ig_cultural_minorities = modifier@ig_cultural_minorities_popularity_factor }
+				}
+				if = {
+					limit = { is_in_array = { interest_group_array value = token:ig_separatists } }
+					set_variable = { strength_modifier@token:ig_separatists = modifier@ig_separatists_strength_modifier }
+					set_variable = { strength_factor@token:ig_separatists = modifier@ig_separatists_strength_factor }
+					set_variable = { popularity_modifier@token:ig_separatists = modifier@ig_separatists_popularity_modifier }
+					set_variable = { popularity_factor@token:ig_separatists = modifier@ig_separatists_popularity_factor }
+				}
+				if = {
+					limit = { is_in_array = { interest_group_array value = token:ig_supernationalists } }
+					set_variable = { strength_modifier@token:ig_supernationalists = modifier@ig_supernationalists_strength_modifier }
+					set_variable = { strength_factor@token:ig_supernationalists = modifier@ig_supernationalists_strength_factor }
+					set_variable = { popularity_modifier@token:ig_supernationalists = modifier@ig_supernationalists_popularity_modifier }
+					set_variable = { popularity_factor@token:ig_supernationalists = modifier@ig_supernationalists_popularity_factor }
+				}
+				if = {
+					limit = { is_in_array = { interest_group_array value = token:ig_foreign_interests } }
+					set_variable = { strength_modifier@token:ig_foreign_interests = modifier@ig_foreign_interests_strength_modifier }
+					set_variable = { strength_factor@token:ig_foreign_interests = modifier@ig_foreign_interests_strength_factor }
+					set_variable = { popularity_modifier@token:ig_foreign_interests = modifier@ig_foreign_interests_popularity_modifier }
+					set_variable = { popularity_factor@token:ig_foreign_interests = modifier@ig_foreign_interests_popularity_factor }
+				}
+			#
+			# Coalitions
+				set_variable = { strength_modifier@token:ruling_coalition = modifier@ruling_coalition_strength_modifier }
+				set_variable = { strength_factor@token:ruling_coalition = modifier@ruling_coalition_strength_factor }
+				set_variable = { strength_modifier@token:oppositional_parties = modifier@oppositional_parties_strength_modifier }
+				set_variable = { strength_factor@token:oppositional_parties = modifier@oppositional_parties_strength_factor }
+				set_variable = { strength_modifier@token:marginalized_parties = modifier@marginalized_parties_strength_modifier }
+				set_variable = { strength_factor@token:marginalized_parties = modifier@marginalized_parties_strength_factor }
+			#
+		#
+		# Update Interest Groups
+			for_each_loop = {
+				array = interest_group_arrays
+				value = ig_temp
+
+				set_variable = {
+					strength@var:ig_temp = {
+						value = 10
+						add = strength_modifier@var:ig_temp
+						add = {
+							value = popularity@var:ig_temp
+							add = popularity_modifier@var:ig_temp
+							multiply = popularity_factor@var:ig_temp
+						}
+						multiply = {
+							value = 1
+							add = strength_factor@var:ig_temp
+						}
+					}
+				}
+				add_to_variable = { total_political_strength = strength@var:ig_temp }
+				add_to_variable = { total_poltiical_popularity = popularity@var:ig_temp }
+
+				# >>> Evaluate Preference Party?
+			}
+			for_each_loop = {
+				
+			}
+	}
+	update_politics_overview = {
+		clear_variable = politics_overview_selection_array
+
+		update_politics = yes
+	
+	
+	}
+# update_politics_overview = {
+# 	# Reset Variables
+# 	clear_array = political_overview_selection_array
+# 	clear_array = total_political_strength
+# 	clear_array = total_political_popularity
+# 	set_variable = { political_overview_open@token:ruling_coalition = 0 }
+# 	set_variable = { political_overview_open@token:oppositional_parties = 0 }
+# 	set_variable = { political_overview_open@token:marginalized_parties = 0 }
+
+# 	for_each_loop = {
+# 		array = parties_array
+# 		value = p
+
+# 		set_variable = {
+# 			strength@var:p = {
+# 				value = 5
+# 				for_each_loop
+# 			}
+# 		}
+
+# 		set_variable = { strength@var:p = 25 }
+
+
+
+
+# 		add_to_variable = { strength@var:p = strength_modifier@var:p }
+
+# 		add_to_variable = { total_popularity_strength = strength@var:p }
+# 		add_to_variable = { total_popularity_strength = }
+# 	}
+# }
+
+update_politics_overview = {
 	clear_array = political_overview_selection_array
 	clear_variable = total_political_strength
 	clear_variable = total_political_popularity
@@ -1713,7 +2072,7 @@ set_internal_politics = {
 	}
 	add_ideas = political_legitimacy_moderate
 	update_political_legitimacy_drift = yes
-	reset_politics_overview = yes
+	update_politics_overview = yes
 }
 reset_internal_politics = {
 	randomize_variable = {
@@ -1722,7 +2081,7 @@ reset_internal_politics = {
 		max = 55
 	}
 	update_political_legitimacy_drift = yes
-	reset_politics_overview = yes
+	update_politics_overview = yes
 }
 # Legitimacy
 	update_political_legitimacy = {
