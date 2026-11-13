@@ -1,12 +1,10 @@
 
 # Industry Update
 	industries_update = {
-		set_variable = { pops_dividends@token:capitalists = 0 }
-		set_variable = { pops_dividends@token:landowners = 0 }
-		set_variable = { pops_bonuses@token:laborers = 0 }
-		set_variable = { pops_bonuses@token:workers = 0 }
-		set_variable = { pops_bonuses@token:professionals = 0 }
-		set_variable = { pops_bonuses@token:specialists = 0 }
+		# The upper class owns every industry's local share (Q11), and employees share a third of its profit as bonuses
+		set_variable = { pops_dividends@token:upper_class = 0 }
+		set_variable = { pops_bonuses@token:working_class = 0 }
+		set_variable = { pops_bonuses@token:middle_class = 0 }
 
 		for_each_loop = {
 			array = industries
@@ -15,8 +13,6 @@
 				limit = {
 					check_variable = { size@var:bu_token > 0 }
 				}
-
-				set_temp_variable = { owner_temp = global.industry_owner@var:bu_token }
 
 				# Apportion dividends by ownership: locals receive only their (size - incorporated) share.
 				# The incorporated share is collected by companies in companies_update. owner_sizes is
@@ -43,10 +39,10 @@
 				else = {
 					set_variable = { owner_sizes_local@var:bu_token = size@var:bu_token }
 				}
-				add_to_variable = { pops_dividends@var:owner_temp = local_dividends_temp }
+				add_to_variable = { pops_dividends@token:upper_class = local_dividends_temp }
 
-				add_to_variable = { pops_bonuses@token:laborers = laborers_bonuses@var:bu_token }
-				add_to_variable = { pops_bonuses@token:workers = workers_bonuses@var:bu_token }
+				add_to_variable = { pops_bonuses@token:working_class = working_bonuses@var:bu_token }
+				add_to_variable = { pops_bonuses@token:middle_class = middle_bonuses@var:bu_token }
 			}
 		}
 
@@ -54,7 +50,7 @@
 			array = company_hqs
 			value = cid
 			# Add company dividends
-			add_to_variable = { pops_dividends@token:capitalists = global.company_dividends@var:cid }
+			add_to_variable = { pops_dividends@token:upper_class = global.company_dividends@var:cid }
 		}
 
 		special_buildings_update = yes
@@ -151,22 +147,22 @@
 		set_temp_variable = { pm_employment_temp = { value = 1 add = controller:pm_employment_factor@var:production_method_temp } }
 		set_temp_variable = { am_employment_temp = { value = 1 add = controller:pm_employment_factor@var:automation_method_temp } }
 		set_temp_variable = {
-			i_laborers_jobs = {
-				value = global.pm_workforce_laborers@var:production_method_temp
+			i_working_jobs = {
+				value = global.pm_workforce_working@var:production_method_temp
 				multiply = pm_employment_temp
 				add = {
-					value = global.pm_workforce_laborers@var:automation_method_temp
+					value = global.pm_workforce_working@var:automation_method_temp
 					multiply = am_employment_temp
 				}
 				max = 0
 			}
 		}
 		set_temp_variable = {
-			i_workers_jobs = {
-				value = global.pm_workforce_workers@var:production_method_temp
+			i_middle_jobs = {
+				value = global.pm_workforce_middle@var:production_method_temp
 				multiply = pm_employment_temp
 				add = {
-					value = global.pm_workforce_workers@var:automation_method_temp
+					value = global.pm_workforce_middle@var:automation_method_temp
 					multiply = am_employment_temp
 				}
 				max = 0
@@ -176,36 +172,33 @@
 		# Payroll Multiplier
 		set_variable = {
 			payroll_multiplier@var:bu_token = {
-				value = i_laborers_jobs
-				multiply = global.wage_multiplier@token:laborers
+				value = i_working_jobs
+				multiply = global.wage_multiplier@token:working_class
 				add = {
-					value = i_workers_jobs
-					multiply = global.wage_multiplier@token:workers
+					value = i_middle_jobs
+					multiply = global.wage_multiplier@token:middle_class
 				}
 				multiply = global.building_base_employees@var:bu_token
 			}
 		}
 
-		multiply_temp_variable = { i_laborers_jobs = base_jobs_temp }
-		multiply_temp_variable = { i_workers_jobs = base_jobs_temp }
-		set_temp_variable = { i_jobs = { value = i_laborers_jobs add = i_workers_jobs } }
+		multiply_temp_variable = { i_working_jobs = base_jobs_temp }
+		multiply_temp_variable = { i_middle_jobs = base_jobs_temp }
+		set_temp_variable = { i_jobs = { value = i_working_jobs add = i_middle_jobs } }
 
 		# Jobs Available
 		set_temp_variable = { i_employment_target = employment_target@var:bu_token }
-		set_temp_variable = { i_laborers_jobs_available = { value = i_laborers_jobs multiply = i_employment_target divide = 100 } }
-		set_temp_variable = { i_workers_jobs_available = { value = i_workers_jobs multiply = i_employment_target divide = 100 } }
-		set_temp_variable = { i_jobs_available = { value = i_laborers_jobs_available add = i_workers_jobs_available } }
+		set_temp_variable = { i_working_jobs_available = { value = i_working_jobs multiply = i_employment_target divide = 100 } }
+		set_temp_variable = { i_middle_jobs_available = { value = i_middle_jobs multiply = i_employment_target divide = 100 } }
 
-		# Decaching
+		# Decaching. Owner places are about 2% of jobs and go to the upper class (Q11)
 		set_variable = { owner_jobs@var:bu_token = { value = base_jobs_temp multiply = 0.02 multiply = i_employment_target divide = 100 } }
 
 		set_variable = { jobs@var:bu_token = i_jobs }
-		set_variable = { laborers_jobs@var:bu_token = i_laborers_jobs }
-		set_variable = { workers_jobs@var:bu_token = i_workers_jobs }
+		set_variable = { working_jobs@var:bu_token = i_working_jobs }
+		set_variable = { middle_jobs@var:bu_token = i_middle_jobs }
 
-		set_variable = { jobs_available@var:bu_token = i_jobs_available }
-		set_variable = { laborers_jobs_available@var:bu_token = i_laborers_jobs_available }
-		set_variable = { workers_jobs_available@var:bu_token = i_workers_jobs_available }
+		set_variable = { jobs_available@var:bu_token = { value = i_working_jobs_available add = i_middle_jobs_available } }
 
 	}
 
@@ -214,44 +207,44 @@
 		set_temp_variable = { i_employment_target = employment_target@var:bu_token }
 
 		set_variable = {
-			laborers_employed@var:bu_token = {
+			working_employed@var:bu_token = {
 				value = 0
-				if = { limit = { value = laborers_jobs@var:bu_token greater_than = 0 }
-					add = laborers_jobs@var:bu_token
+				if = { limit = { value = working_jobs@var:bu_token greater_than = 0 }
+					add = working_jobs@var:bu_token
 					multiply = i_employment_target
 					divide = 100
-					multiply = job_fulfillment@token:laborers
+					multiply = working_job_fulfillment # Slaves and free workers together
 					divide = 100
 				}
 			}
 		}
 
 		set_variable = {
-			workers_employed@var:bu_token = {
+			middle_employed@var:bu_token = {
 				value = 0
-				if = { limit = { value = workers_jobs@var:bu_token greater_than = 0 }
-					add = workers_jobs@var:bu_token
+				if = { limit = { value = middle_jobs@var:bu_token greater_than = 0 }
+					add = middle_jobs@var:bu_token
 					multiply = i_employment_target
 					divide = 100
-					multiply = job_fulfillment@token:workers
+					multiply = job_fulfillment@token:middle_class
 					divide = 100
 				}
 			}
 		}
-		
+
 		set_variable = { employed@var:bu_token = {
-			value = laborers_employed@var:bu_token
-			add = workers_employed@var:bu_token
+			value = working_employed@var:bu_token
+			add = middle_employed@var:bu_token
 		} }
 
 		#Employment/Production Percentage
 		set_temp_variable = {
 			total_prod_temp = {
-				value = laborers_employed@var:bu_token
-				multiply = global.wage_multiplier@token:laborers
+				value = working_employed@var:bu_token
+				multiply = global.wage_multiplier@token:working_class
 				add = {
-					value = workers_employed@var:bu_token
-					multiply = global.wage_multiplier@token:workers
+					value = middle_employed@var:bu_token
+					multiply = global.wage_multiplier@token:middle_class
 				}
 				divide = payroll_multiplier@var:bu_token
 				divide = size@var:bu_token
@@ -579,12 +572,20 @@
 				add_to_variable = { revenue@var:bu_token = revenue_industrial_capacity@var:bu_token }
 			}
 
-			# Expenses
-			set_variable = { expenses_payroll@var:bu_token = size@var:bu_token }
-			multiply_variable = { expenses_payroll@var:bu_token = employment_percentage@var:bu_token }
-			divide_variable = { expenses_payroll@var:bu_token = 100 }
-			multiply_variable = { expenses_payroll@var:bu_token = base_wage }
-			multiply_variable = { expenses_payroll@var:bu_token = payroll_multiplier@var:bu_token }
+			# Expenses. Wages for the free share of the working class and for the middle class: slaves cost nothing (Q12, Q62)
+			set_variable = {
+				expenses_payroll@var:bu_token = {
+					value = 1
+					subtract = slave_labor_share
+					multiply = working_employed@var:bu_token
+					multiply = global.wage_multiplier@token:working_class
+					add = {
+						value = middle_employed@var:bu_token
+						multiply = global.wage_multiplier@token:middle_class
+					}
+					multiply = base_wage
+				}
+			}
 
 			set_variable = { expenses@var:bu_token = expenses_payroll@var:bu_token }
 			add_to_variable = { expenses@var:bu_token = expenses_input@var:bu_token }
@@ -600,7 +601,7 @@
 			# add_to_variable = { revenue@var:bu_token = revenue_subsidies@var:bu_token }
 			# add_to_variable = { profit@var:bu_token = revenue_subsidies@var:bu_token }
 
-			# Bonuses
+			# Bonuses: a third of profit, shared by employees in proportion to their wages. The slaves' share isn't paid
 			if = {
 				limit = {
 					check_variable = { profit@var:bu_token > 0 }
@@ -613,25 +614,30 @@
 				divide_temp_variable = { i_divisor_temp = 100 }
 				multiply_temp_variable = { i_divisor_temp = payroll_multiplier@var:bu_token }
 
-				set_temp_variable = { i_laborers_bonus = laborers_employed@var:bu_token }
-				multiply_temp_variable = { i_laborers_bonus = global.wage_multiplier@token:laborers }
-				divide_temp_variable = { i_laborers_bonus = i_divisor_temp }
-				multiply_temp_variable = { i_laborers_bonus = bonus_total }
-				set_temp_variable = { i_workers_bonus = workers_employed@var:bu_token }
-				multiply_temp_variable = { i_workers_bonus = global.wage_multiplier@token:workers }
-				divide_temp_variable = { i_workers_bonus = i_divisor_temp }
-				multiply_temp_variable = { i_workers_bonus = bonus_total }
-				
-				set_variable = { laborers_bonuses@var:bu_token = i_laborers_bonus }
-				set_variable = { workers_bonuses@var:bu_token = i_workers_bonus }
+				set_temp_variable = { i_working_bonus = working_employed@var:bu_token }
+				multiply_temp_variable = { i_working_bonus = global.wage_multiplier@token:working_class }
+				divide_temp_variable = { i_working_bonus = i_divisor_temp }
+				multiply_temp_variable = { i_working_bonus = bonus_total }
+				set_temp_variable = { i_free_share_temp = 1 }
+				subtract_from_temp_variable = { i_free_share_temp = slave_labor_share }
+				multiply_temp_variable = { i_working_bonus = i_free_share_temp }
+				set_temp_variable = { i_middle_bonus = middle_employed@var:bu_token }
+				multiply_temp_variable = { i_middle_bonus = global.wage_multiplier@token:middle_class }
+				divide_temp_variable = { i_middle_bonus = i_divisor_temp }
+				multiply_temp_variable = { i_middle_bonus = bonus_total }
 
+				set_variable = { working_bonuses@var:bu_token = i_working_bonus }
+				set_variable = { middle_bonuses@var:bu_token = i_middle_bonus }
+
+				set_temp_variable = { bonus_total = i_working_bonus }
+				add_to_temp_variable = { bonus_total = i_middle_bonus }
 				add_to_variable = { expenses@var:bu_token = bonus_total }
 				add_to_variable = { expenses_payroll@var:bu_token = bonus_total }
 				subtract_from_variable = { profit@var:bu_token = bonus_total }
 			}
 			else = {
-				set_variable = { laborers_bonuses@var:bu_token = 0 }
-				set_variable = { workers_bonuses@var:bu_token = 0 }
+				set_variable = { working_bonuses@var:bu_token = 0 }
+				set_variable = { middle_bonuses@var:bu_token = 0 }
 			}
 
 			# (Money accumulation, dividends & downsizing are computed below, after asset_value - the downsize
@@ -1323,28 +1329,26 @@
 		set_temp_variable = { base_jobs_temp = global.building_base_employees@var:bu_token }
 		multiply_temp_variable = { base_jobs_temp = size@var:bu_token }
 
-		set_variable = { laborers_jobs@var:bu_token = global.pm_workforce_laborers@var:production_method_temp }
-		clamp_variable = { var = laborers_jobs@var:bu_token min = 0 }
-		set_variable = { laborers_ratio@var:bu_token = laborers_jobs@var:bu_token }
+		set_variable = { working_jobs@var:bu_token = global.pm_workforce_working@var:production_method_temp }
+		clamp_variable = { var = working_jobs@var:bu_token min = 0 }
 
-		set_variable = { workers_jobs@var:bu_token = global.pm_workforce_workers@var:production_method_temp }
-		clamp_variable = { var = workers_jobs@var:bu_token min = 0 }
-		set_variable = { workers_ratio@var:bu_token = workers_jobs@var:bu_token }
+		set_variable = { middle_jobs@var:bu_token = global.pm_workforce_middle@var:production_method_temp }
+		clamp_variable = { var = middle_jobs@var:bu_token min = 0 }
 
 		set_variable = {
 			payroll_multiplier@var:bu_token = {
-				value = laborers_jobs@var:bu_token
-				multiply = global.wage_multiplier@token:laborers
+				value = working_jobs@var:bu_token
+				multiply = global.wage_multiplier@token:working_class
 				add = {
-					value = workers_jobs@var:bu_token
-					multiply = global.wage_multiplier@token:workers
+					value = middle_jobs@var:bu_token
+					multiply = global.wage_multiplier@token:middle_class
 				}
 				multiply = global.building_base_employees@var:bu_token
 			}
 		}
 
-		multiply_variable = { laborers_jobs@var:bu_token = base_jobs_temp }
-		multiply_variable = { workers_jobs@var:bu_token = base_jobs_temp }
+		multiply_variable = { working_jobs@var:bu_token = base_jobs_temp }
+		multiply_variable = { middle_jobs@var:bu_token = base_jobs_temp }
 
 		set_variable = { owner_jobs@var:bu_token = 0.02 }
 		multiply_variable = { owner_jobs@var:bu_token = base_jobs_temp }
@@ -1352,41 +1356,41 @@
 		set_variable = { employment_target@var:bu_token = 100 }
 
 		set_variable = {
-			laborers_employed@var:bu_token = {
+			working_employed@var:bu_token = {
 				value = 0
-				if = { limit = { value = laborers_jobs@var:bu_token greater_than = 0 }
-					add = laborers_jobs@var:bu_token
-					multiply = job_fulfillment@token:laborers
+				if = { limit = { value = working_jobs@var:bu_token greater_than = 0 }
+					add = working_jobs@var:bu_token
+					multiply = working_job_fulfillment
 					divide = 100
 				}
 			}
 		}
 
 		set_variable = {
-			workers_employed@var:bu_token = {
+			middle_employed@var:bu_token = {
 				value = 0
-				if = { limit = { value = workers_jobs@var:bu_token greater_than = 0 }
-					add = workers_jobs@var:bu_token
-					multiply = job_fulfillment@token:workers
+				if = { limit = { value = middle_jobs@var:bu_token greater_than = 0 }
+					add = middle_jobs@var:bu_token
+					multiply = job_fulfillment@token:middle_class
 					divide = 100
 				}
 			}
 		}
-		
+
 		set_variable = { employed@var:bu_token = {
-			value = laborers_employed@var:bu_token
-			add = workers_employed@var:bu_token
+			value = working_employed@var:bu_token
+			add = middle_employed@var:bu_token
 		} }
 
 		#Employment/Production Percentage
 
 		set_temp_variable = {
 			total_prod_temp = {
-				value = laborers_employed@var:bu_token
-				multiply = global.wage_multiplier@token:laborers
+				value = working_employed@var:bu_token
+				multiply = global.wage_multiplier@token:working_class
 				add = {
-					value = workers_employed@var:bu_token
-					multiply = global.wage_multiplier@token:workers
+					value = middle_employed@var:bu_token
+					multiply = global.wage_multiplier@token:middle_class
 				}
 				divide = payroll_multiplier@var:bu_token
 				divide = size@var:bu_token
@@ -1454,12 +1458,20 @@
 			multiply_variable = { revenue@var:bu_token = payroll_multiplier@var:bu_token }
 			multiply_variable = { revenue@var:bu_token = size@var:bu_token }
 
-			#Expenses
-			set_variable = { expenses_payroll@var:bu_token = size@var:bu_token }
-			multiply_variable = { expenses_payroll@var:bu_token = employment_percentage@var:bu_token }
-			divide_variable = { expenses_payroll@var:bu_token = 100 }
-			multiply_variable = { expenses_payroll@var:bu_token = base_wage }
-			multiply_variable = { expenses_payroll@var:bu_token = payroll_multiplier@var:bu_token }
+			#Expenses. As industry_update: slaves cost nothing
+			set_variable = {
+				expenses_payroll@var:bu_token = {
+					value = 1
+					subtract = slave_labor_share
+					multiply = working_employed@var:bu_token
+					multiply = global.wage_multiplier@token:working_class
+					add = {
+						value = middle_employed@var:bu_token
+						multiply = global.wage_multiplier@token:middle_class
+					}
+					multiply = base_wage
+				}
+			}
 
 			set_variable = { expenses@var:bu_token = expenses_payroll@var:bu_token }
 
@@ -1598,7 +1610,7 @@
 
 		# Expenses
 		set_variable = { expenses_payroll@token:subsistence_farm = revenue@token:subsistence_farm }
-		multiply_variable = { expenses_payroll@token:subsistence_farm = 0.8 }				 # Landowners take 20%
+		multiply_variable = { expenses_payroll@token:subsistence_farm = 0.8 }				 # The upper class takes 20% as rent
 		set_variable = { expenses@token:subsistence_farm = expenses_payroll@token:subsistence_farm }
 
 		set_variable = { average_wage@token:subsistence_farm = expenses_payroll@token:subsistence_farm }
@@ -1967,22 +1979,16 @@
 		# Is the sum of payroll_multiplier * size * productivity across every industry.
 		set_temp_variable = { base_wage_counting = 0 }
 
-		# Sourcing all job types
-		set_temp_variable = { total_jobs_weight = 0.1 }
-		add_to_temp_variable = { total_jobs_weight = pops_workforce@token:slaves }
-		add_to_temp_variable = { total_jobs_weight = pops_workforce@token:peasants }
-		set_temp_variable = { weight_temp = pops_workforce@token:laborers }
-		multiply_temp_variable = { weight_temp = 2 }
-		add_to_temp_variable = { total_jobs_weight = weight_temp }
-		set_temp_variable = { weight_temp = pops_workforce@token:workers }
-		multiply_temp_variable = { weight_temp = 5 }
-		add_to_temp_variable = { total_jobs_weight = weight_temp }
-		set_temp_variable = { weight_temp = pops_workforce@token:professionals }
-		multiply_temp_variable = { weight_temp = 10 }
-		add_to_temp_variable = { total_jobs_weight = weight_temp }
-		set_temp_variable = { weight_temp = pops_workforce@token:specialists }
-		multiply_temp_variable = { weight_temp = 20 }
-		add_to_temp_variable = { total_jobs_weight = weight_temp }
+		# Sourcing all job types, weighted by their wage multiples
+		set_temp_variable = {
+			total_jobs_weight = {
+				value = 0.1
+				add = pops_workforce@token:slaves
+				add = pops_workforce@token:peasants
+				add = { value = pops_workforce@token:working_class multiply = global.wage_multiplier@token:working_class }
+				add = { value = pops_workforce@token:middle_class multiply = global.wage_multiplier@token:middle_class }
+			}
+		}
 		# log = "Jobs Weight: [?total_jobs_weight]"
 
 		set_temp_variable = { remaining_jobs = total_jobs_weight }
@@ -2049,18 +2055,6 @@
 		}
 
 		multiply_variable = { base_wage = wage_factor }
-
-		set_variable = { laborers_wage = base_wage }
-		multiply_variable = { laborers_wage = global.wage_multiplier@token:laborers }
-
-		set_variable = { workers_wage = base_wage }
-		multiply_variable = { workers_wage = global.wage_multiplier@token:workers }
-
-		set_variable = { professionals_wage = base_wage }
-		multiply_variable = { professionals_wage = global.wage_multiplier@token:professionals }
-
-		set_variable = { specialists_wage = base_wage }
-		multiply_variable = { specialists_wage = global.wage_multiplier@token:specialists }
 	}
 	base_wage_seed = {
 		# State scope. Seeds the persistent base_wage ONCE at startup (called from _init_state / _state_fin).
@@ -2114,8 +2108,8 @@
 		base_wage_finalize = yes
 	}
 	base_wage_finalize = {
-		# State scope. Applies the wage floor and derives per-type wages. Shared by seed + update.
-		# Floor = subsistence_productivity / 2, at least global.minimum_base_wage. Laborers earn 2x base, so laborers floor at >= subsistence.
+		# State scope. Applies the wage floor. Shared by seed + update.
+		# Floor = subsistence_productivity / 2, at least global.minimum_base_wage. The working class earns 2x base, so it floors at >= subsistence.
 		set_temp_variable = { wage_floor_temp = {
 			value = productivity@token:subsistence_farm
 			divide = 2
@@ -2125,18 +2119,6 @@
 			limit = { check_variable = { base_wage < wage_floor_temp } }
 			set_variable = { base_wage = wage_floor_temp }
 		}
-
-		set_variable = { laborers_wage = base_wage }
-		multiply_variable = { laborers_wage = global.wage_multiplier@token:laborers }
-
-		set_variable = { workers_wage = base_wage }
-		multiply_variable = { workers_wage = global.wage_multiplier@token:workers }
-
-		set_variable = { professionals_wage = base_wage }
-		multiply_variable = { professionals_wage = global.wage_multiplier@token:professionals }
-
-		set_variable = { specialists_wage = base_wage }
-		multiply_variable = { specialists_wage = global.wage_multiplier@token:specialists }
 	}
 
 	industry_get_highest_pm = {

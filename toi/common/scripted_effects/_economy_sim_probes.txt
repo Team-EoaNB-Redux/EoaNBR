@@ -64,8 +64,14 @@ eco_sim_probes = {
 	log = "EOPROBE|pow_1_1_cubed|[?a]"
 	set_temp_variable = { a = { value = 100 log = 10 } }
 	log = "EOPROBE|log10_100|[?a]"
-	set_temp_variable = { a = { value = 7 clamp = { max = 5 min = 6 } } }
-	log = "EOPROBE|clamp_max_then_min|[?a]"
+	# Answered: the game refuses max before min ("Expected 'min' as argument 1"), a load error that zeroes every later math expression in this file
+	# set_temp_variable = { a = { value = 7 clamp = { max = 5 min = 6 } } }
+	# log = "EOPROBE|clamp_max_then_min|[?a]"
+
+	# The clamp effect with crossed bounds, min written first. Answered 2026-11-12: 0, so min wins in either order
+	set_temp_variable = { a = 0 }
+	clamp_temp_variable = { var = a min = 0 max = -5 }
+	log = "EOPROBE|clamp_effect_crossed_min_first|[?a]"
 
 	# Temp vs. scope variable with the same name
 	set_variable = { eosim_shadow = 1 }
@@ -396,5 +402,5 @@ eco_sim_pm_audit_line = {
 		multiply_temp_variable = { eosim_amount = global.base_price@var:eosim_g }
 		add_to_temp_variable = { eosim_in = eosim_amount }
 	}
-	log = "EOPM|[?eosim_b.GetTokenKey]|[?eosim_m.GetTokenKey]|[?eosim_rev]|[?eosim_in]|[?global.pm_workforce_laborers@var:eosim_m]|[?global.pm_workforce_workers@var:eosim_m]|[?global.pm_industrial_capacity_use@var:eosim_m]|[?global.pm_industrial_capacity@var:eosim_m]|[?global.pm_shipping_capacity@var:eosim_m]|[?global.pm_construction_value@var:eosim_m]|[?global.pm_construction_duration@var:eosim_m]"
+	log = "EOPM|[?eosim_b.GetTokenKey]|[?eosim_m.GetTokenKey]|[?eosim_rev]|[?eosim_in]|[?global.pm_workforce_working@var:eosim_m]|[?global.pm_workforce_middle@var:eosim_m]|[?global.pm_industrial_capacity_use@var:eosim_m]|[?global.pm_industrial_capacity@var:eosim_m]|[?global.pm_shipping_capacity@var:eosim_m]|[?global.pm_construction_value@var:eosim_m]|[?global.pm_construction_duration@var:eosim_m]"
 }

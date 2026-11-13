@@ -376,21 +376,32 @@
         }
 
         # Actual Taxation Percentages
+            # A short bureaucracy collects less (Q78): global.admin_capacity_tax_floor with no bureaucrats, all of it at full capacity
+            set_temp_variable = {
+                tax_collection_temp = {
+                    value = 1
+                    subtract = global.admin_capacity_tax_floor
+                    multiply = administrative_capacity
+                    add = global.admin_capacity_tax_floor
+                    multiply = modifier@tax_efficiency_factor
+                }
+            }
+
             set_variable = { income_tax_upper_strata_percentage_actual = income_tax_upper_strata_percentage }
-            multiply_variable = { income_tax_upper_strata_percentage_actual = modifier@tax_efficiency_factor }
-        
+            multiply_variable = { income_tax_upper_strata_percentage_actual = tax_collection_temp }
+
             set_variable = { income_tax_middle_strata_percentage_actual = income_tax_middle_strata_percentage }
-            multiply_variable = { income_tax_middle_strata_percentage_actual = modifier@tax_efficiency_factor }
-            
+            multiply_variable = { income_tax_middle_strata_percentage_actual = tax_collection_temp }
+
             set_variable = { income_tax_lower_strata_percentage_actual = income_tax_lower_strata_percentage }
-            multiply_variable = { income_tax_lower_strata_percentage_actual = modifier@tax_efficiency_factor }
-            
+            multiply_variable = { income_tax_lower_strata_percentage_actual = tax_collection_temp }
+
             set_variable = { sales_tax_percentage_actual = sales_tax_percentage }
-            multiply_variable = { sales_tax_percentage_actual = modifier@tax_efficiency_factor }
-        
+            multiply_variable = { sales_tax_percentage_actual = tax_collection_temp }
+
             set_variable = { corporate_tax_percentage_actual = corporate_tax_percentage }
-            multiply_variable = { corporate_tax_percentage_actual = modifier@tax_efficiency_factor }
-        
+            multiply_variable = { corporate_tax_percentage_actual = tax_collection_temp }
+
             set_variable = { import_tariff_percentage_actual = import_tariff_percentage }
             multiply_variable = { import_tariff_percentage_actual = modifier@bureaucratic_efficiency_factor }
             
@@ -883,23 +894,6 @@
         set_variable = { military_production_payroll_spending = 0 }
         set_variable = { public_enterprise_payroll_spending = 0 }
         every_controlled_state = {
-            #Administration
-            set_temp_variable = { admin_temp = pops_earnings }
-            multiply_temp_variable = { admin_temp = global.administration_base_expense }
-            divide_temp_variable = { admin_temp = 100 }
-            if = {
-                limit = {
-                    check_variable = { pops < global.administration_population_expense }
-                }
-                set_temp_variable = { modifier_temp = global.administration_population_expense }
-                subtract_from_temp_variable = { modifier_temp = pops }
-                divide_temp_variable = { modifier_temp = global.administration_population_expense }
-                multiply_temp_variable = { modifier_temp = global.administration_population_expense_modifier }
-                add_to_temp_variable = { modifier_temp = 1 }
-                multiply_temp_variable = { admin_temp = modifier_temp }
-            }
-            add_to_variable = { PREV.administration_spending = admin_temp }
-
             for_each_loop = {
                 array = industries
                 index = sp_i
@@ -950,10 +944,14 @@
         set_temp_variable = { modifier_temp = modifier@administration_cost_factor }
         add_to_temp_variable = { modifier_temp = 1 }
         multiply_variable = { administration_spending = modifier_temp }
-        
+
 
         divide_variable = { administration_spending = modifier@bureaucratic_efficiency_factor }
         divide_variable = { construction_spending = modifier@bureaucratic_efficiency_factor }
+
+        # Bureaucrats' pay (Q77), summed in update_country_pop_stats. The cost factors above don't apply to it, so the
+        # government pays exactly the wages its bureaucrats receive
+        add_to_variable = { administration_spending = bureaucrats_payroll }
 
         #Military Payroll
         set_variable = { military_payroll_spending = deployed_army_manpower_k }

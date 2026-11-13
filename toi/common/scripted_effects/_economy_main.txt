@@ -75,6 +75,7 @@ _country_advance_time = {
     # 1.2 secs (calc: 1.4)
     update_national_production_methods = yes
     r_update_modifiers_country_effects = yes
+    bureaucracy_and_manpower_update = yes # Bureaucratic jobs and active manpower for the states below
     #buildings_update_base_latest_vals = yes
     every_controlled_state = {
         r_update_modifiers_state_effects = yes
@@ -629,12 +630,16 @@ on_monthly_industries = {
 	}
 }
 on_monthly_pops = {
-    # Finances
+    # Finances. Slaves have none
 	for_each_loop = {
 		array = global.pops_array
 		value = pop_token
 
-		if = { limit = { check_variable = { pops_workforce@var:pop_token > 0 } }
+		if = {
+			limit = {
+				check_variable = { pops_workforce@var:pop_token > 0 }
+				NOT = { check_variable = { pop_token = token:slaves } }
+			}
 
 			set_temp_variable = { current_pop_token = pop_token }
 
@@ -667,6 +672,10 @@ on_monthly_pops = {
 
 	# Demographic Changes
     pops_population_growth = yes
+    pops_culture_shares_calc = yes
+    pops_slaves_monthly = yes
+    pops_active_manpower_monthly = yes
+    pops_qualifications_monthly = yes
 
 	# Structural Pop Changes
     pops_peasant_job_migration = yes
@@ -684,69 +693,71 @@ pops_test = {
 }
 
 pops_population_growth = {
-	# Adds additional population from between months
+	# Adds additional population from between months, to each class in proportion to its share of the civilian workforce
 	set_temp_variable = { pop_growth_temp = state_population_k }
 	subtract_from_temp_variable = { pop_growth_temp = pops }
 	multiply_temp_variable = { pop_growth_temp = pops_workforce_participation }
-	
-	# # Correcting from possible pop losses from lossy calculations
-	# NOTE: Unnecessary atm, but keeping the commented out version until further notice
-	# set_temp_variable = { pops_workforce_temp = 0 }
-	# for_each_loop = {
-	# 	array = global.pops_array
-	# 	value = pop_token
 
-	# 	add_to_temp_variable = { pops_workforce_temp = pops_workforce@var:pop_token }
-	# }
+	if = {
+		limit = { NOT = { check_variable = { pop_growth_temp = 0 } } }
 
-	# add_to_temp_variable = { pop_growth_temp = pops_workforce }
-	# subtract_from_temp_variable = { pop_growth_temp = pops_workforce_temp }
-	add_to_variable = { pops_workforce = pop_growth_temp }
-	for_each_loop = {
-		array = global.pops_array
-		value = pop_token
-		set_temp_variable = { pops_amt_temp = pops_percentage@var:pop_token }
-		multiply_temp_variable = { pops_amt_temp = pop_growth_temp }
-		add_to_variable = { pops_workforce@var:pop_token = pops_amt_temp }
-		add_to_variable = { pops_workforce_balance@var:pop_token = pops_amt_temp }
+		set_temp_variable = { civilian_workforce_temp = pops_workforce }
+		subtract_from_temp_variable = { civilian_workforce_temp = active_manpower }
+		add_to_variable = { pops_workforce = pop_growth_temp }
+		if = {
+			limit = { check_variable = { civilian_workforce_temp > 0 } }
+			for_each_loop = {
+				array = global.pops_array
+				value = pop_token
+				set_temp_variable = { pops_amt_temp = pops_workforce@var:pop_token }
+				multiply_temp_variable = { pops_amt_temp = pop_growth_temp }
+				divide_temp_variable = { pops_amt_temp = civilian_workforce_temp }
+				add_to_variable = { pops_workforce@var:pop_token = pops_amt_temp }
+				add_to_variable = { pops_workforce_balance@var:pop_token = pops_amt_temp }
+			}
+		}
+		else = {
+			add_to_variable = { pops_workforce@token:peasants = pop_growth_temp }
+		}
 	}
 }
 pops_peasant_job_migration = {
-	# If there's not enough jobs available, then laborers will become peasants
-		# If there aren't enough laborers, nothing happens
-	# If there's not enough workers for the jobs available, then peasants will become laborers
+	# If the working and middle classes together are short of workers, peasants become working class, at a rate limited by arable land
+	# If the working class has too many and wages are low compared with farming, working-class pops go back to the land
 
 	set_temp_variable = { pops_change_temp = arable_land }
 	divide_temp_variable = { pops_change_temp = 10 }
 	set_temp_variable = { base_wage_temp = base_wage }
 	divide_temp_variable = { base_wage_temp = 2 }
 
-	set_temp_variable = { workforce_balance_temp = pops_workforce_balance@token:laborers }
-	add_to_temp_variable = { workforce_balance_temp = pops_workforce_balance@token:workers }
-	add_to_temp_variable = { workforce_balance_temp = pops_workforce_balance@token:professionals }
-	add_to_temp_variable = { workforce_balance_temp = pops_workforce_balance@token:specialists }
-	
+	set_temp_variable = { workforce_balance_temp = pops_workforce_balance@token:working_class }
+	add_to_temp_variable = { workforce_balance_temp = pops_workforce_balance@token:middle_class }
+
 	if = {
 		limit = {
 			check_variable = { workforce_balance_temp < 0 }
 			check_variable = { pops_workforce@token:peasants > 0 }
 		}
+		multiply_temp_variable = { workforce_balance_temp = -1 }
+		clamp_temp_variable = { var = pops_change_temp min = 0 max = workforce_balance_temp } # No more than the shortfall
 		clamp_temp_variable = { var = pops_change_temp min = 0 max = pops_workforce@token:peasants }
 		subtract_from_variable = { pops_workforce@token:peasants = pops_change_temp }
-		add_to_variable = { pops_workforce@token:laborers = pops_change_temp }
+		add_to_variable = { pops_workforce@token:working_class = pops_change_temp }
+		add_to_variable = { pops_workforce_balance@token:working_class = pops_change_temp }
 	}
 	else_if = {
 		limit = {
-			check_variable = { workforce_balance_temp > 0 }
+			check_variable = { pops_workforce_balance@token:working_class > 0 }
 			check_variable = { base_wage_temp < productivity@token:subsistence_farm }
 			OR = {
 				check_variable = { peasants_marginal_land = 0 }
-				check_variable = { pops_unemployed@token:laborers > 0 }
+				check_variable = { pops_unemployed@token:working_class > 0 }
 			}
 		}
-		clamp_temp_variable = { var = pops_change_temp min = 0 max = workforce_balance_temp }
+		clamp_temp_variable = { var = pops_change_temp min = 0 max = pops_workforce_balance@token:working_class } # Only the working class's own surplus
 		add_to_variable = { pops_workforce@token:peasants = pops_change_temp }
-		subtract_from_variable = { pops_workforce@token:laborers = pops_change_temp }
+		subtract_from_variable = { pops_workforce@token:working_class = pops_change_temp }
+		subtract_from_variable = { pops_workforce_balance@token:working_class = pops_change_temp }
 	}
 }
 

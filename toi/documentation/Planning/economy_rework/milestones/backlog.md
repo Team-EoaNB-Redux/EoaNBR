@@ -7,11 +7,11 @@ Small items that don't belong to one milestone. Do them when one is convenient. 
 - **Missing sheet rows:** livestock, oil extraction, farm AMs after Tractors, and government buildings are still legacy conversions from `pm_legacy_data.json`. M08 may remove the government rows.
 - **Sheet gaps:** 119 workforce values and 137 construction lists use defaults.
 - **Icons:** 127 PMs use placeholder art.
-- **Localisation:** Korean and Russian lack the new PM names. M02 adds the new pop-class names.
+- **Localisation:** Korean and Russian lack the new PM names, and the Korean economy file still carries stale PM tooltips from the old PM system. The pop-class names are in all three languages since M02; the Russian tooltips M02 changed are in English, marked #NT!.
 - **Moving base prices** by era, so early PMs age out. If base prices start moving, `pops_spending_need_at_sol` and `pm_construction_value` must be recomputed. This may overlap with the M12 price level.
 - **Sheet oddities:** 34 PMs have a tech 30+ years older than their tier. `High Performance Computers` has a transport row priced at 0. Blister Steel is worse than Primitive above about $10.60 steel. Modern Machinery's revenue is below Specialized Machinery's.
 - **Data bug:** `1092-Western Colorado.txt` has `owner = HYD`.
-- **Overflow:** `pops_sol` overflows when dividing by the population of tiny states (`_economy_main_rework.txt`). It may go away in M02 or M03.
+- **Overflow:** the country SoL statistic in `update_country_pop_stats` (`_economy_main_rework.txt`) overflows about 3,000 times in 60 months: it divides a summed SoL by the population of tiny countries, and multiplies a summed SoL by a class's workforce. It survived M02 and is display-only. M03 renames SoL to wealth and can fix it then.
 - **`pops_food_consumption_factor`** (`get_pop_needs`, `_economy_main_rework.txt`) subtracts its share of food from the quantity needed, but adds the cost of that share to `needs_spending_temp`. It does nothing while the modifier is 0, but a non-zero value would make pops pay for food they no longer eat.
 - **Trade AI, found in M01** (`_economy_market.txt`):
   - `trade_ai_calculation` runs before `trade_update` refreshes the world price (`local_global_market_update`), so in the first week of each month the AI sizes routes against last month's world target. In one test, ENG cut its coal exports from 33 to 3 for that week, because the world target it saw was 2.10 instead of 8.00. Refreshing first would double the cost of `local_global_market_update`, which loops over every market for every leader.

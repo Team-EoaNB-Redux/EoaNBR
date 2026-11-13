@@ -102,7 +102,7 @@ class Model:
                 return g.get("pm_workforce_%s@%s" % (name, m), 0) * (1 + c.get("pm_employment_factor@%s" % m, 0))
             return max(0, part(pm) + part(am))
 
-        jobs = emp * sum(tier(t) for t in ("laborers", "workers", "peasants"))
+        jobs = emp * sum(tier(t) for t in ("working", "middle", "peasants"))
         return Level({good: q * emp * modifier for good, q in per_k.items()}, jobs, pm, am, self.value(per_k))
 
 

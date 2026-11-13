@@ -2,7 +2,7 @@
 
 A plain-English briefing for an AI assistant (ChatGPT, Claude or similar) that can't see the code. It explains what the economy simulates, how the parts affect each other, what is switched on, and what limits any new idea has to live within. It describes behaviour, not syntax.
 
-Last checked against the code: 2026-11-11.
+Last checked against the code: 2026-11-12.
 
 ## How to use this briefing
 
@@ -19,7 +19,7 @@ The economy ticks once a month for every country. Trade ticks weekly. Players ac
 
 ## 2. The whole system in one paragraph
 
-Every state has a population split into pop types, and a set of industries. Industries hire pops, turn input goods into output goods with a production method, sell the output at the market price, pay wages, and pass profit to their owners. Pops spend their income on a basket of goods that grows as their standard of living rises. All production and consumption in a country and its subjects is pooled into one market, with one price per good, and each price moves with the ratio of demand to supply. Markets trade with each other weekly through a global market. Governments tax income, spending, dividends and trade, and spend on administration, the military, research, construction and subsidies. Deficits become debt, and too much debt ends in bankruptcy. Each state's wage floats with how tight its labour market is. The intended growth engine is investment, where owners' savings build and upgrade industries. It is switched off while it's rewritten, so nothing grows on its own at the moment.
+Every state has a population split into five classes, and a set of industries. Industries hire pops, turn input goods into output goods with a production method, sell the output at the market price, pay wages, and pass profit to their owners. Pops spend their income on a basket of goods that grows as their standard of living rises. All production and consumption in a country and its subjects is pooled into one market, with one price per good, and each price moves with the ratio of demand to supply. Markets trade with each other weekly through a global market. Governments tax income, spending, dividends and trade, and spend on administration, the military, research, construction and subsidies. Deficits become debt, and too much debt ends in bankruptcy. Each state's wage floats with how tight its labour market is. The intended growth engine is investment, where owners' savings build and upgrade industries. It is switched off while it's rewritten, so nothing grows on its own at the moment.
 
 ## 3. The building blocks
 
@@ -30,20 +30,21 @@ Every state has a population split into pop types, and a set of industries. Indu
 - Countries are processed in order of industrial power, biggest first. That matters wherever there is a shared pool or first pick, such as investment.
 
 ### Pops [LIVE]
-Population comes from HOI4's state population, counted in thousands. A fixed 35% of everyone is workforce; the rest are dependants. Each pop type in each state tracks its workforce, employment, earnings, spending, savings, standard of living and consumer confidence.
+Population comes from HOI4's state population, counted in thousands. A fixed 35% of everyone is workforce; the rest are dependants. Each class in each state tracks its workforce, employment, earnings, spending, savings, standard of living and consumer confidence. Unemployment is a class's workforce minus its employed, not a separate pop.
 
-| Pop type | Role now | Pay relative to the state's base wage |
+| Class | Role | Pay relative to the state's base wage |
 |---|---|---|
+| Slaves | Fill working-class jobs before free workers, unpaid. No income and no needs | — |
 | Peasants | Subsistence farmers | Share of subsistence output |
-| Laborers | Unskilled industrial jobs | 2× |
-| Workers | Skilled and middle jobs | 4× |
-| Professionals | No jobs yet (open problem) | 10× |
-| Specialists | No jobs yet (open problem) | 20× |
-| Capitalists | Own factories, commercial farms, urban buildings and railways; live on dividends | — |
-| Landowners | Own mines and other resource extraction, ports, and a 20% cut of subsistence farming | — |
-| Slaves, bureaucrats, soldiers | Defined, but play little part in the monthly loop | — |
+| Working class | Manual and industrial jobs (the sheet's Wrk share) | 2× |
+| Middle class | Skilled and professional jobs (the sheet's Mid share), and bureaucratic jobs | 4× |
+| Upper class | Owns every industry and lives on dividends and the 20% subsistence rent. Also fills senior government jobs in the capital | 10× for those jobs only |
 
-Owners' numbers follow what they own: each industry holds a small number of owner places, about 2% of its jobs.
+- **Owners' numbers follow what they own:** each industry holds owner places for the upper class, about 2% of its jobs.
+- **Slaves** exist only where history sets a starting share (for now, test shares in three US southern states). They're capped at the state's share of marginalised cultures, and freed into the working class wherever the controller's laws ban slavery. Nobody is newly enslaved.
+- **Bureaucratic jobs** come from population: 1.5 per 1,000 people in core states, half that elsewhere, plus 5% more in the capital for the upper class. The government pays them. They compete with private jobs for the middle class, and administrative capacity is the share filled.
+- **Active manpower:** HOI4's fielded and training manpower is taken out of the peasants and the working class, by state population, and returned when soldiers demobilise. Their pay and upkeep stay on the military budget lines.
+- **Qualifications** limit moves up into the middle and upper classes. They're one stock per state (see "Pops changing class").
 
 ### Goods [LIVE]
 There are 32 goods. Raw goods are food, luxuries, wood, fiber, iron, coal, copper, valuables, oil, rubber, aluminum, tungsten, chromium, titanium, silicon and rare earths. Made goods are steel, tools, machinery, chemicals, plastics, composites, electronics, portable power, consumer goods, textiles, vehicles, appliances, computers, electricity, services and entertainment.
@@ -65,7 +66,7 @@ An industry is one building type in one state, with a **size** (a number of leve
 Industries unlock with technology. Every industry runs one production method and one automation method.
 
 ### Production methods (PMs) and automation methods (AMs) [LIVE]
-- A **PM** is a recipe. Per thousand base workers it sets how much the industry makes, which inputs it needs, how the jobs split between laborers and workers, how much transport it uses, and what it costs to build and how long that takes. PMs come in four eras: 1857, 1900, 1950 and 2000.
+- A **PM** is a recipe. Per thousand base workers it sets how much the industry makes, which inputs it needs, how the jobs split between the working and middle classes, how much transport it uses, and what it costs to build and how long that takes. PMs come in four eras: 1857, 1900, 1950 and 2000.
 - An **AM** is a second layer on top: steam engines, electrification, assembly lines, robots and so on. AMs mainly cut labour and add inputs such as machinery.
 - Technology unlocks PMs and AMs. New buildings start on the latest unlocked method. Existing buildings only change method by retooling, which costs goods and time, and the AI only retools through investment, which is off.
 - Every PM number is generated from Strat's "EoaNBR Economy" spreadsheet by a script. The sheet is where balancing happens.
@@ -107,16 +108,16 @@ First, every market leader moves its actual prices (market and world) toward the
 Then each country, in rank order:
 
 1. Last month's net budget goes into the treasury. AI countries adjust their budget, and the spending sliders' bonuses update.
-2. Technology unlocks and their modifiers refresh.
+2. Technology unlocks and their modifiers refresh. Each state's bureaucratic jobs and its share of active manpower are set.
 3. For each state the country controls:
    1. Construction and retooling progress. Finished projects add size.
    2. Industries bank last month's retained profit or absorb last month's loss.
    3. Prospecting rolls.
-   4. Pops settle last month's finances: savings, shortfalls, standard of living. Population grows, and peasants and laborers move between farming and industry.
+   4. Pops settle last month's finances: savings, shortfalls, standard of living. Population grows, slaves above their cap are freed, soldiers are drawn or returned, qualifications are gained and lost, and peasants and the working class move between farming and industry.
    5. The state's base wage moves according to last month's labour market.
    6. Each industry nudges its hiring target according to last month's profitability.
-   7. Pops convert between types to fit the jobs on offer.
-   8. Everything is recomputed: arable land and subsistence, jobs and employment, government buildings, production, finances and dividends, then each pop's earnings, needs, taxes, confidence and targets.
+   7. Pops move between the working, middle and upper classes to fit the jobs on offer, within their qualifications.
+   8. Everything is recomputed: arable land and subsistence, jobs and employment (bureaucratic jobs included), government buildings, production, finances and dividends, then each class's earnings, needs, taxes, confidence and targets.
 4. Companies and investment-fund bookkeeping. Investment opportunities are off.
 5. Market leaders recompute supply, demand and target prices for their whole market, and GDP.
 6. The budget is recomputed: taxes, spending, debt and interest.
@@ -136,39 +137,43 @@ Weekly: markets recompute supply, demand and target prices with current trade, t
   - Margin below about 5%: it fires, faster when its cash reserves are low.
   - In between: it holds steady.
   - The step can be as big as +20 or −25 percentage points in one month.
-- Jobs are filled by pops of the matching type. If a state is short of a type, every industry there is short-staffed in proportion.
+- Jobs are filled by pops of the matching class. If a state is short of a class, every industry there, and the bureaucracy, is short-staffed in proportion. Slaves take working-class jobs first.
 
 ### Profit and where the money goes [LIVE]
 - **Revenue:** output sold at the market price. Railways and ports get their transport fee instead.
-- **Costs:** wages (base wage × the pop type's multiple × employees), inputs bought at market price, and **maintenance**. Maintenance is a fixed upkeep of about 3% of build cost a year, paid even on idle capacity.
-- **Profit:** a third goes to the employees as bonuses. The rest is split between the industry's cash reserve, capped at about one month of full output, and dividends to the owning pop type in that state.
+- **Costs:** wages (base wage × the class's multiple × employees, with nothing paid for slaves), inputs bought at market price, and **maintenance**. Maintenance is a fixed upkeep of about 3% of build cost a year, paid even on idle capacity.
+- **Profit:** a third goes to the employees as bonuses (the slaves' share isn't paid). The rest is split between the industry's cash reserve, capped at about one month of full output, and dividends to the state's upper class.
 - **Loss:** it comes out of cash reserves, with no dividends paid. When reserves run out, the owners absorb the loss as negative dividends. Downsizing, where a loss-maker sells off capacity, is built but switched off until investment returns, because nothing would rebuild what it sheds.
-- **Ownership:** factories, commercial farms, urban buildings and railways belong to the state's capitalists. Extraction, ports and the landlord share of subsistence belong to landowners. Companies can own slices of an industry (see below).
+- **Ownership:** every industry, and the 20% rent from subsistence farming, belongs to the state's upper class. Companies can own slices of an industry (see below).
 
 ### Wages [LIVE]
-- Each state has one **base wage**, and each pop type earns a fixed multiple of it.
-- It floats monthly. If jobs exceed workforce (more than 99% utilisation), wages rise. Below 95% they fall, about five times more slowly, so wages are sticky downward. Between those bands they hold. The change is capped at ±2% a month.
-- There's a floor: laborers never earn less than subsistence farming would give them.
+- Each state has one **base wage**, and each class earns a fixed multiple of it.
+- It floats monthly on the private labour market: private working- and middle-class jobs against the slave, working-class and middle-class workforce. Slaves count as supply, so plentiful slaves hold wages down. Bureaucrats are left out, since the government pays the going wage. If jobs exceed workforce (more than 99% utilisation), wages rise. Below 95% they fall, about five times more slowly, so wages are sticky downward. Between those bands they hold. The change is capped at ±2% a month.
+- There's a floor: the working class never earns less than subsistence farming would give it.
 - It's seeded at game start from history. A state's own value wins, then the country's, then a default for its technology tier, which rises from about 1.2 for tribes to about 4 for early mechanisation.
 - Wages are a cost for industry and income for pops. A tight labour market raises wages, which squeezes margins, which slows hiring.
 
 ### Pops: income, spending, standard of living [LIVE]
-- **Income:** a small universal base income, plus wages (or the subsistence share for peasants), bonuses, and dividends for owners. Capitalists and landowners divert part of their income toward investment.
-- **Taxes:** income tax by bracket (lower, middle or upper, depending on a pop type's average earnings against the national average), sales tax on what they spend on goods, and corporate tax on dividends.
-- **Standard of living (SoL),** from 1 to 200, sets each pop type's basket of goods. The SoL-1 basket is worth `global.pops_base_spending` per thousand pops a month at base prices: 0.1 since M01, cut from 0.3, which had pinned food at its cap. Food comes first. Textiles, consumer goods and services follow, then luxuries from around SoL 21, and later electricity, appliances, vehicles and computers. The basket's value roughly doubles every 10 SoL. It's defined in base-price value and bought at market price, so expensive goods squeeze pops.
+- **Income:** a small universal base income, plus wages (or the subsistence share for peasants), bonuses, and dividends for the upper class. The upper class diverts part of its income toward investment. Slaves get nothing.
+- **Taxes:** income tax by bracket (lower, middle or upper, depending on a class's average earnings against the national average), sales tax on what they spend on goods, and corporate tax on dividends.
+- **Standard of living (SoL),** from 1 to 200, sets each class's basket of goods. The SoL-1 basket is worth `global.pops_base_spending` per thousand pops a month at base prices: 0.1 since M01, cut from 0.3, which had pinned food at its cap. Food comes first. Textiles, consumer goods and services follow, then luxuries from around SoL 21, and later electricity, appliances, vehicles and computers. The basket's value roughly doubles every 10 SoL. It's defined in base-price value and bought at market price, so expensive goods squeeze pops.
 - **Technology gates needs.** If a good isn't available yet, such as electricity, an older substitute fills the need. A state's electrification shifts the basket over time.
 - **Each month,** pops compare what they want to spend (income × consumer confidence) with what their basket costs. A surplus slowly raises SoL and a shortfall lowers it. Spare income goes into savings up to a target of about a year's income, scaled by banking confidence. When the target falls, they spend down their savings.
 - **Consumer confidence,** from 0.2 to 2, comes from national modifiers. Debt burdens and high interest rates lower it, and savings raise it. Below 1 pops save, and above 1 they spend more than they earn.
 - **Peasants** live mostly off their own farms. Only about 20% of subsistence output reaches the market, and only about 20% of their needs show up as market demand.
 
-### Pops changing type [LIVE]
-- Each month, pops convert toward the jobs on offer: unemployed laborers become workers where workers are wanted, and so on. Total population never changes in this step.
-- If industry needs more hands, peasants become laborers, at a rate limited by arable land. If there's a labour surplus and wages are low compared with farming, laborers go back to the land.
-- Literacy and education limits exist but are set to 100% for now, so they never bind.
+### Pops changing class [LIVE]
+- Each month, pops move toward the jobs on offer: a class short of workers takes them, in proportion, from classes with too many. Total population never changes in this step. Slaves never move.
+- If the working and middle classes are short of hands, peasants join the working class, at a rate limited by arable land and never more than the shortfall. If the working class has too many and wages are low compared with farming, its surplus goes back to the land.
+- **Qualifications** are one stock per state, in thousands of qualified people. The middle class needs 1 per head and the upper class 2, and a move up is scaled down to what's free. Moving down loses nothing.
+  - **Gains:** literacy, schooling and education (state percentages, by default 20%, 10% and 0.5%; Britain's history sets 60%, 40% and 2%), wealth above SoL 10, and the share of the workforce already middle or upper class.
+  - **Cuts:** half for marginalised cultures, a tenth for cultures that are neither primary nor promoted, and serfdom laws can cut peasants' gains, all through modifiers. Slaves gain nothing.
+  - **Losses:** 0.5% of the stock a month.
+  - **Start:** the stock starts at exactly what the starting classes need, so growing the middle class always waits on new qualifications. It's meant as a major barrier to industrialisation.
 
 ### Government budget [LIVE]
-- **Revenue:** the taxes above, plus import and export tariffs and trade income. Effective rates are scaled by tax efficiency, and tariffs by bureaucratic efficiency.
-- **Spending:** administration (scales with earnings, population and GDP), military payroll (manpower × average earnings), military procurement (goods for equipment), research, construction (builds the government pays for), projects, subsidies, order and intelligence, and social spending.
+- **Revenue:** the taxes above, plus import and export tariffs and trade income. Effective rates are scaled by tax efficiency, and tariffs by bureaucratic efficiency. A short bureaucracy collects less income, sales and corporate tax: from half the rate with no bureaucrats, rising to the full rate at full administrative capacity.
+- **Spending:** administration (the bureaucrats' pay, plus per-head and per-GDP costs), military payroll (manpower × average earnings), military procurement (goods for equipment), research, construction (builds the government pays for), projects, subsidies, order and intelligence, and social spending.
 - **Sliders have political effects.** Taxes cost political power, stability, war support and *incentives*, a property-rights mood that drives investment appetite. Spending buys HOI4 bonuses: military spending improves army organisation and morale, research spending speeds research, and procurement raises production efficiency and lowers equipment cost.
 - **Debt:** a negative treasury becomes debt, domestic or foreign. Interest starts around 8%, is cheaper for great and secondary powers, and rises when the lending pool is scarce. The *debt level* tracks debt against annual GDP. Passing roughly 200% fires **bankruptcy**: debt is wiped and spending is cut, but stability takes a heavy hit. Lower stability means lower productivity and consumer confidence, so pops dump their savings and prices spike.
 - **Debt switch:** while the rework runs, `global.eco_debt_enabled = 0` skips every starting debt, sets both interest rates to 0 and stops bankruptcy. Deficits still borrow up to the lending cap (24 months of GDP). Past it, the treasury goes negative with no consequence. M14 turns the switch back on.
@@ -181,7 +186,7 @@ Weekly: markets recompute supply, demand and target prices with current trade, t
 
 ### Investment [OFF, being redesigned]
 How the old system works, which is still in the code behind a switch:
-- Capitalists and landowners put part of their income into a national **investment fund**. The share depends on their contribution rate, the *incentives* level, and how attractive the best opportunity looks. It's damped if the fund already sits on idle money.
+- The upper class puts part of its income into a national **investment fund**. The share depends on their contribution rate, the *incentives* level, and how attractive the best opportunity looks. It's damped if the fund already sits on idle money.
 - The fund keeps a list of **investment opportunities**: build a new industry in a state, expand one, upgrade its PM or AM, exploit known reserves, prospect, or buy a slice of an industry. Each is scored by *attractiveness*, roughly annual return, where 10% ROI scores 100. The fund only backs opportunities scoring at least 100, up to a monthly spending target.
 - A project first pools about 25% of its build cost, then pays the monthly construction cost while it builds. Construction materials are real demand for goods.
 - Players can subsidise opportunities from the treasury.
@@ -189,7 +194,7 @@ How the old system works, which is still in the code behind a switch:
 
 ### Companies [PARTIAL]
 - Companies own fractional slices of industries: a size-14 mill might be 2 levels Company A, 4 levels Company B and 8 levels local owners. Each slice earns its share of that industry's profit.
-- A company keeps 30% of its dividends as its treasury and pays the rest to capitalists in its headquarters state, which can be a financial hub far from its holdings.
+- A company keeps 30% of its dividends as its treasury and pays the rest to the upper class of its headquarters state, which can be a financial hub far from its holdings.
 - Companies are founded dynamically, as an investment-fund "national opportunity" that buys a slice of a profitable local industry. Each new company makes the next more expensive. Companies can also expand, exploit and prospect.
 - The bookkeeping runs every month, but founding and company investment sit behind the investment switch. In practice no companies exist yet.
 - Planned: companies defined at game start, valuations and a stock market, state-owned shares, mergers and acquisitions.
@@ -218,13 +223,13 @@ From the second year, every month, each state's GDP is compared with its 3-year 
 - **The map has been stripped back to subsistence farming,** on purpose. Every state's industries and deposits are commented out of the history files, leaving only subsistence and HOI4's own factories. On the old map, Britain went bankrupt in its first July, in both the game and the simulator. Historical targets for Britain and India are written as comments in the history files.
 - **The plan, decided November 2026: redesign first, balance last.** The economy is being rebuilt to a new design (section 8) in a series of milestones. Only after that will the 1857 map be rebuilt sector by sector so world supply and demand start roughly equal. Until then, the M00 test bed is used to check mechanics: small test industries in five British states (in `# >>> rework test industries` blocks), and debt switched off for every country, so no one goes bankrupt (20 countries did within five years before).
 - **Off:** investment, downsizing, banking, pop borrowing, debt (starting debt, interest, bankruptcy) and the economic cycle.
-- **Recently done:** gradual prices (M01), generated PMs, Infrastructure Efficiency, floating wages, maintenance costs, the companies MVP, incentives.
+- **Recently done:** five pop classes with qualifications, slaves, bureaucrats and active manpower (M02), gradual prices (M01), generated PMs, Infrastructure Efficiency, floating wages, maintenance costs, the companies MVP, incentives.
 - **Testing:** a headless simulator called redux-eco-sim runs the mod's real economy scripts outside the game. It matched in-game British GDP to within about 0.5% at startup and after one month, so it's trusted for fast experiments. In-game testing is slow.
 
 ### Known problems
 1. Price-employment oscillation (section 6): much reduced by M01, but hiring still reacts faster than prices.
-2. Professionals and specialists have no jobs.
-3. Base wages drift down over the years (in one test, from 3.2 to about 1.3 over five years). Either they start too sticky or industries add too little value.
+2. Wherever jobs are filled exactly, which startup does everywhere, utilisation sits at 1.0, just above the stable band, so the wage rises 0.5% a month (London +33% over five years on the test bed).
+3. In the slave test states, the idle slaves count as labour supply and push the wage to its floor, because the stripped map has no plantations for them.
 4. Budgets and debt don't scale with GDP: some spending lines stay large when the economy is small. On the test bed, Britain spends about twice its revenue (three times since M01's pop spending cut lowered sales tax), and Britain, France, Russia, Sweden and Spain hit the lending cap and run deeply negative treasuries.
 5. Railways lose money in busy hubs, while empty rural states get the full +20% Infrastructure Efficiency bonus for free.
 6. Many late automation upgrades are pointless: once an AM's labour cut hits zero, the extra input cost remains.
@@ -237,7 +242,7 @@ The target design is `documentation/Planning/economy_rework/EOANB_Redux_Economy_
 
 - **Country-sectors decide; state-industries are where it physically happens.** Each country keeps one record per sector (capacity, a target utilisation, output, profit, retained capital). Each method's economics are cached once a month as high up as possible: per market at that market's prices, with country modifiers on top. States add only local wages, Infrastructure Efficiency and modifiers. Each industry keeps one PM/AM pair. Company bonuses are applied once, nationally, to each owner's slice. A national target utilisation replaces each industry's own hiring decision, with a small local adjustment. Industry size becomes a floating number, and chronically unprofitable capacity slowly decays.
 - **Gradual prices** (built in M01, see section 3). Supply and demand set a target price, and the actual price moves toward it once a month, slowly for small gaps and fast for big ones. Trade stays weekly so military production gets its resources. Prices move fastest, utilisation and employment slower, and capacity slowest.
-- **Five pop classes:** slaves, peasants, working class, middle class and upper class, with one floating wage per state. Unemployment is the gap between a class's labour pool and its jobs. Qualifications limit how fast pops move up, as a major barrier to industrialisation. Bureaucratic jobs come from bureaucratic strain and are paid by the government. Active manpower (fielded and training) is taken out of the civilian pools. SoL is renamed wealth, with the same baskets per level. Pops hold no savings: they spend toward a target set by consumer confidence, and overspending becomes debt to the banks.
+- **Five pop classes** (built in M02, see section 3): slaves, peasants, working class, middle class and upper class, with one floating wage per state. Unemployment is the gap between a class's labour pool and its jobs. Qualifications limit how fast pops move up, as a major barrier to industrialisation. Bureaucratic jobs come from bureaucratic strain and are paid by the government. Active manpower (fielded and training) is taken out of the civilian pools. SoL is renamed wealth, with the same baskets per level. Pops hold no savings: they spend toward a target set by consumer confidence, and overspending becomes debt to the banks.
 - **Land and resources as state data.** Arable land, land quality and crop eligibility are set in history, with the population formula kept as a fallback for land until every state has it. Subsistence follows a carrying capacity with half returns beyond it, and pays rent to the upper class. Deposits are potential, known and active, with quality kept separate from quantity.
 - **Manufacturing Base:** HOI4's civilian and military factories and dockyards become offmap buildings derived from the country's manufacturing sectors and split by a national allocation, rather than economic industries. The state pays a contract cost per factory. All on-map factories go.
 - **Investment from capital pools.** Retained capital tends to expand the sector that earned it, and incentives decide how much profit is retained. A share flows into a general pool set by financial laws, alongside pops' own investment, which is how capital crosses sectors. A sector new to a country needs the general pool, credit, government or foreign money. Opportunities are ranked in ROI tiers (Exceptional over 20%, Good 10–20%, Fair 5–10%, Marginal −5% to 5%), with hard caps from deposits and land, and throttles on new establishments.
@@ -290,13 +295,16 @@ If you're unsure whether something exists or is switched on, say so and ask, rat
 | Size / level | How big one industry in one state is |
 | PM | Production method: the recipe an industry uses |
 | AM | Automation method: a labour-saving layer on top of the PM |
-| Wrk / Mid | Laborer and worker job shares in method data |
+| Wrk / Mid | Working- and middle-class job shares in method data |
 | Employment target | An industry's hiring decision, 10–100% of its jobs |
 | Profitability | Profit ÷ revenue (the margin) |
+| Qualifications | A state's stock of people qualified for middle- and upper-class work. Moves up need them |
+| Administrative capacity | Filled ÷ required bureaucratic jobs. It scales tax collection |
+| Active manpower | Soldiers in the field or in training, taken out of the civilian classes |
 | Productivity | Value added per worker; used for comparisons and AI choices |
 | RGO | Resource extraction industry, sized by worked deposits |
 | Subsistence | Peasant farming on leftover arable land, mostly outside the market |
-| Base wage | A state's reference wage. Pop types earn multiples of it |
+| Base wage | A state's reference wage. Classes earn multiples of it |
 | SoL | Standard of living, 1–200. It sets the size and contents of a pop's basket |
 | Consumer confidence | A pop's willingness to spend rather than save |
 | Incentives | The long-term property-rights mood that drives investment appetite |

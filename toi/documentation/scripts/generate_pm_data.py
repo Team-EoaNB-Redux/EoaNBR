@@ -560,9 +560,9 @@ def emit_definitions(methods):
             out.append(f"\tset_variable = {{ global.pm_workforce_peasants@token:{t} = 1 }}")
         else:
             if m.wrk:
-                out.append(f"\tset_variable = {{ global.pm_workforce_laborers@token:{t} = {fmt(m.wrk)} }}")
+                out.append(f"\tset_variable = {{ global.pm_workforce_working@token:{t} = {fmt(m.wrk)} }}")
             if m.mid:
-                out.append(f"\tset_variable = {{ global.pm_workforce_workers@token:{t} = {fmt(m.mid)} }}")
+                out.append(f"\tset_variable = {{ global.pm_workforce_middle@token:{t} = {fmt(m.mid)} }}")
         out.append("}")
     return "\n".join(out) + "\n"
 

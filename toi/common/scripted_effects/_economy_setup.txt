@@ -113,6 +113,9 @@ _init_country = {
     # Initializes subjects as part of your market & sets yourself as market leader & updates your market
     market_setup = yes
 
+    # Bureaucratic jobs and active manpower for the states, which _init_state sets up next
+    bureaucracy_and_manpower_update = yes
+
     # Budget
     set_variable = { sales_tax_percentage = 100 }
     set_variable = { income_tax_lower_strata_percentage = 100 }
@@ -551,12 +554,13 @@ _country_reset = {
 
     _update_market = yes
 
+    # Neither effect exists. A load error anywhere in a file makes every math expression after it read 0 in-game
     # Update states
-    every_controlled_state = {
-        _update_state = yes
-    }
+    # every_controlled_state = {
+    #     _update_state = yes
+    # }
 
-    market_pops_industry_recalc = yes
+    # market_pops_industry_recalc = yes
 
     # Update Market Again
     _update_market = yes
@@ -640,13 +644,8 @@ initialize_country = {
         buildings_global_var_setup = yes
 
         #Investment
-            set_variable = { global.base_landowners_investment_contribution = 0.1 }
-            set_variable = { global.base_capitalists_investment_contribution = 0.25 }
-
             set_variable = { global.base_investment_opportunities_cap = 2 }     # Base amount of investment opportunities
-            set_variable = { global.capitalists_per_investment_opportunity = 2 }    # How many capitalists are needed to add 1 to the investment opportunity cap
-            set_variable = { global.landowners_per_investment_opportunity = 20 }   # How many landowners are needed to add 1 to the investment opportunity cap
-            set_variable = { global.max_landowners_investment_opportunities = 10 } # The maximum that landowners can contribute to IOs as a base (basically anti-China/India)
+            set_variable = { global.upper_class_per_investment_opportunity = 5 } # How many upper-class pops (K) add 1 to the investment opportunity cap
 
             # Pop investment appetite is damped when the investment fund accumulates undeployed capital (it can't
             # find opportunities to spend on). Overhang = investment_fund / gdp*tolerance.
@@ -697,9 +696,6 @@ initialize_country = {
             set_variable = { global.base_tax_efficiency = 0.25 }
             set_variable = { global.base_bureaucratic_efficiency = 0.25 }
 
-            set_variable = { global.administration_base_expense = 0.5 } #Percentage (from 0.0 to 100.0) of pop earnings that are needed for basic administration
-            set_variable = { global.administration_population_expense = 100 } #Below this population amount (in thousands), administration becomes more expensive. Should not be 0
-            set_variable = { global.administration_population_expense_modifier = 2 } #Maximum modifier of admin costs when population is 0
 
             set_variable = { global.default_interest_rate = 8.0 } #Percent per year - Default national bank interest rate for loans to pops/corporations
             set_variable = { global.loan_scarcity_rate = 10.0 } #Percent per year - How much interest should be added when you use up all loans you can get
@@ -740,28 +736,18 @@ initialize_country = {
     }
     pops_global_var_setup = {
         #Defined Vars Default Values
+            # The five classes (M02, Q8). Slaves and peasants earn no wage: slaves get nothing, and peasants live off subsistence
             clear_array = global.pops_array
             add_to_array = { global.pops_array = token:slaves }
             add_to_array = { global.pops_array = token:peasants }
-            add_to_array = { global.pops_array = token:laborers }
-            add_to_array = { global.pops_array = token:workers }
-            add_to_array = { global.pops_array = token:professionals }
-            add_to_array = { global.pops_array = token:specialists }
-            add_to_array = { global.pops_array = token:capitalists }
-            add_to_array = { global.pops_array = token:landowners }
-            add_to_array = { global.pops_array = token:bureaucrats }
-            add_to_array = { global.pops_array = token:soldiers }
+            add_to_array = { global.pops_array = token:working_class }
+            add_to_array = { global.pops_array = token:middle_class }
+            add_to_array = { global.pops_array = token:upper_class }
 
-            set_variable = { global.wage_multiplier@token:slaves = 1 }
-            set_variable = { global.wage_multiplier@token:peasants = 1 }
-            set_variable = { global.wage_multiplier@token:laborers = 2 }
-            set_variable = { global.wage_multiplier@token:workers = 4 }
-            set_variable = { global.wage_multiplier@token:professionals = 10 }
-            set_variable = { global.wage_multiplier@token:specialists = 20 }
-            set_variable = { global.wage_multiplier@token:capitalists = 20 }
-            set_variable = { global.wage_multiplier@token:landowners = 10 }
-            set_variable = { global.wage_multiplier@token:bureaucrats = 8 }
-            set_variable = { global.wage_multiplier@token:soldiers = 4 }
+            # Multiples of the state's base wage (Q9)
+            set_variable = { global.wage_multiplier@token:working_class = 2 }
+            set_variable = { global.wage_multiplier@token:middle_class = 4 }
+            set_variable = { global.wage_multiplier@token:upper_class = 10 } # Senior government jobs in the capital only. Owners live on dividends
 
             # Floating wages: monthly base_wage evolves via labor utilization (jobs/workforce).
             set_variable = { global.wage_labor_util_high = 0.99 } # Utilization above this raises wages
@@ -771,9 +757,25 @@ initialize_country = {
             set_variable = { global.wage_change_cap = 0.02 } # Clamp monthly wage change to +/-2%
 
             set_variable = { global.pops_workforce_participation = 0.35 }
-            set_variable = { global.pops_literacy_percentage = 100 } #Unlocks Workers
-            set_variable = { global.pops_schooling_percentage = 100 } #Unlocks Professionals
-            set_variable = { global.pops_education_percentage = 100 } #Unlocks Specialists
+
+            # Defaults for states whose owner's history sets none: rough 1857 world levels (Q75). They feed qualification gains
+            set_variable = { global.pops_literacy_percentage = 20 }
+            set_variable = { global.pops_schooling_percentage = 10 }
+            set_variable = { global.pops_education_percentage = 0.5 }
+
+            # Qualifications (Q57, pops_qualifications_monthly): one stock per state, in K qualified people
+            set_variable = { global.qualifications_need@token:middle_class = 1 } # Per head
+            set_variable = { global.qualifications_need@token:upper_class = 2 }
+            set_variable = { global.qualifications_gain_scale = 0.001 } # Turns the notepad's gains per K into K qualified per K pops a month
+            set_variable = { global.qualifications_loss_rate = 0.005 } # Share of the stock lost each month, to deaths and decay
+            set_variable = { global.qualifications_marginalized_factor = -0.5 } # Gains for marginalised cultures before any law (limited equality, Q76)
+            set_variable = { global.qualifications_non_accepted_factor = -0.1 } # Gains for cultures that aren't primary or promoted
+
+            # Bureaucratic jobs (Q13, Q58, bureaucracy_and_manpower_update)
+            set_variable = { global.bureaucrats_per_pop = 0.0015 } # Middle-class jobs per head in a core state. Britain had about 40K civil servants for 28M
+            set_variable = { global.bureaucrats_non_core_weight = 0.5 } # Non-core states need fewer per head
+            set_variable = { global.bureaucrats_upper_share = 0.05 } # Senior jobs in the capital for the upper class, as a share of the rest
+            set_variable = { global.admin_capacity_tax_floor = 0.5 } # Share of tax collected with no bureaucrats, rising to all of it at full capacity (Q78)
 
             set_variable = { global.pops_natural_birth_base_rate = 3.0 } #Per year rate
             set_variable = { global.pops_natural_death_base_rate = 2.0 } #Per year rate
@@ -786,14 +788,11 @@ initialize_country = {
 			set_variable = { global.peasant_market_interaction = 0.2 } # How much output from subsistence farms is sold in the market. Also determines peasant consumption effect on market demand
 			set_variable = { global.base_pop_earnings = 0.1 } # Base earnings per pop(k) per month
 
-			set_variable = { global.company_retention_factor = 0.3 } # Fraction of a company's gross dividends retained to its treasury (rest paid to HQ-state capitalists)
-            set_variable = { global.pops_unemployment_bleed = 0.2 } #What % of unemployed pops become laborers each month
+			set_variable = { global.company_retention_factor = 0.3 } # Fraction of a company's gross dividends retained to its treasury (rest paid to the HQ state's upper class)
+            set_variable = { global.pops_unemployment_bleed = 0.2 } #What % of unemployed pops become working class each month
             set_variable = { global.pops_underpaid_start = 0.5 } #What % of a pop's SoL expenditure will they start to be less inclined to be employed
             set_variable = { global.pops_underpaid_min = 0.3 } #Minimum % of pops willing to be employed
-            
-            set_variable = { global.pops_capitalists_investment_pool_contribution = 0.3 } # Base rate
-            set_variable = { global.pops_landowners_investment_pool_contribution = 0.15 } # Base rate
-        #
+#
 
         #Spending Patterns
             #Note: Spending is multiplied by e^0.07s (doubles every 10 Standard of Living)
@@ -1522,23 +1521,7 @@ initialize_country = {
             array = global.industry_token_array
             value = ind_token
 			
-			if = {
-				limit = {
-					is_in_array = { global.building_token_array = ind_token }
-				}
-				set_variable = { global.industry_owner@var:ind_token = token:capitalists }
-			}
-			else_if = {
-				limit = {
-					check_variable = { ind_token = token:railway }
-				}
-				set_variable = { global.industry_owner@var:ind_token = token:capitalists }
-			}
-			else = {
-				set_variable = { global.industry_owner@var:ind_token = token:landowners }
-			}
-            
-            for_each_loop = {
+for_each_loop = {
                 array = global.building_production_methods@var:ind_token
                 value = pm_token
 
@@ -2162,47 +2145,35 @@ initialize_country = {
             value = emp_ind_token
             set_variable = { employment_target@var:emp_ind_token = 80 }
         }
-        employment_update = yes
-        
-        # Take chunks out of workforce value until it reaches 0
+        # Everyone starts as a peasant. History's slaves and the state's share of active manpower come out first
         set_variable = { pops_workforce@token:peasants = pops_workforce }
 
-        clear_temp_array = temp_pops_array
-        add_to_temp_array = { temp_pops_array = token:capitalists }
-        add_to_temp_array = { temp_pops_array = token:landowners }
-        add_to_temp_array = { temp_pops_array = token:specialists }
-        add_to_temp_array = { temp_pops_array = token:professionals }
-        add_to_temp_array = { temp_pops_array = token:workers }
-        add_to_temp_array = { temp_pops_array = token:laborers }
-
-        subtract_from_variable = { pops_jobs@token:landowners = owner_jobs@token:subsistence_farm }
-        for_each_loop = {
-            array = temp_pops_array
-            value = pop_token
-
-            if = {
-                limit = {
-                    check_variable = { pops_jobs@var:pop_token > pops_workforce@token:peasants }
-                }
-                set_variable = { pops_workforce@var:pop_token = pops_workforce@token:peasants }
-                set_variable = { pops_workforce@token:peasants = 0 }
-			}
-            else = {
-                set_variable = { pops_workforce@var:pop_token = pops_jobs@var:pop_token }
-                subtract_from_variable = { pops_workforce@token:peasants = pops_workforce@var:pop_token }
+        if = { # History sets slave_share, a share of the workforce, within the cap pops_slaves_monthly keeps (Q73)
+            limit = {
+                has_variable = slave_share
+                NOT = { check_variable = { controller:modifier@slavery_banned > 0 } }
             }
+            pops_culture_shares_calc = yes
+            set_variable = { pops_workforce@token:slaves = { value = slave_share min = marginalized_share_temp multiply = pops_workforce } }
+            subtract_from_variable = { pops_workforce@token:peasants = pops_workforce@token:slaves }
         }
-        add_to_variable = { pops_jobs@token:landowners = owner_jobs@token:subsistence_farm }
 
-        # Subs Farm Landowners
-        set_temp_variable = { landowners_jobs_temp = pops_workforce@token:peasants }
-        multiply_temp_variable = { landowners_jobs_temp = 0.02 }
-        add_to_variable = { pops_workforce@token:landowners = landowners_jobs_temp }
-        subtract_from_variable = { pops_workforce@token:peasants = landowners_jobs_temp }
+        set_variable = { active_manpower = 0 }
+        pops_active_manpower_monthly = yes
+
+        employment_update = yes
+
+        # Each class fills its jobs from the peasants, top down. Slaves already hold the working-class jobs they can fill
+        set_variable = { pops_workforce@token:upper_class = { value = pops_jobs@token:upper_class min = pops_workforce@token:peasants } }
+        subtract_from_variable = { pops_workforce@token:peasants = pops_workforce@token:upper_class }
+        set_variable = { pops_workforce@token:middle_class = { value = pops_jobs@token:middle_class min = pops_workforce@token:peasants } }
+        subtract_from_variable = { pops_workforce@token:peasants = pops_workforce@token:middle_class }
+        set_variable = { pops_workforce@token:working_class = { value = pops_jobs@token:working_class min = pops_workforce@token:peasants } }
+        subtract_from_variable = { pops_workforce@token:peasants = pops_workforce@token:working_class }
 
         # Updates Subsistence Farms
         subsist_and_arable_update = yes
-        
+
         # Updates Jobs Fulfillment
         employment_update = yes
 
@@ -2211,6 +2182,18 @@ initialize_country = {
 
         # Updates Pop Finances
         pops_update = yes
+
+        # Qualifications start at what the middle and upper classes hold, so moving up needs new ones from the start (Q57)
+        set_variable = {
+            qualifications = {
+                value = pops_workforce@token:middle_class
+                multiply = global.qualifications_need@token:middle_class
+                add = {
+                    value = pops_workforce@token:upper_class
+                    multiply = global.qualifications_need@token:upper_class
+                }
+            }
+        }
 
         # TODO - Adjust starting employment based on profitability
         # for_each_loop = {

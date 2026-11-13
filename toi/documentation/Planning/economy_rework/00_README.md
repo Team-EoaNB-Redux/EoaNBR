@@ -12,7 +12,7 @@ Each one is a self-contained piece of work for a fresh session. Do them in order
 |---|---|---|---|---|
 | M00 | [Test bed](milestones/M00_test_bed.md) | — | Q1–Q5 | Done |
 | M01 | [Gradual prices](milestones/M01_prices.md) | §7 | Q6–Q7, Q56 | Done |
-| M02 | [Pops and labour](milestones/M02_pops_and_labour.md) | §5, §23–30 | Q8–Q14, Q57, Q58, Q61, Q62 | Not started |
+| M02 | [Pops and labour](milestones/M02_pops_and_labour.md) | §5, §23–30 | Q8–Q14, Q57, Q58, Q61, Q62, Q73–Q80 | Done; checked in-game (month-1 autosave) |
 | M03 | [Wealth and demand](milestones/M03_wealth_and_demand.md) | §24–25, §31–32 | Q15–Q17, Q59, Q60 | Not started |
 | M04 | [National sectors and target utilisation](milestones/M04_national_sectors.md) | §2–4, §6 | Q18–Q23, Q55 | Not started |
 | M05 | [Land, agriculture and subsistence](milestones/M05_land_and_subsistence.md) | §10–11, §25 | Q24–Q27, Q63, Q71 | Not started |
@@ -47,14 +47,16 @@ Q52 to Q54 apply across milestones.
   - The game loads, with a smoke test in-game.
 - **After a milestone:** update its status here, then `economy_overview.md` and the "Current status" section of `AGENTS.md`.
 - **Delete what a milestone replaces** (Q4). Old code clutters the mod and confuses coding agents, and git keeps the history.
-- **Leave the stripped map alone.** Test industries go only inside `# >>> rework test industries` blocks.
+- **Leave the stripped map alone.** Test industries go only inside `# >>> rework test industries` blocks, and test slaves inside `# >>> rework test slaves` blocks (Virginia, South Carolina and Mississippi).
 
 ## Current state of the code
 - **Committed** in `26bd1bfab`: the map is stripped to subsistence plus 303 engine factories, with the old values commented out in place in about 1,095 state files. The 1857 PM retune is in ([pm_1857_tuning.md](pm_1857_tuning.md)), and the ENG and RAJ targets are comments in the history files.
-- **Uncommitted:** this plan reorganisation, M00 (the debt and cycle switches, the month counter fix and the test industries) and M01 (gradual prices, the trade AI's minimum-trade fix, and `pops_base_spending` cut from 0.3 to 0.1).
+- **Committed** in `c472e2509`: this plan reorganisation, M00 (the debt and cycle switches, the month counter fix and the test industries) and M01 (gradual prices, the trade AI's minimum-trade fix, and `pops_base_spending` cut from 0.3 to 0.1).
+- **Uncommitted:** M02 (five classes, qualifications, slaves, bureaucrats, active manpower, the merged upper-class investment modifier). The pie chart's segment textures are renamed and removed with `git mv` and `git rm`, so those changes are already staged.
 - **Switched off:** investment (`global.eco_investment_enabled = 0`), debt (`global.eco_debt_enabled = 0`: starting debt, interest and bankruptcy), the economic cycle (`global.eco_cycle_enabled = 0`), downsizing, banking and pop borrowing.
 - **Known bugs:**
   - Pop investment money disappears until M09 gives it the general pool.
+  - Wages rise 0.5% a month wherever jobs are filled exactly, since utilisation then sits at 1.0, above the stable band (M02, Left over).
 
 ## Other files here
 - **M14 reference:** [eng_economy.md](eng_economy.md) and [raj_economy.md](raj_economy.md) give 1857 output for the British Isles and India. The history files cite them by name, so keep them here. [pm_1857_tuning.md](pm_1857_tuning.md) and `pm_1857_tuning.csv` record the 1857 PM values already in the sheet.
@@ -88,3 +90,4 @@ Run them all from the repo. Simulator details are in `redux-eco-sim/CLAUDE.md`.
 - **Read the xlsx, not pasted CSVs.** CSV rounding hid real values.
 - **Tech links set startup PMs.** A state with no starting PM begins on `latest_production_method`.
 - **Strat prefers math expressions,** and temps only when a value is reused. Array reads and trigger blocks are the exceptions.
+- **A load error zeroes every later math expression in its file.** M02 first loaded with everyone a peasant because `_economy_main_rework.txt` had a `log = ""` at line 124 and `_economy_setup.txt` called two effects that don't exist. Both were harmless until M02 put math expressions after them. Check `error.log` for "Errors occurred while reading math expression" after loading. The simulator has reported these as `load_error` since 2026-11-12.

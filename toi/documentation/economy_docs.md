@@ -560,18 +560,10 @@ NONE OF THESE ARE IMPLEMENTED
         <td> Country/State </td>
     </tr>
     <tr>
-        <td> has_capitalists </td>
-        <td> <code> x_temp = float </code> <br> (Optional) Capitalists amount. Default is 0.</td>
-        <td> <code> set_temp_variable = { x_temp = 2.4 } <br> has_capitalists = yes </code> </td>
-        <td> Checks if the current scope's capitalist amount is more than the given value.</td>
-        <td> </td>
-        <td> Country/State </td>
-    </tr>
-    <tr>
-        <td> has_landowners </td>
-        <td> <code> x_temp = float </code> <br> (Optional) Landowners amount. Default is 0.</td>
-        <td> <code> set_temp_variable = { x_temp = 3.5 } <br> has_landowners = yes </code> </td>
-        <td> Checks if the current scope's aristocrat amount is more than the given value.</td>
+        <td> has_upper_class </td>
+        <td> <code> x_temp = float </code> <br> (Optional) Upper class amount. Default is 0.</td>
+        <td> <code> set_temp_variable = { x_temp = 2.4 } <br> has_upper_class = yes </code> </td>
+        <td> Checks if the current scope's upper class amount is more than the given value.</td>
         <td> </td>
         <td> Country/State </td>
     </tr>
@@ -853,22 +845,54 @@ A list of modifiers that can be used in ideas and dynamic modifiers. Each of the
         <td> Country </td>
     </tr>
     <tr>
-        <td> landowners_investment_contribution_factor </td>
+        <td> upper_class_investment_contribution_factor </td>
         <td> </td>
         <td> </td>
-        <td> </td>
-        <td> </td>
-        <td> Country </td>
-    </tr>
-    <tr>
-        <td> capitalists_investment_contribution_factor </td>
-        <td> </td>
-        <td> </td>
-        <td> </td>
+        <td> Share of the upper class's income that goes into the investment pool. </td>
         <td> </td>
         <td> Country </td>
     </tr>
     <tr>
+        <td> bureaucratic_strain_factor </td>
+        <td> </td>
+        <td> </td>
+        <td> Adds to the bureaucratic jobs the country needs per head. For the bureaucracy law. </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> slavery_banned </td>
+        <td> </td>
+        <td> </td>
+        <td> Yes/no. Frees every slave. Set by the law that bans slavery; without it, slavery is allowed. </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> marginalized_culture_qualifications_factor </td>
+        <td> </td>
+        <td> </td>
+        <td> Adds to the multiplier on qualification gains for marginalised cultures (base -50%). </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> non_accepted_culture_qualifications_factor </td>
+        <td> </td>
+        <td> </td>
+        <td> Adds to the multiplier on qualification gains for cultures that are neither primary nor promoted (base -10%). </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> peasant_qualifications_factor </td>
+        <td> </td>
+        <td> </td>
+        <td> Adds to the multiplier on peasants' qualification gains. For serfdom (-100%) and estate society (-50%). </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+<tr>
         <td> government_investment_efficiency_factor </td>
         <td> </td>
         <td> </td>

@@ -15,7 +15,7 @@
 #       global.company_num                       - id allocation counter
 #       global.companies                         - master list of every company id
 #       global.company_owner@var:cid             - owner country scope
-#       global.company_hq_state@var:cid          - HQ state scope (payout goes to capitalists here)
+#       global.company_hq_state@var:cid          - HQ state scope (payout goes to its upper class)
 #       global.company_type@var:cid              - token: company_type_private / _public / _soe
 #       global.company_focus@var:cid             - primary industry token (informational for MVP)
 #       global.company_treasury@var:cid          - retained capital pool (accrued by companies_monthly)
@@ -23,7 +23,7 @@
 #       global.company_employees@var:cid         - apportioned employee count across holdings (display; set by companies_update)
 #       global.company_asset_value@var:cid       - apportioned asset value across holdings (display; set by companies_update)
 #       global.company_revenue@var:cid / _expenses / _profit / _gross_dividends - P&L (set by companies_update)
-#       global.company_dividends@var:cid         - this month's payout to HQ-state capitalists (set by companies_update)
+#       global.company_dividends@var:cid         - this month's payout to the HQ state's upper class (set by companies_update)
 #       global.company_net_cashflow@var:cid      - net money in/out of treasury this month = operating cash kept after
 #                                                  dividends, minus all investment outlays (construction + pooling). companies_monthly applies it to the treasury.
 #       Holdings (parallel arrays, one entry per owned building-slice; merged so (state,building) is unique):
@@ -57,7 +57,7 @@
 #   country's turn in global.econ_order_array (rank-sorted, so the UK etc. get first pickings for investment).
 #
 # DIVIDEND ROUTING (pull-based): companies_update sets global.company_dividends@var:cid; industries_update
-#   loops the HQ state's company_hqs and pulls global.company_dividends@var:cid into pops_dividends@token:capitalists.
+#   loops the HQ state's company_hqs and pulls global.company_dividends@var:cid into pops_dividends@token:upper_class.
 #   The pull reads last tick's payout -> one-tick lag, consistent with the local-dividend lag (same tick-N building
 #   dividends consumed at tick N+1), no double count.
 #
@@ -87,7 +87,7 @@
 # LIFECYCLE --------------------------------------------------------------------
 	# Founds a new company owned by THIS country. Country scope.
 	# INPUT:
-	#   company_hq_state_temp  - state scope where the company is headquartered (dividends paid to its capitalists)
+	#   company_hq_state_temp  - state scope where the company is headquartered (dividends paid to its upper class)
 	#   company_focus_temp     - primary industry token (informational for MVP)
 	#   company_type_temp      - token:company_type_private / _public / _soe (defaults to private)
 	# OUTPUT:
@@ -387,7 +387,7 @@
 			set_variable = { global.company_profit@var:cid = global.company_revenue@var:cid }
 			subtract_from_variable = { global.company_profit@var:cid = global.company_expenses@var:cid }
 
-			# Dividend payout to HQ-state capitalists; retain_temp is the operating cash kept after dividends.
+			# Dividend payout to the HQ state's upper class; retain_temp is the operating cash kept after dividends.
 			set_temp_variable = { retain_temp = global.company_gross_dividends@var:cid }
 			multiply_temp_variable = { retain_temp = global.company_retention_factor }
 

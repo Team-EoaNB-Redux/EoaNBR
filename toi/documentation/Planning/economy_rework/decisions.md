@@ -4,7 +4,7 @@ Questions raised against the new spec, [EOANB_Redux_Economy_Redesign_Updated.md]
 
 When Strat answers, write the answer under the question, mark it **Decided** with the date, and update the milestone file it belongs to. The tuning values the spec leaves to testing (§34) aren't asked here: they get settled in the milestone that builds them.
 
-**Status:** Strat answered Q1–Q54 on 2026-11-12. Where an answer differs from the recommendation, it says "Not as recommended". The answers raised follow-up questions Q55–Q68, which Strat also answered on 2026-11-12. Those raised Q69–Q72, also answered the same day. Every question is now decided.
+**Status:** Strat answered Q1–Q54 on 2026-11-12. Where an answer differs from the recommendation, it says "Not as recommended". The answers raised follow-up questions Q55–Q68, which Strat also answered on 2026-11-12. Those raised Q69–Q72, also answered the same day. M02's code reading raised Q73–Q80, which Strat also answered on 2026-11-12. Every question is now decided.
 
 ---
 
@@ -114,6 +114,8 @@ When Strat answers, write the answer under the question, mark it **Decided** wit
 > - Jobs are spread over states by population, and by whether the state is core territory.
 >
 > Follow-up: Q58.
+>
+> **Implementation note (M02, 2026-11-12):** bureaucrats compete with private jobs for workers: when a state is short of middle-class pops, government and private jobs fall short in the same proportion. They're left out of the labour utilisation that moves the wage, though, on both the jobs side and the workforce side. Otherwise every rural state, where bureaucrats are the whole middle class and startup fills their jobs exactly, would sit at utilisation 1.0 and see its wage creep up for good. A middle-class shortage still raises the wage through the private jobs it leaves unfilled.
 
 **Q14. Active manpower.** What counts as active manpower, and who is drawn into it?
 *Recommend:* HOI4's own fielded and training manpower. It's taken from peasants and the working class in proportion to their numbers, and spread over states by population. Soldiers' pay and consumption stay on the existing military budget and demand lines.
@@ -618,3 +620,79 @@ These come out of the answers to Q55–Q68. Strat answered them on 2026-11-12.
 *Recommend:* (b), from M11 onward. Until then the interest disappears. It ties financial crises across borders, as the spec wants instability to come from finance (§14), and the old bank already has the structure. Q43's domestic bonds stay outside the bank.
 
 > **Decided 2026-11-12:** (b).
+
+---
+
+## Pops and labour follow-ups (raised 2026-11-12, M02)
+
+These came up while reading the code for M02. Two findings first, because they change what the M02 baseline means:
+- **Capitalists never exist.** `employment_update` adds each industry's owner jobs from a temp, `i_owner_jobs`, that nothing sets, so no industry has owner jobs. The capitalists start with no workforce, `pops_update` skips them, and their dividends reach no one. In Strat's July 1857 save, ENG's capitalists are booked 2,132 a month in dividends, with no workforce and no earnings. ENG's 94K landowners have no jobs either, so all of them count as unemployed. M02 rewrites this code, so the upper class gets its owner jobs and that income. GDP, prices and sales tax will move against the baseline for this reason alone.
+- **The demographics code's state culture tallies don't work.** `is_owner_primary_culture` and the other `is_owner_*_culture` triggers check `culture_temp`, but the loop in `sort_state_culture` sets `cc`. `is_owner_marginalized_culture` reads `OWNER.pops_primary_marginalized_array`, which doesn't exist. The tallies are also refreshed only when an effect changes a state's cultures, never at startup. M02 computes its own culture shares from `pops_culture_array`, so it doesn't depend on them. Strat: leave the demographics code alone.
+
+**Q73. Where slaves come from (contradiction).** No state history sets slaves, so every state starts with none, and nothing creates them. Q12 and Q61 say only pops of marginalised cultures can be enslaved, and that every country counts as allowing slavery until history sets the new laws. ENG's 1857 history marginalises the Irish (USA and CSA marginalise African Americans; BRA and ARG Afro-Brazilians, pardos and Amazonians; TAI the Manchu). So a rule that enslaves marginalised pops by itself would enslave Ireland.
+- (a) History sets a starting slave share for each state, as a share of its workforce. Afterwards slaves change only through population growth and emancipation, and nobody is newly enslaved. Each month the slaves are capped at the state's marginalised-culture share, or at 0 where slavery is banned. Freed slaves become working class.
+- (b) At startup, every marginalised-culture pop becomes a slave wherever slavery isn't banned. That needs Britain and others to ban slavery in their history first, which needs the new laws.
+- (c) Free marginalised pops become slaves each month at some rate, where slavery isn't banned. Same problem as (b).
+
+*Recommend:* (a). In 1857 the big slave populations (the US South, Brazil, Cuba) grew by birth, and the Atlantic trade was nearly closed. To test it while the map is stripped: put the 1860 census shares into a few US southern states (Virginia about 31%, South Carolina 57%, Mississippi 55%), in a marked `# >>> rework test slaves` block. The test bed is British, and Britain has no slaves.
+
+> **Decided 2026-11-12:** (a), with the test shares in a few US southern states. Strat notes that Britain would start with slavery abolished anyway.
+
+**Q74. Do qualifications leave with pops that move down?** The notepad loses qualifications through death, conversion and decay. Its stocks belonged to each pop type, so a pop that changed type took its qualifications with it. Q57 makes it one stock per state, which the middle and upper classes draw on, so there's no type for them to belong to. If a move down still destroys them, every month in which middle-class pops fill working-class jobs destroys qualifications, and industries' hiring swings (+20 / −25 points a month) would wear the stock down.
+- (a) As the notepad: a pop that moves down loses its share of qualifications.
+- (b) They stay in the state's stock, so the same people can move back up when jobs return. Deaths and decay take a share of the stock each month.
+
+*Recommend:* (b).
+
+> **Decided 2026-11-12:** (b).
+
+**Q75. Qualification inputs are flat today.** The notepad's gains come mostly from literacy, schooling and education. These are state percentages that default to 100 everywhere (`global.pops_literacy_percentage` and the rest), and no history sets them. With the cap model gone, qualifications are the only thing that reads them. At 100, every state gains at the top rate per head, and only wealth, the class mix and the culture cuts make a difference.
+- (a) Lower the defaults to rough 1857 world levels (literacy 20%, schooling 10%, education 0.5%), give ENG its own values in country history since it's the test bed (about 60%, 40% and 2%), and set everyone else in M14.
+- (b) Keep 100 until M14.
+
+*Recommend:* (a). Otherwise qualifications can't hold anyone back, which is their point (Q10).
+
+> **Decided 2026-11-12:** (a).
+
+**Q76. Culture cuts before the laws exist.** The notepad cuts gains by law: under slavery laws −100% for oppressed cultures and −50% for non-accepted ones, down to −40% and 0 under full equality. In the code's four culture tiers, oppressed is marginalised and non-accepted is normal: anything not primary or promoted. No country has the new laws yet (Q61).
+- (a) A base cut from culture status alone, since marginalisation is already history data. Modifiers that the citizenship and slavery laws set later change it.
+- (b) No cut until the laws set modifiers.
+
+*Recommend:* (a), starting from the notepad's middle row, limited equality: −50% for marginalised cultures and −10% for non-accepted ones. The serfdom cut for peasants is a law, so it's a modifier with no effect until history sets the law.
+
+> **Decided 2026-11-12:** (a).
+
+**Q77. What the bureaucrats' pay replaces.** `administration_spending` is now 0.5% of pop earnings, plus `administration_cost_per_c` × population and `administration_cost_per_gdp` × GDP, all × (1 + `administration_cost_factor`) and ÷ bureaucratic efficiency. It pays no one. ENG's is about 220 a month, of which the earnings term is about 50 before the factors. The bureaucrats' pay is filled jobs × their class's wage multiple × the state's base wage, and it goes to them as wages. At about 1.5 jobs per 1,000 people (Britain had roughly 40,000 civil servants for 28 million), ENG's payroll would be about 350 a month.
+- (a) The payroll replaces the earnings term. The per-capita and per-GDP terms, the cost factor and efficiency stay, applied only to those terms, so content that uses them keeps working and the payroll paid equals the wages received.
+- (b) The payroll is added to today's line.
+- (c) The payroll replaces the whole line, and the modifiers are reworked to act on required jobs.
+
+*Recommend:* (a). M13 can do (c) when it reworks the budget.
+
+> **Decided 2026-11-12:** (a).
+
+**Q78. Does administrative capacity cut taxes in M02?** Capacity = filled ÷ required bureaucratic jobs. The politics notepad has a shortage cut tax effectiveness and spending effectiveness. Nothing in the code models spending effectiveness yet.
+- (a) M02 applies capacity to income, sales and corporate tax collected, so a short bureaucracy loses revenue. How strongly is tuning. Spending effectiveness waits for M13.
+- (b) M02 only stores capacity, and M13 applies it.
+
+*Recommend:* (a). Otherwise the bureaucracy costs money and labour from the day it exists but changes nothing.
+
+> **Decided 2026-11-12:** (a).
+
+**Q79. Merging the owners' investment modifiers.** The upper class replaces capitalists and landowners, but `capitalists_investment_contribution_factor` and `landowners_investment_contribution_factor` are used in about 30 places of content: ideas, leader traits, decisions, balance of power and static modifiers. M03 decides who invests (Q60: the middle and upper classes).
+- (a) Merge them now into `upper_class_investment_contribution_factor`, adding the two values where a block has both. M03 adds the middle class's.
+- (b) Keep both until M03, with the upper class using the capitalists' one.
+
+*Recommend:* (a). The diverted money disappears until M09 anyway, so for now the only effect is on how much the upper class spends.
+
+> **Decided 2026-11-12:** (a).
+
+**Q80. Bureaucrats against the speed target (contradiction).** M02's "done when" asks for the pop pipeline to cost about half what it does now. In the baseline (`runs/m02_base`, 60 months) it costs 12.6 s of the 42 s country tick: `pops_update` 4.6 s, `employment_update` 3.4 s, `update_country_pop_stats` 2.0 s, `on_monthly_pops` 1.6 s and `pops_balance` 0.8 s. `pops_update` already skips pop types with no workforce, and the stripped map's states mostly have two (peasants and landowners). Going from ten types to five halves the loops over every type, but Q58 puts bureaucrats in every state, so almost every state gains a middle class: a third active class, and about 1.4 s more of `pops_update`.
+- (a) Keep Q58's spread. M02's target becomes "no slower than now", and the rest of the speed-up comes in M03, which refactors `get_pop_needs` (1.8 s) and removes the savings steps.
+- (b) Put bureaucratic jobs only in states above a population threshold, or only in each country's largest states, so most rural states have no middle class.
+
+*Recommend:* (a). (b) would put whole provinces outside the administration, which Q58 didn't intend.
+
+> **Decided 2026-11-12:** (a).
+>
+> **Measured (M02, 2026-11-12):** run against the old code under the same conditions (`runs/m02_base_rerun`), the pop pipeline costs 13.3 s against 14.0 s, 5% less. `pops_update` grew 27% for the extra class, and every loop over the pop types halved. Details in M02's Results.

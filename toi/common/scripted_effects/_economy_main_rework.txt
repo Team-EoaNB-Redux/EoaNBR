@@ -18,21 +18,28 @@
 				pops_cache_pop_context = yes
 
 				pops_process_workforce_status = yes
-				pops_calculate_earnings_and_investment = yes
-				pops_calculate_needs_spending = yes
-				pops_calculate_living_standards = yes
-				pops_calculate_taxation = yes
 
-				pops_calculate_debt_servicing = yes
-				pops_calculate_credit_metrics = yes
+				if = { # Slaves have no income and no needs (Q12)
+					limit = { check_variable = { current_pop_token = token:slaves } }
+					pops_commit_slaves = yes
+				}
+				else = {
+					pops_calculate_earnings_and_investment = yes
+					pops_calculate_needs_spending = yes
+					pops_calculate_living_standards = yes
+					pops_calculate_taxation = yes
 
-				pops_update_confidence = yes
-				pops_calculate_spending_targets = yes
-				pops_calculate_savings_targets = yes
+					pops_calculate_debt_servicing = yes
+					pops_calculate_credit_metrics = yes
 
-				pops_add_to_state_totals = yes
+					pops_update_confidence = yes
+					pops_calculate_spending_targets = yes
+					pops_calculate_savings_targets = yes
 
-				pops_commit_pop_context = yes
+					pops_add_to_state_totals = yes
+
+					pops_commit_pop_context = yes
+				}
 			}
 			else = {
 				pops_clear_inactive_pop_data = yes
@@ -87,9 +94,14 @@
 		set_variable = { pops_spending_target@var:current_pop_token = p_pops_spending_target }
 		set_variable = { pops_savings_target@var:current_pop_token = p_pops_savings_target }
 	}
+	pops_commit_slaves = {
+		set_variable = { pops@var:current_pop_token = p_pops }
+		set_variable = { pops_percentage@var:current_pop_token = p_pops_percentage }
+		set_variable = { pops_unemployed@var:current_pop_token = p_pops_unemployed }
+	}
 
 	log_pop_vals = {
-		set_temp_variable = { current_pop_token = token:laborers }
+		set_temp_variable = { current_pop_token = token:working_class }
 		log = "Pop Values for [?current_pop_token.GetTokenKey]:"
 		log = "pops: [?pops@var:current_pop_token]"
 		log = "pops_percentage: [?pops_percentage@var:current_pop_token]"
@@ -109,7 +121,6 @@
 		log = "pops_consumer_confidence: [?pops_consumer_confidence@var:current_pop_token]"
 		log = "pops_spending_target: [?pops_spending_target@var:current_pop_token]"
 		log = "pops_savings_target: [?pops_savings_target@var:current_pop_token]"
-		log = ""
 	}
 
 	pops_reset_core_variable = {
@@ -179,6 +190,7 @@
 		set_variable = { pops_unemployed = pops_workforce }
 		subtract_from_variable = { pops_unemployed = pops_employed }
 		subtract_from_variable = { pops_unemployed = pops_workforce@token:peasants }
+		subtract_from_variable = { pops_unemployed = active_manpower }
 		clamp_variable = { var = pops_unemployed min = 0 max = pops_workforce }
 
 		set_variable = { pops_unemployed_percentage = pops_unemployed }
@@ -186,9 +198,6 @@
 
 		divide_variable = { pops_creditworthiness = pops_workforce }
 		multiply_variable = { pops_creditworthiness = 100 }
-		
-		set_variable = { excess_workforce = pops_workforce }
-		subtract_from_variable = { excess_workforce = non_subs_jobs_buildings }
 
 		set_variable = { pops_spending = pops_needs_spending }
 		add_to_variable = { pops_spending = pops_income_tax_spending }
@@ -227,6 +236,13 @@
 			limit = { check_variable = { current_pop_token = token:peasants } }
 			add_to_temp_variable = { p_pops_earnings = expenses_payroll@token:subsistence_farm }
 		}
+		else_if = { # The upper class is paid only for senior government jobs. Owners live on dividends
+			limit = { check_variable = { current_pop_token = token:upper_class } }
+			set_temp_variable = { p_pops_wage_earnings = bureaucrats_employed_upper }
+			multiply_temp_variable = { p_pops_wage_earnings = global.wage_multiplier@token:upper_class }
+			multiply_temp_variable = { p_pops_wage_earnings = base_wage }
+			add_to_temp_variable = { p_pops_earnings = p_pops_wage_earnings }
+		}
 		else = {
 			set_temp_variable = { p_pops_wage_earnings = p_pops_employed }
 			multiply_temp_variable = { p_pops_wage_earnings = global.wage_multiplier@var:current_pop_token }
@@ -240,24 +256,12 @@
 		# Earnings from Dividends
 		set_temp_variable = { p_pops_investment = 0 }
 		if = {
-			limit = { 
-				OR = { 
-					check_variable = { current_pop_token = token:landowners } 
-					check_variable = { current_pop_token = token:capitalists } 
-				} 
-			}
+			limit = { check_variable = { current_pop_token = token:upper_class } }
 			add_to_temp_variable = { p_pops_earnings = p_pops_dividends }
 
 			if = {
 				limit = { check_variable = { p_pops_earnings > 0 } }
-				if = { limit = { check_variable = { current_pop_token = token:landowners } }
-					set_temp_variable = { p_pops_investment = controller:modifier@landowners_investment_contribution_factor } 
-				}
-				if = { 
-					limit = { check_variable = { current_pop_token = token:capitalists } }
-					set_temp_variable = { p_pops_investment = controller:modifier@capitalists_investment_contribution_factor }
-				}
-				
+				set_temp_variable = { p_pops_investment = controller:modifier@upper_class_investment_contribution_factor }
 				clamp_temp_variable = { var = p_pops_investment max = 0.8 min = 0 }
 				multiply_temp_variable = { p_pops_investment = p_pops_earnings }
 
@@ -496,23 +500,20 @@
 
 
 	employment_update = {
-		# Updates Industry Jobs, Job Fulfillment, and Pop/Industry Employment
+		# Updates industry jobs, job fulfillment, and pop and industry employment
+		# Jobs per class: each industry's Wrk and Mid shares go to the working and middle classes, and its owner places
+		# (about 2% of its jobs, owner_jobs@) to the upper class (Q11). Bureaucratic jobs (bureaucracy_and_manpower_update)
+		# are middle class, plus senior ones in the capital for the upper class (Q13, Q58). Slaves fill working-class jobs
+		# before free workers (Q12).
 
 		## JOBS
-		set_variable = { pops_jobs@token:capitalists = 0 }
-		set_variable = { pops_jobs@token:landowners = 0 }
+		set_temp_variable = { e_working_jobs = 0 }
+		set_temp_variable = { e_working_jobs_available = 0 }
 
-		set_temp_variable = { e_laborers_jobs = 0 }
-		set_temp_variable = { e_laborers_jobs_available = 0 }
+		set_temp_variable = { e_middle_jobs = bureaucratic_jobs }
+		set_temp_variable = { e_middle_jobs_available = bureaucratic_jobs }
 
-		set_temp_variable = { e_workers_jobs = 0 }
-		set_temp_variable = { e_workers_jobs_available = 0 }
-		
-		set_temp_variable = { e_professionals_jobs = 0 }
-		set_temp_variable = { e_professionals_jobs_available = 0 }
-		
-		set_temp_variable = { e_specialists_jobs = 0 }
-		set_temp_variable = { e_specialists_jobs_available = 0 }
+		set_temp_variable = { e_upper_jobs = bureaucratic_jobs_upper }
 
 		# Industries
 		for_each_loop = {
@@ -522,36 +523,26 @@
 			if = {
 				limit = { NOT = { check_variable = { bu_token = token:subsistence_farm } } }
 				industry_update_size_jobs = yes
-				
-				add_to_temp_variable = { e_laborers_jobs = i_laborers_jobs }
-				add_to_temp_variable = { e_laborers_jobs_available = i_laborers_jobs_available }
-				
-				add_to_temp_variable = { e_workers_jobs = i_workers_jobs }
-				add_to_temp_variable = { e_workers_jobs_available = i_workers_jobs_available }
-				
-				add_to_temp_variable = { e_professionals_jobs = i_professionals_jobs }
-				add_to_temp_variable = { e_professionals_jobs_available = i_professionals_jobs_available }
-				
-				add_to_temp_variable = { e_specialists_jobs = i_specialists_jobs }
-				add_to_temp_variable = { e_specialists_jobs_available = i_specialists_jobs_available }
+
+				add_to_temp_variable = { e_working_jobs = i_working_jobs }
+				add_to_temp_variable = { e_working_jobs_available = i_working_jobs_available }
+
+				add_to_temp_variable = { e_middle_jobs = i_middle_jobs }
+				add_to_temp_variable = { e_middle_jobs_available = i_middle_jobs_available }
 			}
 
-			set_temp_variable = { owner_temp = global.industry_owner@var:bu_token }
-			add_to_variable = { pops_jobs@var:owner_temp = i_owner_jobs }
+			add_to_temp_variable = { e_upper_jobs = owner_jobs@var:bu_token } # Owner places already follow the employment target
 		}
 
-		# Pops
-		set_variable = { pops_jobs@token:laborers = e_laborers_jobs }
-		set_variable = { pops_jobs_available@token:laborers = e_laborers_jobs_available }
-		set_variable = { pops_jobs@token:workers = e_workers_jobs }
-		set_variable = { pops_jobs_available@token:workers = e_workers_jobs_available }
-		set_variable = { pops_jobs@token:professionals = e_professionals_jobs }
-		set_variable = { pops_jobs_available@token:professionals = e_professionals_jobs_available }
-		set_variable = { pops_jobs@token:specialists = e_specialists_jobs }
-		set_variable = { pops_jobs_available@token:specialists = e_specialists_jobs_available }
-
-		set_variable = { pops_jobs_available@token:capitalists = pops_jobs@token:capitalists }
-		set_variable = { pops_jobs_available@token:landowners = pops_jobs@token:landowners }
+		# Pops. Slaves take working-class jobs first, and free workers get the rest
+		set_variable = { pops_jobs@token:slaves = { value = pops_workforce@token:slaves min = e_working_jobs } }
+		set_variable = { pops_jobs_available@token:slaves = { value = pops_workforce@token:slaves min = e_working_jobs_available } }
+		set_variable = { pops_jobs@token:working_class = { value = e_working_jobs subtract = pops_jobs@token:slaves } }
+		set_variable = { pops_jobs_available@token:working_class = { value = e_working_jobs_available subtract = pops_jobs_available@token:slaves } }
+		set_variable = { pops_jobs@token:middle_class = e_middle_jobs }
+		set_variable = { pops_jobs_available@token:middle_class = e_middle_jobs_available }
+		set_variable = { pops_jobs@token:upper_class = e_upper_jobs }
+		set_variable = { pops_jobs_available@token:upper_class = e_upper_jobs }
 
 		## JOB FULFILLMENT
 		set_variable = { pops_jobs_available = 0 }
@@ -561,81 +552,86 @@
 			array = global.pops_array
 			value = pop_token
 
-			set_temp_variable = { e_pops_jobs_available = pops_jobs_available@var:pop_token }
-			
-			set_variable = { pops_workforce_balance@var:pop_token = pops_workforce@var:pop_token }
-			subtract_from_variable = { pops_workforce_balance@var:pop_token = e_pops_jobs_available }
-			
 			if = {
-				limit = {
-					check_variable = { pops_workforce@var:pop_token > e_pops_jobs_available }
-				}
-				set_variable = { job_fulfillment@var:pop_token = 100 }
-				set_variable = { pops_employed@var:pop_token = e_pops_jobs_available }
-			}
-			else_if = {
-				limit = {
-					check_variable = { e_pops_jobs_available > 100 }
-				}
-				divide_temp_variable = { e_pops_jobs_available = 100 }
+				limit = { NOT = { check_variable = { pop_token = token:peasants } } }
 
-				set_temp_variable = { e_job_fulfillment = pops_workforce@var:pop_token }
-				divide_temp_variable = { e_job_fulfillment = e_pops_jobs_available }
-				
-				set_temp_variable = { e_pops_employed = e_pops_jobs_available }
-				multiply_temp_variable = { e_pops_employed = e_job_fulfillment }
-				
-				set_variable = { job_fulfillment@var:pop_token = e_job_fulfillment }
-				set_variable = { pops_employed@var:pop_token = e_pops_employed }
-			}
-			else_if = {
-				limit = {
-					check_variable = { e_pops_jobs_available > 0 }
+				set_temp_variable = { e_pops_jobs_available = pops_jobs_available@var:pop_token }
+
+				set_variable = { pops_workforce_balance@var:pop_token = { value = pops_workforce@var:pop_token subtract = e_pops_jobs_available } }
+				set_variable = { pops_employed@var:pop_token = { value = pops_workforce@var:pop_token min = e_pops_jobs_available } }
+				if = {
+					limit = { check_variable = { e_pops_jobs_available > 0 } }
+					set_variable = { job_fulfillment@var:pop_token = { value = pops_employed@var:pop_token multiply = 100 divide = e_pops_jobs_available } }
 				}
-				set_temp_variable = { e_job_fulfillment = pops_workforce@var:pop_token }
-				multiply_temp_variable = { e_job_fulfillment = 100 }
-				divide_temp_variable = { e_job_fulfillment = e_pops_jobs_available }
-				
-				set_temp_variable = { e_pops_employed = e_pops_jobs_available }
-				multiply_temp_variable = { e_pops_employed = e_job_fulfillment }
-				divide_temp_variable = { e_pops_employed = 100 }
-				
-				set_variable = { job_fulfillment@var:pop_token = e_job_fulfillment }
-				set_variable = { pops_employed@var:pop_token = e_pops_employed }
+				else = {
+					set_variable = { job_fulfillment@var:pop_token = 0 }
+				}
+
+				add_to_variable = { pops_jobs_available = e_pops_jobs_available }
+				add_to_variable = { pops_jobs = pops_jobs@var:pop_token }
+				add_to_variable = { pops_employed = pops_employed@var:pop_token }
 			}
-			else = {
-				set_variable = { job_fulfillment@var:pop_token = 0 }
-				set_variable = { pops_employed@var:pop_token = 0 }
-			}
-				
-			add_to_variable = { pops_jobs_available = pops_jobs_available@var:pop_token }
-			add_to_variable = { pops_jobs = pops_jobs@var:pop_token }
-			add_to_variable = { pops_employed = pops_employed@var:pop_token }
 		}
-		add_to_variable = { pops_workforce_balance@token:peasants = pops_jobs_available@token:peasants }
-		subtract_from_variable = { pops_jobs_available = pops_jobs_available@token:peasants }
-		
-		set_variable = { available_workforce = pops_workforce }
-		subtract_from_variable = { available_workforce = pops_jobs_available }
 
-		set_variable = { net_workforce = pops_workforce }
-		add_to_variable = { net_workforce = pops_jobs@token:peasants }
-		subtract_from_variable = { net_workforce = pops_jobs }
-
+		# Peasants all work, on subsistence land or marginal land
 		set_variable = { pops_employed@token:peasants = pops_workforce@token:peasants }
 		set_variable = { pops_unemployed@token:peasants = 0 }
 
-		## LABOR UTILIZATION (drives floating wages in base_wage_update)
-		# Industrial pop types only: laborers, workers, professionals, specialists.
-		set_variable = { industrial_workforce = pops_workforce@token:laborers }
-		add_to_variable = { industrial_workforce = pops_workforce@token:workers }
-		add_to_variable = { industrial_workforce = pops_workforce@token:professionals }
-		add_to_variable = { industrial_workforce = pops_workforce@token:specialists }
+		set_variable = { available_workforce = { value = pops_workforce subtract = active_manpower subtract = pops_jobs_available } }
 
-		set_variable = { industrial_jobs_available = pops_jobs_available@token:laborers }
-		add_to_variable = { industrial_jobs_available = pops_jobs_available@token:workers }
-		add_to_variable = { industrial_jobs_available = pops_jobs_available@token:professionals }
-		add_to_variable = { industrial_jobs_available = pops_jobs_available@token:specialists }
+		# Working-class jobs as a whole, slaves and free workers together, for industry employment
+		set_temp_variable = { e_working_employed = { value = pops_employed@token:slaves add = pops_employed@token:working_class } }
+		if = {
+			limit = { check_variable = { e_working_jobs_available > 0 } }
+			set_variable = { working_job_fulfillment = { value = e_working_employed multiply = 100 divide = e_working_jobs_available } }
+		}
+		else = {
+			set_variable = { working_job_fulfillment = 0 }
+		}
+
+		# The enslaved share of working-class labour. Employers pay no wage for it (industry_update)
+		if = {
+			limit = { check_variable = { pops_employed@token:slaves > 0 } }
+			set_variable = { slave_labor_share = { value = pops_employed@token:slaves divide = e_working_employed } }
+		}
+		else = {
+			set_variable = { slave_labor_share = 0 }
+		}
+
+		# Bureaucrats. The government pays them at the state's wage, through administration spending (budget_update)
+		set_variable = { bureaucrats_employed = { value = bureaucratic_jobs multiply = job_fulfillment@token:middle_class divide = 100 } }
+		set_variable = { bureaucrats_employed_upper = { value = bureaucratic_jobs_upper multiply = job_fulfillment@token:upper_class divide = 100 } }
+		set_variable = {
+			bureaucrats_payroll = {
+				value = bureaucrats_employed
+				multiply = global.wage_multiplier@token:middle_class
+				add = {
+					value = bureaucrats_employed_upper
+					multiply = global.wage_multiplier@token:upper_class
+				}
+				multiply = base_wage
+			}
+		}
+
+		## LABOR UTILIZATION (drives floating wages in base_wage_update)
+		# Slaves, the working class and the middle class, against private jobs. Slaves count in the supply (Q62), so plentiful
+		# slaves hold free wages down. Bureaucrats are left out on both sides: the government pays the going wage and doesn't
+		# bid it up, and states with only bureaucrats keep a steady wage, as they did before M02.
+		set_variable = {
+			industrial_workforce = {
+				value = pops_workforce@token:slaves
+				add = pops_workforce@token:working_class
+				add = pops_workforce@token:middle_class
+				subtract = bureaucrats_employed
+			}
+		}
+		set_variable = {
+			industrial_jobs_available = {
+				value = e_working_jobs_available
+				add = e_middle_jobs_available
+				subtract = bureaucratic_jobs
+			}
+		}
 
 		# Utilization = available jobs / workforce (effective employment/availability ratio).
 		# Neutral 0.97 (mid stable band) when there is no industrial workforce.
@@ -693,7 +689,7 @@
 		# if = {
 		# 	limit = {
 		# 		state = 219
-		# 		check_variable = { current_pop_token = token:laborers }
+		# 		check_variable = { current_pop_token = token:working_class }
 		# 	}
 		# 	#log_pop_vals = yes
 		# 	log = "Pop Needs for [?current_pop_token.GetTokenKey]: (SOL: [?sol_temp], Pops: [?pop_temp], Magnitude: [?magnitude_temp])"
@@ -804,393 +800,278 @@
 	}
 
 	pops_balance = {
-		# Balance pops according to jobs available
-		# Uses pops_convert to do most of the heavy lifting
-		# Sets workforce amount depending on ratio of unemployed to non-subsistence jobs		
-		# Peasants & Subsistence Farms have to be handled seperately
+		# Moves pops between the working, middle and upper classes toward the jobs each offers (Q10). Total population never
+		# changes here. Slaves never move, and peasants join or leave the working class in pops_peasant_job_migration.
+		# Classes short of workers take them from classes with too many, in proportion. Moving up into the middle and upper
+		# classes needs free qualifications (Q57), and the whole move is scaled down to fit them. Moving down loses none (Q74).
 
-		set_temp_variable = { laborers_change = pops_workforce_balance@token:laborers }
-		multiply_temp_variable = { laborers_change = -1 }
-		
-		set_temp_variable = { workers_change = pops_workforce_balance@token:workers }
-		multiply_temp_variable = { workers_change = -1 }
+		set_temp_variable = { change_working = { value = pops_workforce_balance@token:working_class multiply = -1 } }
+		set_temp_variable = { change_middle = { value = pops_workforce_balance@token:middle_class multiply = -1 } }
+		set_temp_variable = { change_upper = { value = pops_workforce_balance@token:upper_class multiply = -1 } }
 
-		set_temp_variable = { professionals_change = pops_workforce_balance@token:professionals }
-		multiply_temp_variable = { professionals_change = -1 }
-		
-		set_temp_variable = { specialists_change = pops_workforce_balance@token:specialists }
-		multiply_temp_variable = { specialists_change = -1 }
-
-		set_temp_variable = { landowners_change = landowners_jobs }
-		subtract_from_temp_variable = { landowners_change = pops_workforce_balance@token:landowners }
-		
-		set_temp_variable = { capitalists_change = capitalists_jobs }
-		subtract_from_temp_variable = { capitalists_change = pops_workforce_balance@token:capitalists }
-
-		pops_convert = yes
-	}
-	pops_convert = {
-		# Changes pops from from one pop type to another. Defaults to workforce amounts. Accounts for qualifications.
-		# Inputs:
-		# slaves_change - Net Change. Positive is adding, Negative is removing
-		# peasants_change
-		# laborers_change
-		# workers_change
-		# professionals_change
-		# specialists_change
-		# landowners_change
-		# capitalists_change
-		# bureaucrats_change
-		# soldiers_change
-		#
-		# Outputs:
-		# percent_done - What % got converted
-
-		set_temp_variable = { pops_change@token:slaves = slaves_change }
-		set_temp_variable = { pops_change@token:peasants = peasants_change }
-		set_temp_variable = { pops_change@token:laborers = laborers_change }
-		set_temp_variable = { pops_change@token:workers = workers_change }
-		set_temp_variable = { pops_change@token:professionals = professionals_change }
-		set_temp_variable = { pops_change@token:specialists = specialists_change }
-		set_temp_variable = { pops_change@token:landowners = landowners_change }
-		set_temp_variable = { pops_change@token:capitalists = capitalists_change }
-		set_temp_variable = { pops_change@token:bureaucrats = bureaucrats_change }
-		set_temp_variable = { pops_change@token:soldiers = soldiers_change }
-
-		# Making sure negatives don't go beyond actual amount
-		for_each_loop = {
-			array = global.pops_array
-			value = pop_cvt_token
-
-			if = {	
-				limit = {
-					check_variable = { pops_change@var:pop_cvt_token < 0 }
-					set_temp_variable = { pops_temp = pops_change@var:pop_cvt_token }
-					multiply_temp_variable = { pops_temp = -1 }
-					check_variable = { pops_temp > pops_workforce@var:pop_cvt_token }
-				}
-				set_temp_variable = { pops_change@var:pop_cvt_token = pops_workforce@var:pop_cvt_token }
-				multiply_temp_variable = { pops_change@var:pop_cvt_token = -1 }
-			}
-		}
-
-		## Add up positive & negative change totals and see if they match ##
-		set_temp_variable = { percent_done = 1 }
-		set_temp_variable = { positive_change_total = 0 }
-		set_temp_variable = { negative_change_total = 0 }
-		for_each_loop = {
-			array = global.pops_array
-			value = pop_cvt_token
-
-			if = { limit = { check_variable = { pops_change@var:pop_cvt_token > 0 } } add_to_temp_variable = { positive_change_total = pops_change@var:pop_cvt_token } }
-			else = { subtract_from_temp_variable = { negative_change_total = pops_change@var:pop_cvt_token } }
-		}
+		# Positive changes are shortfalls, negative ones surpluses. The number who move is the smaller total of the two
+		set_temp_variable = { shortfall_temp = { value = change_working max = 0 add = { value = change_middle max = 0 } add = { value = change_upper max = 0 } } }
+		set_temp_variable = { surplus_temp = { value = change_working min = 0 add = { value = change_middle min = 0 } add = { value = change_upper min = 0 } multiply = -1 } }
 
 		if = {
 			limit = {
-				check_variable = { positive_change_total > negative_change_total }
+				check_variable = { shortfall_temp > 0 }
+				check_variable = { surplus_temp > 0 }
 			}
-			set_temp_variable = { first_percent_done = negative_change_total }
-			multiply_temp_variable = { first_percent_done = 10 }
-			divide_temp_variable = { first_percent_done = positive_change_total }
-			set_temp_variable = { scale_positive_temp = 1 } # More additions than removals: scale the additions down to match
-		}
-		else_if = {
-			limit = {
-				check_variable = { positive_change_total < negative_change_total }
-			}
-			set_temp_variable = { first_percent_done = positive_change_total }
-			multiply_temp_variable = { first_percent_done = 10 }
-			divide_temp_variable = { first_percent_done = negative_change_total }
-			set_temp_variable = { scale_positive_temp = 0 } # More removals than additions: scale the REMOVALS down to match (else pops leak)
-		}
+			set_temp_variable = { shortfall_scale_temp = { value = shortfall_temp min = surplus_temp divide = shortfall_temp } }
+			set_temp_variable = { surplus_scale_temp = { value = shortfall_temp min = surplus_temp divide = surplus_temp } }
 
+			if = { limit = { check_variable = { change_working > 0 } } multiply_temp_variable = { change_working = shortfall_scale_temp } }
+			else = { multiply_temp_variable = { change_working = surplus_scale_temp } }
+			if = { limit = { check_variable = { change_middle > 0 } } multiply_temp_variable = { change_middle = shortfall_scale_temp } }
+			else = { multiply_temp_variable = { change_middle = surplus_scale_temp } }
+			if = { limit = { check_variable = { change_upper > 0 } } multiply_temp_variable = { change_upper = shortfall_scale_temp } }
+			else = { multiply_temp_variable = { change_upper = surplus_scale_temp } }
 
-		if = {
-			limit = {
-				NOT = { check_variable = { positive_change_total = negative_change_total } }
-			}
-			multiply_temp_variable = { percent_done = first_percent_done }
-			divide_temp_variable = { percent_done = 10 }
-					
-			for_each_loop = {
-				array = global.pops_array
-				value = pop_cvt_token
-
-				if = {
-					limit = {
-						OR = {
-							AND = { check_variable = { scale_positive_temp = 1 } check_variable = { pops_change@var:pop_cvt_token > 0 } }
-							AND = { NOT = { check_variable = { scale_positive_temp = 1 } } check_variable = { pops_change@var:pop_cvt_token < 0 } }
-						}
+			# Qualifications the move needs, against those the middle and upper classes don't already hold
+			set_temp_variable = {
+				qualifications_change_temp = {
+					value = change_middle
+					multiply = global.qualifications_need@token:middle_class
+					add = {
+						value = change_upper
+						multiply = global.qualifications_need@token:upper_class
 					}
-					multiply_temp_variable = { pops_change@var:pop_cvt_token = first_percent_done }
-					round_temp_variable = pops_change@var:pop_cvt_token
-					divide_temp_variable = { pops_change@var:pop_cvt_token = 10 }
+				}
+			}
+			if = {
+				limit = { check_variable = { qualifications_change_temp > 0 } }
+				set_temp_variable = {
+					qualifications_free_temp = {
+						value = qualifications
+						subtract = { value = pops_workforce@token:middle_class multiply = global.qualifications_need@token:middle_class }
+						subtract = { value = pops_workforce@token:upper_class multiply = global.qualifications_need@token:upper_class }
+						max = 0
+					}
+				}
+				if = {
+					limit = { check_variable = { qualifications_change_temp > qualifications_free_temp } }
+					set_temp_variable = { qualifications_scale_temp = { value = qualifications_free_temp divide = qualifications_change_temp } }
+					multiply_temp_variable = { change_middle = qualifications_scale_temp }
+					multiply_temp_variable = { change_upper = qualifications_scale_temp }
 				}
 			}
 
-			# Redo totals
-			set_temp_variable = { positive_change_total = 0 }
-			set_temp_variable = { negative_change_total = 0 }
-			
-			for_each_loop = {
-				array = global.pops_array
-				value = pop_cvt_token
-					
-				if = { limit = { check_variable = { pops_change@var:pop_cvt_token > 0 } } add_to_temp_variable = { positive_change_total = pops_change@var:pop_cvt_token } }
-				else = { subtract_from_temp_variable = { negative_change_total = pops_change@var:pop_cvt_token } }
-			}
-		}
-		else = {
-			set_temp_variable = { first_percent_done = 1 }
-		}
+			# The working class takes the other side of every move, so the total is exact
+			set_temp_variable = { change_working = { value = change_middle add = change_upper multiply = -1 } }
 
-		# log = "STATE: [THIS.GetName]"
-
-		if = {
-			limit = { check_variable = { percent_done > 0 } }
-			# Note: Landowners & Capitalists don't count for qualification changes b/c they're required at every stage of tech. But they do count as literate + schooled.
-
-			## Educated Qualifications (Just specialists) ##
-				if = {
-					limit = {
-						check_variable = { pops_change@token:specialists > 0 }
-					}
-					set_temp_variable = { education_change_cap = pops_workforce }
-					multiply_temp_variable = { education_change_cap = pops_education_percentage }
-					divide_temp_variable = { education_change_cap = 100 }
-					subtract_from_temp_variable = { education_change_cap = pops_workforce@token:specialists }
-					# log = "Educated Change: [?pops_change@token:specialists] / [?education_change_cap]"
-
-					if = {
-						limit = {
-							check_variable = { education_change_cap < education_change_cap }
-						}
-						set_temp_variable = { amount_temp = education_change_cap }
-						set_temp_variable = { max_amount_temp = education_change_cap }
-						multiply_pops_change = yes
-						set_temp_variable = { second_percent_done = temp_percent_done }
-						multiply_temp_variable = { percent_done = second_percent_done }
-					}
-					else = {
-						set_temp_variable = { second_percent_done = 1 }
-					}
-				}
-			#
-			## Schooled Qualifications ##
-				set_temp_variable = { schooled_change = pops_change@token:specialists }
-				add_to_temp_variable = { schooled_change = pops_change@token:professionals }
-				if = {
-					limit = {
-						check_variable = { schooled_change > 0 }
-					}
-					set_temp_variable = { schooled_change_cap = pops_workforce }
-					multiply_temp_variable = { schooled_change_cap = pops_schooling_percentage }
-					divide_temp_variable = { schooled_change_cap = 100 }
-					subtract_from_temp_variable = { schooled_change_cap = pops_workforce@token:professionals }
-					subtract_from_temp_variable = { schooled_change_cap = pops_workforce@token:specialists }
-					subtract_from_temp_variable = { schooled_change_cap = pops_workforce@token:capitalists }
-					subtract_from_temp_variable = { schooled_change_cap = pops_workforce@token:landowners }
-					# log = "Schooled Change: [?schooled_change] / [?schooled_change_cap]"
-
-					if = {
-						limit = {
-							check_variable = { schooled_change_cap < schooled_change }
-						}
-						set_temp_variable = { amount_temp = schooled_change }
-						set_temp_variable = { max_amount_temp = schooled_change_cap }
-						multiply_pops_change = yes
-						set_temp_variable = { third_percent_done = temp_percent_done }
-						multiply_temp_variable = { percent_done = third_percent_done }
-					}
-					else = {
-						set_temp_variable = { third_percent_done = 1 }
-					}
-				}
-			#
-			## Literates Qualifications ##
-				set_temp_variable = { literates_change = pops_change@token:workers }
-				add_to_temp_variable = { literates_change = pops_change@token:professionals }
-				add_to_temp_variable = { literates_change = pops_change@token:specialists }
-				add_to_temp_variable = { literates_change = pops_change@token:bureaucrats }
-				if = {
-					limit = {
-						check_variable = { literates_change > 0 }
-					}
-					set_temp_variable = { literates_change_cap = pops_workforce }
-					multiply_temp_variable = { literates_change_cap = pops_literacy_percentage }
-					divide_temp_variable = { literates_change_cap = 100 }
-					subtract_from_temp_variable = { literates_change_cap = pops_workforce@token:workers }
-					subtract_from_temp_variable = { literates_change_cap = pops_workforce@token:professionals }
-					subtract_from_temp_variable = { literates_change_cap = pops_workforce@token:specialists }
-					subtract_from_temp_variable = { literates_change_cap = pops_workforce@token:bureaucrats }
-					# log = "Literates Change: [?literates_change] / [?literates_change_cap]"
-
-					if = {
-						limit = {
-							check_variable = { literates_change_cap < literates_change }
-						}
-						set_temp_variable = { amount_temp = literates_change }
-						set_temp_variable = { max_amount_temp = literates_change_cap }
-						multiply_pops_change = yes
-						set_temp_variable = { fourth_percent_done = temp_percent_done }
-						multiply_temp_variable = { percent_done = fourth_percent_done }
-					}
-					else = {
-						set_temp_variable = { fourth_percent_done = 1 }
-					}
-				}
-			#
-
-			# Debugging #
-				# if = { limit = { NOT = { check_variable = { slaves_change = 0 } } }  log = "Slaves Change: [?slaves_change]" }
-				# if = { limit = { NOT = { check_variable = { peasants_change = 0 } } }  log = "Peasants Change: [?peasants_change]" }
-				# if = { limit = { NOT = { check_variable = { laborers_change = 0 } } }  log = "Laborers Change: [?laborers_change]" }
-				# if = { limit = { NOT = { check_variable = { workers_change = 0 } } }  log = "Workers Change: [?workers_change]" }
-				# if = { limit = { NOT = { check_variable = { professionals_change = 0 } } }  log = "Professionals Change: [?professionals_change]" }
-				# if = { limit = { NOT = { check_variable = { specialists_change = 0 } } }  log = "Specialists Change: [?specialists_change]" }
-				# if = { limit = { NOT = { check_variable = { landowners_change = 0 } } }  log = "Landowners Change: [?landowners_change]" }
-				# if = { limit = { NOT = { check_variable = { capitalists_change = 0 } } }  log = "Capitalists Change: [?capitalists_change]" }
-				# if = { limit = { NOT = { check_variable = { bureaucrats_change = 0 } } }  log = "Bureaucrats Change: [?bureaucrats_change]" }
-				# if = { limit = { NOT = { check_variable = { soldiers_change = 0 } } }  log = "Soldiers Change: [?soldiers_change]" }
-				# log = "BEFORE:"
-				# if = { limit = { NOT = { check_variable = { slaves_workforce = 0 } } }  log = "Slaves Workforce: [?slaves_workforce]" }
-				# if = { limit = { NOT = { check_variable = { peasants_workforce = 0 } } }  log = "Peasants Workforce: [?peasants_workforce]" }
-				# if = { limit = { NOT = { check_variable = { laborers_workforce = 0 } } }  log = "Laborers Workforce: [?laborers_workforce]" }
-				# if = { limit = { NOT = { check_variable = { workers_workforce = 0 } } }  log = "Workers Workforce: [?workers_workforce]" }
-				# if = { limit = { NOT = { check_variable = { professionals_workforce = 0 } } }  log = "Professionals Workforce: [?professionals_workforce]" }
-				# if = { limit = { NOT = { check_variable = { specialists_workforce = 0 } } }  log = "Specialists Workforce: [?specialists_workforce]" }
-				# if = { limit = { NOT = { check_variable = { landowners_workforce = 0 } } }  log = "Landowners Workforce: [?landowners_workforce]" }
-				# if = { limit = { NOT = { check_variable = { capitalists_workforce = 0 } } }  log = "Capitalists Workforce: [?capitalists_workforce]" }
-				# if = { limit = { NOT = { check_variable = { bureaucrats_workforce = 0 } } }  log = "Bureaucrats Workforce: [?bureaucrats_workforce]" }
-				# if = { limit = { NOT = { check_variable = { soldiers_workforce = 0 } } }  log = "Soldiers Workforce: [?soldiers_workforce]" }
-				# log = "AFTER:"
-			#
-
-			# Guarantee exact pop conservation: scaling + qualification rounding can leave a small residual.
-			# Net change across all types must be zero; fold any residual into the largest-magnitude change.
-			set_temp_variable = { net_change_temp = 0 }
-			set_temp_variable = { max_change_mag_temp = -1 }
-			set_temp_variable = { max_change_token_temp = token:laborers }
-			for_each_loop = {
-				array = global.pops_array
-				value = pop_cvt_token
-
-				add_to_temp_variable = { net_change_temp = pops_change@var:pop_cvt_token }
-				set_temp_variable = { pops_mag_temp = pops_change@var:pop_cvt_token }
-				if = { limit = { check_variable = { pops_mag_temp < 0 } } multiply_temp_variable = { pops_mag_temp = -1 } }
-				if = {
-					limit = { check_variable = { pops_mag_temp > max_change_mag_temp } }
-					set_temp_variable = { max_change_mag_temp = pops_mag_temp }
-					set_temp_variable = { max_change_token_temp = pop_cvt_token }
-				}
-			}
-			subtract_from_temp_variable = { pops_change@var:max_change_token_temp = net_change_temp }
-
-			# Changes to Workforce
-			for_each_loop = {
-				array = global.pops_array
-				value = pop_cvt_token
-
-				# log = "Change for [?pop_cvt_token.GetTokenKey]: [?pops_change@var:pop_cvt_token]"
-				add_to_variable = { pops_workforce@var:pop_cvt_token = pops_change@var:pop_cvt_token }
-				add_to_variable = { pops_unemployed@var:pop_cvt_token = pops_change@var:pop_cvt_token }
-			}
-		}
-
-		# More Debugging #
-			# if = { limit = { NOT = { check_variable = { slaves_workforce = 0 } } }  log = "Slaves Workforce: [?slaves_workforce]" }
-			# if = { limit = { NOT = { check_variable = { peasants_workforce = 0 } } }  log = "Peasants Workforce: [?peasants_workforce]" }
-			# if = { limit = { NOT = { check_variable = { laborers_workforce = 0 } } }  log = "Laborers Workforce: [?laborers_workforce]" }
-			# if = { limit = { NOT = { check_variable = { workers_workforce = 0 } } }  log = "Workers Workforce: [?workers_workforce]" }
-			# if = { limit = { NOT = { check_variable = { professionals_workforce = 0 } } }  log = "Professionals Workforce: [?professionals_workforce]" }
-			# if = { limit = { NOT = { check_variable = { specialists_workforce = 0 } } }  log = "Specialists Workforce: [?specialists_workforce]" }
-			# if = { limit = { NOT = { check_variable = { landowners_workforce = 0 } } }  log = "Landowners Workforce: [?landowners_workforce]" }
-			# if = { limit = { NOT = { check_variable = { capitalists_workforce = 0 } } }  log = "Capitalists Workforce: [?capitalists_workforce]" }
-			# if = { limit = { NOT = { check_variable = { bureaucrats_workforce = 0 } } }  log = "Bureaucrats Workforce: [?bureaucrats_workforce]" }
-			# if = { limit = { NOT = { check_variable = { soldiers_workforce = 0 } } }  log = "Soldiers Workforce: [?soldiers_workforce]" }
-			# log = "PERCENT DONE: [?percent_done]"
-		#
-
-		## Reset Temp Vars ##
-		set_temp_variable = { slaves_change = 0 }
-		set_temp_variable = { peasants_change = 0 }
-		set_temp_variable = { laborers_change = 0 }
-		set_temp_variable = { workers_change = 0 }
-		set_temp_variable = { professionals_change = 0 }
-		set_temp_variable = { specialists_change = 0 }
-		set_temp_variable = { landowners_change = 0 }
-		set_temp_variable = { capitalists_change = 0 }
-		set_temp_variable = { bureaucrats_change = 0 }
-		set_temp_variable = { soldiers_change = 0 }
-	}
-	multiply_pops_change = {
-		# Effect for pops_convert
-		# amount_temp
-		# max_amount_temp
-	
-		set_temp_variable = { temp_percent_done = max_amount_temp }
-		multiply_temp_variable = { temp_percent_done = 10 }
-		divide_temp_variable = { temp_percent_done = amount_temp }
-		
-		set_temp_variable = { positive_change_total = 0 }
-		set_temp_variable = { negative_change_total = 0 }
-		
-		for_each_loop = {
-			array = global.pops_array
-			value = pop_cvt_token
-
-			multiply_temp_variable = { pops_change@var:pop_cvt_token = temp_percent_done }
-			round_temp_variable = pops_change@var:pop_cvt_token
-			divide_temp_variable = { pops_change@var:pop_cvt_token = 10 }
-			
-			if = { limit = { check_variable = { pops_change@var:pop_cvt_token > 0 } } add_to_temp_variable = { positive_change_total = pops_change@var:pop_cvt_token } }
-			else = { subtract_from_temp_variable = { negative_change_total = pops_change@var:pop_cvt_token } }
+			add_to_variable = { pops_workforce@token:working_class = change_working }
+			add_to_variable = { pops_workforce@token:middle_class = change_middle }
+			add_to_variable = { pops_workforce@token:upper_class = change_upper }
 		}
 	}
 	fix_negative_workforce = {
-		# Fixes negative landowners/capitalists by sourcing from peasants/laborers
-		if = {
-			limit = {
-				check_variable = { pops_workforce@token:landowners < 0 }
-			}
-			add_to_variable = { pops_workforce@token:peasants = pops_workforce@token:landowners }
-			set_variable = { pops_workforce@token:landowners = 0 }
-		}
-		if = {
-			limit = {
-				check_variable = { pops_workforce@token:capitalists < 0 }
-			}
-			add_to_variable = { pops_workforce@token:peasants = pops_workforce@token:capitalists }
-			set_variable = { pops_workforce@token:capitalists = 0 }
-		}
-
-		# Fixes negative workforce by sourcing from higher-tier pops
-		for_loop_effect = {
-			start = 0
-			end = 5
-			value = pop_type_num
-			
-			set_temp_variable = { pop_type_num2 = pop_type_num }
-			add_to_temp_variable = { pop_type_num2 = 1 }
-
-			set_temp_variable = { pop_type_1 = global.pops_array^pop_type_num }
-			set_temp_variable = { pop_type_2 = global.pops_array^pop_type_num2 }
+		# A class can only go below 0 through rounding. Settle it against the peasants
+		for_each_loop = {
+			array = global.pops_array
+			value = pop_token
 
 			if = {
 				limit = {
-					check_variable = { pops_workforce@var:pop_type_1 < 0 }
+					check_variable = { pops_workforce@var:pop_token < 0 }
+					NOT = { check_variable = { pop_token = token:peasants } }
 				}
-				add_to_variable = { pops_workforce@var:pop_type_2 = pops_workforce@var:pop_type_1 }
-				set_variable = { pops_workforce@var:pop_type_1 = 0 }
+				add_to_variable = { pops_workforce@token:peasants = pops_workforce@var:pop_token }
+				set_variable = { pops_workforce@var:pop_token = 0 }
 			}
 		}
-		if = {
-			limit = {
-				check_variable = { pops_workforce@token:specialists < 0 }
+	}
+
+	bureaucracy_and_manpower_update = {
+		# Country scope, before its states update. Sets each controlled state's bureaucratic jobs, and the active manpower
+		# per head of population that pops_active_manpower_monthly draws from the states.
+		# Bureaucratic jobs (Q13, Q58): population x global.bureaucrats_per_pop x (1 + bureaucratic_strain_factor), with
+		# non-core states at global.bureaucrats_non_core_weight. The capital adds senior jobs for the upper class.
+		set_temp_variable = { bureaucrats_per_pop_temp = { value = 1 add = modifier@bureaucratic_strain_factor multiply = global.bureaucrats_per_pop } }
+		set_temp_variable = { population_temp = 0 }
+		set_variable = { bureaucratic_jobs_required = 0 }
+		every_controlled_state = {
+			set_variable = { bureaucratic_jobs = state_population_k }
+			multiply_variable = { bureaucratic_jobs = bureaucrats_per_pop_temp }
+			if = {
+				limit = { NOT = { is_core_of = PREV } }
+				multiply_variable = { bureaucratic_jobs = global.bureaucrats_non_core_weight }
 			}
-			set_variable = { pops_workforce@token:specialists = 0 }
+			clear_variable = bureaucratic_jobs_upper
+
+			add_to_variable = { PREV.bureaucratic_jobs_required = bureaucratic_jobs }
+			add_to_temp_variable = { population_temp = state_population_k }
+		}
+		set_temp_variable = { bureaucrats_upper_temp = { value = bureaucratic_jobs_required multiply = global.bureaucrats_upper_share } }
+		capital_scope = {
+			if = {
+				limit = { is_controlled_by = PREV }
+				set_variable = { bureaucratic_jobs_upper = bureaucrats_upper_temp }
+				add_to_variable = { PREV.bureaucratic_jobs_required = bureaucrats_upper_temp }
+			}
+		}
+
+		# Active manpower (Q14): HOI4's fielded and training manpower. The deployment queue is counted in people, not thousands
+		set_variable = { active_manpower_k = deployed_army_manpower_k }
+		add_to_variable = { active_manpower_k = deployed_navy_manpower_k }
+		add_to_variable = { active_manpower_k = deployed_airforce_manpower_k }
+		set_temp_variable = { training_temp = amount_manpower_in_deployment_queue }
+		divide_temp_variable = { training_temp = 1000 }
+		add_to_variable = { active_manpower_k = training_temp }
+
+		set_variable = { active_manpower_per_pop = active_manpower_k }
+		divide_variable = { active_manpower_per_pop = population_temp }
+	}
+	pops_culture_shares_calc = {
+		# State scope. Shares of the state's people in the controller's marginalised cultures, and in cultures that are
+		# neither primary nor promoted (non-accepted). The demographics code's own state tallies aren't used (decisions.md, M02).
+		# Output: marginalized_share_temp, non_accepted_share_temp
+		set_temp_variable = { marginalized_share_temp = 0 }
+		set_temp_variable = { non_accepted_share_temp = 0 }
+		for_each_loop = {
+			array = pops_culture_array
+			value = cc
+
+			if = {
+				limit = { is_in_array = { array = controller:pops_marginalized_culture_array value = cc } }
+				add_to_temp_variable = { marginalized_share_temp = percentage@var:cc }
+			}
+			else_if = {
+				limit = {
+					NOT = { is_in_array = { array = controller:pops_primary_culture_array value = cc } }
+					NOT = { is_in_array = { array = controller:pops_promoted_culture_array value = cc } }
+				}
+				add_to_temp_variable = { non_accepted_share_temp = percentage@var:cc }
+			}
+		}
+	}
+	pops_slaves_monthly = {
+		# State scope. Frees slaves above the cap: the state's share in marginalised cultures, or none where the controller
+		# bans slavery (slavery_banned, Q61). Freed slaves join the working class. Nobody is newly enslaved (Q73).
+		# Input: marginalized_share_temp (pops_culture_shares_calc)
+		if = {
+			limit = { check_variable = { pops_workforce@token:slaves > 0 } }
+
+			set_temp_variable = { slaves_cap_temp = { value = pops_workforce multiply = marginalized_share_temp } }
+			if = {
+				limit = { check_variable = { controller:modifier@slavery_banned > 0 } }
+				set_temp_variable = { slaves_cap_temp = 0 }
+			}
+			if = {
+				limit = { check_variable = { pops_workforce@token:slaves > slaves_cap_temp } }
+				set_temp_variable = { freed_temp = { value = pops_workforce@token:slaves subtract = slaves_cap_temp } }
+				subtract_from_variable = { pops_workforce@token:slaves = freed_temp }
+				add_to_variable = { pops_workforce@token:working_class = freed_temp }
+				add_to_variable = { pops_workforce_balance@token:working_class = freed_temp }
+			}
+		}
+	}
+	pops_active_manpower_monthly = {
+		# State scope. Moves pops between the civilian classes and active manpower (Q14): the state's share of its controller's
+		# active manpower, by population, drawn from peasants and the working class in proportion to their numbers.
+		# Demobilised soldiers go back the same way. Soldiers' pay and upkeep stay on the military budget lines.
+		set_temp_variable = { draft_pool_temp = { value = pops_workforce@token:peasants add = pops_workforce@token:working_class } }
+
+		set_temp_variable = { draft_temp = state_population_k }
+		multiply_temp_variable = { draft_temp = controller:active_manpower_per_pop }
+		subtract_from_temp_variable = { draft_temp = active_manpower }
+		if = { limit = { check_variable = { draft_temp > draft_pool_temp } } set_temp_variable = { draft_temp = draft_pool_temp } }
+
+		if = {
+			limit = { NOT = { check_variable = { draft_temp = 0 } } }
+
+			if = {
+				limit = { check_variable = { draft_pool_temp > 0 } }
+				set_temp_variable = { draft_working_temp = { value = draft_temp multiply = pops_workforce@token:working_class divide = draft_pool_temp } }
+			}
+			else = {
+				set_temp_variable = { draft_working_temp = 0 } # Nobody left to draw from: demobilised soldiers all return as peasants
+			}
+			subtract_from_variable = { pops_workforce@token:working_class = draft_working_temp }
+			subtract_from_variable = { pops_workforce_balance@token:working_class = draft_working_temp }
+			subtract_from_variable = { pops_workforce@token:peasants = draft_temp }
+			add_to_variable = { pops_workforce@token:peasants = draft_working_temp }
+			add_to_variable = { active_manpower = draft_temp }
+		}
+	}
+	pops_qualifications_monthly = {
+		# State scope. Advances the state's qualifications stock, in K qualified people (Q57). The middle and upper classes
+		# need global.qualifications_need@<class> per head, and pops_balance moves people up only into what's free.
+		# Gains a month per K pops, from Strat's notepad: (literacy - 10%) x 0.3, (schooling - 5%) x 0.5, education x 0.3,
+		# (wealth - 10) x 0.005, and the middle and upper classes' share of the workforce x 0.2, all x global.qualifications_gain_scale.
+		# They're cut for marginalised and non-accepted cultures (Q76), and for peasants by serfdom laws. Slaves gain nothing.
+		# Losses: global.qualifications_loss_rate of the stock a month, for deaths and decay.
+		# Input: marginalized_share_temp, non_accepted_share_temp (pops_culture_shares_calc)
+		if = {
+			limit = { check_variable = { pops_workforce > 0 } }
+
+			# Schooling and the workforce mix are the same for every class
+			set_temp_variable = {
+				qualifications_base_temp = {
+					value = pops_literacy_percentage
+					subtract = 10
+					max = 0
+					multiply = 0.003
+					add = { value = pops_schooling_percentage subtract = 5 max = 0 multiply = 0.005 }
+					add = { value = pops_education_percentage multiply = 0.003 }
+					add = { value = pops_workforce@token:middle_class add = pops_workforce@token:upper_class divide = pops_workforce multiply = 0.2 }
+				}
+			}
+
+			set_temp_variable = { qualifications_gain_temp = 0 }
+			for_each_loop = {
+				array = global.pops_array
+				value = pop_token
+
+				if = {
+					limit = {
+						check_variable = { pops_workforce@var:pop_token > 0 }
+						NOT = { check_variable = { pop_token = token:slaves } }
+					}
+					set_temp_variable = {
+						class_gain_temp = {
+							value = pops_sol@var:pop_token
+							subtract = 10
+							max = 0
+							multiply = 0.005
+							add = qualifications_base_temp
+							multiply = pops_workforce@var:pop_token
+						}
+					}
+					if = {
+						limit = { check_variable = { pop_token = token:peasants } }
+						set_temp_variable = { serfdom_temp = { value = 1 add = controller:modifier@peasant_qualifications_factor max = 0 } }
+						multiply_temp_variable = { class_gain_temp = serfdom_temp }
+					}
+					add_to_temp_variable = { qualifications_gain_temp = class_gain_temp }
+				}
+			}
+
+			set_variable = {
+				qualifications = {
+					value = qualifications
+					multiply = { value = 1 subtract = global.qualifications_loss_rate }
+					add = {
+						value = qualifications_gain_temp
+						multiply = global.qualifications_gain_scale
+						multiply = {
+							value = 1
+							add = {
+								value = global.qualifications_marginalized_factor
+								add = controller:modifier@marginalized_culture_qualifications_factor
+								clamp = { min = -1 max = 0 }
+								multiply = marginalized_share_temp
+							}
+							add = {
+								value = global.qualifications_non_accepted_factor
+								add = controller:modifier@non_accepted_culture_qualifications_factor
+								clamp = { min = -1 max = 0 }
+								multiply = non_accepted_share_temp
+							}
+						}
+					}
+				}
+			}
 		}
 	}
 
@@ -1217,7 +1098,16 @@
 			set_variable = { size@var:industry_token = 0 }
 		}
 
+		set_variable = { bureaucrats_employed = 0 }
+		set_variable = { bureaucrats_payroll = 0 }
+		set_variable = { active_manpower = 0 }
+
 		every_controlled_state = {
+			add_to_variable = { PREV.bureaucrats_employed = bureaucrats_employed }
+			add_to_variable = { PREV.bureaucrats_employed = bureaucrats_employed_upper }
+			add_to_variable = { PREV.bureaucrats_payroll = bureaucrats_payroll }
+			add_to_variable = { PREV.active_manpower = active_manpower }
+
 			#Pops
 			for_each_loop = {
 				array = global.pops_array
@@ -1277,6 +1167,13 @@
 			set_variable = { pops_col@var:pop_token = pops_needs_spending@var:pop_token }
 			divide_variable = { pops_col@var:pop_token = pops_workforce@var:pop_token }
 		}
+
+		# Active manpower is outside the classes, but still part of the population
+		add_to_variable = { pops_workforce = active_manpower }
+		set_temp_variable = { pops_temp = active_manpower }
+		divide_temp_variable = { pops_temp = global.pops_workforce_participation }
+		add_to_variable = { pops = pops_temp }
+
 		set_temp_variable = { pops_temp = pops }
 		divide_temp_variable = { pops_temp = 1000 }
 		divide_variable = { pops_sol = pops_temp }
@@ -1289,6 +1186,15 @@
 
 		set_variable = { workforce_earnings_avg = pops_earnings }
 		divide_variable = { workforce_earnings_avg = pops_workforce }
+
+		# Administrative capacity: filled / required bureaucratic jobs (Q13). A short bureaucracy collects less tax (taxes_update)
+		set_variable = { administrative_capacity = 1 }
+		if = {
+			limit = { check_variable = { bureaucratic_jobs_required > 0 } }
+			set_variable = { administrative_capacity = bureaucrats_employed }
+			divide_variable = { administrative_capacity = bureaucratic_jobs_required }
+			clamp_variable = { var = administrative_capacity min = 0 max = 1 }
+		}
 	}
 
 
@@ -1300,7 +1206,7 @@
 		clear_array = pie_chart_pop_type
 		resize_array = {
 			array = pie_chart_pop_type
-			value = 1 # 1 is value for RGO frame
+			value = 0 # Not set yet. Classes count from 1 (slaves), so 0 can't be mistaken for one
 			size = 100 # 100 pieces, each percent is one piece
 		}
 
@@ -1317,16 +1223,18 @@
 		for_each_loop = {
 			array = pop_types_percentage
 			index = pie_ind
+
+			multiply_temp_variable = { pop_types_percentage^pie_ind = 100 }
+			round_temp_variable = pop_types_percentage^pie_ind
+			add_to_temp_variable = { total_temp = pop_types_percentage^pie_ind }
+
+			# The rounding remainder goes to the largest class. Both sides are in pieces by now
 			if = {
 				limit = {
 					check_variable = { pop_types_percentage^pie_ind > pop_types_percentage^largest }
 				}
 				set_temp_variable = { largest = pie_ind }
 			}
-
-			multiply_temp_variable = { pop_types_percentage^pie_ind = 100 }
-			round_temp_variable = pop_types_percentage^pie_ind
-			add_to_temp_variable = { total_temp = pop_types_percentage^pie_ind }
 		}
 
 		if = {
@@ -1367,14 +1275,15 @@
 		clear_variable = pie_chart_v
 
 		# Paradox bugginess forced me to make this a separate loop rather than put it in the above loop
-		set_temp_variable = { pie_chart_idx = 0 }
+		# Each piece not set yet takes the class of the piece before it. Piece 0 always holds the first class
+		set_temp_variable = { pie_chart_idx = 1 }
 		while_loop_effect = {
 			limit = {
 				check_variable = { pie_chart_idx < 100 }
 			}
 			if = {
 				limit = {
-					check_variable = { pie_chart_pop_type^pie_chart_idx = 1 }
+					check_variable = { pie_chart_pop_type^pie_chart_idx = 0 }
 				}
 				set_temp_variable = { prev_idx = pie_chart_idx }
 				subtract_from_temp_variable = { prev_idx = 1 }
