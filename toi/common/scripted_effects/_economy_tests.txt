@@ -70,13 +70,12 @@ assert_temp = {
 
 test_creditworthiness = {
     # Pure function (calculate_creditworthiness in _economy_banking.txt):
-    #   cw = clamp(-500, 500){ 100 + 10*(savings/income) - 5*(debt/income) - 200*(debt_spending/income) }
+    #   cw = clamp(-500, 500){ 100 - 5*(debt/income) - 200*(debt_spending/income) }. Pops hold no savings (M03)
     log = "TEST: calculate_creditworthiness"
 
     # neutral -> 100
-    log = " - neutral (income=100, no savings/debt) -> 100"
+    log = " - neutral (income=100, no debt) -> 100"
     set_temp_variable = { income_temp = 100 }
-    set_temp_variable = { savings_temp = 0 }
     set_temp_variable = { debt_temp = 0 }
     set_temp_variable = { debt_spending_temp = 0 }
     calculate_creditworthiness = yes
@@ -85,22 +84,9 @@ test_creditworthiness = {
     set_temp_variable = { assert_tol = 0.01 }
     assert_temp = yes
 
-    # savings = income -> 100 + 10*1 = 110
-    log = " - savings=income -> 110"
-    set_temp_variable = { income_temp = 100 }
-    set_temp_variable = { savings_temp = 100 }
-    set_temp_variable = { debt_temp = 0 }
-    set_temp_variable = { debt_spending_temp = 0 }
-    calculate_creditworthiness = yes
-    set_temp_variable = { assert_expected = 110 }
-    set_temp_variable = { assert_actual = creditworthiness_temp }
-    set_temp_variable = { assert_tol = 0.01 }
-    assert_temp = yes
-
     # debt = income -> 100 - 5*1 = 95
     log = " - debt=income -> 95"
     set_temp_variable = { income_temp = 100 }
-    set_temp_variable = { savings_temp = 0 }
     set_temp_variable = { debt_temp = 100 }
     set_temp_variable = { debt_spending_temp = 0 }
     calculate_creditworthiness = yes
@@ -112,7 +98,6 @@ test_creditworthiness = {
     # debt_spending = 10% of income -> 100 - 200*0.1 = 80
     log = " - debt_spending=10% income -> 80"
     set_temp_variable = { income_temp = 100 }
-    set_temp_variable = { savings_temp = 0 }
     set_temp_variable = { debt_temp = 0 }
     set_temp_variable = { debt_spending_temp = 10 }
     calculate_creditworthiness = yes
@@ -121,15 +106,14 @@ test_creditworthiness = {
     set_temp_variable = { assert_tol = 0.01 }
     assert_temp = yes
 
-    # combined: income=100, savings=200, debt=100, debt_spending=5
-    #   100 + 10*2 - 5*1 - 200*0.05 = 100 + 20 - 5 - 10 = 105
-    log = " - combined -> 105"
+    # combined: income=100, debt=100, debt_spending=5
+    #   100 - 5*1 - 200*0.05 = 100 - 5 - 10 = 85
+    log = " - combined -> 85"
     set_temp_variable = { income_temp = 100 }
-    set_temp_variable = { savings_temp = 200 }
     set_temp_variable = { debt_temp = 100 }
     set_temp_variable = { debt_spending_temp = 5 }
     calculate_creditworthiness = yes
-    set_temp_variable = { assert_expected = 105 }
+    set_temp_variable = { assert_expected = 85 }
     set_temp_variable = { assert_actual = creditworthiness_temp }
     set_temp_variable = { assert_tol = 0.01 }
     assert_temp = yes
@@ -137,23 +121,10 @@ test_creditworthiness = {
     # clamp low: huge debt_spending -> -500
     log = " - clamp low -> -500"
     set_temp_variable = { income_temp = 1 }
-    set_temp_variable = { savings_temp = 0 }
     set_temp_variable = { debt_temp = 0 }
     set_temp_variable = { debt_spending_temp = 100 }
     calculate_creditworthiness = yes
     set_temp_variable = { assert_expected = -500 }
-    set_temp_variable = { assert_actual = creditworthiness_temp }
-    set_temp_variable = { assert_tol = 0.01 }
-    assert_temp = yes
-
-    # clamp high: huge savings -> 500
-    log = " - clamp high -> 500"
-    set_temp_variable = { income_temp = 1 }
-    set_temp_variable = { savings_temp = 1000 }
-    set_temp_variable = { debt_temp = 0 }
-    set_temp_variable = { debt_spending_temp = 0 }
-    calculate_creditworthiness = yes
-    set_temp_variable = { assert_expected = 500 }
     set_temp_variable = { assert_actual = creditworthiness_temp }
     set_temp_variable = { assert_tol = 0.01 }
     assert_temp = yes

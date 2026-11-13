@@ -4,7 +4,7 @@ Questions raised against the new spec, [EOANB_Redux_Economy_Redesign_Updated.md]
 
 When Strat answers, write the answer under the question, mark it **Decided** with the date, and update the milestone file it belongs to. The tuning values the spec leaves to testing (§34) aren't asked here: they get settled in the milestone that builds them.
 
-**Status:** Strat answered Q1–Q54 on 2026-11-12. Where an answer differs from the recommendation, it says "Not as recommended". The answers raised follow-up questions Q55–Q68, which Strat also answered on 2026-11-12. Those raised Q69–Q72, also answered the same day. M02's code reading raised Q73–Q80, which Strat also answered on 2026-11-12. Every question is now decided.
+**Status:** Strat answered Q1–Q54 on 2026-11-12. Where an answer differs from the recommendation, it says "Not as recommended". The answers raised follow-up questions Q55–Q68, which Strat also answered on 2026-11-12. Those raised Q69–Q72, also answered the same day. M02's code reading raised Q73–Q80, and M03's raised Q81–Q84. Strat answered all of them on 2026-11-12. Every question is now decided.
 
 ---
 
@@ -696,3 +696,42 @@ These came up while reading the code for M02. Two findings first, because they c
 > **Decided 2026-11-12:** (a).
 >
 > **Measured (M02, 2026-11-12):** run against the old code under the same conditions (`runs/m02_base_rerun`), the pop pipeline costs 13.3 s against 14.0 s, 5% less. `pops_update` grew 27% for the extra class, and every loop over the pop types halved. Details in M02's Results.
+
+## Wealth and demand follow-ups (raised 2026-11-12, M03)
+
+These came up while reading the code for M03, together with a bug Strat reported: sparse states with plenty of land start almost entirely upper class (Q84). The baseline is `runs/m03_base` (`world_1857_eng`, 60 months, `--watch-file watches/m03.txt`).
+
+**Q81. The startup overspend becomes debt (contradiction).** Startup sets each class's wealth against base prices, before the markets open and before the first tick sets bonuses, dividends and taxes. So at month 0 London's pops spend about three times what they earn (working class 866 against 299, upper class 1,163 against 206), and they keep overspending until wealth catches up in month 3. Today that gap is money from nowhere. Under Q15 and Q59 it all becomes debt: about 930 for London's working class (1.5 months' income) and 1,470 for its upper class. At today's repayment rate, 4% of the debt a year, it takes decades to clear, and it lowers confidence by under 1% through the debt-service penalty.
+- (a) Accept it until M14, which balances the start.
+- (b) No borrowing in the first tick, whose figures come from startup. That removes about 60% of it.
+- (c) Set starting wealth at actual prices at the end of startup (`_state_fin`). Month-0 earnings are understated, though, so classes would start too poor and climb back over a few months, and month-1 wealth would no longer match M02.
+
+*Recommend:* (a). Until M14, debt is only being tested as a mechanism.
+
+> **Decided 2026-11-12:** (a). Accept it until M14.
+
+**Q82. Classes that can't borrow.** Target spending is earnings × consumer confidence, and ENG's confidence is 108.7: 100 at peace, plus the stability bonus. So every class aims to spend about 9% more than it earns, every month. The working, middle and upper classes borrow the difference (Q59). Peasants can't borrow.
+- (a) Cap peasants' target at their income. Confidence above 100 can't make them overspend, and below 100 it still cuts their spending.
+- (b) Leave it. Peasants overspend and owe nothing, which is money from nowhere.
+
+*Recommend:* (a), so spending above income always becomes debt. Peasants sit at the wealth floor until M05 anyway.
+
+> **Decided 2026-11-12:** (a). Peasants' target is capped at their income.
+
+**Q83. Earnings become gross income.** Q36 and Q60 take investment out of income that has already paid income tax. The budget works out income tax from `pops_earnings`, so `pops_earnings` has to be gross income. Today it's net of investment: the upper class's investment is taken off before tax. Gross earnings raise ENG's `pops_earnings_avg` by about 13% (its upper class invests about 1,460 a month). That average also sets military payroll, the research cost, the tax brackets and the trade AI's productivity bounds.
+- (a) `pops_earnings` is gross income, and investment is one of its uses, like spending. Accept the knock-ons.
+- (b) Keep `pops_earnings` net of investment, and add a second variable for the tax base.
+
+*Recommend:* (a). Everything that reads earnings means gross income.
+
+> **Decided 2026-11-12:** (a). Gross income, and accept the knock-ons.
+
+**Q84. Subsistence owner jobs (Strat's bug report).** Owner jobs on subsistence land are 2% of the land's capacity, not of the peasants who farm it, and startup fills the upper class before it counts the peasants. So a sparse state with plenty of land becomes all upper class. In the simulator, South Dakota's upper class is 4.46K of its 4.49K workforce. 121 states start above 10% upper class, and 42 above 50%. Nothing else causes it: excluding these jobs, only Washington DC (senior government jobs, 9%) is above 5%. The fix: owner jobs follow the peasants, and startup takes the landowners out of the peasants after the other classes have their jobs. Which peasants count?
+- (a) Those on the arable land, up to its capacity. States with more peasants than land don't change: London keeps 13.8K.
+- (b) All peasants, including those on marginal land. Crowded states gain landowners: London goes from 13.8K to 24.5K, and India and China gain the most.
+
+*Recommend:* (a). It changes only the states that were wrong.
+
+> **Decided 2026-11-12:** not as recommended. (b): owner jobs are 2% of all peasants, including those on marginal land.
+
+Saves made before the fix keep their all-upper-class states, because `pops_balance` only moves a surplus into another class's shortfall. Start a new game.

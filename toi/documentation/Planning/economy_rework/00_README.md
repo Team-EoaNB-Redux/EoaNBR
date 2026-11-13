@@ -3,7 +3,7 @@
 **Strat's decision, 2026-11-11:** build the economy to the new spec first, then balance the 1857 start. Until then the map stays stripped to subsistence, and a few small test industries in Britain are fine for checking that mechanisms work. Balance waits for M14. Debt is off for every country for the same reason (`global.eco_debt_enabled = 0`, from M00).
 
 - **Target design:** [EOANB_Redux_Economy_Redesign_Updated.md](EOANB_Redux_Economy_Redesign_Updated.md) ("the spec"). The old spec is in [archive/](archive/redux_economy_redesign_spec.md) for history.
-- **Decisions:** [decisions.md](decisions.md). Strat answered every question, Q1–Q72, on 2026-11-12. Each milestone lists the questions it depends on.
+- **Decisions:** [decisions.md](decisions.md). Strat answered every question, Q1–Q84, on 2026-11-12. Each milestone lists the questions it depends on.
 
 ## Milestones
 Each one is a self-contained piece of work for a fresh session. Do them in order, since each builds on the ones before. The order itself is Q1.
@@ -13,7 +13,7 @@ Each one is a self-contained piece of work for a fresh session. Do them in order
 | M00 | [Test bed](milestones/M00_test_bed.md) | — | Q1–Q5 | Done |
 | M01 | [Gradual prices](milestones/M01_prices.md) | §7 | Q6–Q7, Q56 | Done |
 | M02 | [Pops and labour](milestones/M02_pops_and_labour.md) | §5, §23–30 | Q8–Q14, Q57, Q58, Q61, Q62, Q73–Q80 | Done; checked in-game (month-1 autosave) |
-| M03 | [Wealth and demand](milestones/M03_wealth_and_demand.md) | §24–25, §31–32 | Q15–Q17, Q59, Q60 | Not started |
+| M03 | [Wealth and demand](milestones/M03_wealth_and_demand.md) | §24–25, §31–32 | Q15–Q17, Q59, Q60, Q81–Q84 | Done in the simulator; in-game check to do |
 | M04 | [National sectors and target utilisation](milestones/M04_national_sectors.md) | §2–4, §6 | Q18–Q23, Q55 | Not started |
 | M05 | [Land, agriculture and subsistence](milestones/M05_land_and_subsistence.md) | §10–11, §25 | Q24–Q27, Q63, Q71 | Not started |
 | M06 | [Natural resources](milestones/M06_resources.md) | §9 | Q28–Q30, Q68 | Not started |
@@ -52,10 +52,12 @@ Q52 to Q54 apply across milestones.
 ## Current state of the code
 - **Committed** in `26bd1bfab`: the map is stripped to subsistence plus 303 engine factories, with the old values commented out in place in about 1,095 state files. The 1857 PM retune is in ([pm_1857_tuning.md](pm_1857_tuning.md)), and the ENG and RAJ targets are comments in the history files.
 - **Committed** in `c472e2509`: this plan reorganisation, M00 (the debt and cycle switches, the month counter fix and the test industries) and M01 (gradual prices, the trade AI's minimum-trade fix, and `pops_base_spending` cut from 0.3 to 0.1).
-- **Uncommitted:** M02 (five classes, qualifications, slaves, bureaucrats, active manpower, the merged upper-class investment modifier). The pie chart's segment textures are renamed and removed with `git mv` and `git rm`, so those changes are already staged.
-- **Switched off:** investment (`global.eco_investment_enabled = 0`), debt (`global.eco_debt_enabled = 0`: starting debt, interest and bankruptcy), the economic cycle (`global.eco_cycle_enabled = 0`), downsizing, banking and pop borrowing.
+- **Committed** in `94fc8dbbf`: M02 (five classes, qualifications, slaves, bureaucrats, active manpower, the merged upper-class investment modifier).
+- **Uncommitted:** M03 (wealth, spending toward a target, pop debt, middle-class investment, the `get_pop_needs` refactor, and subsistence owner jobs from the peasants).
+- **Switched off:** investment (`global.eco_investment_enabled = 0`), debt (`global.eco_debt_enabled = 0`: starting debt, interest and bankruptcy), the economic cycle (`global.eco_cycle_enabled = 0`), downsizing and banking. Pops borrow, but without interest until M11.
 - **Known bugs:**
   - Pop investment money disappears until M09 gives it the general pool.
+  - Pops start in debt: the first three ticks overspend against startup's figures (Q81, accepted until M14).
   - Wages rise 0.5% a month wherever jobs are filled exactly, since utilisation then sits at 1.0, above the stable band (M02, Left over).
 
 ## Other files here

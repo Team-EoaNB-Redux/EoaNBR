@@ -1,15 +1,14 @@
 
 ## NOTE - THESE ARE INTERNAL EFFECTS AND SHOULD NOT BE USED IN CONTENT ##
 
-#   Pops can deposit money into the bank
-#   The bank can loan out money to pops or IO ventures
+#   The bank can loan out money to pops or IO ventures. Pops hold no savings (M03, Q15), and their debt is pops_debt@<class>
+#   on the state, which the bank takes over as creditor in M11
 
 # 	What gets stored on a state level:
-#   pops_savings                 - Amount of money that pops have deposited into the bank
 #	bank_lent_to_pops_k          - Amount of money that the bank has lent out to pops in this state
 #   Generally speaking everything else is country-level
 
-# bank_reserves                 - Amount of money that has been deposited into the bank. Accumulation of pops_savings & building cash reserves
+# bank_reserves                 - Amount of money that has been deposited into the bank. Accumulation of building cash reserves
 
 # bank_credit_available_k       - Bank credit currently available to be loaned out
 # bank_credit_total_k           - Total bank credit 
@@ -283,70 +282,6 @@ bank_repay_loan_pops = {
 	}
 }
 
-bank_store_money = {
-    # x_temp
-    # target_type - 1 - pops, 3 - corporation
-    # target_temp
-        # If pops: pop token
-        # otherwise, irrelevant
-    # no_update_temp
-	
-    if = {
-        limit = {
-            check_variable = { x_temp > 0 }
-            check_variable = { target_type = 1 }
-            NOT = { check_variable = { target_temp = 0 } }
-        }
-        add_to_variable = { pops_savings = x_temp }
-        add_to_variable = { pops_savings@var:target_temp = x_temp }
-        add_to_variable = { controller:bank_deposits = x_temp }
-
-        if = { limit = { check_variable = { no_update_temp = 0 } }
-            bank_update = yes
-        }
-    }
-
-    set_temp_variable = { x_temp = 0 }
-    set_temp_variable = { target_type = 0 }
-    set_temp_variable = { target_temp = 0 }
-    set_temp_variable = { no_update_temp = 0 }
-}
-bank_withdraw_money = {
-    # x_temp
-    # target_type - 1 - pops, 3 - corporation
-    # target_temp
-        # If pops: pop token
-        # otherwise, irrelevant
-    # no_update_temp
-
-    # Output: withdraw_temp
-
-    set_temp_variable = { withdraw_temp = 0 }
-    if = {
-        limit = {
-            check_variable = { x_temp > 0 }
-            check_variable = { target_type = 1 }
-        }
-        
-        if = { limit = { check_variable = { pops_savings@var:target_temp < x_temp } } set_temp_variable = { x_temp = pops_savings@var:target_temp } }
-        
-        set_temp_variable = { withdraw_temp = x_temp }
-
-        subtract_from_variable = { pops_savings = x_temp }
-        subtract_from_variable = { pops_savings@var:target_temp = x_temp }
-        add_to_variable = { controller:bank_withdrawals = x_temp }
-        
-        if = { limit = { check_variable = { no_update_temp = 0 } }
-            bank_update = yes
-        }
-    }
-
-    set_temp_variable = { x_temp = 0 }
-    set_temp_variable = { target_type = 0 }
-    set_temp_variable = { target_temp = 0 }
-    set_temp_variable = { no_update_temp = 0 }
-}
-
 bank_update = {
 	# Establishes the amount of reserves & loans the bank has
 	bank_reevaluate = yes
@@ -375,7 +310,7 @@ bank_reevaluate = {
 
 	every_owned_state = {
 		# Bank Reserves
-		set_temp_variable = { reserves_temp = pops_savings }
+		set_temp_variable = { reserves_temp = 0 }
 		for_each_loop = {
 			array = industries
 			value = industry_token
@@ -496,15 +431,7 @@ bank_update_interest_income = {
 
 	# Dividends to Owners
 	set_variable = { bank_dividends = bank_interest }
-	multiply_variable = { bank_dividends = 0.8 }  # 80% goes to owners
-
-	# Return on Savings for Savers
-	set_variable = { bank_interest_paid_to_savers = bank_interest }
-	multiply_variable = { bank_interest_paid_to_savers = 0.2 }  # 20% goes back to savers
-
-	set_variable = { bank_interest_return_rate = bank_interest_paid_to_savers }
-	multiply_variable = { bank_interest_return_rate = 100 }
-	divide_variable = { bank_interest_return_rate = pops_savings }
+	multiply_variable = { bank_dividends = 0.8 }  # 80% goes to owners. The 20% that went to savers goes nowhere: pops hold no savings (Q15)
 }
 bank_update_status = {
     # Bank status thresholds
@@ -547,18 +474,11 @@ calculate_creditworthiness = {
 	# income_temp
 	# debt_temp
 	# debt_spending_temp
-	# savings_temp
 
 	# Outputs: creditworthiness_temp
 	
 	# Start with 100 base
 	set_temp_variable = { creditworthiness_temp = 100 }
-
-	# +10 * (savings / income)
-	set_temp_variable = { cw_add = savings_temp }
-	divide_temp_variable = { cw_add = income_temp }
-	multiply_temp_variable = { cw_add = 10 }
-	add_to_temp_variable = { creditworthiness_temp = cw_add }
 
 	# -5 * (debt / income)
 	set_temp_variable = { cw_sub = debt_temp }

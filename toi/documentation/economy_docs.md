@@ -544,10 +544,10 @@ NONE OF THESE ARE IMPLEMENTED
         <td> Country/State </td>
     </tr>
     <tr>
-        <td> has_average_sol </td>
-        <td> <code> x_temp = float </code> <br> (Optional) Standard of Living amount. Default is 0.</td>
-        <td> <code> set_temp_variable = { x_temp = 21.5 } <br> has_average_sol = yes </code> </td>
-        <td> Checks if the current scope's standard of living is higher than the given value.</td>
+        <td> has_average_wealth </td>
+        <td> <code> x_temp = float </code> <br> (Optional) Wealth level. Default is 0.</td>
+        <td> <code> set_temp_variable = { x_temp = 21.5 } <br> has_average_wealth = yes </code> </td>
+        <td> Checks if the current scope's average wealth (called standard of living before M03) is higher than the given value.</td>
         <td> </td>
         <td> Country/State </td>
     </tr>

@@ -154,8 +154,8 @@ _init_state = {
 	industries_update = yes
 	pops_update = yes
 
-    # Standard of Living Setup
-    calculate_standard_of_living = yes
+    # Starting wealth
+    calculate_starting_wealth = yes
 
     # Update Industries & Pops
 	employment_update = yes
@@ -376,35 +376,8 @@ _state_fin = {
         }
     }
 
-	# Max Out Savings for pops & set up debt
+    # Update Pops. They start with no savings, which they don't hold (Q15), and no debt
 	employment_update = yes
-	pops_update = yes
-	set_temp_variable = { bank_conf_temp = controller:modifier@banking_confidence_modifier }
-	divide_temp_variable = { bank_conf_temp = 100 }
-
-	set_temp_variable = { debt_starter_temp = bank_conf_temp }
-	multiply_temp_variable = { debt_starter_temp = bank_conf_temp }
-	add_to_temp_variable = { debt_starter_temp = bank_conf_temp }
-	divide_temp_variable = { debt_starter_temp = 2 }
-
-	set_variable = { bank_lent_to_pops_k = 0 }
-	set_variable = { pops_savings = 0 }
-	for_each_loop = {
-		array = global.pops_array
-        value = pop_token
-		
-		set_variable = { pops_savings@var:pop_token = pops_savings_target@var:pop_token }
-		add_to_variable = { pops_savings = pops_savings_target@var:pop_token }
-		
-		set_temp_variable = { initial_debt_temp = pops_earnings@var:pop_token }
-		multiply_temp_variable = { initial_debt_temp = debt_starter_temp }
-		divide_temp_variable   = { initial_debt_temp = 25 }
-
-		#set_variable = { bank_lent_to_pops_k@var:pop_token = initial_debt_temp } - Disabled until bank system is done
-		#add_to_variable = { bank_lent_to_pops_k = initial_debt_temp }
-	}
-    
-    # Update Pops
     pops_update = yes
 
     # Graphs & Displays
@@ -788,334 +761,343 @@ initialize_country = {
 			set_variable = { global.peasant_market_interaction = 0.2 } # How much output from subsistence farms is sold in the market. Also determines peasant consumption effect on market demand
 			set_variable = { global.base_pop_earnings = 0.1 } # Base earnings per pop(k) per month
 
+			# Spending and debt (M03). Pops hold no savings (Q15): they spend toward a target of their income after investment x
+			# consumer confidence, and wealth moves toward the level where spending meets it (pops_wealth_monthly)
+			set_variable = { global.pops_wealth_speed = 6 } # Wealth progress a month per unit of (target - spending) / goods spending. The old SoL step counted that gap twice at confidence 1, so this keeps its speed
+			set_variable = { global.pops_borrows@token:working_class = 1 } # Spending above income becomes debt for these classes (Q59). Peasants and slaves don't borrow
+			set_variable = { global.pops_borrows@token:middle_class = 1 }
+			set_variable = { global.pops_borrows@token:upper_class = 1 }
+			set_variable = { global.pops_debt_repayment_rate = 0.00333 } # Share of the debt repaid each month, as part of spending: 4% a year. No interest until M11
+			set_variable = { global.pops_debt_surplus_repayment = 0.5 } # Share of a surplus that repays debt. The rest disappears (Q15)
+
 			set_variable = { global.company_retention_factor = 0.3 } # Fraction of a company's gross dividends retained to its treasury (rest paid to the HQ state's upper class)
             set_variable = { global.pops_unemployment_bleed = 0.2 } #What % of unemployed pops become working class each month
-            set_variable = { global.pops_underpaid_start = 0.5 } #What % of a pop's SoL expenditure will they start to be less inclined to be employed
+            set_variable = { global.pops_underpaid_start = 0.5 } #What % of a pop's wealth basket's cost will they start to be less inclined to be employed
             set_variable = { global.pops_underpaid_min = 0.3 } #Minimum % of pops willing to be employed
 #
 
         #Spending Patterns
-            #Note: Spending is multiplied by e^0.07s (doubles every 10 Standard of Living)
-            set_variable = { global.pops_base_spending = 0.1 } # At 1 SoL. This doubles every 10 SoL. Was 0.3, which pinned food at 4x base with every peasant at SoL 1 (M01)
+            # Each wealth level has a basket of goods (Q17). Its value is multiplied by e^0.07 per level, so it doubles every 10
+            set_variable = { global.pops_base_spending = 0.1 } # At wealth 1. This doubles every 10 levels. Was 0.3, which pinned food at 4x base with every peasant at wealth 1 (M01)
 
             # Food - For living | 1.0
             clear_array = global.pops_spending_weight_val@token:food # How much weight to add
-            clear_array = global.pops_spending_weight_sol@token:food # What SoL to add at
+            clear_array = global.pops_spending_weight_wealth@token:food # What wealth level to add at
             add_to_array = { global.pops_spending_weight_val@token:food = 1.0 }
-            add_to_array = { global.pops_spending_weight_sol@token:food = 0 }
+            add_to_array = { global.pops_spending_weight_wealth@token:food = 0 }
 
             # Luxuries - Wealthy need | 1.0
             clear_array = global.pops_spending_weight_val@token:luxuries
-            clear_array = global.pops_spending_weight_sol@token:luxuries
+            clear_array = global.pops_spending_weight_wealth@token:luxuries
             add_to_array = { global.pops_spending_weight_val@token:luxuries = 0.05 }
-            add_to_array = { global.pops_spending_weight_sol@token:luxuries = 21 }
+            add_to_array = { global.pops_spending_weight_wealth@token:luxuries = 21 }
             add_to_array = { global.pops_spending_weight_val@token:luxuries = 0.05 }
-            add_to_array = { global.pops_spending_weight_sol@token:luxuries = 26 }
+            add_to_array = { global.pops_spending_weight_wealth@token:luxuries = 26 }
             add_to_array = { global.pops_spending_weight_val@token:luxuries = 0.05 }
-            add_to_array = { global.pops_spending_weight_sol@token:luxuries = 31 }
+            add_to_array = { global.pops_spending_weight_wealth@token:luxuries = 31 }
             add_to_array = { global.pops_spending_weight_val@token:luxuries = 0.05 }
-            add_to_array = { global.pops_spending_weight_sol@token:luxuries = 36 }
+            add_to_array = { global.pops_spending_weight_wealth@token:luxuries = 36 }
             add_to_array = { global.pops_spending_weight_val@token:luxuries = 0.1 }
-            add_to_array = { global.pops_spending_weight_sol@token:luxuries = 41 }
+            add_to_array = { global.pops_spending_weight_wealth@token:luxuries = 41 }
             add_to_array = { global.pops_spending_weight_val@token:luxuries = 0.1 }
-            add_to_array = { global.pops_spending_weight_sol@token:luxuries = 51 }
+            add_to_array = { global.pops_spending_weight_wealth@token:luxuries = 51 }
             add_to_array = { global.pops_spending_weight_val@token:luxuries = 0.1 }
-            add_to_array = { global.pops_spending_weight_sol@token:luxuries = 61 }
+            add_to_array = { global.pops_spending_weight_wealth@token:luxuries = 61 }
             add_to_array = { global.pops_spending_weight_val@token:luxuries = 0.1 }
-            add_to_array = { global.pops_spending_weight_sol@token:luxuries = 71 }
+            add_to_array = { global.pops_spending_weight_wealth@token:luxuries = 71 }
             add_to_array = { global.pops_spending_weight_val@token:luxuries = 0.1 }
-            add_to_array = { global.pops_spending_weight_sol@token:luxuries = 81 }
+            add_to_array = { global.pops_spending_weight_wealth@token:luxuries = 81 }
             add_to_array = { global.pops_spending_weight_val@token:luxuries = 0.15 }
-            add_to_array = { global.pops_spending_weight_sol@token:luxuries = 91 }
+            add_to_array = { global.pops_spending_weight_wealth@token:luxuries = 91 }
             add_to_array = { global.pops_spending_weight_val@token:luxuries = 0.15 }
-            add_to_array = { global.pops_spending_weight_sol@token:luxuries = 100 }
+            add_to_array = { global.pops_spending_weight_wealth@token:luxuries = 100 }
             
             # Wood - For heating & housing | 0.25
             clear_array = global.pops_spending_weight_val@token:wood
-            clear_array = global.pops_spending_weight_sol@token:wood
+            clear_array = global.pops_spending_weight_wealth@token:wood
             add_to_array = { global.pops_spending_weight_val@token:wood = 0.1 }
-            add_to_array = { global.pops_spending_weight_sol@token:wood = 0 }
+            add_to_array = { global.pops_spending_weight_wealth@token:wood = 0 }
             add_to_array = { global.pops_spending_weight_val@token:wood = 0.03 }
-            add_to_array = { global.pops_spending_weight_sol@token:wood = 10 }
+            add_to_array = { global.pops_spending_weight_wealth@token:wood = 10 }
             add_to_array = { global.pops_spending_weight_val@token:wood = 0.03 }
-            add_to_array = { global.pops_spending_weight_sol@token:wood = 15 }
+            add_to_array = { global.pops_spending_weight_wealth@token:wood = 15 }
             add_to_array = { global.pops_spending_weight_val@token:wood = 0.04 }
-            add_to_array = { global.pops_spending_weight_sol@token:wood = 20 }
+            add_to_array = { global.pops_spending_weight_wealth@token:wood = 20 }
             add_to_array = { global.pops_spending_weight_val@token:wood = 0.05 }
-            add_to_array = { global.pops_spending_weight_sol@token:wood = 25 }
+            add_to_array = { global.pops_spending_weight_wealth@token:wood = 25 }
             add_to_array = { global.pops_spending_weight_val@token:wood = 0.05 }
-            add_to_array = { global.pops_spending_weight_sol@token:wood = 30 }
+            add_to_array = { global.pops_spending_weight_wealth@token:wood = 30 }
             add_to_array = { global.pops_spending_weight_val@token:wood = 0.05 }
-            add_to_array = { global.pops_spending_weight_sol@token:wood = 35 }
+            add_to_array = { global.pops_spending_weight_wealth@token:wood = 35 }
             add_to_array = { global.pops_spending_weight_val@token:wood = -0.05 }
-            add_to_array = { global.pops_spending_weight_sol@token:wood = 50 }
+            add_to_array = { global.pops_spending_weight_wealth@token:wood = 50 }
             add_to_array = { global.pops_spending_weight_val@token:wood = -0.05 }
-            add_to_array = { global.pops_spending_weight_sol@token:wood = 60 }
+            add_to_array = { global.pops_spending_weight_wealth@token:wood = 60 }
             
             # Fiber - For clothing, replaced by textiles | 0
             clear_array = global.pops_spending_weight_val@token:fiber
-            clear_array = global.pops_spending_weight_sol@token:fiber
+            clear_array = global.pops_spending_weight_wealth@token:fiber
             add_to_array = { global.pops_spending_weight_val@token:fiber = 0.2 }
-            add_to_array = { global.pops_spending_weight_sol@token:fiber = 0 }
+            add_to_array = { global.pops_spending_weight_wealth@token:fiber = 0 }
             add_to_array = { global.pops_spending_weight_val@token:fiber = -0.1 }
-            add_to_array = { global.pops_spending_weight_sol@token:fiber = 11 }
+            add_to_array = { global.pops_spending_weight_wealth@token:fiber = 11 }
             add_to_array = { global.pops_spending_weight_val@token:fiber = -0.1 }
-            add_to_array = { global.pops_spending_weight_sol@token:fiber = 21 }
+            add_to_array = { global.pops_spending_weight_wealth@token:fiber = 21 }
             
             # Coal - For heating, can be replaced by electricity | 1.0
             set_variable = { global.pops_spending_replacement@token:coal = token:electricity }
             set_variable = { global.pops_spending_electrification_reverse@token:coal = 1 }
             clear_array = global.pops_spending_weight_val@token:coal
-            clear_array = global.pops_spending_weight_sol@token:coal
+            clear_array = global.pops_spending_weight_wealth@token:coal
             add_to_array = { global.pops_spending_weight_val@token:coal = 0.03 }
-            add_to_array = { global.pops_spending_weight_sol@token:coal = 24 }
+            add_to_array = { global.pops_spending_weight_wealth@token:coal = 24 }
             add_to_array = { global.pops_spending_weight_val@token:coal = 0.03 }
-            add_to_array = { global.pops_spending_weight_sol@token:coal = 29 }
+            add_to_array = { global.pops_spending_weight_wealth@token:coal = 29 }
             add_to_array = { global.pops_spending_weight_val@token:coal = 0.05 }
-            add_to_array = { global.pops_spending_weight_sol@token:coal = 34 }
+            add_to_array = { global.pops_spending_weight_wealth@token:coal = 34 }
             add_to_array = { global.pops_spending_weight_val@token:coal = 0.05 }
-            add_to_array = { global.pops_spending_weight_sol@token:coal = 44 }
+            add_to_array = { global.pops_spending_weight_wealth@token:coal = 44 }
             add_to_array = { global.pops_spending_weight_val@token:coal = 0.1 }
-            add_to_array = { global.pops_spending_weight_sol@token:coal = 54 }
+            add_to_array = { global.pops_spending_weight_wealth@token:coal = 54 }
             add_to_array = { global.pops_spending_weight_val@token:coal = 0.1 }
-            add_to_array = { global.pops_spending_weight_sol@token:coal = 64 }
+            add_to_array = { global.pops_spending_weight_wealth@token:coal = 64 }
             add_to_array = { global.pops_spending_weight_val@token:coal = 0.1 }
-            add_to_array = { global.pops_spending_weight_sol@token:coal = 69 }
+            add_to_array = { global.pops_spending_weight_wealth@token:coal = 69 }
             add_to_array = { global.pops_spending_weight_val@token:coal = 0.15 }
-            add_to_array = { global.pops_spending_weight_sol@token:coal = 79 }
+            add_to_array = { global.pops_spending_weight_wealth@token:coal = 79 }
             add_to_array = { global.pops_spending_weight_val@token:coal = 0.2 }
-            add_to_array = { global.pops_spending_weight_sol@token:coal = 89 }
+            add_to_array = { global.pops_spending_weight_wealth@token:coal = 89 }
             add_to_array = { global.pops_spending_weight_val@token:coal = 0.2 }
-            add_to_array = { global.pops_spending_weight_sol@token:coal = 99 }
+            add_to_array = { global.pops_spending_weight_wealth@token:coal = 99 }
             
             # Oil - Fuel for vehicles, requires Internal Combustion Engines tech | 0.5
             set_variable = { global.pops_spending_tech@token:oil = token:tech_internal_combustion_engine } # Converts into Services need if you don't have this tech
             set_variable = { global.pops_spending_replacement@token:oil = token:services }
             clear_array = global.pops_spending_weight_val@token:oil
-            clear_array = global.pops_spending_weight_sol@token:oil
+            clear_array = global.pops_spending_weight_wealth@token:oil
             add_to_array = { global.pops_spending_weight_val@token:oil = 0.1 }
-            add_to_array = { global.pops_spending_weight_sol@token:oil = 56 }
+            add_to_array = { global.pops_spending_weight_wealth@token:oil = 56 }
             add_to_array = { global.pops_spending_weight_val@token:oil = 0.1 }
-            add_to_array = { global.pops_spending_weight_sol@token:oil = 61 }
+            add_to_array = { global.pops_spending_weight_wealth@token:oil = 61 }
             add_to_array = { global.pops_spending_weight_val@token:oil = 0.1 }
-            add_to_array = { global.pops_spending_weight_sol@token:oil = 66 }
+            add_to_array = { global.pops_spending_weight_wealth@token:oil = 66 }
             add_to_array = { global.pops_spending_weight_val@token:oil = 0.1 }
-            add_to_array = { global.pops_spending_weight_sol@token:oil = 71 }
+            add_to_array = { global.pops_spending_weight_wealth@token:oil = 71 }
             add_to_array = { global.pops_spending_weight_val@token:oil = 0.1 }
-            add_to_array = { global.pops_spending_weight_sol@token:oil = 81 }
+            add_to_array = { global.pops_spending_weight_wealth@token:oil = 81 }
             
             # Composites - Technological people wood, requires Plexiglass Tech | 0.5
             set_variable = { global.pops_spending_tech@token:composites = token:tech_fiberglass } # Converts into Wood need if you don't have this tech
             set_variable = { global.pops_spending_replacement@token:composites = token:wood }
             clear_array = global.pops_spending_weight_val@token:composites
-            clear_array = global.pops_spending_weight_sol@token:composites
+            clear_array = global.pops_spending_weight_wealth@token:composites
             add_to_array = { global.pops_spending_weight_val@token:composites = 0.1 }
-            add_to_array = { global.pops_spending_weight_sol@token:composites = 50 }
+            add_to_array = { global.pops_spending_weight_wealth@token:composites = 50 }
             add_to_array = { global.pops_spending_weight_val@token:composites = 0.1 }
-            add_to_array = { global.pops_spending_weight_sol@token:composites = 60 }
+            add_to_array = { global.pops_spending_weight_wealth@token:composites = 60 }
             add_to_array = { global.pops_spending_weight_val@token:composites = 0.1 }
-            add_to_array = { global.pops_spending_weight_sol@token:composites = 70 }
+            add_to_array = { global.pops_spending_weight_wealth@token:composites = 70 }
             add_to_array = { global.pops_spending_weight_val@token:composites = 0.1 }
-            add_to_array = { global.pops_spending_weight_sol@token:composites = 80 }
+            add_to_array = { global.pops_spending_weight_wealth@token:composites = 80 }
             add_to_array = { global.pops_spending_weight_val@token:composites = 0.1 }
-            add_to_array = { global.pops_spending_weight_sol@token:composites = 90 }
+            add_to_array = { global.pops_spending_weight_wealth@token:composites = 90 }
             
             # Consumer Goods - Furniture, Paper, Ceramics, other household items | 1.25
             clear_array = global.pops_spending_weight_val@token:consumer_goods
-            clear_array = global.pops_spending_weight_sol@token:consumer_goods
+            clear_array = global.pops_spending_weight_wealth@token:consumer_goods
             add_to_array = { global.pops_spending_weight_val@token:consumer_goods = 0.1 }
-            add_to_array = { global.pops_spending_weight_sol@token:consumer_goods = 16 }
+            add_to_array = { global.pops_spending_weight_wealth@token:consumer_goods = 16 }
             add_to_array = { global.pops_spending_weight_val@token:consumer_goods = 0.05 }
-            add_to_array = { global.pops_spending_weight_sol@token:consumer_goods = 21 }
+            add_to_array = { global.pops_spending_weight_wealth@token:consumer_goods = 21 }
             add_to_array = { global.pops_spending_weight_val@token:consumer_goods = 0.1 }
-            add_to_array = { global.pops_spending_weight_sol@token:consumer_goods = 26 }
+            add_to_array = { global.pops_spending_weight_wealth@token:consumer_goods = 26 }
             add_to_array = { global.pops_spending_weight_val@token:consumer_goods = 0.1 }
-            add_to_array = { global.pops_spending_weight_sol@token:consumer_goods = 31 }
+            add_to_array = { global.pops_spending_weight_wealth@token:consumer_goods = 31 }
             add_to_array = { global.pops_spending_weight_val@token:consumer_goods = 0.2 }
-            add_to_array = { global.pops_spending_weight_sol@token:consumer_goods = 36 }
+            add_to_array = { global.pops_spending_weight_wealth@token:consumer_goods = 36 }
             add_to_array = { global.pops_spending_weight_val@token:consumer_goods = 0.2 }
-            add_to_array = { global.pops_spending_weight_sol@token:consumer_goods = 46 }
+            add_to_array = { global.pops_spending_weight_wealth@token:consumer_goods = 46 }
             add_to_array = { global.pops_spending_weight_val@token:consumer_goods = 0.2 }
-            add_to_array = { global.pops_spending_weight_sol@token:consumer_goods = 56 }
+            add_to_array = { global.pops_spending_weight_wealth@token:consumer_goods = 56 }
             add_to_array = { global.pops_spending_weight_val@token:consumer_goods = 0.1 }
-            add_to_array = { global.pops_spending_weight_sol@token:consumer_goods = 66 }
+            add_to_array = { global.pops_spending_weight_wealth@token:consumer_goods = 66 }
             add_to_array = { global.pops_spending_weight_val@token:consumer_goods = 0.1 }
-            add_to_array = { global.pops_spending_weight_sol@token:consumer_goods = 76 }
+            add_to_array = { global.pops_spending_weight_wealth@token:consumer_goods = 76 }
             add_to_array = { global.pops_spending_weight_val@token:consumer_goods = 0.1 }
-            add_to_array = { global.pops_spending_weight_sol@token:consumer_goods = 86 }
+            add_to_array = { global.pops_spending_weight_wealth@token:consumer_goods = 86 }
             
             # Textiles - Clothing | 1.0
             clear_array = global.pops_spending_weight_val@token:textiles
-            clear_array = global.pops_spending_weight_sol@token:textiles
+            clear_array = global.pops_spending_weight_wealth@token:textiles
             add_to_array = { global.pops_spending_weight_val@token:textiles = 0.1 }
-            add_to_array = { global.pops_spending_weight_sol@token:textiles = 11 }
+            add_to_array = { global.pops_spending_weight_wealth@token:textiles = 11 }
             add_to_array = { global.pops_spending_weight_val@token:textiles = 0.1 }
-            add_to_array = { global.pops_spending_weight_sol@token:textiles = 21 }
+            add_to_array = { global.pops_spending_weight_wealth@token:textiles = 21 }
             add_to_array = { global.pops_spending_weight_val@token:textiles = 0.15 }
-            add_to_array = { global.pops_spending_weight_sol@token:textiles = 31 }
+            add_to_array = { global.pops_spending_weight_wealth@token:textiles = 31 }
             add_to_array = { global.pops_spending_weight_val@token:textiles = 0.2 }
-            add_to_array = { global.pops_spending_weight_sol@token:textiles = 41 }
+            add_to_array = { global.pops_spending_weight_wealth@token:textiles = 41 }
             add_to_array = { global.pops_spending_weight_val@token:textiles = 0.2 }
-            add_to_array = { global.pops_spending_weight_sol@token:textiles = 51 }
+            add_to_array = { global.pops_spending_weight_wealth@token:textiles = 51 }
             add_to_array = { global.pops_spending_weight_val@token:textiles = 0.25 }
-            add_to_array = { global.pops_spending_weight_sol@token:textiles = 61 }
+            add_to_array = { global.pops_spending_weight_wealth@token:textiles = 61 }
             
             # Vehicles - Cars, Trucks, & Airplanes, requires Internal Combustion Engines tech | 0.5
             set_variable = { global.pops_spending_tech@token:vehicles = token:tech_internal_combustion_engine } # Converts into Services need if you don't have this tech
             set_variable = { global.pops_spending_replacement@token:vehicles = token:services }
             clear_array = global.pops_spending_weight_val@token:vehicles
-            clear_array = global.pops_spending_weight_sol@token:vehicles
+            clear_array = global.pops_spending_weight_wealth@token:vehicles
             add_to_array = { global.pops_spending_weight_val@token:vehicles = 0.1 }
-            add_to_array = { global.pops_spending_weight_sol@token:vehicles = 56 }
+            add_to_array = { global.pops_spending_weight_wealth@token:vehicles = 56 }
             add_to_array = { global.pops_spending_weight_val@token:vehicles = 0.1 }
-            add_to_array = { global.pops_spending_weight_sol@token:vehicles = 61 }
+            add_to_array = { global.pops_spending_weight_wealth@token:vehicles = 61 }
             add_to_array = { global.pops_spending_weight_val@token:vehicles = 0.1 }
-            add_to_array = { global.pops_spending_weight_sol@token:vehicles = 66 }
+            add_to_array = { global.pops_spending_weight_wealth@token:vehicles = 66 }
             add_to_array = { global.pops_spending_weight_val@token:vehicles = 0.1 }
-            add_to_array = { global.pops_spending_weight_sol@token:vehicles = 71 }
+            add_to_array = { global.pops_spending_weight_wealth@token:vehicles = 71 }
             add_to_array = { global.pops_spending_weight_val@token:vehicles = 0.1 }
-            add_to_array = { global.pops_spending_weight_sol@token:vehicles = 81 }
+            add_to_array = { global.pops_spending_weight_wealth@token:vehicles = 81 }
             
             # Appliances - Washing Machiners, Dryers, Refrigerators, Telephones, Radios, Televisions, requires Telephone | 0.5
             set_variable = { global.pops_spending_tech@token:appliances = token:telephone } # Converts into Consumer Goods need if state isn't electrified/don't have this tech
             set_variable = { global.pops_spending_replacement@token:appliances = token:consumer_goods }
             set_variable = { global.pops_spending_electrification@token:appliances = 1 }
             clear_array = global.pops_spending_weight_val@token:appliances
-            clear_array = global.pops_spending_weight_sol@token:appliances
+            clear_array = global.pops_spending_weight_wealth@token:appliances
             add_to_array = { global.pops_spending_weight_val@token:appliances = 0.05 }
-            add_to_array = { global.pops_spending_weight_sol@token:appliances = 54 }
+            add_to_array = { global.pops_spending_weight_wealth@token:appliances = 54 }
             add_to_array = { global.pops_spending_weight_val@token:appliances = 0.05 }
-            add_to_array = { global.pops_spending_weight_sol@token:appliances = 58 }
+            add_to_array = { global.pops_spending_weight_wealth@token:appliances = 58 }
             add_to_array = { global.pops_spending_weight_val@token:appliances = 0.1 }
-            add_to_array = { global.pops_spending_weight_sol@token:appliances = 64 }
+            add_to_array = { global.pops_spending_weight_wealth@token:appliances = 64 }
             add_to_array = { global.pops_spending_weight_val@token:appliances = 0.1 }
-            add_to_array = { global.pops_spending_weight_sol@token:appliances = 68 }
+            add_to_array = { global.pops_spending_weight_wealth@token:appliances = 68 }
             add_to_array = { global.pops_spending_weight_val@token:appliances = 0.1 }
-            add_to_array = { global.pops_spending_weight_sol@token:appliances = 74 }
+            add_to_array = { global.pops_spending_weight_wealth@token:appliances = 74 }
             add_to_array = { global.pops_spending_weight_val@token:appliances = 0.05 }
-            add_to_array = { global.pops_spending_weight_sol@token:appliances = 84 }
+            add_to_array = { global.pops_spending_weight_wealth@token:appliances = 84 }
             add_to_array = { global.pops_spending_weight_val@token:appliances = 0.05 }
-            add_to_array = { global.pops_spending_weight_sol@token:appliances = 94 }
+            add_to_array = { global.pops_spending_weight_wealth@token:appliances = 94 }
             
             # Computers - Laptops, Desktops, requires Early Computers | 0.5
             set_variable = { global.pops_spending_tech@token:computers = token:early_computers } # Converts into Consumer Goods need if state isn't electrified/don't have this tech
             set_variable = { global.pops_spending_replacement@token:computers = token:consumer_goods }
             set_variable = { global.pops_spending_electrification@token:computers = 1 }
             clear_array = global.pops_spending_weight_val@token:computers
-            clear_array = global.pops_spending_weight_sol@token:computers
+            clear_array = global.pops_spending_weight_wealth@token:computers
             add_to_array = { global.pops_spending_weight_val@token:computers = 0.05 }
-            add_to_array = { global.pops_spending_weight_sol@token:computers = 68 }
+            add_to_array = { global.pops_spending_weight_wealth@token:computers = 68 }
             add_to_array = { global.pops_spending_weight_val@token:computers = 0.1 }
-            add_to_array = { global.pops_spending_weight_sol@token:computers = 74 }
+            add_to_array = { global.pops_spending_weight_wealth@token:computers = 74 }
             add_to_array = { global.pops_spending_weight_val@token:computers = 0.15 }
-            add_to_array = { global.pops_spending_weight_sol@token:computers = 78 }
+            add_to_array = { global.pops_spending_weight_wealth@token:computers = 78 }
             add_to_array = { global.pops_spending_weight_val@token:computers = 0.1 }
-            add_to_array = { global.pops_spending_weight_sol@token:computers = 88 }
+            add_to_array = { global.pops_spending_weight_wealth@token:computers = 88 }
             add_to_array = { global.pops_spending_weight_val@token:computers = 0.1 }
-            add_to_array = { global.pops_spending_weight_sol@token:computers = 98 }
+            add_to_array = { global.pops_spending_weight_wealth@token:computers = 98 }
             
             # Electricity - Power for appliances & computers, etc | 1.0
             set_variable = { global.pops_spending_tech@token:electricity = token:transformer } # Converts into Coal need if state isn't electrified/don't have this tech
             set_variable = { global.pops_spending_replacement@token:electricity = token:coal }
             set_variable = { global.pops_spending_electrification@token:electricity = 1 }
             clear_array = global.pops_spending_weight_val@token:electricity
-            clear_array = global.pops_spending_weight_sol@token:electricity
+            clear_array = global.pops_spending_weight_wealth@token:electricity
             add_to_array = { global.pops_spending_weight_val@token:electricity = 0.05 }
-            add_to_array = { global.pops_spending_weight_sol@token:electricity = 54 }
+            add_to_array = { global.pops_spending_weight_wealth@token:electricity = 54 }
             add_to_array = { global.pops_spending_weight_val@token:electricity = 0.05 }
-            add_to_array = { global.pops_spending_weight_sol@token:electricity = 58 }
+            add_to_array = { global.pops_spending_weight_wealth@token:electricity = 58 }
             add_to_array = { global.pops_spending_weight_val@token:electricity = 0.1 }
-            add_to_array = { global.pops_spending_weight_sol@token:electricity = 64 }
+            add_to_array = { global.pops_spending_weight_wealth@token:electricity = 64 }
             add_to_array = { global.pops_spending_weight_val@token:electricity = 0.15 }
-            add_to_array = { global.pops_spending_weight_sol@token:electricity = 68 }
+            add_to_array = { global.pops_spending_weight_wealth@token:electricity = 68 }
             add_to_array = { global.pops_spending_weight_val@token:electricity = 0.2 }
-            add_to_array = { global.pops_spending_weight_sol@token:electricity = 74 }
+            add_to_array = { global.pops_spending_weight_wealth@token:electricity = 74 }
             add_to_array = { global.pops_spending_weight_val@token:electricity = 0.15 }
-            add_to_array = { global.pops_spending_weight_sol@token:electricity = 78 }
+            add_to_array = { global.pops_spending_weight_wealth@token:electricity = 78 }
             add_to_array = { global.pops_spending_weight_val@token:electricity = 0.05 }
-            add_to_array = { global.pops_spending_weight_sol@token:electricity = 84 }
+            add_to_array = { global.pops_spending_weight_wealth@token:electricity = 84 }
             add_to_array = { global.pops_spending_weight_val@token:electricity = 0.1 }
-            add_to_array = { global.pops_spending_weight_sol@token:electricity = 88 }
+            add_to_array = { global.pops_spending_weight_wealth@token:electricity = 88 }
             add_to_array = { global.pops_spending_weight_val@token:electricity = 0.05 }
-            add_to_array = { global.pops_spending_weight_sol@token:electricity = 94 }
+            add_to_array = { global.pops_spending_weight_wealth@token:electricity = 94 }
             add_to_array = { global.pops_spending_weight_val@token:electricity = 0.1 }
-            add_to_array = { global.pops_spending_weight_sol@token:electricity = 98 }
+            add_to_array = { global.pops_spending_weight_wealth@token:electricity = 98 }
             
             # Services - Transportation, Finance, Healthcare, Real Estate | 4.0
             clear_array = global.pops_spending_weight_val@token:services
-            clear_array = global.pops_spending_weight_sol@token:services
+            clear_array = global.pops_spending_weight_wealth@token:services
             add_to_array = { global.pops_spending_weight_val@token:services = 0.04 }
-            add_to_array = { global.pops_spending_weight_sol@token:services = 13 }
+            add_to_array = { global.pops_spending_weight_wealth@token:services = 13 }
             add_to_array = { global.pops_spending_weight_val@token:services = 0.04 }
-            add_to_array = { global.pops_spending_weight_sol@token:services = 17 }
+            add_to_array = { global.pops_spending_weight_wealth@token:services = 17 }
             add_to_array = { global.pops_spending_weight_val@token:services = 0.08 }
-            add_to_array = { global.pops_spending_weight_sol@token:services = 23 }
+            add_to_array = { global.pops_spending_weight_wealth@token:services = 23 }
             add_to_array = { global.pops_spending_weight_val@token:services = 0.1 }
-            add_to_array = { global.pops_spending_weight_sol@token:services = 27 }
+            add_to_array = { global.pops_spending_weight_wealth@token:services = 27 }
             add_to_array = { global.pops_spending_weight_val@token:services = 0.1 }
-            add_to_array = { global.pops_spending_weight_sol@token:services = 33 }
+            add_to_array = { global.pops_spending_weight_wealth@token:services = 33 }
             add_to_array = { global.pops_spending_weight_val@token:services = 0.1 }
-            add_to_array = { global.pops_spending_weight_sol@token:services = 37 }
+            add_to_array = { global.pops_spending_weight_wealth@token:services = 37 }
             add_to_array = { global.pops_spending_weight_val@token:services = 0.14 }
-            add_to_array = { global.pops_spending_weight_sol@token:services = 43 }
+            add_to_array = { global.pops_spending_weight_wealth@token:services = 43 }
             add_to_array = { global.pops_spending_weight_val@token:services = 0.2 }
-            add_to_array = { global.pops_spending_weight_sol@token:services = 47 }
+            add_to_array = { global.pops_spending_weight_wealth@token:services = 47 }
             add_to_array = { global.pops_spending_weight_val@token:services = 0.2 }
-            add_to_array = { global.pops_spending_weight_sol@token:services = 53 }
+            add_to_array = { global.pops_spending_weight_wealth@token:services = 53 }
             add_to_array = { global.pops_spending_weight_val@token:services = 0.2 }
-            add_to_array = { global.pops_spending_weight_sol@token:services = 57 }
+            add_to_array = { global.pops_spending_weight_wealth@token:services = 57 }
             add_to_array = { global.pops_spending_weight_val@token:services = 0.2 }
-            add_to_array = { global.pops_spending_weight_sol@token:services = 63 }
+            add_to_array = { global.pops_spending_weight_wealth@token:services = 63 }
             add_to_array = { global.pops_spending_weight_val@token:services = 0.3 }
-            add_to_array = { global.pops_spending_weight_sol@token:services = 67 }
+            add_to_array = { global.pops_spending_weight_wealth@token:services = 67 }
             add_to_array = { global.pops_spending_weight_val@token:services = 0.3 }
-            add_to_array = { global.pops_spending_weight_sol@token:services = 73 }
+            add_to_array = { global.pops_spending_weight_wealth@token:services = 73 }
             add_to_array = { global.pops_spending_weight_val@token:services = 0.3 }
-            add_to_array = { global.pops_spending_weight_sol@token:services = 77 }
+            add_to_array = { global.pops_spending_weight_wealth@token:services = 77 }
             add_to_array = { global.pops_spending_weight_val@token:services = 0.3 }
-            add_to_array = { global.pops_spending_weight_sol@token:services = 83 }
+            add_to_array = { global.pops_spending_weight_wealth@token:services = 83 }
             add_to_array = { global.pops_spending_weight_val@token:services = 0.4 }
-            add_to_array = { global.pops_spending_weight_sol@token:services = 87 }
+            add_to_array = { global.pops_spending_weight_wealth@token:services = 87 }
             add_to_array = { global.pops_spending_weight_val@token:services = 0.5 }
-            add_to_array = { global.pops_spending_weight_sol@token:services = 93 }
+            add_to_array = { global.pops_spending_weight_wealth@token:services = 93 }
             add_to_array = { global.pops_spending_weight_val@token:services = 0.5 }
-            add_to_array = { global.pops_spending_weight_sol@token:services = 97 }
+            add_to_array = { global.pops_spending_weight_wealth@token:services = 97 }
             
             # Entertainment | 0.75
             clear_array = global.pops_spending_weight_val@token:entertainment
-            clear_array = global.pops_spending_weight_sol@token:entertainment
+            clear_array = global.pops_spending_weight_wealth@token:entertainment
             add_to_array = { global.pops_spending_weight_val@token:entertainment = 0.03 }
-            add_to_array = { global.pops_spending_weight_sol@token:entertainment = 29 }
+            add_to_array = { global.pops_spending_weight_wealth@token:entertainment = 29 }
             add_to_array = { global.pops_spending_weight_val@token:entertainment = 0.03 }
-            add_to_array = { global.pops_spending_weight_sol@token:entertainment = 35 }
+            add_to_array = { global.pops_spending_weight_wealth@token:entertainment = 35 }
             add_to_array = { global.pops_spending_weight_val@token:entertainment = 0.03 }
-            add_to_array = { global.pops_spending_weight_sol@token:entertainment = 39 }
+            add_to_array = { global.pops_spending_weight_wealth@token:entertainment = 39 }
             add_to_array = { global.pops_spending_weight_val@token:entertainment = 0.03 }
-            add_to_array = { global.pops_spending_weight_sol@token:entertainment = 45 }
+            add_to_array = { global.pops_spending_weight_wealth@token:entertainment = 45 }
             add_to_array = { global.pops_spending_weight_val@token:entertainment = 0.03 }
-            add_to_array = { global.pops_spending_weight_sol@token:entertainment = 49 }
+            add_to_array = { global.pops_spending_weight_wealth@token:entertainment = 49 }
             add_to_array = { global.pops_spending_weight_val@token:entertainment = 0.05 }
-            add_to_array = { global.pops_spending_weight_sol@token:entertainment = 55 }
+            add_to_array = { global.pops_spending_weight_wealth@token:entertainment = 55 }
             add_to_array = { global.pops_spending_weight_val@token:entertainment = 0.05 }
-            add_to_array = { global.pops_spending_weight_sol@token:entertainment = 59 }
+            add_to_array = { global.pops_spending_weight_wealth@token:entertainment = 59 }
             add_to_array = { global.pops_spending_weight_val@token:entertainment = 0.05 }
-            add_to_array = { global.pops_spending_weight_sol@token:entertainment = 65 }
+            add_to_array = { global.pops_spending_weight_wealth@token:entertainment = 65 }
             add_to_array = { global.pops_spending_weight_val@token:entertainment = 0.05 }
-            add_to_array = { global.pops_spending_weight_sol@token:entertainment = 69 }
+            add_to_array = { global.pops_spending_weight_wealth@token:entertainment = 69 }
             add_to_array = { global.pops_spending_weight_val@token:entertainment = 0.05 }
-            add_to_array = { global.pops_spending_weight_sol@token:entertainment = 75 }
+            add_to_array = { global.pops_spending_weight_wealth@token:entertainment = 75 }
             add_to_array = { global.pops_spending_weight_val@token:entertainment = 0.05 }
-            add_to_array = { global.pops_spending_weight_sol@token:entertainment = 79 }
+            add_to_array = { global.pops_spending_weight_wealth@token:entertainment = 79 }
             add_to_array = { global.pops_spending_weight_val@token:entertainment = 0.05 }
-            add_to_array = { global.pops_spending_weight_sol@token:entertainment = 85 }
+            add_to_array = { global.pops_spending_weight_wealth@token:entertainment = 85 }
             add_to_array = { global.pops_spending_weight_val@token:entertainment = 0.05 }
-            add_to_array = { global.pops_spending_weight_sol@token:entertainment = 89 }
+            add_to_array = { global.pops_spending_weight_wealth@token:entertainment = 89 }
             add_to_array = { global.pops_spending_weight_val@token:entertainment = 0.1 }
-            add_to_array = { global.pops_spending_weight_sol@token:entertainment = 95 }
+            add_to_array = { global.pops_spending_weight_wealth@token:entertainment = 95 }
             add_to_array = { global.pops_spending_weight_val@token:entertainment = 0.1 }
-            add_to_array = { global.pops_spending_weight_sol@token:entertainment = 99 }
+            add_to_array = { global.pops_spending_weight_wealth@token:entertainment = 99 }
 
-            # Spending Level at SoL:
+            # Spending at each wealth level:
             # 1:   $0.25 per K, requires approx $0.75 wage at full work hours to maintain
             # 11:  $0.50 per K, requires approx $1.50 wage - Subsistence Farming
             # 21:  $1.00 per K, requires approx $3.00 wage - 1700s
@@ -1144,54 +1126,54 @@ initialize_country = {
                 if = {
                     limit = {
                         check_variable = { global.pops_spending_weight_val@var:r_token^num > 0 }
-                        check_variable = { global.pops_spending_weight_sol@var:r_token^num > 0 }
+                        check_variable = { global.pops_spending_weight_wealth@var:r_token^num > 0 }
                     }
                     add_to_array = { global.pop_needs_resources = r_token }
                 }
             }
             
-            # Precalculating weights & spending for each SoL up to 200 SoL 
+            # Precalculating weights & spending for each wealth level up to 200
             for_each_loop = {
                 array = global.pop_needs_resources
                 value = r_token
 
-                clear_array = global.pops_spending_weight_at_sol@var:r_token
-                clear_array = global.pops_spending_need_at_sol@var:r_token
+                clear_array = global.pops_spending_weight_at_wealth@var:r_token
+                clear_array = global.pops_need_at_wealth@var:r_token
             }
             
             # for_each_loop = {
             #     array = global.pop_needs_resources
             #     value = r_token
 
-            #     add_to_array = { global.pops_spending_weight_at_sol@var:r_token = 0 }
+            #     add_to_array = { global.pops_spending_weight_at_wealth@var:r_token = 0 }
             # }
 
                 
-            clear_array = global.pops_spending_at_sol
-            clear_array = global.pops_spending_weight_at_sol
-            for_loop_effect = { # Pop Spending at SoL
+            clear_array = global.pops_spending_at_wealth
+            clear_array = global.pops_spending_weight_at_wealth
+            for_loop_effect = { # Pop spending at each wealth level
                 start = 0
                 end = 200
                 add = 1
-                value = sol_temp
+                value = wealth_temp
                 break = b
-                add_to_array = { global.pops_spending_at_sol = 0 }
-                add_to_array = { global.pops_spending_weight_at_sol = 0 }
+                add_to_array = { global.pops_spending_at_wealth = 0 }
+                add_to_array = { global.pops_spending_weight_at_wealth = 0 }
                 
-                # Spending is multiplied by e^0.07s (doubles every 10 Standard of Living)
+                # Spending is multiplied by e^0.07 per level (doubles every 10 levels)
                 set_temp_variable = { spending_temp = global.pops_base_spending }
-                set_temp_variable = { sol_dif = sol_temp }
-                subtract_from_temp_variable = { sol_dif = 1 }
-                clamp_temp_variable = { var = sol_dif min = 0 }
+                set_temp_variable = { wealth_dif = wealth_temp }
+                subtract_from_temp_variable = { wealth_dif = 1 }
+                clamp_temp_variable = { var = wealth_dif min = 0 }
                 while_loop_effect = {
                     limit = {
-                        NOT = { check_variable = { sol_dif < 10 } }
+                        NOT = { check_variable = { wealth_dif < 10 } }
                     }
                     multiply_temp_variable = { spending_temp = 2 }
-                    subtract_from_temp_variable = { sol_dif = 10 }
+                    subtract_from_temp_variable = { wealth_dif = 10 }
                 }
 
-                set_temp_variable = { x = sol_dif }
+                set_temp_variable = { x = wealth_dif }
                 multiply_temp_variable = { x = 0.07 } #doubles every 10
 
                 set_temp_variable = { xx = x } # x^2 / 2
@@ -1217,10 +1199,10 @@ initialize_country = {
                 add_to_temp_variable = { taylor_approx = xxxx }
                 add_to_temp_variable = { taylor_approx = xxxxx }
                 multiply_temp_variable = { spending_temp = taylor_approx }
-                set_variable = { global.pops_spending_at_sol^sol_temp = spending_temp }
+                set_variable = { global.pops_spending_at_wealth^wealth_temp = spending_temp }
             }
 
-            for_each_loop = { # Setting weights at SoL
+            for_each_loop = { # Setting weights at each wealth level
                 array = global.pop_needs_resources
                 value = r_token
                 
@@ -1228,38 +1210,38 @@ initialize_country = {
                     start = 0
                     end = 200
                     add = 1
-                    value = sol_temp
+                    value = wealth_temp
                     break = b
 
-                    set_temp_variable = { prev_sol = sol_temp }
-                    subtract_from_temp_variable = { prev_sol = 1 }
-                    clamp_temp_variable = { var = prev_sol min = 0 }
+                    set_temp_variable = { prev_wealth = wealth_temp }
+                    subtract_from_temp_variable = { prev_wealth = 1 }
+                    clamp_temp_variable = { var = prev_wealth min = 0 }
 
-                    add_to_array = { global.pops_spending_weight_at_sol@var:r_token = global.pops_spending_weight_at_sol@var:r_token^prev_sol }
+                    add_to_array = { global.pops_spending_weight_at_wealth@var:r_token = global.pops_spending_weight_at_wealth@var:r_token^prev_wealth }
 
                     
                     for_loop_effect = {
                         start = 0
-                        end =  global.pops_spending_weight_sol@var:r_token^num
+                        end =  global.pops_spending_weight_wealth@var:r_token^num
                         add = 1
                         value = i_temp
                         break = br
 
                         if = {
                             limit = {
-                                check_variable = { global.pops_spending_weight_sol@var:r_token^i_temp = sol_temp }
+                                check_variable = { global.pops_spending_weight_wealth@var:r_token^i_temp = wealth_temp }
                             }
-                            add_to_variable = { global.pops_spending_weight_at_sol@var:r_token^sol_temp = global.pops_spending_weight_val@var:r_token^i_temp }
+                            add_to_variable = { global.pops_spending_weight_at_wealth@var:r_token^wealth_temp = global.pops_spending_weight_val@var:r_token^i_temp }
                             set_temp_variable = { br = 1 }
                         }
                     }
 
-                    add_to_variable = { global.pops_spending_weight_at_sol^sol_temp = global.pops_spending_weight_at_sol@var:r_token^sol_temp }
+                    add_to_variable = { global.pops_spending_weight_at_wealth^wealth_temp = global.pops_spending_weight_at_wealth@var:r_token^wealth_temp }
 
                 }
             }
 
-            for_each_loop = { # Need at SoL
+            for_each_loop = { # Need at each wealth level
                 array = global.pop_needs_resources
                 value = r_token
                 
@@ -1267,16 +1249,16 @@ initialize_country = {
                     start = 0
                     end = 200
                     add = 1
-                    value = sol_temp
+                    value = wealth_temp
                     break = b
 
-                    # Need at SoL
-                    set_temp_variable = { spending_per_weight = global.pops_spending_at_sol^sol_temp }
-                    divide_temp_variable = { spending_per_weight = global.pops_spending_weight_at_sol^sol_temp }
+                    # Need at this wealth level
+                    set_temp_variable = { spending_per_weight = global.pops_spending_at_wealth^wealth_temp }
+                    divide_temp_variable = { spending_per_weight = global.pops_spending_weight_at_wealth^wealth_temp }
 
-                    add_to_array = { global.pops_spending_need_at_sol@var:r_token = global.pops_spending_weight_at_sol@var:r_token^sol_temp }
-                    multiply_variable = { global.pops_spending_need_at_sol@var:r_token^sol_temp = spending_per_weight }
-                    divide_variable = { global.pops_spending_need_at_sol@var:r_token^sol_temp = global.base_price@var:r_token }
+                    add_to_array = { global.pops_need_at_wealth@var:r_token = global.pops_spending_weight_at_wealth@var:r_token^wealth_temp }
+                    multiply_variable = { global.pops_need_at_wealth@var:r_token^wealth_temp = spending_per_weight }
+                    divide_variable = { global.pops_need_at_wealth@var:r_token^wealth_temp = global.base_price@var:r_token }
                 }
             }
                 
@@ -1284,25 +1266,25 @@ initialize_country = {
             #     start = 1 
             #     end = 102
             #     add = 10
-            #     value = sol_temp
+            #     value = wealth_temp
             #     break = b
-            #     set_temp_variable = { spending_per_weight = global.pops_spending_at_sol^sol_temp }
-            #     divide_temp_variable = { spending_per_weight = global.pops_spending_weight_at_sol^sol_temp }
+            #     set_temp_variable = { spending_per_weight = global.pops_spending_at_wealth^wealth_temp }
+            #     divide_temp_variable = { spending_per_weight = global.pops_spending_weight_at_wealth^wealth_temp }
             #     # Weight
-            #     # log = "[?sol_temp]: [?global.pops_spending_weight_at_sol^sol_temp] with $[?global.pops_spending_at_sol^sol_temp] spending with $[?spending_per_weight]/w"
-            #     # log = "         Fd [?global.pops_spending_weight_at_sol@token:food^sol_temp] | Lx [?global.pops_spending_weight_at_sol@token:luxuries^sol_temp] | Wd [?global.pops_spending_weight_at_sol@token:wood^sol_temp]"
-            #     # log = "         Fb [?global.pops_spending_weight_at_sol@token:fiber^sol_temp] | Cl [?global.pops_spending_weight_at_sol@token:coal^sol_temp] | Ol [?global.pops_spending_weight_at_sol@token:oil^sol_temp]"
-            #     # log = "         Ct [?global.pops_spending_weight_at_sol@token:composites^sol_temp] | Cg [?global.pops_spending_weight_at_sol@token:consumer_goods^sol_temp] | Tx [?global.pops_spending_weight_at_sol@token:textiles^sol_temp]"
-            #     # log = "         Vh [?global.pops_spending_weight_at_sol@token:vehicles^sol_temp] | Ap [?global.pops_spending_weight_at_sol@token:appliances^sol_temp] | Cr [?global.pops_spending_weight_at_sol@token:computers^sol_temp]"
-            #     # log = "         El [?global.pops_spending_weight_at_sol@token:electricity^sol_temp] | Sv [?global.pops_spending_weight_at_sol@token:services^sol_temp] | En [?global.pops_spending_weight_at_sol@token:entertainment^sol_temp]"
+            #     # log = "[?wealth_temp]: [?global.pops_spending_weight_at_wealth^wealth_temp] with $[?global.pops_spending_at_wealth^wealth_temp] spending with $[?spending_per_weight]/w"
+            #     # log = "         Fd [?global.pops_spending_weight_at_wealth@token:food^wealth_temp] | Lx [?global.pops_spending_weight_at_wealth@token:luxuries^wealth_temp] | Wd [?global.pops_spending_weight_at_wealth@token:wood^wealth_temp]"
+            #     # log = "         Fb [?global.pops_spending_weight_at_wealth@token:fiber^wealth_temp] | Cl [?global.pops_spending_weight_at_wealth@token:coal^wealth_temp] | Ol [?global.pops_spending_weight_at_wealth@token:oil^wealth_temp]"
+            #     # log = "         Ct [?global.pops_spending_weight_at_wealth@token:composites^wealth_temp] | Cg [?global.pops_spending_weight_at_wealth@token:consumer_goods^wealth_temp] | Tx [?global.pops_spending_weight_at_wealth@token:textiles^wealth_temp]"
+            #     # log = "         Vh [?global.pops_spending_weight_at_wealth@token:vehicles^wealth_temp] | Ap [?global.pops_spending_weight_at_wealth@token:appliances^wealth_temp] | Cr [?global.pops_spending_weight_at_wealth@token:computers^wealth_temp]"
+            #     # log = "         El [?global.pops_spending_weight_at_wealth@token:electricity^wealth_temp] | Sv [?global.pops_spending_weight_at_wealth@token:services^wealth_temp] | En [?global.pops_spending_weight_at_wealth@token:entertainment^wealth_temp]"
                 
             #     # Need
-            #     # log = "[?sol_temp]: [?global.pops_spending_weight_at_sol^sol_temp] with $[?global.pops_spending_at_sol^sol_temp] spending with $[?spending_per_weight]/w"
-            #     # log = "         Fd [?global.pops_spending_need_at_sol@token:food^sol_temp] | Lx [?global.pops_spending_need_at_sol@token:luxuries^sol_temp] | Wd [?global.pops_spending_need_at_sol@token:wood^sol_temp]"
-            #     # log = "         Fb [?global.pops_spending_need_at_sol@token:fiber^sol_temp] | Cl [?global.pops_spending_need_at_sol@token:coal^sol_temp] | Ol [?global.pops_spending_need_at_sol@token:oil^sol_temp]"
-            #     # log = "         Ct [?global.pops_spending_need_at_sol@token:composites^sol_temp] | Cg [?global.pops_spending_need_at_sol@token:consumer_goods^sol_temp] | Tx [?global.pops_spending_need_at_sol@token:textiles^sol_temp]"
-            #     # log = "         Vh [?global.pops_spending_need_at_sol@token:vehicles^sol_temp] | Ap [?global.pops_spending_need_at_sol@token:appliances^sol_temp] | Cr [?global.pops_spending_need_at_sol@token:computers^sol_temp]"
-            #     # log = "         El [?global.pops_spending_need_at_sol@token:electricity^sol_temp] | Sv [?global.pops_spending_need_at_sol@token:services^sol_temp] | En [?global.pops_spending_need_at_sol@token:entertainment^sol_temp]"
+            #     # log = "[?wealth_temp]: [?global.pops_spending_weight_at_wealth^wealth_temp] with $[?global.pops_spending_at_wealth^wealth_temp] spending with $[?spending_per_weight]/w"
+            #     # log = "         Fd [?global.pops_need_at_wealth@token:food^wealth_temp] | Lx [?global.pops_need_at_wealth@token:luxuries^wealth_temp] | Wd [?global.pops_need_at_wealth@token:wood^wealth_temp]"
+            #     # log = "         Fb [?global.pops_need_at_wealth@token:fiber^wealth_temp] | Cl [?global.pops_need_at_wealth@token:coal^wealth_temp] | Ol [?global.pops_need_at_wealth@token:oil^wealth_temp]"
+            #     # log = "         Ct [?global.pops_need_at_wealth@token:composites^wealth_temp] | Cg [?global.pops_need_at_wealth@token:consumer_goods^wealth_temp] | Tx [?global.pops_need_at_wealth@token:textiles^wealth_temp]"
+            #     # log = "         Vh [?global.pops_need_at_wealth@token:vehicles^wealth_temp] | Ap [?global.pops_need_at_wealth@token:appliances^wealth_temp] | Cr [?global.pops_need_at_wealth@token:computers^wealth_temp]"
+            #     # log = "         El [?global.pops_need_at_wealth@token:electricity^wealth_temp] | Sv [?global.pops_need_at_wealth@token:services^wealth_temp] | En [?global.pops_need_at_wealth@token:entertainment^wealth_temp]"
             # }
         #
     }
@@ -2163,13 +2145,30 @@ for_each_loop = {
 
         employment_update = yes
 
-        # Each class fills its jobs from the peasants, top down. Slaves already hold the working-class jobs they can fill
-        set_variable = { pops_workforce@token:upper_class = { value = pops_jobs@token:upper_class min = pops_workforce@token:peasants } }
+        # Each class fills its jobs from the peasants, top down. Slaves already hold the working-class jobs they can fill.
+        # Landowners come last, because their jobs follow the peasants (Q84)
+        set_variable = { pops_workforce@token:upper_class = { value = pops_jobs@token:upper_class subtract = owner_jobs@token:subsistence_farm max = 0 min = pops_workforce@token:peasants } }
         subtract_from_variable = { pops_workforce@token:peasants = pops_workforce@token:upper_class }
         set_variable = { pops_workforce@token:middle_class = { value = pops_jobs@token:middle_class min = pops_workforce@token:peasants } }
         subtract_from_variable = { pops_workforce@token:peasants = pops_workforce@token:middle_class }
         set_variable = { pops_workforce@token:working_class = { value = pops_jobs@token:working_class min = pops_workforce@token:peasants } }
         subtract_from_variable = { pops_workforce@token:peasants = pops_workforce@token:working_class }
+
+        # Landowners, out of the peasants who are left. Owner jobs are a share of the peasants, so take owners x peasants /
+        # (peasants + owners): the peasants who remain then need exactly that many
+        subsist_and_arable_update = yes
+        if = {
+            limit = { check_variable = { pops_workforce@token:peasants > 0 } }
+            set_temp_variable = {
+                landowners_temp = {
+                    value = owner_jobs@token:subsistence_farm
+                    multiply = pops_workforce@token:peasants
+                    divide = { value = pops_workforce@token:peasants add = owner_jobs@token:subsistence_farm }
+                }
+            }
+            add_to_variable = { pops_workforce@token:upper_class = landowners_temp }
+            subtract_from_variable = { pops_workforce@token:peasants = landowners_temp }
+        }
 
         # Updates Subsistence Farms
         subsist_and_arable_update = yes
@@ -2202,7 +2201,8 @@ for_each_loop = {
         #     set_variable = { employment_target@var:emp_ind_token = employment_percentage@var:emp_ind_token }
         # }
     }
-    calculate_standard_of_living = {
+    calculate_starting_wealth = {
+        # Each class starts 15% below the first wealth level whose basket, at base prices, costs more than it earns per head
         for_each_loop = {
             array = global.pops_array
             value = pop_token
@@ -2212,8 +2212,8 @@ for_each_loop = {
 			# log = "Pop: [?pop_token.GetTokenKey]"
 			# log = "Earnings Temp: [?earnings_temp]"
             for_each_loop = {
-                array = global.pops_spending_at_sol
-                index = sol_temp
+                array = global.pops_spending_at_wealth
+                index = wealth_temp
                 value = col_temp
                 break = b
 
@@ -2221,47 +2221,17 @@ for_each_loop = {
                     limit = {
                         check_variable = { earnings_temp < col_temp }
                     }
-					# log = "Cost of Living Temp: [?col_temp] at [?sol_temp]"
-                    set_variable = { pops_sol@var:pop_token = sol_temp }
-					divide_variable = { pops_sol@var:pop_token = 1.15 }
-					round_variable = pops_sol@var:pop_token
+					# log = "Cost of Living Temp: [?col_temp] at [?wealth_temp]"
+                    set_variable = { pops_wealth@var:pop_token = wealth_temp }
+					divide_variable = { pops_wealth@var:pop_token = 1.15 }
+					round_variable = pops_wealth@var:pop_token
                     set_temp_variable = { b = 1 }
                 }
             }
-            clamp_variable = { var = pops_sol@var:pop_token min = 1 max = 200 }
+            clamp_variable = { var = pops_wealth@var:pop_token min = 1 max = 200 }
         }
 
         pops_update = yes
-    }
-    readjust_standard_of_living = {
-        pops_update = yes
-
-        for_each_loop = {
-            array = global.pops_array
-            value = pop_token
-
-			set_temp_variable = { pops_spending_half = pops_spending@var:pop_token }
-			divide_temp_variable = { pops_spending_half = 2 }
-			set_temp_variable = { pops_earnings_half = pops_earnings@var:pop_token }
-			divide_temp_variable = { pops_earnings_half = 2 }
-
-            if = {
-                limit = { check_variable = { pops_earnings@var:pop_token < pops_spending_half } }
-                subtract_from_variable = { pops_sol@var:pop_token = 5 }
-            }
-            else_if = {
-                limit = { check_variable = { pops_earnings@var:pop_token < pops_spending@var:pop_token } }
-                subtract_from_variable = { pops_sol@var:pop_token = 2 }
-            }
-            else_if = { 
-                limit = { check_variable = { pops_earnings_half > pops_spending@var:pop_token } } 
-                add_to_variable = { pops_sol@var:pop_token = 5 } 
-            }
-            else_if = { 
-                limit = { check_variable = { pops_earnings@var:pop_token > pops_spending@var:pop_token } } 
-                add_to_variable = { pops_sol@var:pop_token = 2 } 
-            }
-        }
     }
 #
 

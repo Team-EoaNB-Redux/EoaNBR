@@ -1,6 +1,9 @@
 
 #Pops
 	pops_update = {
+		# Works out every class's earnings, spending and target spending from scratch (M03). Pops hold no savings (Q15):
+		# on_monthly_pops turns spending above income into debt for the classes that borrow, and moves wealth toward the
+		# level where spending meets the target.
 		pops_reset_core_variable = yes
 		pops_prepare_contextual_multipliers = yes
 
@@ -8,12 +11,11 @@
 			array = global.pops_array
 			value = pop_update_token
 
+			set_temp_variable = { current_pop_token = pop_update_token } # Before the check, so an empty class clears its own data
 			if = {
 				limit = {
-					check_variable = { pops_workforce@var:pop_update_token > 0 }
+					check_variable = { pops_workforce@var:current_pop_token > 0 }
 				}
-
-				set_temp_variable = { current_pop_token = pop_update_token }
 
 				pops_cache_pop_context = yes
 
@@ -24,17 +26,14 @@
 					pops_commit_slaves = yes
 				}
 				else = {
-					pops_calculate_earnings_and_investment = yes
+					pops_calculate_earnings = yes
 					pops_calculate_needs_spending = yes
-					pops_calculate_living_standards = yes
 					pops_calculate_taxation = yes
-
+					pops_calculate_investment = yes
 					pops_calculate_debt_servicing = yes
-					pops_calculate_credit_metrics = yes
 
 					pops_update_confidence = yes
 					pops_calculate_spending_targets = yes
-					pops_calculate_savings_targets = yes
 
 					pops_add_to_state_totals = yes
 
@@ -53,8 +52,6 @@
 		set_temp_variable = { p_pops_workforce = pops_workforce@var:current_pop_token }
 		set_temp_variable = { p_pops_employed = pops_employed@var:current_pop_token }
 		set_temp_variable = { p_pops_dividends = pops_dividends@var:current_pop_token }
-		set_temp_variable = { p_bank_lent_to_pops_k = bank_lent_to_pops_k@var:current_pop_token }
-		set_temp_variable = { p_pops_savings = pops_savings@var:current_pop_token }
 	}
 	pops_commit_pop_context = {
 		# Process Workforce
@@ -62,42 +59,31 @@
 		set_variable = { pops_percentage@var:current_pop_token = p_pops_percentage }
 		set_variable = { pops_unemployed@var:current_pop_token = p_pops_unemployed }
 
-		# Calculate Earnings & Investment
+		# Earnings & Investment
 		set_variable = { pops_earnings@var:current_pop_token = p_pops_earnings }
 		set_variable = { pops_investment@var:current_pop_token = p_pops_investment }
 
-		# Calculate Needs Spending
+		# Spending
 		set_variable = { pops_needs_spending@var:current_pop_token = p_pops_needs_spending }
 		set_variable = { pops_spending@var:current_pop_token = p_pops_spending }
-
-		# Calculate Living Standards
 		set_variable = { pops_col@var:current_pop_token = p_pops_col }
-
-		# Calculate Taxation
 		set_variable = { pops_income_tax_spending@var:current_pop_token = p_pops_income_tax_spending }
 		set_variable = { pops_sales_tax_spending@var:current_pop_token = p_pops_sales_tax_spending }
-		set_variable = { pops_investment_tax@var:current_pop_token = p_pops_investment_tax }
-
-		# Calculate Debt Servicing
-		set_variable = { pops_debt_interest_spending@var:current_pop_token = p_pops_debt_interest_spending }
+		set_variable = { pops_corporate_tax_spending@var:current_pop_token = p_pops_corporate_tax_spending }
 		set_variable = { pops_debt_repayment_spending@var:current_pop_token = p_pops_debt_repayment_spending }
-		
-		# Calculate Credit Metrics
-		set_variable = { pops_debt_spending@var:current_pop_token = p_pops_debt_spending }
-		set_variable = { pops_debt_spending_ratio@var:current_pop_token = p_pops_debt_spending_ratio }
-		set_variable = { pops_debt_spending_limit@var:current_pop_token = p_pops_debt_spending_limit }
 
-		# Update Confidence
+		# Target
 		set_variable = { pops_consumer_confidence@var:current_pop_token = p_pops_consumer_confidence }
-		
-		# Calc Targets
 		set_variable = { pops_spending_target@var:current_pop_token = p_pops_spending_target }
-		set_variable = { pops_savings_target@var:current_pop_token = p_pops_savings_target }
 	}
 	pops_commit_slaves = {
 		set_variable = { pops@var:current_pop_token = p_pops }
 		set_variable = { pops_percentage@var:current_pop_token = p_pops_percentage }
 		set_variable = { pops_unemployed@var:current_pop_token = p_pops_unemployed }
+
+		set_temp_variable = { wealth_sum_temp = pops_wealth@var:current_pop_token }
+		multiply_temp_variable = { wealth_sum_temp = p_pops_workforce }
+		add_to_variable = { pops_wealth = wealth_sum_temp }
 	}
 
 	log_pop_vals = {
@@ -106,26 +92,23 @@
 		log = "pops: [?pops@var:current_pop_token]"
 		log = "pops_percentage: [?pops_percentage@var:current_pop_token]"
 		log = "pops_unemployed: [?pops_unemployed@var:current_pop_token]"
+		log = "pops_wealth: [?pops_wealth@var:current_pop_token]"
 		log = "pops_earnings: [?pops_earnings@var:current_pop_token]"
 		log = "pops_investment: [?pops_investment@var:current_pop_token]"
 		log = "pops_col: [?pops_col@var:current_pop_token]"
 		log = "pops_spending: [?pops_spending@var:current_pop_token]"
 		log = "pops_income_tax_spending: [?pops_income_tax_spending@var:current_pop_token]"
 		log = "pops_sales_tax_spending: [?pops_sales_tax_spending@var:current_pop_token]"
-		log = "pops_investment_tax: [?pops_investment_tax@var:current_pop_token]"
-		log = "pops_debt_interest_spending: [?pops_debt_interest_spending@var:current_pop_token]"
+		log = "pops_corporate_tax_spending: [?pops_corporate_tax_spending@var:current_pop_token]"
 		log = "pops_debt_repayment_spending: [?pops_debt_repayment_spending@var:current_pop_token]"
-		log = "pops_debt_spending: [?pops_debt_spending@var:current_pop_token]"
-		log = "pops_debt_spending_ratio: [?pops_debt_spending_ratio@var:current_pop_token]"
-		log = "pops_debt_spending_limit: [?pops_debt_spending_limit@var:current_pop_token]"
+		log = "pops_debt: [?pops_debt@var:current_pop_token]"
 		log = "pops_consumer_confidence: [?pops_consumer_confidence@var:current_pop_token]"
 		log = "pops_spending_target: [?pops_spending_target@var:current_pop_token]"
-		log = "pops_savings_target: [?pops_savings_target@var:current_pop_token]"
 	}
 
 	pops_reset_core_variable = {
 		set_variable = { pops_workforce_percentage = global.pops_workforce_participation }
-		
+
 		set_variable = { pops = pops_workforce }
 		divide_variable = { pops = global.pops_workforce_participation }
 
@@ -136,20 +119,18 @@
 			set_variable = { pops_need@var:pop_r_token = 0 }
 		}
 
-		set_variable = { pops_sol = 0 }
+		set_variable = { pops_wealth = 0 }
 		set_variable = { pops_needs_spending = 0 }
 
 		set_variable = { pops_earnings = 0 }
 		set_variable = { pops_dividends = 0 }
 		set_variable = { pops_investment = 0 }
 		set_variable = { pops_spending_target = 0 }
-		set_variable = { pops_savings_target = 0 }
-		set_variable = { pops_creditworthiness = 0 }
+		set_variable = { pops_debt = 0 }
 
 		set_variable = { pops_income_tax_spending = 0 }
-		#set_variable = { pops_corporate_tax_spending = 0 }
 		set_variable = { pops_sales_tax_spending = 0 }
-		set_variable = { pops_debt_interest_spending = 0 }
+		set_variable = { pops_corporate_tax_spending = 0 }
 		set_variable = { pops_debt_repayment_spending = 0 }
 	}
 	pops_prepare_contextual_multipliers = {
@@ -162,11 +143,18 @@
 		divide_temp_variable = { bank_conf_temp = 100 }
 		clamp_temp_variable = { var = bank_conf_temp min = 0.0 max = 1 }
 
+		# The share of earnings pops will spend on debt repayments before they panic (pops_update_confidence)
+		set_temp_variable = { debt_service_limit_temp = { value = bank_conf_temp multiply = 0.05 add = 0.1 add = { value = cons_conf_temp multiply = 0.025 } } }
+
+		# Investment appetite, from incentives (Q39). The same for every class that invests
+		set_temp_variable = { incentives_temp = controller:modifier@incentives_modifier }
+		calculate_investment_appetite = yes
+
 		# Earnings Limit
 		set_temp_variable = { upper_earnings_limit = controller:pops_earnings_avg }
 		multiply_temp_variable = { upper_earnings_limit = 3 }
 		set_temp_variable = { lower_earnings_limit = controller:pops_earnings_avg }
-		
+
 		# Tax Brackets
 		set_temp_variable = { upper_income_multiplier = controller:income_tax_upper_strata_percentage_actual }
 		divide_temp_variable = { upper_income_multiplier = 100 }
@@ -196,20 +184,20 @@
 		set_variable = { pops_unemployed_percentage = pops_unemployed }
 		divide_variable = { pops_unemployed_percentage = pops_workforce }
 
-		divide_variable = { pops_creditworthiness = pops_workforce }
-		multiply_variable = { pops_creditworthiness = 100 }
-
 		set_variable = { pops_spending = pops_needs_spending }
 		add_to_variable = { pops_spending = pops_income_tax_spending }
 		add_to_variable = { pops_spending = pops_sales_tax_spending }
-		add_to_variable = { pops_spending = pops_debt_interest_spending }
+		add_to_variable = { pops_spending = pops_corporate_tax_spending }
 		add_to_variable = { pops_spending = pops_debt_repayment_spending }
 
-		divide_variable = { pops_sol = pops_workforce }
+		# Average wealth of the civilian classes. Soldiers are outside them
+		set_temp_variable = { civilian_workforce_temp = pops_workforce }
+		subtract_from_temp_variable = { civilian_workforce_temp = active_manpower }
+		divide_variable = { pops_wealth = civilian_workforce_temp }
 	}
 
 	pops_process_workforce_status = {
-		# current_pop_token 
+		# current_pop_token
 
 		# Total Amount
 		set_temp_variable = { p_pops = p_pops_workforce }
@@ -224,15 +212,17 @@
 		subtract_from_temp_variable = { p_pops_unemployed = p_pops_employed }
 
 	}
-	pops_calculate_earnings_and_investment = {
-		# current_pop_token 
+	pops_calculate_earnings = {
+		# current_pop_token
+		# Gross income, which income tax is charged on (Q83): base earnings, wages, bonuses, and the upper class's dividends,
+		# which include subsistence rent (industries_update)
 
 		# Base Earnings
-		set_temp_variable = { p_pops_earnings = pops@var:current_pop_token }
+		set_temp_variable = { p_pops_earnings = p_pops }
 		multiply_temp_variable = { p_pops_earnings = global.base_pop_earnings } # 0.1
-		
+
 		# Earnings from Wages
-		if = { 
+		if = {
 			limit = { check_variable = { current_pop_token = token:peasants } }
 			add_to_temp_variable = { p_pops_earnings = expenses_payroll@token:subsistence_farm }
 		}
@@ -242,6 +232,7 @@
 			multiply_temp_variable = { p_pops_wage_earnings = global.wage_multiplier@token:upper_class }
 			multiply_temp_variable = { p_pops_wage_earnings = base_wage }
 			add_to_temp_variable = { p_pops_earnings = p_pops_wage_earnings }
+			add_to_temp_variable = { p_pops_earnings = p_pops_dividends }
 		}
 		else = {
 			set_temp_variable = { p_pops_wage_earnings = p_pops_employed }
@@ -253,80 +244,33 @@
 		# Earnings from Bonuses
 		add_to_temp_variable = { p_pops_earnings = pops_bonuses@var:current_pop_token }
 
-		# Earnings from Dividends
-		set_temp_variable = { p_pops_investment = 0 }
-		if = {
-			limit = { check_variable = { current_pop_token = token:upper_class } }
-			add_to_temp_variable = { p_pops_earnings = p_pops_dividends }
-
-			if = {
-				limit = { check_variable = { p_pops_earnings > 0 } }
-				set_temp_variable = { p_pops_investment = controller:modifier@upper_class_investment_contribution_factor }
-				clamp_temp_variable = { var = p_pops_investment max = 0.8 min = 0 }
-				multiply_temp_variable = { p_pops_investment = p_pops_earnings }
-
-				# Scale the diverted share by investment appetite: structural incentives x the best
-				# available opportunity's attractiveness (sorted list top; up to 1 month stale - fine).
-				set_temp_variable = { incentives_temp = controller:modifier@incentives_modifier }
-				if = {
-					limit = { check_variable = { controller:active_investment_opportunities^num > 0 } }
-					set_temp_variable = { top_io_id_temp = controller:active_investment_opportunities^0 }
-					set_temp_variable = { top_attractiveness_temp = controller:investment_opportunity_attractiveness@var:top_io_id_temp }
-				}
-				else = {
-					set_temp_variable = { top_attractiveness_temp = 100 }
-				}
-				calculate_investment_appetite = yes
-				multiply_temp_variable = { p_pops_investment = investment_appetite_temp }
-				#log = "[?current_pop_token.GetTokenKey] Investment: [?p_pops_investment] / [?p_pops_earnings] | [?investment_appetite_temp]"
-
-				subtract_from_temp_variable = { p_pops_earnings = p_pops_investment }
-			}
-		}
-
 		# Other Earnings (TODO: Corruption for Bureaucrats)
-
 	}
 	pops_calculate_needs_spending = {
 		# current_pop_token
-		
-		set_temp_variable = { sol_temp = pops_sol@var:current_pop_token }
+		# The basket for the class's wealth. Peasants grow most of what they eat, so only global.peasant_market_interaction of
+		# their basket shows up as market demand, though their subsistence income pays for all of it
+		set_temp_variable = { wealth_temp = pops_wealth@var:current_pop_token }
 		set_temp_variable = { pop_temp = p_pops }
-		set_temp_variable = { magnitude_temp = 1 }
+		set_temp_variable = { market_share_temp = 1 }
+		if = {
+			limit = { check_variable = { current_pop_token = token:peasants } }
+			set_temp_variable = { market_share_temp = global.peasant_market_interaction }
+		}
 		get_pop_needs = yes
+
 		set_temp_variable = { p_pops_needs_spending = needs_spending_temp }
-
-		if = { # After-the-fact consumption modifier on goods total. E.g. peasants consuming less market goods due to subsistence farming
-			limit = {
-				check_variable = { current_pop_token = token:peasants }
-			}
-			set_temp_variable = { consumption_modifier = global.peasant_market_interaction }
-		}
-		else = {
-			set_temp_variable = { consumption_modifier = 1 }
-		}
-
-		for_each_loop = {
-			array = global.pop_needs_resources
-			value = pop_r_token
-
-			set_temp_variable = { pops_need_t = pops_need_t@var:pop_r_token }
-			multiply_temp_variable = { pops_need_t = consumption_modifier }
-			add_to_variable = { pops_need@var:pop_r_token = pops_need_t }
-		}
-
-		set_temp_variable = { p_pops_spending = p_pops_needs_spending }
-	}
-	pops_calculate_living_standards = {
-		# current_pop_token 
+		set_temp_variable = { p_pops_spending = needs_spending_temp }
 
 		# Cost of Living
-		set_temp_variable = { p_pops_col = p_pops_needs_spending }
+		set_temp_variable = { p_pops_col = needs_spending_temp }
 		divide_temp_variable = { p_pops_col = p_pops_workforce }
 	}
 	pops_calculate_taxation = {
-		# current_pop_token 
-		
+		# current_pop_token
+		# Every tax a class pays is part of its spending: income tax on gross earnings, sales tax on goods, and the corporate
+		# tax that the budget collects on the upper class's dividends (taxes_update)
+
 		# Income Tax
 		set_temp_variable = { avg_earnings_temp = p_pops_earnings }
 		divide_temp_variable = { avg_earnings_temp = p_pops }
@@ -347,86 +291,75 @@
 			multiply_temp_variable = { p_pops_income_tax_spending = upper_income_multiplier }
 		}
 		add_to_temp_variable = { p_pops_spending = p_pops_income_tax_spending }
-		
+
 		#Sales Tax
 		set_temp_variable = { p_pops_sales_tax_spending = p_pops_needs_spending }
 		multiply_temp_variable = { p_pops_sales_tax_spending = sales_tax_multiplier }
 		add_to_temp_variable = { p_pops_spending = p_pops_sales_tax_spending }
-		
+
 		#Corporate Tax
+		set_temp_variable = { p_pops_corporate_tax_spending = 0 }
 		if = {
 			limit = { check_variable = { p_pops_dividends > 0 } }
+			set_temp_variable = { p_pops_corporate_tax_spending = { value = p_pops_dividends multiply = corporate_tax_multiplier max = 0 min = p_pops_dividends } }
+			add_to_temp_variable = { p_pops_spending = p_pops_corporate_tax_spending }
+		}
+	}
+	pops_calculate_investment = {
+		# current_pop_token
+		# The middle and upper classes put a share of their after-tax income into the general investment pool (Q36, Q60):
+		# <class>_investment_contribution_factor, at most 80%, scaled by investment appetite (incentives, Q39). Target spending
+		# comes out of what's left. Until M09 builds the pool, the money disappears.
+		set_temp_variable = { p_pops_investment = 0 }
+		if = {
+			limit = { check_variable = { current_pop_token = token:upper_class } }
+			set_temp_variable = { p_pops_investment = controller:modifier@upper_class_investment_contribution_factor }
+		}
+		else_if = {
+			limit = { check_variable = { current_pop_token = token:middle_class } }
+			set_temp_variable = { p_pops_investment = controller:modifier@middle_class_investment_contribution_factor }
+		}
 
-			set_temp_variable = { p_pops_investment_tax = p_pops_dividends }
-			multiply_temp_variable = { p_pops_investment_tax = corporate_tax_multiplier }
-			if = { limit = { check_variable = { p_pops_investment_tax > p_pops_dividends } } set_temp_variable = { p_pops_investment_tax = p_pops_dividends } }
-			if = { limit = { check_variable = { p_pops_investment_tax < 0 } } set_temp_variable = { p_pops_investment_tax = 0 } }
+		if = {
+			limit = { check_variable = { p_pops_investment > 0 } }
+			set_temp_variable = {
+				p_pops_investment = {
+					value = p_pops_investment
+					min = 0.8
+					multiply = investment_appetite_temp
+					multiply = {
+						value = p_pops_earnings
+						subtract = p_pops_income_tax_spending
+						subtract = p_pops_corporate_tax_spending
+						max = 0
+					}
+				}
+			}
 		}
 	}
 	pops_calculate_debt_servicing = {
-		# current_pop_token 
-
-		#Interest
-		set_temp_variable = { p_pops_debt_interest_spending = controller:bank_interest_rate }
-		# add_to_temp_variable = { p_pops_debt_interest_spending = pops_credit_rating_interest@var:current_pop_token }
-		multiply_temp_variable = { p_pops_debt_interest_spending = p_bank_lent_to_pops_k }
-		divide_temp_variable = { p_pops_debt_interest_spending = 1.2 }
-		add_to_temp_variable = { p_pops_spending = p_pops_debt_interest_spending }
-
-		# Debt Repayment
-		set_temp_variable = { p_pops_debt_repayment_spending = 4 }
-		multiply_temp_variable = { p_pops_debt_repayment_spending = p_bank_lent_to_pops_k }
-		divide_temp_variable = { p_pops_debt_repayment_spending = 1.2 }
+		# current_pop_token
+		# The classes that borrow repay global.pops_debt_repayment_rate of their debt a month, as part of their spending (Q59).
+		# There's no interest until the bank becomes the creditor in M11
+		set_temp_variable = { p_pops_debt_repayment_spending = pops_debt@var:current_pop_token }
+		multiply_temp_variable = { p_pops_debt_repayment_spending = global.pops_debt_repayment_rate }
 		add_to_temp_variable = { p_pops_spending = p_pops_debt_repayment_spending }
 	}
-	pops_calculate_credit_metrics = {
-		# current_pop_token
-		set_temp_variable = { p_pops_debt_spending = p_pops_debt_interest_spending }
-		add_to_temp_variable = { p_pops_debt_spending = p_pops_debt_repayment_spending }
-
-		set_temp_variable = { p_pops_debt_spending_ratio = p_pops_debt_spending }
-		divide_temp_variable = { p_pops_debt_spending_ratio = p_pops_earnings }
-
-		# Use global banking_confidence & consumer_confidence as temp vars if needed
-		set_temp_variable = { p_pops_debt_spending_limit = 0.1 }
-
-		set_temp_variable = { debt_limit_temp = bank_conf_temp }
-		multiply_temp_variable = { debt_limit_temp = 0.05 }
-		add_to_temp_variable = { p_pops_debt_spending_limit = limit_temp }
-
-		set_temp_variable = { debt_limit_temp = cons_conf_temp }
-		multiply_temp_variable = { debt_limit_temp = 0.025 }
-		add_to_temp_variable = { p_pops_debt_spending_limit = debt_limit_temp }
-
-		# Creditworthiness
-		set_temp_variable = { income_temp = p_pops_earnings }
-		set_temp_variable = { debt_temp = p_bank_lent_to_pops_k }
-		set_temp_variable = { debt_spending_temp = p_pops_debt_spending }
-		set_temp_variable = { savings_temp = p_pops_savings }
-		calculate_creditworthiness = yes
-		set_variable = { pops_creditworthiness@var:current_pop_token = creditworthiness_temp }
-
-		set_temp_variable = { weighted_credit = creditworthiness_temp }
-		divide_temp_variable = { weighted_credit = 100 }
-		multiply_temp_variable = { weighted_credit = p_pops_workforce }
-		add_to_variable = { pops_creditworthiness = weighted_credit }
-	}
 	pops_update_confidence = {
-		# Base from macro conditions (From 0.2 to 2.0)
+		# current_pop_token
+		# Consumer confidence (0.2 to 2) sets target spending (Q16). It starts from the country's consumer_confidence_modifier
+		# and falls with the share of earnings that goes on debt repayments, faster once that share passes what pops tolerate.
+		# Classes that can't borrow never aim to spend more than they earn (Q82).
+		set_temp_variable = { debt_service_ratio_temp = p_pops_debt_repayment_spending }
+		divide_temp_variable = { debt_service_ratio_temp = p_pops_earnings }
+
+		# Base from macro conditions (From 0.2 to 2.0), less the debt-service share
 		set_temp_variable = { p_pops_consumer_confidence = cons_conf_temp }
-
-		# Debt Spending Penalty (Up to -1.0)
-		subtract_from_temp_variable = { p_pops_consumer_confidence = p_pops_debt_spending_ratio }
-
-		# Savings Bonus (Up to +0.12)
-		set_temp_variable = { temp_conf_delta = p_pops_savings }
-		divide_temp_variable = { temp_conf_delta = p_pops_earnings }
-		multiply_temp_variable = { temp_conf_delta = 0.01 }
-		add_to_temp_variable = { p_pops_consumer_confidence = temp_conf_delta }
+		subtract_from_temp_variable = { p_pops_consumer_confidence = debt_service_ratio_temp }
 
 		# Debt Panic Penalty (Limitless, but 100% excess -> -0.55)
-		set_temp_variable = { excess_ratio = p_pops_debt_spending_ratio }
-		divide_temp_variable = { excess_ratio = p_pops_debt_spending_limit }
+		set_temp_variable = { excess_ratio = debt_service_ratio_temp }
+		divide_temp_variable = { excess_ratio = debt_service_limit_temp }
 		if = {
 			limit = { check_variable = { excess_ratio > 1 } }
 			set_temp_variable = { temp_penalty = excess_ratio }
@@ -447,6 +380,15 @@
 			subtract_from_temp_variable = { p_pops_consumer_confidence = temp_penalty }
 		}
 
+		# Classes that can't borrow spend at most their income
+		if = {
+			limit = {
+				NOT = { check_variable = { global.pops_borrows@var:current_pop_token = 1 } }
+				check_variable = { p_pops_consumer_confidence > 1 }
+			}
+			set_temp_variable = { p_pops_consumer_confidence = 1 }
+		}
+
 		# Clamp 0.2–2
 		clamp_temp_variable = {
 			var = p_pops_consumer_confidence
@@ -455,49 +397,47 @@
 		}
 	}
 	pops_calculate_spending_targets = {
-		# current_pop_token 
-		
-		#Spending Target
+		# current_pop_token
+		# What's left after investment, x consumer confidence. Taxes and debt repayments count as spending
 		set_temp_variable = { p_pops_spending_target = p_pops_earnings }
+		subtract_from_temp_variable = { p_pops_spending_target = p_pops_investment }
 		multiply_temp_variable = { p_pops_spending_target = p_pops_consumer_confidence }
 	}
-	pops_calculate_savings_targets = {
-		# current_pop_token
-		set_temp_variable = { p_pops_savings_target = p_pops_earnings }
-		multiply_temp_variable = { p_pops_savings_target = bank_conf_temp }
-		multiply_temp_variable = { p_pops_savings_target = 12 }
-	}
 	pops_add_to_state_totals = {
-		# current_pop_token 
-		
-		set_temp_variable = { sol_temp = pops_sol@var:current_pop_token }
-		multiply_temp_variable = { sol_temp = p_pops_workforce }
-		add_to_variable = { pops_sol = sol_temp }
+		# current_pop_token
+
+		set_temp_variable = { wealth_sum_temp = pops_wealth@var:current_pop_token }
+		multiply_temp_variable = { wealth_sum_temp = p_pops_workforce }
+		add_to_variable = { pops_wealth = wealth_sum_temp }
 		add_to_variable = { pops_needs_spending = p_pops_needs_spending }
-		
+
 		add_to_variable = { pops_earnings = p_pops_earnings }
 		add_to_variable = { pops_investment = p_pops_investment }
 		add_to_variable = { pops_spending_target = p_pops_spending_target }
-		add_to_variable = { pops_savings_target = p_pops_savings_target }
-		add_to_variable = { pops_dividends = pops_dividends@var:current_pop_token }
+		add_to_variable = { pops_dividends = p_pops_dividends }
+		add_to_variable = { pops_debt = pops_debt@var:current_pop_token }
 
 		add_to_variable = { pops_income_tax_spending = p_pops_income_tax_spending }
-		# add_to_variable = { pops_corporate_tax_spending = p_pops_investment_tax } - Gets calculated for the Investment Funds iirc
 		add_to_variable = { pops_sales_tax_spending = p_pops_sales_tax_spending }
-		add_to_variable = { pops_debt_interest_spending = p_pops_debt_interest_spending }
+		add_to_variable = { pops_corporate_tax_spending = p_pops_corporate_tax_spending }
 		add_to_variable = { pops_debt_repayment_spending = p_pops_debt_repayment_spending }
 	}
 	pops_clear_inactive_pop_data = {
-		# current_pop_token 
+		# current_pop_token
+		# A class with nobody left keeps its wealth level, for anyone who joins it later. Its debt is written off
 
 		set_variable = { pops_unemployed@var:current_pop_token = 0 }
+		set_variable = { pops_earnings@var:current_pop_token = 0 }
+		set_variable = { pops_investment@var:current_pop_token = 0 }
+		set_variable = { pops_needs_spending@var:current_pop_token = 0 }
+		set_variable = { pops_spending@var:current_pop_token = 0 }
 		set_variable = { pops_spending_target@var:current_pop_token = 0 }
 		set_variable = { pops_income_tax_spending@var:current_pop_token = 0 }
 		set_variable = { pops_sales_tax_spending@var:current_pop_token = 0 }
-		set_variable = { pops_debt_interest_spending@var:current_pop_token = 0 }
+		set_variable = { pops_corporate_tax_spending@var:current_pop_token = 0 }
 		set_variable = { pops_debt_repayment_spending@var:current_pop_token = 0 }
+		set_variable = { pops_debt@var:current_pop_token = 0 }
 	}
-
 
 	employment_update = {
 		# Updates industry jobs, job fulfillment, and pop and industry employment
@@ -669,134 +609,74 @@
 	}
 
 	get_pop_needs = {
+		# State scope. Adds one class's demand for goods to the state's pops_need@<good>, and works out what its basket costs.
+		# Each wealth level's basket is global.pops_need_at_wealth@<good>^<level>, in goods per K pops at base-price value.
+		# A good whose technology the controller lacks is bought as its replacement (global.pops_spending_replacement@), at the
+		# same base-price value, and so is the share of an electrified good that the state's electrification doesn't cover.
+		# pops_food_consumption_factor changes how much food they eat.
 		#Input:
-		#	sol_temp
-		#   pop_temp
-		#	magnitude_temp
-		#	state_electrification - is a variable statewide
-
-		#Note: All these values should be taken as 1 resource every 1K WORKFORCE pops
+		#	wealth_temp
+		#	pop_temp - K pops
+		#	market_share_temp - share of the basket bought at market. The rest still costs money: peasants pay for what they grow
+		#	state_electrification - a state variable, in %
 		#Output:
-		# needs_spending_temp
-		# pop_need_t@resource
+		#	needs_spending_temp
 
 		set_temp_variable = { needs_spending_temp = 0 }
 		for_each_loop = {
 			array = global.pop_needs_resources
 			value = pop_r_token
-			set_temp_variable = { pops_need_t@var:pop_r_token = 0 }
-		}
-		# if = {
-		# 	limit = {
-		# 		state = 219
-		# 		check_variable = { current_pop_token = token:working_class }
-		# 	}
-		# 	#log_pop_vals = yes
-		# 	log = "Pop Needs for [?current_pop_token.GetTokenKey]: (SOL: [?sol_temp], Pops: [?pop_temp], Magnitude: [?magnitude_temp])"
-		# }
 
-		for_each_loop = {
-			array = global.pop_needs_resources
-			value = pop_r_token
+			set_temp_variable = { need_temp = global.pops_need_at_wealth@var:pop_r_token^wealth_temp }
 			if = {
-				limit = {
-					check_variable = { controller:pops_spending_tech@var:pop_r_token = 0 }
+				limit = { check_variable = { need_temp > 0 } } # At low wealth most goods aren't in the basket yet
+				multiply_temp_variable = { need_temp = pop_temp }
+
+				if = { # Goods with a replacement: the share bought as the replacement instead
+					limit = { NOT = { check_variable = { global.pops_spending_replacement@var:pop_r_token = 0 } } }
+
+					set_temp_variable = { replaced_share_temp = 0 }
+					if = {
+						limit = { check_variable = { controller:pops_spending_tech@var:pop_r_token = 0 } }
+						set_temp_variable = { replaced_share_temp = 1 }
+					}
+					else_if = {
+						limit = { check_variable = { global.pops_spending_electrification@var:pop_r_token = 1 } }
+						set_temp_variable = { replaced_share_temp = { value = 100 subtract = state_electrification max = 0 divide = 100 } }
+					}
+					else_if = {
+						limit = { check_variable = { global.pops_spending_electrification_reverse@var:pop_r_token = 1 } }
+						set_temp_variable = { replaced_share_temp = { value = state_electrification divide = 100 } }
+					}
+
+					if = {
+						limit = { check_variable = { replaced_share_temp > 0 } }
+						set_temp_variable = { replace_token = global.pops_spending_replacement@var:pop_r_token }
+						set_temp_variable = { replaced_temp = { value = need_temp multiply = replaced_share_temp } }
+						subtract_from_temp_variable = { need_temp = replaced_temp }
+
+						set_temp_variable = { replaced_temp = { value = replaced_temp multiply = global.base_price@var:pop_r_token divide = global.base_price@var:replace_token } }
+						set_temp_variable = { market_need_temp = { value = replaced_temp multiply = market_share_temp } }
+						add_to_variable = { pops_need@var:replace_token = market_need_temp }
+						multiply_temp_variable = { replaced_temp = controller:price@var:replace_token }
+						add_to_temp_variable = { needs_spending_temp = replaced_temp }
+					}
 				}
-				set_temp_variable = { replace_token = global.pops_spending_replacement@var:pop_r_token }
 
-				set_temp_variable = { replace_amount = global.pops_spending_need_at_sol@var:pop_r_token^sol_temp }
-				multiply_temp_variable = { replace_amount = global.base_price@var:pop_r_token }
-				divide_temp_variable = { replace_amount = global.base_price@var:replace_token }
-
-				add_to_temp_variable = { pops_need_t@var:replace_token = replace_amount }
-
-				multiply_temp_variable = { replace_amount = controller:price@var:replace_token }
-				#log = "Replacing [?global.pops_spending_need_at_sol@var:pop_r_token^sol_temp] [?pop_r_token.GetTokenLocalizedKey] with [?replace_amount] [?replace_token.GetTokenLocalizedKey]"
-				add_to_temp_variable = { needs_spending_temp = replace_amount }
-			}
-			else_if = {
-				limit = {
-					check_variable = { global.pops_spending_electrification@var:pop_r_token = 1 }
-					check_variable = { state_electrification < 100 }
-				}
-				set_temp_variable = { replace_token = global.pops_spending_replacement@var:pop_r_token }
-				
-				set_temp_variable = { resource_amount = global.pops_spending_need_at_sol@var:pop_r_token^sol_temp }
-
-				set_temp_variable = { removal_amount = 100 }
-				subtract_from_temp_variable = { removal_amount = state_electrification }
-				multiply_temp_variable = { removal_amount = global.pops_spending_need_at_sol@var:pop_r_token^sol_temp }
-				divide_temp_variable = { removal_amount = 100 }
-
-				set_temp_variable = { replace_amount = removal_amount }
-				multiply_temp_variable = { replace_amount = global.base_price@var:pop_r_token }
-				divide_temp_variable = { replace_amount = global.base_price@var:replace_token }
-
-				#log = "Replacing [?removal_amount] [?pop_r_token.GetTokenLocalizedKey] with [?replace_amount] [?replace_token.GetTokenLocalizedKey] (Electrification: [?state_electrification|1]%)"
-				subtract_from_temp_variable = { resource_amount = removal_amount }
-				add_to_temp_variable = { pops_need_t@var:pop_r_token = resource_amount }
-				add_to_temp_variable = { pops_need_t@var:replace_token = replace_amount }
-
-				multiply_temp_variable = { resource_amount = controller:price@var:pop_r_token }
-				multiply_temp_variable = { replace_amount = controller:price@var:replace_token }
-
-				add_to_temp_variable = { needs_spending_temp = resource_amount }
-				add_to_temp_variable = { needs_spending_temp = replace_amount }
-			}
-			else_if = {
-				limit = {
-					check_variable = { global.pops_spending_electrification_reverse@var:pop_r_token = 1 }
-					check_variable = { state_electrification > 0 }
-				}
-				set_temp_variable = { replace_token = global.pops_spending_replacement@var:pop_r_token }
-				
-				set_temp_variable = { resource_amount = global.pops_spending_need_at_sol@var:pop_r_token^sol_temp }
-
-				set_temp_variable = { removal_amount = state_electrification }
-				multiply_temp_variable = { removal_amount = global.pops_spending_need_at_sol@var:pop_r_token^sol_temp }
-				divide_temp_variable = { removal_amount = 100 }
-
-				set_temp_variable = { replace_amount = removal_amount }
-				multiply_temp_variable = { replace_amount = global.base_price@var:pop_r_token }
-				divide_temp_variable = { replace_amount = global.base_price@var:replace_token }
-
-				#log = "Replacing [?removal_amount] [?pop_r_token.GetTokenLocalizedKey] with [?replace_amount] [?replace_token.GetTokenLocalizedKey] (Electrification: [?state_electrification|1]%)"
-				subtract_from_temp_variable = { resource_amount = removal_amount }
-				add_to_temp_variable = { pops_need_t@var:pop_r_token = resource_amount }
-				add_to_temp_variable = { pops_need_t@var:replace_token = replace_amount }
-
-				multiply_temp_variable = { resource_amount = controller:price@var:pop_r_token }
-				multiply_temp_variable = { replace_amount = controller:price@var:replace_token }
-
-				add_to_temp_variable = { needs_spending_temp = resource_amount }
-				add_to_temp_variable = { needs_spending_temp = replace_amount }
-			}
-			else = {
-				set_temp_variable = { resource_amount = global.pops_spending_need_at_sol@var:pop_r_token^sol_temp }
-				add_to_temp_variable = { pops_need_t@var:pop_r_token = resource_amount }
-				multiply_temp_variable = { resource_amount = controller:price@var:pop_r_token }
-				add_to_temp_variable = { needs_spending_temp = resource_amount }
+				set_temp_variable = { market_need_temp = { value = need_temp multiply = market_share_temp } }
+				add_to_variable = { pops_need@var:pop_r_token = market_need_temp }
+				multiply_temp_variable = { need_temp = controller:price@var:pop_r_token }
+				add_to_temp_variable = { needs_spending_temp = need_temp }
 			}
 		}
 
-		# Modifiers
-		set_temp_variable = { resource_amount = controller:modifier@pops_food_consumption_factor }
-		multiply_temp_variable = { resource_amount = global.pops_spending_need_at_sol@token:food^sol_temp }
-		subtract_from_temp_variable = { pops_need_t@token:food = resource_amount }
-		multiply_temp_variable = { resource_amount = controller:price@token:food }
-		add_to_temp_variable = { needs_spending_temp = resource_amount }
-		
-		#divide_temp_variable = { pop_temp = magnitude_temp }
-		multiply_temp_variable = { needs_spending_temp = pop_temp }
-		
-
-		# log = "[?pop_token.GetTokenKey]: [?pop_temp]"
-		for_each_loop = {
-			array = global.pop_needs_resources
-			value = pop_r_token
-			
-			multiply_temp_variable = { pops_need_t@var:pop_r_token = pop_temp }
-		}
+		# Food. The modifier is a share of the basket's food: technologies lower it
+		set_temp_variable = { need_temp = global.pops_need_at_wealth@token:food^wealth_temp }
+		set_temp_variable = { need_temp = { value = need_temp multiply = pop_temp multiply = controller:modifier@pops_food_consumption_factor } }
+		set_temp_variable = { market_need_temp = { value = need_temp multiply = market_share_temp } }
+		add_to_variable = { pops_need@token:food = market_need_temp }
+		multiply_temp_variable = { need_temp = controller:price@token:food }
+		add_to_temp_variable = { needs_spending_temp = need_temp }
 	}
 
 	pops_balance = {
@@ -1030,7 +910,7 @@
 					}
 					set_temp_variable = {
 						class_gain_temp = {
-							value = pops_sol@var:pop_token
+							value = pops_wealth@var:pop_token
 							subtract = 10
 							max = 0
 							multiply = 0.005
@@ -1088,6 +968,8 @@
 			set_variable = { pops_needs_spending@var:pop_token = 0 }
 			set_variable = { pops_dividends@var:pop_token = 0 }
 			set_variable = { pops_investment@var:pop_token = 0 }
+			set_variable = { pops_debt@var:pop_token = 0 }
+			set_variable = { pops_wealth@var:pop_token = 0 }
 		}
 
 		for_each_loop = {
@@ -1121,11 +1003,12 @@
 				add_to_variable = { PREV.pops_needs_spending@var:pop_token = pops_needs_spending@var:pop_token }
 				add_to_variable = { PREV.pops_dividends@var:pop_token = pops_dividends@var:pop_token }
 				add_to_variable = { PREV.pops_investment@var:pop_token = pops_investment@var:pop_token }
-					
-				set_temp_variable = { stat_temp = pops_sol@var:pop_token }
-				multiply_temp_variable = { stat_temp = pops@var:pop_token }
-				divide_temp_variable = { stat_temp = 1000 }
-				add_to_variable = { PREV.pops_sol@var:pop_token = stat_temp }
+				add_to_variable = { PREV.pops_debt@var:pop_token = pops_debt@var:pop_token }
+
+				# Wealth, weighted by workforce. Averaged below
+				set_temp_variable = { stat_temp = pops_wealth@var:pop_token }
+				multiply_temp_variable = { stat_temp = pops_workforce@var:pop_token }
+				add_to_variable = { PREV.pops_wealth@var:pop_token = stat_temp }
 			}
 
 			# Industries
@@ -1146,6 +1029,8 @@
 		set_variable = { pops_needs_spending = 0 }
 		set_variable = { pops_dividends = 0 }
 		set_variable = { pops_investment = 0 }
+		set_variable = { pops_debt = 0 }
+		set_variable = { pops_wealth = 0 }
 		for_each_loop = {
 			array = global.pops_array
 			value = pop_token
@@ -1158,15 +1043,17 @@
 			add_to_variable = { pops_needs_spending = pops_needs_spending@var:pop_token }
 			add_to_variable = { pops_dividends = pops_dividends@var:pop_token }
 			add_to_variable = { pops_investment = pops_investment@var:pop_token }
+			add_to_variable = { pops_debt = pops_debt@var:pop_token }
 
-			set_temp_variable = { sol_temp = pops_sol@var:pop_token }
-			multiply_temp_variable = { sol_temp = pops_workforce@var:pop_token }
-			divide_temp_variable = { sol_temp = 1000 }
-			add_to_variable = { pops_sol = sol_temp }
+			add_to_variable = { pops_wealth = pops_wealth@var:pop_token }
+			divide_variable = { pops_wealth@var:pop_token = pops_workforce@var:pop_token }
 
 			set_variable = { pops_col@var:pop_token = pops_needs_spending@var:pop_token }
 			divide_variable = { pops_col@var:pop_token = pops_workforce@var:pop_token }
 		}
+
+		# Average wealth of the civilian classes
+		divide_variable = { pops_wealth = pops_workforce }
 
 		# Active manpower is outside the classes, but still part of the population
 		add_to_variable = { pops_workforce = active_manpower }
@@ -1174,10 +1061,6 @@
 		divide_temp_variable = { pops_temp = global.pops_workforce_participation }
 		add_to_variable = { pops = pops_temp }
 
-		set_temp_variable = { pops_temp = pops }
-		divide_temp_variable = { pops_temp = 1000 }
-		divide_variable = { pops_sol = pops_temp }
-		
 		set_variable = { pops_col = pops_needs_spending }
 		divide_variable = { pops_col = pops_workforce }
 
