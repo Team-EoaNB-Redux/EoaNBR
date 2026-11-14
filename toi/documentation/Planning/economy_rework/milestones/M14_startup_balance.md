@@ -23,6 +23,7 @@ Rebuild the 1857 map on the finished systems, so world supply and demand start r
 5. **Debt:** bring back the real starting debts. ENG's `starting_debt = 1500` is commented out in `ENG - Britain.txt`.
 6. **Wages:** base wages for every tag. Only ENG and the Indian tags are set; the rest still use the `set_tech_*` seeds.
 7. **Money, banks and companies:** starting base money, reserves, bank stocks and companies.
+8. **Infrastructure (M07):** size railways and ports to transport demand (on the stripped map railways are paid the floor rate), and decide which techs, laws or content grant `base_infrastructure_cap_modifier` and `base_infrastructure_cap_factor`. Until something does, a road tech adds nothing in a state at the cap of 40 (Q103). Check the shipping price's floor and cap (0.25–2, Q104).
 
 ## Done when
 The bar is the one from archive/03:

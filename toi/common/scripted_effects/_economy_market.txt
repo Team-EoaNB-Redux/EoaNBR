@@ -717,6 +717,7 @@
 		# State Scope
 		# Transport supply & demand -> Infrastructure Efficiency, and the rate railways & ports get paid.
 		# Runs before this month's industries update, so it works off of last month's demand.
+		# Supply from population, after roads, is capped (Q103): roads only carry so much freight
 
 		set_variable = {
 			industrial_capacity = {
@@ -726,6 +727,15 @@
 					value = 1
 					add = controller:modifier@base_infrastructure_factor
 				}
+				min = {
+					value = global.base_infrastructure_cap
+					add = controller:modifier@base_infrastructure_cap_modifier
+					multiply = {
+						value = 1
+						add = controller:modifier@base_infrastructure_cap_factor
+					}
+				}
+				max = 0
 				add = global.base_industrial_capacity
 				add = modifier@local_industrial_capacity_modifier
 			}
@@ -789,7 +799,16 @@
 		}
 	}
 	calc_shipping_capacity = {
-		set_variable = { price_shipping_capacity = 1 }
+		# Market leader. The market's shipping pool: 100, plus convoys, plus every member's ports.
+		# The shipping price follows use (Q104): the latest weekly shipping usage, clamped. Traders pay it per unit of shipping
+		# they use (trade_update), and ports are paid it per unit of capacity (industry_update). Members copy it in market_update
+		set_variable = {
+			price_shipping_capacity = {
+				value = shipping_usage
+				clamp = { min = global.shipping_price_floor max = global.shipping_price_cap }
+				multiply = global.base_price_shipping_capacity
+			}
+		}
 
 		set_variable = { shipping_capacity_convoys = shipping_convoys }
 		multiply_variable = { shipping_capacity_convoys = global.shipping_capacity_per_convoy }

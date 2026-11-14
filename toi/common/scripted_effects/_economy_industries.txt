@@ -248,7 +248,7 @@
 		#   sector_profit@ (operating profit) and sector_margin@ (profit / revenue)
 		#   sector_transport_demand@ - the industrial capacity its industries use (industrial_capacity_use@)
 		#   Railways and ports: sector_industrial_capacity@, sector_shipping_capacity@, and sector_transport_revenue@ (what
-		#     they're paid for transport at each state's rate, part of sector_revenue@)
+		#     they're paid for transport at each state's rate and for shipping at the shipping price, part of sector_revenue@)
 		#   sector_construction@ (size being built), sector_retooling@ (size retooling)
 		#   RGOs: sector_known_deposits@ (found, worked or not), sector_potential_deposits@ (not found yet)
 		# Profit pays corporate tax when it's positive (Q86), then the sector keeps global.sector_retained_share of what's left,
@@ -307,19 +307,18 @@
 						add_to_variable = { PREV.sector_payroll@var:bu_token = expenses_payroll@var:bu_token }
 						add_to_variable = { PREV.sector_maintenance@var:bu_token = expenses_maintenance@var:bu_token }
 						add_to_variable = { PREV.sector_transport_demand@var:bu_token = industrial_capacity_use@var:bu_token }
-						if = { # Railways and ports, paid at this state's rate as in industry_update
+						if = { # Railways and ports, paid at this state's transport rate and the shipping price, as in industry_update
 							limit = { check_variable = { global.building_type@var:bu_token = 2 } }
 							add_to_variable = { PREV.sector_industrial_capacity@var:bu_token = industrial_capacity@var:bu_token }
 							add_to_variable = { PREV.sector_shipping_capacity@var:bu_token = shipping_capacity@var:bu_token }
 							set_temp_variable = {
 								s_transport_temp = {
 									value = industrial_capacity@var:bu_token
-									subtract = {
-										value = shipping_capacity@var:bu_token
-										multiply = global.port_transport_share
-									}
-									add = shipping_capacity@var:bu_token
 									multiply = price_industrial_capacity
+									add = {
+										value = shipping_capacity@var:bu_token
+										multiply = controller:price_shipping_capacity
+									}
 								}
 							}
 							add_to_variable = { PREV.sector_transport_revenue@var:bu_token = s_transport_temp }
@@ -683,18 +682,18 @@
 				}
 			}
 
-			if = { # Railways & ports are paid for the service they provide, at the state's rate (see calc_industrial_capacity).
-				# A port's industrial capacity includes the share of its shipping that moves goods within the state, paid once
+			if = { # Railways & ports are paid for the service they provide: transport at the state's rate (calc_industrial_capacity),
+				# and shipping at the market's shipping price (calc_shipping_capacity, Q104). A port's industrial capacity is the share
+				# of its shipping that moves goods within the state, paid like a railway's (Q105)
 				limit = { check_variable = { global.building_type@var:bu_token = 2 } }
 				set_variable = {
 					revenue@var:bu_token = {
 						value = industrial_capacity@var:bu_token
-						subtract = {
-							value = shipping_capacity@var:bu_token
-							multiply = global.port_transport_share
-						}
-						add = shipping_capacity@var:bu_token
 						multiply = price_industrial_capacity
+						add = {
+							value = shipping_capacity@var:bu_token
+							multiply = controller:price_shipping_capacity
+						}
 						add = revenue@var:bu_token
 					}
 				}

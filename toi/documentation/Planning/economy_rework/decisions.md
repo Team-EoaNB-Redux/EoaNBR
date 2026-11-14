@@ -4,7 +4,7 @@ Questions raised against the new spec, [EOANB_Redux_Economy_Redesign_Updated.md]
 
 When Strat answers, write the answer under the question, mark it **Decided** with the date, and update the milestone file it belongs to. The tuning values the spec leaves to testing (§34) aren't asked here: they get settled in the milestone that builds them.
 
-**Status:** Strat answered Q1–Q54 on 2026-11-12. Where an answer differs from the recommendation, it says "Not as recommended". The answers raised follow-up questions Q55–Q68, which Strat also answered on 2026-11-12. Those raised Q69–Q72, also answered the same day. M02's code reading raised Q73–Q80, and M03's raised Q81–Q84. Strat answered all of them on 2026-11-12. M04's raised Q85–Q91, answered on 2026-11-13. M05's raised Q92–Q95, answered on 2026-11-14. M06's raised Q96–Q101, answered on 2026-11-14.
+**Status:** Strat answered Q1–Q54 on 2026-11-12. Where an answer differs from the recommendation, it says "Not as recommended". The answers raised follow-up questions Q55–Q68, which Strat also answered on 2026-11-12. Those raised Q69–Q72, also answered the same day. M02's code reading raised Q73–Q80, and M03's raised Q81–Q84. Strat answered all of them on 2026-11-12. M04's raised Q85–Q91, answered on 2026-11-13. M05's raised Q92–Q95, answered on 2026-11-14. M06's raised Q96–Q101, answered on 2026-11-14. M07's raised Q102–Q105, answered on 2026-11-14.
 
 ---
 
@@ -886,5 +886,46 @@ These came out of reading the deposit code for M06. Baseline: `redux-eco-sim/run
 - (b) Keep it as reference until M14.
 
 *Recommend:* (a), under Q4.
+
+> **Decided 2026-11-14:** (a).
+
+---
+
+## Infrastructure follow-ups (raised 2026-11-14, M07)
+
+These came out of M07's baseline (`redux-eco-sim/runs/m07_base`, and `runs/m07_rail_pre`, the same code with test railways and ports). Strat answered Q102–Q105 on 2026-11-14.
+
+**Q102. The spare-capacity bonus.** When transport supply S covers demand D, Infrastructure Efficiency is 1 + 0.2 × (1 − D/S), and 1.2 with no demand. S includes the supply every state gets from its population, so Cornwall, with no industry, gets 1.20, and every British test state gets 1.10–1.18 without railways. M07's plan called that a free bonus, to be scaled by built supply or dropped.
+- (a) Only built supply earns the bonus: the bonus × the share of S from railways, ports and local modifiers.
+- (b) Drop the bonus.
+- (c) Scale the bonus by built supply per head against a reference level.
+
+*Recommend:* (a).
+
+> **Decided 2026-11-14:** none of them, not as recommended: keep the bonus as it is. It isn't a problem. The point is that states with excellent infrastructure get a bonus, and that can mean populous states. Strat never raised the "free bonus": an agent noted it in segment 04 (2026-10-30), and the plan reorganisation copied it into M07 as if decided. Follow-up: Q103.
+
+**Q103. A cap on supply from population (Strat's idea, from Q102).** Supply from population is pops × `global.base_infrastructure_per_pop` (0.0055) × (1 + road techs). London (3,883K) gets 34, but China's biggest states (20,000–26,000K) get 140–230, six times London. Roads only carry so much freight, and density matters for industrialisation, as in Victoria III.
+- (a) Cap it after roads: min(pops × 0.0055 × (1 + roads), the cap). Roads raise the rate per head, and only cap modifiers raise the cap.
+- (b) Cap it before roads, so road techs raise the cap too.
+- (c) Not now.
+
+*Recommend:* (a), with a cap of 40, just above London, so no British state changes and about 50 states (mostly China and India) are capped.
+
+> **Decided 2026-11-14:** (a), with both an absolute modifier and a relative factor on the cap, the absolute one first: cap = (`global.base_infrastructure_cap` + `base_infrastructure_cap_modifier`) × (1 + `base_infrastructure_cap_factor`). No tech grants either yet; M14 assigns them.
+
+**Q104. How ports are paid for shipping.** Shipping capacity is one pool per market (100, plus convoys, plus every member's ports), and weekly trade measures how much of it is used. Traders pay a flat shipping price of 1 per unit used. Ports are paid their whole shipping capacity at their state's railway rate, whatever the use.
+- (a) Ports' rate = the market's shipping usage, clamped 0.25–2 like the railway rate. Traders keep paying 1.
+- (b) Ports' rate = exactly the usage: ports get what traders pay, split by capacity.
+- (c) The shipping price itself follows usage, clamped: traders pay it per unit of shipping used, and ports are paid it per unit of capacity.
+
+*Recommend:* (a).
+
+> **Decided 2026-11-14:** (c), not as recommended.
+
+**Q105. A port's local transport.** 23% of a port's shipping capacity also counts as transport supply in its state (`global.port_transport_share`), and isn't paid on top of its shipping ("paid once").
+- (a) Pay it at the state's transport rate, as railways are paid.
+- (b) Don't pay it.
+
+*Recommend:* (a).
 
 > **Decided 2026-11-14:** (a).

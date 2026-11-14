@@ -75,11 +75,21 @@
             multiply_temp_variable = { revenue_temp = deposit_quality@var:industry_token }
         }
 
-        # Railways & ports are paid for the service they provide
-        set_temp_variable = { getter_amount_temp = global.pm_industrial_capacity@var:pm_temp }
-        add_to_temp_variable = { getter_amount_temp = global.pm_shipping_capacity@var:pm_temp }
-        multiply_temp_variable = { getter_amount_temp = employees_temp }
+        # Railways & ports are paid for the service they provide: transport at the state's rate, and shipping at the shipping
+        # price (Q104). A port's share of its shipping that moves goods within the state is paid like a railway's (Q105).
+        # Their capacity takes the same modifiers as output (industry_production_update)
+        set_temp_variable = { getter_amount_temp = global.pm_shipping_capacity@var:pm_temp }
+        multiply_temp_variable = { getter_amount_temp = global.port_transport_share }
+        add_to_temp_variable = { getter_amount_temp = global.pm_industrial_capacity@var:pm_temp }
         multiply_temp_variable = { getter_amount_temp = price_industrial_capacity }
+        set_temp_variable = { getter_factor_temp = global.pm_shipping_capacity@var:pm_temp }
+        multiply_temp_variable = { getter_factor_temp = controller:price_shipping_capacity }
+        add_to_temp_variable = { getter_amount_temp = getter_factor_temp }
+        multiply_temp_variable = { getter_amount_temp = employees_temp }
+        multiply_temp_variable = { getter_amount_temp = common_modifier_temp }
+        set_temp_variable = { getter_factor_temp = controller:industry_output_factor@var:industry_token }
+        add_to_temp_variable = { getter_factor_temp = 1 }
+        multiply_temp_variable = { getter_amount_temp = getter_factor_temp }
         add_to_temp_variable = { revenue_temp = getter_amount_temp }
 
         # Input
@@ -134,7 +144,7 @@
         # Outputs:
         #   employed_temp, jobs_temp - K workers, working and middle class together
         #   employment_percent_temp - the share of its payroll it employs, in %
-        #   revenue_shipping_temp, revenue_industrial_temp - what a railway or port is paid for transport
+        #   revenue_shipping_temp, revenue_industrial_temp - what a railway or port is paid for shipping and for transport
         #   revenue_goods_temp - what its goods sold for
         #   expenses_total_temp, profit_temp, margin_temp (this month's profit over revenue)
         #   productivity_temp - what each wage-weighted worker adds after inputs and maintenance. The government buildings
@@ -169,11 +179,8 @@
         if = {
             limit = { check_variable = { global.building_type@var:industry_token = 2 } }
             set_temp_variable = { revenue_shipping_temp = shipping_capacity@var:industry_token }
-            multiply_temp_variable = { revenue_shipping_temp = price_industrial_capacity }
-            set_temp_variable = { revenue_industrial_temp = shipping_capacity@var:industry_token }
-            multiply_temp_variable = { revenue_industrial_temp = global.port_transport_share }
-            multiply_temp_variable = { revenue_industrial_temp = -1 }
-            add_to_temp_variable = { revenue_industrial_temp = industrial_capacity@var:industry_token }
+            multiply_temp_variable = { revenue_shipping_temp = controller:price_shipping_capacity }
+            set_temp_variable = { revenue_industrial_temp = industrial_capacity@var:industry_token }
             multiply_temp_variable = { revenue_industrial_temp = price_industrial_capacity }
         }
         set_temp_variable = { revenue_goods_temp = revenue@var:industry_token }

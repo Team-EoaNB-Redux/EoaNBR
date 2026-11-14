@@ -186,7 +186,7 @@ For a country-level screen with one entry per sector. No such screen exists yet,
 | Goods made, per good, and their value | `output@<sector>` × `global.building_base_production_amount@<sector>^i`, × `price@<good>` | Loc can work it out |
 | Goods used, per good, and their cost | For each method i with a scale, `sector_pm_scale@^i` × each of its input amounts (`global.pm_input@<method>^j`, `global.pm_input_amount@<method>^j`), and the same for the AMs. Method i's input cost is `sector_pm_scale@^i` × `method_input_cost@<method>`, and all of them add up to `sector_inputs@`. A loop over the sector's own methods, not its states | Loc can work it out |
 | Transport demand | `sector_transport_demand@` | Stored |
-| Transport capacity and revenue (railways, ports) | `sector_industrial_capacity@`, `sector_shipping_capacity@`, `sector_transport_revenue@` (paid at each state's rate) | Stored |
+| Transport capacity and revenue (railways, ports) | `sector_industrial_capacity@`, `sector_shipping_capacity@`, `sector_transport_revenue@` (transport at each state's rate, shipping at the shipping price, since M07) | Stored |
 | Employed and jobs, per class | `sector_working_jobs@`, `sector_middle_jobs@`, `sector_working_employed@`, `sector_middle_employed@`. The totals are their sums | Stored |
 | Employment % | Wage-weighted, as the state tooltip: (working employed × `global.wage_multiplier@token:working_class` + middle employed × `global.wage_multiplier@token:middle_class`) over the same for jobs | Loc |
 | Employment target | `sector_utilisation@`, the national target. Each state works within `global.local_utilisation_shift` of it | Stored |

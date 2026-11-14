@@ -3,7 +3,7 @@
 **Strat's decision, 2026-11-11:** build the economy to the new spec first, then balance the 1857 start. Until then the map stays stripped to subsistence, and a few small test industries in Britain are fine for checking that mechanisms work. Balance waits for M14. Debt is off for every country for the same reason (`global.eco_debt_enabled = 0`, from M00).
 
 - **Target design:** [EOANB_Redux_Economy_Redesign_Updated.md](EOANB_Redux_Economy_Redesign_Updated.md) ("the spec"). The old spec is in [archive/](archive/redux_economy_redesign_spec.md) for history.
-- **Decisions:** [decisions.md](decisions.md). Strat answered every question: Q1–Q84 on 2026-11-12, Q85–Q91 on 2026-11-13 and Q92–Q101 on 2026-11-14. Each milestone lists the questions it depends on.
+- **Decisions:** [decisions.md](decisions.md). Strat answered every question: Q1–Q84 on 2026-11-12, Q85–Q91 on 2026-11-13 and Q92–Q105 on 2026-11-14. Each milestone lists the questions it depends on.
 
 ## Milestones
 Each one is a self-contained piece of work for a fresh session. Do them in order, since each builds on the ones before. The order itself is Q1.
@@ -17,7 +17,7 @@ Each one is a self-contained piece of work for a fresh session. Do them in order
 | M04 | [National sectors and target utilisation](milestones/M04_national_sectors.md) | §2–4, §6 | Q18–Q23, Q55, Q85–Q91 | In progress: the systems are done, in the simulator and in Strat's month-1 save; the UI rework remains |
 | M05 | [Land, agriculture and subsistence](milestones/M05_land_and_subsistence.md) | §10–11, §25 | Q24–Q27, Q63, Q71, Q92–Q95 | Done in the simulator; in-game check to do |
 | M06 | [Natural resources](milestones/M06_resources.md) | §9 | Q28–Q30, Q68, Q96–Q101 | Done in the simulator; in-game check to do |
-| M07 | [Infrastructure](milestones/M07_infrastructure.md) | §8 | Q31 | Not started, mostly built |
+| M07 | [Infrastructure](milestones/M07_infrastructure.md) | §8 | Q31, Q102–Q105 | Done in the simulator; in-game check to do |
 | M08 | [Manufacturing Base and HOI4 factories](milestones/M08_manufacturing_base.md) | §12 | Q32–Q33, Q64 | Not started |
 | M09 | [Investment](milestones/M09_investment.md) | §13 | Q34–Q39, Q60 | Not started |
 | M10 | [Companies](milestones/M10_companies.md) | §19 | Q40–Q41, Q66 | Not started |
@@ -57,7 +57,8 @@ Q52 to Q54 apply across milestones.
 - **Committed** in `94fc8dbbf`: M02 (five classes, qualifications, slaves, bureaucrats, active manpower, the merged upper-class investment modifier).
 - **Committed** in `56c941ee2`: M03 (wealth, spending toward a target, pop debt, middle-class investment, the `get_pop_needs` refactor, and subsistence owner jobs from the peasants).
 - **Committed** in `f1fbcedc7`: M04's systems (the PM/AM cache, sector records, the profit split, monthly goods totals by sector and method, the slim state-industry, target utilisation, capacity decay, the national sector figures for the UI). `9612e4cfb` starts the UI rework.
-- **Uncommitted:** M05 (arable land, land quality, crop eligibility, carrying capacity, half returns past it, rent as a constant, and the peasant basket's home-grown share at base price) and M06 (deposits as state history data, deposit quality, prospecting without finds from nothing, RGOs for natural goods only, and content's `add_resource` calls converted to the economy's wrappers). Strat commits the two together.
+- **Committed** in `acece860c`: M05 (arable land, land quality, crop eligibility, carrying capacity, half returns past it, rent as a constant, and the peasant basket's home-grown share at base price) and M06 (deposits as state history data, deposit quality, prospecting without finds from nothing, RGOs for natural goods only, and content's `add_resource` calls converted to the economy's wrappers).
+- **Uncommitted:** M07 (the cap on transport supply from population, a shipping price that follows use, ports paid from it and for their local transport, and test railways and ports).
 - **Switched off:** investment (`global.eco_investment_enabled = 0`), debt (`global.eco_debt_enabled = 0`: starting debt, interest and bankruptcy), the economic cycle (`global.eco_cycle_enabled = 0`), downsizing and banking. Pops borrow, but without interest until M11.
 - **Known bugs:**
   - Pop investment money disappears until M09 gives it the general pool.
