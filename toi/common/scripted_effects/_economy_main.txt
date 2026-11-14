@@ -76,18 +76,18 @@ _country_advance_time = {
     update_national_production_methods = yes
     r_update_modifiers_country_effects = yes
     bureaucracy_and_manpower_update = yes # Bureaucratic jobs and active manpower for the states below
+    sectors_monthly = yes # National sectors: last month's retained earnings become capital, and target utilisation steps
     #buildings_update_base_latest_vals = yes
     every_controlled_state = {
         r_update_modifiers_state_effects = yes
 
         bank_reset_month = yes
 
-        on_monthly_industries = yes # Money Accumulation & Factory Construction
+        on_monthly_industries = yes # Construction, retooling & prospecting
         on_monthly_pops = yes # Pop Finances & Growth
 
-        industry_productivity_sort = yes
         base_wage_update = yes # Floating wage: evolves base_wage from labor utilization + inflation (was base_wage_calculation)
-        on_monthly_industry_ai = yes # Adjusts employment_target
+        industries_monthly = yes # Trailing margins, capacity decay
 
         pops_balance = yes
         fix_negative_workforce = yes
@@ -102,9 +102,13 @@ _country_advance_time = {
         industries_update_construction_retooling = yes
         industries_update = yes
         pops_update = yes
-        
+
         set_variable = { prev_gdp_amount = gdp_amount }
     }
+    national_market_states_update = yes # The goods its industries and pops make and use, which the market reads until next month
+
+    # National sectors: this month's accounts and dividends
+    sectors_update = yes
 
     ## INVESTMENT ##
 	if = {
@@ -140,7 +144,9 @@ _country_advance_time = {
             check_variable = { market_leader = THIS }
         }
 		calc_shipping_capacity = yes
+        set_temp_variable = { ignore_state_market_temp = 1 } # Each member's states were added up after its own tick
         market_update = yes
+        market_statistics_update = yes
         market_calc_gdp = yes
     }
 
@@ -395,6 +401,7 @@ r_weekly_trade = {
             limit = {
                 check_variable = { market_leader = THIS }
             }
+            set_temp_variable = { ignore_state_market_temp = 1 } # States only change monthly
             market_update = yes
         }
     }
@@ -554,57 +561,6 @@ on_monthly_industries = {
                 }
                 set_variable = { retooling_pm@var:om_building = 0 }
             }
-        }
-    }
-    for_each_loop = { # Money Accumulation
-        array = industries
-        value = om_building
-
-        add_to_variable = { money@var:om_building = money_accumulation@var:om_building }
-
-        # Downsizing (creative destruction): shed the planned LOCAL sizes and add scrap value to cash.
-        # add_x_industry_internal recomputes size/jobs/finances (incl. money_limit) for the new size, so the
-        # money cap below applies to the downsized plant - any scrap beyond it is wasted.
-        if = {
-            limit = {
-                check_variable = { downsize_amount@var:om_building > 0 }
-            }
-            # scrap = 0.1 * (asset_value / size) per size shed (equipment & materials sold off)
-            set_temp_variable = { scrap_temp = asset_value@var:om_building }
-            multiply_temp_variable = { scrap_temp = 0.1 }
-            divide_temp_variable = { scrap_temp = size@var:om_building }
-            multiply_temp_variable = { scrap_temp = downsize_amount@var:om_building }
-            add_to_variable = { money@var:om_building = scrap_temp }
-
-            set_temp_variable = { financer_temp = 0 } # local owner (companies downsize at the company level)
-            if = {
-                limit = { check_variable = { global.building_rgo@var:om_building = 1 } }
-                # RGO: flip the shed active extraction back to KNOWN reserves (deposit -n, known +n) - not destroyed.
-                set_temp_variable = { deposit_temp = downsize_amount@var:om_building }
-                multiply_temp_variable = { deposit_temp = -1 }
-                set_temp_variable = { known_temp = downsize_amount@var:om_building }
-                set_temp_variable = { r_token = om_building }
-                add_rgo_internal = yes
-            }
-            else = {
-                set_temp_variable = { x_temp = downsize_amount@var:om_building }
-                multiply_temp_variable = { x_temp = -1 }
-                set_temp_variable = { industry_token = om_building }
-                add_x_industry_internal = yes
-            }
-        }
-
-        if = { #Excess goes to owners
-            limit = {
-                check_variable = { money@var:om_building > money_limit@var:om_building }
-            }
-            set_variable = { money@var:om_building = money_limit@var:om_building }
-        }
-        if = {
-            limit = {
-                check_variable = { money@var:om_building < 0 }
-            }
-            set_variable = { money@var:om_building = 0 }
         }
     }
 	for_each_loop = { # Prospecting
@@ -1223,274 +1179,4 @@ major_economic_boom_effect = {
         trade_update_value = yes
         budget_update = yes
     }
-    on_monthly_industry_ai = { # Adjusts employment_target
-
-        for_each_loop = {
-            array = industries
-            value = om_building
-            break = prod_break
-
-            if = {
-                limit = {
-                    OR = {
-                        check_variable = { om_building = token:industrial_complex }
-                        check_variable = { om_building = token:arms_factory }
-                        check_variable = { om_building = token:dockyard }
-                    }
-                }
-				set_variable = { employment_target@var:om_building = 100 }
-            }
-            else_if = {
-                limit = {
-                    OR = {
-                        check_variable = { om_building = token:subsistence_farm }
-                    }
-                }
-            }
-            else_if = {
-                limit = {
-                    NOT = { check_variable = { size@var:om_building = 0 } }
-					check_variable = { profitability@var:om_building > 0.15 }
-                }
-				set_temp_variable = {
-					target_temp = {
-						value = employment_target@var:om_building
-						# Increase Target
-						add = {
-							value = 4
-							if = { limit = { value = profitability@var:om_building greater_than = 0.15 }
-								# High profitability increases hiring
-								add = {
-									value = profitability@var:om_building
-									subtract = 0.14
-									multiply = 100
-								}
-							}
-							if = { limit = { value = pops_unemployed_percentage less_than = 0.10 }
-								# Low unemployment makes it harder to hire
-								multiply = {
-									value = 0.25
-									add = {
-										value = pops_unemployed_percentage # Range of 0 to 0.1
-										multiply = 7.5
-									}
-								}
-							}
-							min = 20
-						}
-						multiply = 100
-						round = yes
-						divide = 100
-						clamp = { min = 10 max = 100 }
-					}
-				}
-
-				set_variable = { employment_target@var:om_building = target_temp }
-			}
-            else_if = {
-                limit = {
-                    NOT = { check_variable = { size@var:om_building = 0 } }
-					check_variable = { profitability@var:om_building < 0.05 }
-                }
-				set_temp_variable = { money_amount_ratio = {
-					value = money@var:om_building
-					divide = money_limit@var:om_building
-					clamp = { min = 0 max = 1 }
-				}}
-				
-				set_temp_variable = { 
-					target_temp = {
-						value = employment_target@var:om_building
-						# Reduce Target
-						subtract = {
-							value = 3
-							if = { limit = { value = profitability@var:om_building less_than = 0.05 }
-								# Low profitability increases firing
-								subtract = {
-									value = profitability@var:om_building
-									subtract = 0.06
-									multiply = 100
-								}
-							}
-							if = { limit = { value = money_amount_ratio less_than = 0.5 }
-								# Low cash reserves means the industry fires more
-								add = {
-									value = 1
-									subtract = money_amount_ratio
-								}
-								divide = {
-									value = money_amount_ratio
-									add = 0.1
-								}
-							}
-							min = 25
-						}
-						multiply = 100
-						round = yes
-						divide = 100
-						clamp = { min = 10 max = 100 }
-					}
-				}
-
-				set_variable = { employment_target@var:om_building = target_temp }
-			}
-        }
-	}
-	test_target = {
-		set_temp_variable = { om_building = token:iron }
-		set_temp_variable = { money_amount_ratio = {
-			value = money@var:om_building
-			divide = money_limit@var:om_building
-			clamp = { min = 0 max = 1 }
-		}}
-		
-		set_temp_variable = { 
-			target_temp = {
-				value = employment_target@var:om_building
-				# Reduce Target
-				subtract = {
-					value = 3
-					if = { limit = { value = profitability@var:om_building less_than = 0.05 }
-						# Low profitability increases firing
-						subtract = {
-							value = profitability@var:om_building
-							subtract = 0.06
-							multiply = 50
-						}
-					}
-					if = { limit = { value = money_amount_ratio less_than = 0.5 }
-						# Low cash reserves means the industry fires more
-						add = {
-							value = 1
-							subtract = money_amount_ratio
-						}
-						divide = {
-							value = money_amount_ratio
-							add = 0.1
-						}
-					}
-					min = 25
-				}
-				multiply = 100
-				round = yes
-				divide = 100
-				clamp = { min = 10 max = 100 }
-			}
-		}
-
-		log = "[?target_temp]"
-	}
-	# test_cpp = {
-	# 	set_temp_variable = { om_building = token:mechanical_works }
-	# 	set_temp_variable = { target_temp = 10 }
-	# 	calculate_projected_profitability = yes
-	# 	log = "Profitability of [?om_building.GetTokenKey] at [?target_temp]%: [?profitability_temp|%G]"
-	# 	log = "	   Production %: [?output_temp|%Y] | [?production_percentage@var:om_building|Y]%"
-	# 	log = "	   Production Comp: [?output_amount_temp|Y] | [?production@var:om_building^0|Y]"
-	# 	log = "    New Price of [?r_temp.GetTokenKey] vs old: [?output_price_temp|Y] | [?controller:price@var:r_temp|Y]"
-	# 	log = "    Revenue|Expenses: [?revenue_temp|G] | [?expenses_temp|R]"
-	# }
-	calculate_projected_profitability = {
-		# om_building
-		# target_temp
-		# output: profitability_temp
-
-		# Projecting Output:
-		set_temp_variable = {
-			output_temp = {
-				value = target_temp
-				divide = 100
-				multiply = {
-					value = 1.2
-					subtract = {
-						value = target_temp
-						divide = 100
-						pow = 3
-						multiply = 0.2
-					}
-				}
-			}
-		}
-		
-		set_temp_variable = { production_max_temp = production_max@var:om_building^0 }
-		set_temp_variable = {
-			output_amount_temp = {
-				value = production_max_temp
-				multiply = size@var:om_building
-				multiply = output_temp
-			}
-		}
-
-		set_temp_variable = { r_temp = global.building_base_production@var:om_building^0 }
-		set_temp_variable = { new_supply_temp = controller:supply@var:r_temp }
-		subtract_from_temp_variable = { new_supply_temp = production@var:om_building^0 }
-		add_to_temp_variable = { new_supply_temp = output_amount_temp }
-		set_temp_variable = {
-			output_price_temp = {
-				value = global.base_price@var:r_temp
-				multiply = controller:demand@var:r_temp
-				divide = new_supply_temp
-				multiply = controller:demand@var:r_temp
-				divide = new_supply_temp
-			}
-		}
-
-		set_temp_variable = {
-			revenue_temp = {
-				value = production_max_temp
-				multiply = output_price_temp
-				add = {
-					value = industrial_capacity_max@var:om_building
-					subtract = {
-						value = shipping_capacity_max@var:om_building
-						multiply = global.port_transport_share
-					}
-					add = shipping_capacity_max@var:om_building
-					multiply = price_industrial_capacity
-				}
-				multiply = size@var:om_building
-				multiply = output_temp
-			}
-		}
-
-		set_temp_variable = {
-			expenses_temp = {
-				value = expenses_input@var:om_building
-				multiply = 100
-				divide = { 
-					value = production_percentage@var:om_building 
-					clamp = { min = 10 max = 100 }
-				}
-				multiply = output_temp
-				add = {
-					value = size@var:om_building
-					multiply = target_temp
-					divide = 100
-					multiply = base_wage
-					multiply = payroll_multiplier@var:om_building
-				}
-			}
-		}
-
-		set_temp_variable = {
-			profitability_temp = {
-				value = revenue_temp
-				subtract = expenses_temp
-				if = { limit = { value = revenue_temp greater_than = expenses_temp }
-					multiply = 0.67
-					divide = {
-						value = expenses_temp
-						add = {
-							value = revenue_temp
-							subtract = expenses_temp
-							multiply = 0.33
-						}
-					}
-				}
-				else = {
-					divide = expenses_temp
-				}
-			}
-		}
-	}
 #

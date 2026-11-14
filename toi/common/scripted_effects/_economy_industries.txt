@@ -1,10 +1,10 @@
 
 # Industry Update
 	industries_update = {
-		# The upper class owns every industry's local share (Q11), and employees share a third of its profit as bonuses
+		# The upper class owns the generic share of every industry here: its size less what companies hold (Q11).
+		# A sector pays dividends nationally, by size (sectors_update): its dividends@ here are this size's share, from last
+		# month's accounts. Subsistence rent and the government buildings pay their own dividends@
 		set_variable = { pops_dividends@token:upper_class = 0 }
-		set_variable = { pops_bonuses@token:working_class = 0 }
-		set_variable = { pops_bonuses@token:middle_class = 0 }
 
 		for_each_loop = {
 			array = industries
@@ -14,35 +14,23 @@
 					check_variable = { size@var:bu_token > 0 }
 				}
 
-				# Apportion dividends by ownership: locals receive only their (size - incorporated) share.
-				# The incorporated share is collected by companies in companies_update. owner_sizes is
-				# empty for unincorporated industries, so local_fraction = 1 and behaviour is unchanged.
-				set_temp_variable = { local_dividends_temp = dividends@var:bu_token }
+				# The incorporated share is collected by companies in companies_update. owner_sizes is empty for unincorporated
+				# industries, so the generic owner holds the whole size
 				set_temp_variable = { incorporated_size_temp = 0 }
 				for_each_loop = {
 					array = owner_sizes@var:bu_token
 					value = owner_size_temp
 					add_to_temp_variable = { incorporated_size_temp = owner_size_temp }
 				}
-				if = {
-					limit = {
-						check_variable = { incorporated_size_temp > 0 }
-					}
-					set_temp_variable = { local_fraction_temp = size@var:bu_token }
-					subtract_from_temp_variable = { local_fraction_temp = incorporated_size_temp }
-					set_variable = { owner_sizes_local@var:bu_token = local_fraction_temp }
+				set_variable = { owner_sizes_local@var:bu_token = { value = size@var:bu_token subtract = incorporated_size_temp max = 0 } }
 
-					divide_temp_variable = { local_fraction_temp = size@var:bu_token }
-					clamp_temp_variable = { var = local_fraction_temp min = 0 max = 1 }
-					multiply_temp_variable = { local_dividends_temp = local_fraction_temp }
-				}
-				else = {
-					set_variable = { owner_sizes_local@var:bu_token = size@var:bu_token }
+				set_temp_variable = { local_dividends_temp = dividends@var:bu_token }
+				if = {
+					limit = { is_sector = yes }
+					set_variable = { dividends@var:bu_token = { value = controller:sector_dividend_per_size@var:bu_token multiply = size@var:bu_token } }
+					set_temp_variable = { local_dividends_temp = { value = controller:sector_dividend_per_size@var:bu_token multiply = owner_sizes_local@var:bu_token } }
 				}
 				add_to_variable = { pops_dividends@token:upper_class = local_dividends_temp }
-
-				add_to_variable = { pops_bonuses@token:working_class = working_bonuses@var:bu_token }
-				add_to_variable = { pops_bonuses@token:middle_class = middle_bonuses@var:bu_token }
 			}
 		}
 
@@ -103,6 +91,319 @@
 		}
 	}
 
+	# National sectors (Q18, Q85): one per industry token on the country's sectors list, which cache_register_industry fills.
+	# Subsistence farms and the government buildings aren't sectors. Each sector keeps its accounts nationally, and its
+	# state-industries are where the work happens
+	sectors_monthly = {
+		# Country scope. Runs once a tick, before the state loop, from last month's accounts (sectors_update):
+		# - Retained earnings become sector capital (Q21), which M09 spends. A loss drawn from capital is negative retained
+		#   earnings, and never takes capital below 0 (Q22).
+		# - Target utilisation (Q20), sector_utilisation@, in %: a damped step on the national margin. It rises while the margin
+		#   is above global.sector_utilisation_rise_margin and falls while it's negative, by 1 point plus
+		#   global.sector_utilisation_gain points per unit of margin beyond those, at most global.sector_utilisation_step_max
+		#   a month, between global.sector_utilisation_min and 100. A sector with no industries holds its target
+		for_each_loop = {
+			array = sectors
+			value = s_token
+			add_to_variable = { sector_capital@var:s_token = sector_retained@var:s_token }
+
+			if = {
+				limit = { check_variable = { sector_size@var:s_token > 0 } }
+				set_variable = {
+					sector_utilisation@var:s_token = {
+						value = sector_utilisation@var:s_token
+						if = { limit = { value = sector_margin@var:s_token greater_than = global.sector_utilisation_rise_margin }
+							add = {
+								value = sector_margin@var:s_token
+								subtract = global.sector_utilisation_rise_margin
+								multiply = global.sector_utilisation_gain
+								add = 1
+								min = global.sector_utilisation_step_max
+							}
+						}
+						if = { limit = { value = sector_margin@var:s_token less_than = 0 }
+							subtract = {
+								value = sector_margin@var:s_token
+								multiply = global.sector_utilisation_gain
+								multiply = -1
+								add = 1
+								min = global.sector_utilisation_step_max
+							}
+						}
+						clamp = { min = global.sector_utilisation_min max = 100 }
+					}
+				}
+			}
+		}
+	}
+	industries_monthly = {
+		# State scope. Runs once a tick, before industries_update, from last month's figures:
+		# - Each sector state-industry's trailing operating margin, margin@, moves global.industry_margin_weight of the way
+		#   toward last month's (profit over revenue). It sets the local shift in utilisation (industry_utilisation_calc) and
+		#   capacity decay. It's 0 until the industry first earns revenue, and then starts at that month's margin.
+		# - Capacity decay (Q23, Q87): a building whose trailing margin is below global.industry_decay_margin loses
+		#   global.industry_decay_rate of its generic owner's size a month (companies decide for their own), and the generic
+		#   share closes once the building is below global.industry_decay_floor. Only while investment is on
+		#   (global.eco_investment_enabled), since nothing rebuilds capacity before M09. RGOs follow their deposits
+		for_each_loop = {
+			array = industries
+			value = bu_token
+			if = {
+				limit = {
+					is_sector = yes
+					check_variable = { revenue@var:bu_token > 0 }
+				}
+				set_temp_variable = {
+					margin_temp = {
+						value = revenue@var:bu_token
+						subtract = expenses_payroll@var:bu_token
+						subtract = expenses_input@var:bu_token
+						subtract = expenses_maintenance@var:bu_token
+						divide = revenue@var:bu_token
+					}
+				}
+				if = {
+					limit = { check_variable = { margin@var:bu_token = 0 } }
+					set_variable = { margin@var:bu_token = margin_temp }
+				}
+				else = {
+					set_variable = {
+						margin@var:bu_token = {
+							value = margin_temp
+							subtract = margin@var:bu_token
+							multiply = global.industry_margin_weight
+							add = margin@var:bu_token
+						}
+					}
+				}
+			}
+		}
+
+		if = {
+			limit = { check_variable = { global.eco_investment_enabled = 1 } }
+			for_each_loop = { # Not the state's buildings array, which closing a building changes
+				array = global.building_token_array
+				value = decay_token
+				if = {
+					limit = {
+						check_variable = { owner_sizes_local@var:decay_token > 0 }
+						check_variable = { construction@var:decay_token = 0 }
+						check_variable = { margin@var:decay_token < global.industry_decay_margin }
+						NOT = { check_variable = { margin@var:decay_token = 0 } }
+					}
+					set_temp_variable = { industry_token = decay_token }
+					set_temp_variable = { x_temp = { value = owner_sizes_local@var:decay_token multiply = global.industry_decay_rate multiply = -1 } }
+					if = {
+						limit = { check_variable = { size@var:decay_token < global.industry_decay_floor } }
+						set_temp_variable = { x_temp = { value = owner_sizes_local@var:decay_token multiply = -1 } }
+					}
+					set_temp_variable = { financer_temp = 0 }
+					set_temp_variable = { production_method_temp = production_method@var:decay_token }
+					set_temp_variable = { automation_method_temp = automation_method@var:decay_token }
+					add_x_industry_internal = yes
+				}
+			}
+		}
+	}
+	industry_utilisation_calc = {
+		# State scope. Input: bu_token. Output: i_employment_target, the share of its jobs it offers, in %
+		# A sector's state-industries work at the national target utilisation (sector_utilisation@, sectors_monthly), shifted by
+		# global.local_utilisation_gain points per unit by which their trailing margin beats the national margin, at most
+		# global.local_utilisation_shift points either way (Q20). The government buildings always work at 100%
+		if = {
+			limit = { is_sector = yes }
+			set_temp_variable = { i_employment_target = controller:sector_utilisation@var:bu_token }
+			if = { # A sector the controller hasn't registered yet, such as a conquered state's, starts where every sector does
+				limit = { check_variable = { i_employment_target = 0 } }
+				set_temp_variable = { i_employment_target = global.sector_utilisation_start }
+			}
+			if = {
+				limit = { NOT = { check_variable = { margin@var:bu_token = 0 } } } # 0 until its first month's accounts
+				set_temp_variable = { local_shift_floor_temp = { value = global.local_utilisation_shift multiply = -1 } }
+				set_temp_variable = {
+					i_employment_target = {
+						value = margin@var:bu_token
+						subtract = controller:sector_margin@var:bu_token
+						multiply = global.local_utilisation_gain
+						min = global.local_utilisation_shift
+						max = local_shift_floor_temp
+						add = i_employment_target
+						clamp = { min = global.sector_utilisation_min max = 100 }
+					}
+				}
+			}
+		}
+		else = {
+			set_temp_variable = { i_employment_target = 100 }
+		}
+	}
+	sectors_update = {
+		# Country scope. Each sector's national figures for the month, from its state-industries (industries_update):
+		#   sector_size@, sector_generic_size@ (less what companies hold)
+		#   sector_working_jobs@, sector_middle_jobs@, sector_working_employed@, sector_middle_employed@ (K workers)
+		#   sector_revenue@, sector_inputs@, sector_payroll@, sector_maintenance@
+		#   sector_profit@ (operating profit) and sector_margin@ (profit / revenue)
+		#   sector_transport_demand@ - the industrial capacity its industries use (industrial_capacity_use@)
+		#   Railways and ports: sector_industrial_capacity@, sector_shipping_capacity@, and sector_transport_revenue@ (what
+		#     they're paid for transport at each state's rate, part of sector_revenue@)
+		#   sector_construction@ (size being built), sector_retooling@ (size retooling)
+		#   RGOs: sector_known_reserves@, sector_potential_reserves@
+		# Profit pays corporate tax when it's positive (Q86), then the sector keeps global.sector_retained_share of what's left,
+		# scaled by investment appetite (incentives, Q39), and pays the rest as dividends. A loss comes out of the sector's
+		# capital first, then out of dividends, which go negative (Q22). Sectors don't borrow until M11.
+		# Each state's upper class is paid sector_dividend_per_size@ on the generic size there, next month (industries_update).
+		# sector_states@<sector> lists its five biggest states by size, biggest first. The method mix is
+		# national_market_states_update's (sector_pm_size@, sector_am_size@).
+		# Outputs: sector_*@<sector>, and the country totals sectors_profit_tax, sectors_retained and sectors_dividends
+		for_each_loop = {
+			array = sectors
+			value = s_token
+			set_variable = { sector_size@var:s_token = 0 }
+			set_variable = { sector_generic_size@var:s_token = 0 }
+			set_variable = { sector_working_jobs@var:s_token = 0 }
+			set_variable = { sector_middle_jobs@var:s_token = 0 }
+			set_variable = { sector_working_employed@var:s_token = 0 }
+			set_variable = { sector_middle_employed@var:s_token = 0 }
+			set_variable = { sector_revenue@var:s_token = 0 }
+			set_variable = { sector_inputs@var:s_token = 0 }
+			set_variable = { sector_payroll@var:s_token = 0 }
+			set_variable = { sector_maintenance@var:s_token = 0 }
+			set_variable = { sector_transport_demand@var:s_token = 0 }
+			set_variable = { sector_construction@var:s_token = 0 }
+			set_variable = { sector_retooling@var:s_token = 0 }
+			if = {
+				limit = { check_variable = { global.building_type@var:s_token = 2 } }
+				set_variable = { sector_industrial_capacity@var:s_token = 0 }
+				set_variable = { sector_shipping_capacity@var:s_token = 0 }
+				set_variable = { sector_transport_revenue@var:s_token = 0 }
+			}
+			if = {
+				limit = { check_variable = { global.building_rgo@var:s_token > 0 } }
+				set_variable = { sector_known_reserves@var:s_token = 0 }
+				set_variable = { sector_potential_reserves@var:s_token = 0 }
+			}
+			clear_array = sector_states@var:s_token
+		}
+		set_temp_variable = { sectors_country_temp = THIS }
+		every_controlled_state = {
+			for_each_loop = {
+				array = industries
+				value = bu_token
+				if = {
+					limit = { is_sector = yes }
+					if = {
+						limit = { check_variable = { size@var:bu_token > 0 } }
+						add_to_variable = { PREV.sector_size@var:bu_token = size@var:bu_token }
+						add_to_variable = { PREV.sector_generic_size@var:bu_token = owner_sizes_local@var:bu_token }
+						add_to_variable = { PREV.sector_working_jobs@var:bu_token = working_jobs@var:bu_token }
+						add_to_variable = { PREV.sector_middle_jobs@var:bu_token = middle_jobs@var:bu_token }
+						add_to_variable = { PREV.sector_working_employed@var:bu_token = working_employed@var:bu_token }
+						add_to_variable = { PREV.sector_middle_employed@var:bu_token = middle_employed@var:bu_token }
+						add_to_variable = { PREV.sector_revenue@var:bu_token = revenue@var:bu_token }
+						add_to_variable = { PREV.sector_inputs@var:bu_token = expenses_input@var:bu_token }
+						add_to_variable = { PREV.sector_payroll@var:bu_token = expenses_payroll@var:bu_token }
+						add_to_variable = { PREV.sector_maintenance@var:bu_token = expenses_maintenance@var:bu_token }
+						add_to_variable = { PREV.sector_transport_demand@var:bu_token = industrial_capacity_use@var:bu_token }
+						if = { # Railways and ports, paid at this state's rate as in industry_update
+							limit = { check_variable = { global.building_type@var:bu_token = 2 } }
+							add_to_variable = { PREV.sector_industrial_capacity@var:bu_token = industrial_capacity@var:bu_token }
+							add_to_variable = { PREV.sector_shipping_capacity@var:bu_token = shipping_capacity@var:bu_token }
+							set_temp_variable = {
+								s_transport_temp = {
+									value = industrial_capacity@var:bu_token
+									subtract = {
+										value = shipping_capacity@var:bu_token
+										multiply = global.port_transport_share
+									}
+									add = shipping_capacity@var:bu_token
+									multiply = price_industrial_capacity
+								}
+							}
+							add_to_variable = { PREV.sector_transport_revenue@var:bu_token = s_transport_temp }
+						}
+						if = {
+							limit = { NOT = { check_variable = { retooling_pm@var:bu_token = 0 } } }
+							add_to_variable = { PREV.sector_retooling@var:bu_token = size@var:bu_token }
+						}
+
+						# Biggest states, sorted
+						set_temp_variable = { s_break_temp = 0 }
+						for_each_loop = {
+							array = sectors_country_temp:sector_states@var:bu_token
+							index = s_i value = s_state break = s_break_temp
+							if = { limit = { check_variable = { s_state:size@var:bu_token < size@var:bu_token } }
+								add_to_array = { array = sectors_country_temp:sector_states@var:bu_token value = THIS index = s_i }
+								set_temp_variable = { s_break_temp = 1 }
+							}
+						}
+						if = { limit = { check_variable = { s_break_temp = 0 } } add_to_array = { sectors_country_temp:sector_states@var:bu_token = THIS } }
+						if = { limit = { check_variable = { sectors_country_temp:sector_states@var:bu_token^num > 5 } }
+							remove_from_array = { array = sectors_country_temp:sector_states@var:bu_token index = 5 }
+						}
+					}
+
+					# Construction counts before the first size is built, and reserves whether or not a deposit is worked
+					if = {
+						limit = { NOT = { check_variable = { construction@var:bu_token = 0 } } }
+						add_to_variable = { PREV.sector_construction@var:bu_token = construction@var:bu_token }
+					}
+					if = {
+						limit = { check_variable = { global.building_rgo@var:bu_token > 0 } }
+						add_to_variable = { PREV.sector_known_reserves@var:bu_token = known_reserves@var:bu_token }
+						add_to_variable = { PREV.sector_potential_reserves@var:bu_token = potential_reserves@var:bu_token }
+					}
+				}
+			}
+		}
+
+		set_temp_variable = { profit_tax_rate_temp = { value = corporate_tax_percentage_actual divide = 100 } }
+		set_temp_variable = { incentives_temp = modifier@incentives_modifier }
+		calculate_investment_appetite = yes
+		set_temp_variable = { retained_share_temp = { value = global.sector_retained_share multiply = investment_appetite_temp min = 0.8 } }
+
+		set_variable = { sectors_profit_tax = 0 }
+		set_variable = { sectors_retained = 0 }
+		set_variable = { sectors_dividends = 0 }
+		for_each_loop = {
+			array = sectors
+			value = s_token
+
+			set_variable = {
+				sector_profit@var:s_token = {
+					value = sector_revenue@var:s_token
+					subtract = sector_inputs@var:s_token
+					subtract = sector_payroll@var:s_token
+					subtract = sector_maintenance@var:s_token
+				}
+			}
+			set_variable = { sector_margin@var:s_token = 0 }
+			if = {
+				limit = { check_variable = { sector_revenue@var:s_token > 0 } }
+				set_variable = { sector_margin@var:s_token = { value = sector_profit@var:s_token divide = sector_revenue@var:s_token } }
+			}
+
+			set_variable = { sector_profit_tax@var:s_token = { value = sector_profit@var:s_token max = 0 multiply = profit_tax_rate_temp } }
+			set_temp_variable = { s_after_tax_temp = { value = sector_profit@var:s_token subtract = sector_profit_tax@var:s_token } }
+			if = {
+				limit = { check_variable = { s_after_tax_temp > 0 } }
+				set_variable = { sector_retained@var:s_token = { value = s_after_tax_temp multiply = retained_share_temp } }
+			}
+			else = { # As much of the loss as capital covers. The rest comes out of dividends
+				set_variable = { sector_retained@var:s_token = { value = sector_capital@var:s_token multiply = -1 max = s_after_tax_temp } }
+			}
+			set_variable = { sector_dividends@var:s_token = { value = s_after_tax_temp subtract = sector_retained@var:s_token } }
+			set_variable = { sector_dividend_per_size@var:s_token = 0 }
+			if = {
+				limit = { check_variable = { sector_size@var:s_token > 0 } }
+				set_variable = { sector_dividend_per_size@var:s_token = { value = sector_dividends@var:s_token divide = sector_size@var:s_token } }
+			}
+
+			add_to_variable = { sectors_profit_tax = sector_profit_tax@var:s_token }
+			add_to_variable = { sectors_retained = sector_retained@var:s_token }
+			add_to_variable = { sectors_dividends = sector_dividends@var:s_token }
+		}
+	}
+
 	industry_update_size_jobs = {
 		# Calculates Industry Size & Job Figures
 		set_temp_variable = { production_method_temp = production_method@var:bu_token }
@@ -120,26 +421,6 @@
 			set_temp_variable = { size_temp = size@var:bu_token }
 		}
 
-		if = {
-			limit = { NOT = { check_variable = { prev_size@var:bu_token = size_temp } } }
-			set_variable = { industry_dirty_var@var:bu_token = 1 }
-		}
-		else = {
-			set_variable = { prev_size@var:bu_token = size_temp }
-		}
-		
-		# Arable Land Usage
-		if = {
-			limit = {
-				check_variable = { global.building_arable_land_use@var:bu_token > 0 }
-			}
-			set_variable = { arable_land_use@var:bu_token = size_temp }
-			multiply_variable = { arable_land_use@var:bu_token = global.building_arable_land_use@var:bu_token }
-		}
-		else = {
-			clear_variable = arable_land_use@var:bu_token
-		}
-		
 		# Jobs
 		set_temp_variable = { base_jobs_temp = { value = global.building_base_employees@var:bu_token multiply = size_temp } }
 
@@ -184,27 +465,22 @@
 
 		multiply_temp_variable = { i_working_jobs = base_jobs_temp }
 		multiply_temp_variable = { i_middle_jobs = base_jobs_temp }
-		set_temp_variable = { i_jobs = { value = i_working_jobs add = i_middle_jobs } }
 
-		# Jobs Available
-		set_temp_variable = { i_employment_target = employment_target@var:bu_token }
+		# Jobs Available (employment_update adds them up for the state)
+		industry_utilisation_calc = yes
 		set_temp_variable = { i_working_jobs_available = { value = i_working_jobs multiply = i_employment_target divide = 100 } }
 		set_temp_variable = { i_middle_jobs_available = { value = i_middle_jobs multiply = i_employment_target divide = 100 } }
 
 		# Decaching. Owner places are about 2% of jobs and go to the upper class (Q11)
 		set_variable = { owner_jobs@var:bu_token = { value = base_jobs_temp multiply = 0.02 multiply = i_employment_target divide = 100 } }
 
-		set_variable = { jobs@var:bu_token = i_jobs }
 		set_variable = { working_jobs@var:bu_token = i_working_jobs }
 		set_variable = { middle_jobs@var:bu_token = i_middle_jobs }
-
-		set_variable = { jobs_available@var:bu_token = { value = i_working_jobs_available add = i_middle_jobs_available } }
-
 	}
 
 	industry_update_employment = {
 		# Employment
-		set_temp_variable = { i_employment_target = employment_target@var:bu_token }
+		industry_utilisation_calc = yes
 
 		set_variable = {
 			working_employed@var:bu_token = {
@@ -232,12 +508,7 @@
 			}
 		}
 
-		set_variable = { employed@var:bu_token = {
-			value = working_employed@var:bu_token
-			add = middle_employed@var:bu_token
-		} }
-
-		#Employment/Production Percentage
+		# Production Percentage, from the share of its payroll it employs
 		set_temp_variable = {
 			total_prod_temp = {
 				value = working_employed@var:bu_token
@@ -250,12 +521,6 @@
 				divide = size@var:bu_token
 				clamp = { min = 0 max = 1 }
 			}
-		}
-		set_variable = { 
-			employment_percentage@var:bu_token = {
-				value = total_prod_temp
-				multiply = 100
-			} 
 		}
 		set_variable = {
 			production_percentage@var:bu_token = {
@@ -307,14 +572,14 @@
 
 		# Transport demand. Measured before Infrastructure Efficiency, so that efficiency can't feed back into its own demand
 		set_variable = {
-			industrial_capacity_use_max@var:bu_token = {
+			industrial_capacity_use@var:bu_token = {
 				value = global.pm_industrial_capacity_use@var:production_method_temp
 				add = global.pm_industrial_capacity_use@var:automation_method_temp
 				multiply = i_base_employees
 				multiply = i_input_modifier
+				multiply = i_final_prod_modifier
 			}
 		}
-		set_variable = { industrial_capacity_use@var:bu_token = { value = industrial_capacity_use_max@var:bu_token multiply = i_final_prod_modifier } }
 
 		# Infrastructure Efficiency scales goods throughput, never employment
 		set_temp_variable = {
@@ -331,138 +596,48 @@
 		# Transport & Shipping Supply
 		if = {
 			limit = { check_variable = { global.building_type@var:bu_token = 2 } }
-			set_variable = {
-				shipping_capacity_max@var:bu_token = {
+			set_temp_variable = {
+				i_shipping_max_temp = {
 					value = global.pm_shipping_capacity@var:production_method_temp
 					add = global.pm_shipping_capacity@var:automation_method_temp
 					multiply = i_base_employees
 					multiply = i_output_modifier
 				}
 			}
-			set_variable = { shipping_capacity@var:bu_token = { value = shipping_capacity_max@var:bu_token multiply = i_final_prod_modifier } }
+			set_variable = { shipping_capacity@var:bu_token = { value = i_shipping_max_temp multiply = i_final_prod_modifier } }
 
 			# Ports also move goods within the state
 			set_variable = {
-				industrial_capacity_max@var:bu_token = {
+				industrial_capacity@var:bu_token = {
 					value = global.pm_industrial_capacity@var:production_method_temp
 					add = global.pm_industrial_capacity@var:automation_method_temp
 					multiply = i_base_employees
 					multiply = i_output_modifier
 					add = {
-						value = shipping_capacity_max@var:bu_token
+						value = i_shipping_max_temp
 						multiply = global.port_transport_share
 					}
+					multiply = i_final_prod_modifier
 				}
 			}
-			set_variable = { industrial_capacity@var:bu_token = { value = industrial_capacity_max@var:bu_token multiply = i_final_prod_modifier } }
 		}
 
-		# Output Production
-			clear_array = production@var:bu_token
-			clear_array = production_max@var:bu_token
-			clear_array = revenue_goods@var:bu_token
-			set_temp_variable = {
-				i_output_per_size = {
-					value = global.pm_output_amount@var:production_method_temp
-					multiply = global.building_production_multiplier@var:bu_token
-					multiply = i_base_employees
-					multiply = i_output_modifier
-				}
+		# Output: bundles of the industry's base production (global.building_base_production_amount@) made this month. It makes
+		# output@ × each good's amount, which the country adds up by sector (national_market_states_update). Its value comes
+		# from the PM/AM cache in industry_update
+		set_variable = {
+			output@var:bu_token = {
+				value = global.pm_output_amount@var:production_method_temp
+				multiply = global.building_production_multiplier@var:bu_token
+				multiply = i_base_employees
+				multiply = i_output_modifier
+				multiply = i_final_prod_modifier
 			}
-			for_each_loop = {
-				array = global.building_base_production@var:bu_token
-				value = br_token
-				index = ii
+		}
 
-				# Max Production
-				set_temp_variable = { prod_temp = global.building_base_production_amount@var:bu_token^ii }
-				multiply_temp_variable = { prod_temp = i_output_per_size }
-				add_to_array = { production_max@var:bu_token = prod_temp }
-
-				# Actual Production
-				multiply_temp_variable = { prod_temp = i_final_prod_modifier }
-				add_to_array = { production@var:bu_token = prod_temp }
-
-				add_to_array = { revenue_goods@var:bu_token = 0 }
-			}
-		#
-
-		# Input Requirements
-			# Compile Inputs from the PM and AM Together. They only change with the methods themselves
-			if = {
-				limit = {
-					OR = {
-						NOT = { check_variable = { input_compiled_pm@var:bu_token = production_method_temp } }
-						NOT = { check_variable = { input_compiled_am@var:bu_token = automation_method_temp } }
-					}
-				}
-				set_variable = { input_compiled_pm@var:bu_token = production_method_temp }
-				set_variable = { input_compiled_am@var:bu_token = automation_method_temp }
-
-				clear_array = input@var:bu_token
-				clear_array = input_base_amount@var:bu_token
-				clear_array = input_max@var:bu_token
-				clear_array = input_amount@var:bu_token
-				clear_array = input_cost@var:bu_token
-				for_each_loop = {
-					array = global.pm_input@var:production_method_temp
-					value = br_token
-					index = bu_i
-					add_to_array = { input@var:bu_token = br_token }
-					add_to_array = { input_base_amount@var:bu_token = global.pm_input_amount@var:production_method_temp^bu_i }
-					add_to_array = { input_max@var:bu_token = 0 }
-					add_to_array = { input_amount@var:bu_token = 0 }
-					add_to_array = { input_cost@var:bu_token = 0 }
-				}
-				for_each_loop = {
-					array = global.pm_input@var:automation_method_temp
-					value = br_token
-					index = bu_i
-
-					if = {
-						limit = { is_in_array = { input@var:bu_token = br_token } }
-
-						for_each_loop = {
-							array = input@var:bu_token
-							value = br_token2
-							index = bu_ii
-							break = bu_brk
-
-							if = {
-								limit = { check_variable = { br_token2 = br_token } }
-								add_to_variable = { input_base_amount@var:bu_token^bu_ii = global.pm_input_amount@var:automation_method_temp^bu_i }
-
-								set_temp_variable = { bu_brk = 1 }
-							}
-						}
-					}
-					else = {
-						add_to_array = { input@var:bu_token = br_token }
-						add_to_array = { input_base_amount@var:bu_token = global.pm_input_amount@var:automation_method_temp^bu_i }
-						add_to_array = { input_max@var:bu_token = 0 }
-						add_to_array = { input_amount@var:bu_token = 0 }
-						add_to_array = { input_cost@var:bu_token = 0 }
-					}
-				}
-			}
-
-			# Calculating Inputs
-			for_each_loop = {
-				array = input@var:bu_token
-				value = br_token
-				index = ii
-
-				# Max Input
-				set_temp_variable = { prod_temp = input_base_amount@var:bu_token^ii }
-				multiply_temp_variable = { prod_temp = i_base_employees }
-				multiply_temp_variable = { prod_temp = i_input_modifier }
-				set_variable = { input_max@var:bu_token^ii = prod_temp }
-
-				# Actual Input
-				multiply_temp_variable = { prod_temp = i_final_prod_modifier }
-				set_variable = { input_amount@var:bu_token^ii = prod_temp }
-			}
-		#
+		# Inputs: K of base workforce at work, in input terms. It uses input_scale@ × each of its PM's and AM's input amounts
+		# (global.pm_input_amount@), which the country adds up by method. Their cost comes from the PM/AM cache in industry_update
+		set_variable = { input_scale@var:bu_token = { value = i_base_employees multiply = i_input_modifier multiply = i_final_prod_modifier } }
 
 		# Maintenance - flat upkeep from what the plant cost to build, paid on idle capacity too.
 		# Depends on size ONLY (not production/employment %), scaled by the national regulatory_burden_factor.
@@ -485,91 +660,40 @@
 
 		#log = "[?bu_token.GetTokenLocalizedKey]"
 
-		if = {
-			limit = { always = yes } # check_variable = { industry_dirty_var@var:bu_token = 1 }
-			industry_production_update = yes
-			# clear_variable = industry_dirty_var@var:bu_token
-		}
+		cache_register_industry = yes
+		industry_production_update = yes
 
-		# Finances
+		# Finances. A state-industry stores only what the sector accounts, the state GDP and its trailing margin need (revenue@,
+		# expenses_input@, expenses_payroll@, expenses_maintenance@). Tooltips work out the rest
 		if = {
 			limit = { NOT = { check_variable = { global.building_government_control@var:bu_token = 1 } } }
 
-			set_temp_variable = { revenue_temp = 0 }
-			set_temp_variable = { expenses_temp = 0 }
-			
-			# Output Finances
-			set_temp_variable = { i_money_limit = 0 }
-			set_temp_variable = { i_revenue_goods = 0 }
-			for_each_loop = {
-				array = global.building_base_production@var:bu_token
-				value = br_token
-				index = ii
-
-				set_temp_variable = { i_price_temp = controller:price@var:br_token }
-
-				# Goods Revenue
-				set_temp_variable = { money_temp = production@var:bu_token^ii }
-				multiply_temp_variable = { money_temp = i_price_temp }
-
-				set_variable = { revenue_goods@var:bu_token^ii = money_temp }
-				add_to_temp_variable = { i_revenue_goods = money_temp }
-
-				# Productivity & Money Limit
-				set_temp_variable = { productivity_temp = production_max@var:bu_token^ii }
-				set_temp_variable = { money_limit_temp = productivity_temp }
-
-				multiply_temp_variable = { productivity_temp = i_price_temp }
-				add_to_temp_variable = { revenue_temp = productivity_temp }
-
-				multiply_temp_variable = { money_limit_temp = i_size }
-				multiply_temp_variable = { money_limit_temp = global.base_price@var:br_token }
-				add_to_temp_variable = { i_money_limit = money_limit_temp }
+			# Goods revenue and input costs from the PM/AM cache: the market's values for what it made and used. This country's
+			# sector and method modifiers and the local factors are already in output@ and input_scale@
+			set_variable = { revenue@var:bu_token = { value = controller:market_output_value@var:bu_token multiply = output@var:bu_token } }
+			set_variable = {
+				expenses_input@var:bu_token = {
+					value = controller:method_input_cost@var:production_method_temp
+					add = controller:method_input_cost@var:automation_method_temp
+					multiply = input_scale@var:bu_token
+				}
 			}
-			set_variable = { revenue_goods@var:bu_token = i_revenue_goods }
-			set_variable = { money_limit@var:bu_token = i_money_limit }
 
-			# Input Finances
-			set_temp_variable = { i_expenses_input = 0 }
-			for_each_loop = {
-				array = input@var:bu_token
-				value = br_token
-				index = ii
-			
-				set_temp_variable = { i_price_temp = controller:price@var:br_token }
-
-				# Goods Revenue
-				set_temp_variable = { money_temp = input_amount@var:bu_token^ii }
-				multiply_temp_variable = { money_temp = i_price_temp }
-
-				set_variable = { input_cost@var:bu_token^ii = money_temp }
-				add_to_temp_variable = { i_expenses_input = money_temp }
-
-				# Productivity
-				set_temp_variable = { productivity_temp = input_max@var:bu_token^ii }
-				multiply_temp_variable = { productivity_temp = i_price_temp }
-				add_to_temp_variable = { expenses_temp = productivity_temp }
-			}
-			set_variable = { expenses_input@var:bu_token = i_expenses_input }
-
-
-			# Revenue
-			set_variable = { revenue@var:bu_token = revenue_goods@var:bu_token }
-			if = { # Railways & ports are paid for the service they provide, at the state's rate (see calc_industrial_capacity)
+			if = { # Railways & ports are paid for the service they provide, at the state's rate (see calc_industrial_capacity).
+				# A port's industrial capacity includes the share of its shipping that moves goods within the state, paid once
 				limit = { check_variable = { global.building_type@var:bu_token = 2 } }
-				set_variable = { revenue_shipping_capacity@var:bu_token = { value = shipping_capacity@var:bu_token multiply = price_industrial_capacity } }
 				set_variable = {
-					revenue_industrial_capacity@var:bu_token = {
+					revenue@var:bu_token = {
 						value = industrial_capacity@var:bu_token
 						subtract = {
 							value = shipping_capacity@var:bu_token
 							multiply = global.port_transport_share
 						}
+						add = shipping_capacity@var:bu_token
 						multiply = price_industrial_capacity
+						add = revenue@var:bu_token
 					}
 				}
-				add_to_variable = { revenue@var:bu_token = revenue_shipping_capacity@var:bu_token }
-				add_to_variable = { revenue@var:bu_token = revenue_industrial_capacity@var:bu_token }
 			}
 
 			# Expenses. Wages for the free share of the working class and for the middle class: slaves cost nothing (Q12, Q62)
@@ -586,204 +710,116 @@
 					multiply = base_wage
 				}
 			}
-
-			set_variable = { expenses@var:bu_token = expenses_payroll@var:bu_token }
-			add_to_variable = { expenses@var:bu_token = expenses_input@var:bu_token }
-			add_to_variable = { expenses@var:bu_token = expenses_maintenance@var:bu_token }
-
-			# Profit
-			set_variable = { profit@var:bu_token = revenue@var:bu_token }
-			subtract_from_variable = { profit@var:bu_token = expenses@var:bu_token }
-
-			#Subsidies - TODO
-			# set_variable = { revenue_subsidies@var:bu_token = 0 }
-
-			# add_to_variable = { revenue@var:bu_token = revenue_subsidies@var:bu_token }
-			# add_to_variable = { profit@var:bu_token = revenue_subsidies@var:bu_token }
-
-			# Bonuses: a third of profit, shared by employees in proportion to their wages. The slaves' share isn't paid
-			if = {
-				limit = {
-					check_variable = { profit@var:bu_token > 0 }
-				}
-				set_temp_variable = { bonus_total = profit@var:bu_token }
-				multiply_temp_variable = { bonus_total = 0.33 }
-
-				set_temp_variable = { i_divisor_temp = i_size }
-				multiply_temp_variable = { i_divisor_temp = employment_percentage@var:bu_token }
-				divide_temp_variable = { i_divisor_temp = 100 }
-				multiply_temp_variable = { i_divisor_temp = payroll_multiplier@var:bu_token }
-
-				set_temp_variable = { i_working_bonus = working_employed@var:bu_token }
-				multiply_temp_variable = { i_working_bonus = global.wage_multiplier@token:working_class }
-				divide_temp_variable = { i_working_bonus = i_divisor_temp }
-				multiply_temp_variable = { i_working_bonus = bonus_total }
-				set_temp_variable = { i_free_share_temp = 1 }
-				subtract_from_temp_variable = { i_free_share_temp = slave_labor_share }
-				multiply_temp_variable = { i_working_bonus = i_free_share_temp }
-				set_temp_variable = { i_middle_bonus = middle_employed@var:bu_token }
-				multiply_temp_variable = { i_middle_bonus = global.wage_multiplier@token:middle_class }
-				divide_temp_variable = { i_middle_bonus = i_divisor_temp }
-				multiply_temp_variable = { i_middle_bonus = bonus_total }
-
-				set_variable = { working_bonuses@var:bu_token = i_working_bonus }
-				set_variable = { middle_bonuses@var:bu_token = i_middle_bonus }
-
-				set_temp_variable = { bonus_total = i_working_bonus }
-				add_to_temp_variable = { bonus_total = i_middle_bonus }
-				add_to_variable = { expenses@var:bu_token = bonus_total }
-				add_to_variable = { expenses_payroll@var:bu_token = bonus_total }
-				subtract_from_variable = { profit@var:bu_token = bonus_total }
-			}
-			else = {
-				set_variable = { working_bonuses@var:bu_token = 0 }
-				set_variable = { middle_bonuses@var:bu_token = 0 }
-			}
-
-			# (Money accumulation, dividends & downsizing are computed below, after asset_value - the downsize
-			# amount needs it.)
-
-			# Profitability
-			set_variable = { profitability@var:bu_token = profit@var:bu_token }
-			divide_variable = { profitability@var:bu_token = revenue@var:bu_token }
-			
-			# Productivity
-			if = {
-				limit = { check_variable = { global.building_type@var:bu_token = 2 } }
-				add_to_temp_variable = {
-					revenue_temp = {
-						value = industrial_capacity_max@var:bu_token
-						subtract = {
-							value = shipping_capacity_max@var:bu_token
-							multiply = global.port_transport_share
-						}
-						add = shipping_capacity_max@var:bu_token
-						multiply = price_industrial_capacity
-					}
-				}
-			}
-
-			# Maintenance (per size-1) also drags down the per-worker productivity metric
-			set_temp_variable = { exp_temp = expenses_maintenance@var:bu_token }
-			divide_temp_variable = { exp_temp = i_size }
-			if = {
-				limit = {
-					check_variable = { employment_percentage@var:bu_token > 0 }
-				}
-				divide_temp_variable = { exp_temp = employment_percentage@var:bu_token }
-				multiply_temp_variable = { exp_temp = 100 }
-				
-				divide_temp_variable = { expenses_temp = employment_percentage@var:bu_token }
-				multiply_temp_variable = { expenses_temp = production_percentage@var:bu_token }
-				
-				divide_temp_variable = { revenue_temp = employment_percentage@var:bu_token }
-				multiply_temp_variable = { revenue_temp = production_percentage@var:bu_token }
-			}
-			add_to_temp_variable = { expenses_temp = exp_temp }
-
-			set_variable = { productivity@var:bu_token = revenue_temp }
-			subtract_from_variable = { productivity@var:bu_token = expenses_temp }
-			divide_variable = { productivity@var:bu_token = payroll_multiplier@var:bu_token }
-
-			# Asset value - what the industry is worth as an asset (drives acquisition cost & company valuation).
-			# = cost to construct it as it stands (current size & PM/AM) scaled by profitability: a profitable
-			# plant carries a goodwill premium, a loss-making one a distressed discount, floored so the physical
-			# plant always retains value.
-			set_temp_variable = { industry_token = bu_token }
-			set_temp_variable = { pm_temp = production_method@var:bu_token }
-			set_temp_variable = { am_temp = automation_method@var:bu_token }
-			if = {
-				limit = {
-					get_construction_cost = yes # -> total_construction_cost_temp (per size, at current PM/AM)
-				}
-			}
-
-			set_temp_variable = { asset_value_temp = total_construction_cost_temp }
-			multiply_temp_variable = { asset_value_temp = size@var:bu_token }
-
-			set_temp_variable = { asset_mult_temp = profitability@var:bu_token }
-			add_to_temp_variable = { asset_mult_temp = 1 }
-			clamp_temp_variable = { var = asset_mult_temp min = 0.25 max = 2 }
-			multiply_temp_variable = { asset_value_temp = asset_mult_temp }
-
-			set_variable = { asset_value@var:bu_token = asset_value_temp }
-
-			# Money Accumulation, Dividends & Downsizing plan
-			# money_accumulation is applied to money@bu (cash reserves) next tick in on_monthly_industries;
-			# downsize_amount@bu is executed there too. dividends@bu routes to owner pops in industries_update.
-			set_variable = { downsize_amount@var:bu_token = 0 }
-			if = {
-				limit = { check_variable = { profit@var:bu_token < 0 } }
-				# Unprofitable: draw the FULL loss from cash reserves, and pay NO negative dividends while cash covers it.
-				set_variable = { money_accumulation@var:bu_token = profit@var:bu_token }
-				set_variable = { dividends@var:bu_token = 0 }
-
-				set_temp_variable = { cash_after_temp = money@var:bu_token }
-				add_to_temp_variable = { cash_after_temp = profit@var:bu_token }
-				if = {
-					limit = { check_variable = { cash_after_temp < 0 } }
-					# Cash can't cover the loss this tick. Downsize if the plant is under-utilised enough
-					# (employment_target <= 75) AND has locally-owned capacity worth scrapping (RGOs flip active extraction to known reserves);
-					# otherwise the owners cover the shortfall as negative dividends.
-					if = {
-						limit = {
-							check_variable = { global.eco_investment_enabled = 1 } # Without investment, nothing could ever rebuild what's shed
-							NOT = { check_variable = { employment_target@var:bu_token > 75 } }
-							check_variable = { owner_sizes_local@var:bu_token > 0 } # companies downsize at the company level
-							check_variable = { asset_value@var:bu_token > 0 }
-						}
-						# Downsize LOCAL capacity (creative destruction). money_accumulation stays = profit, so cash
-						# goes negative this tick; the downsizing scrap value refills it in on_monthly_industries,
-						# paying off the loss first. scrap per size = 0.1 * asset_value / size ; n = ceil(-profit / scrap_per_size)
-						set_temp_variable = { scrap_per_size_temp = asset_value@var:bu_token }
-						multiply_temp_variable = { scrap_per_size_temp = 0.1 }
-						divide_temp_variable = { scrap_per_size_temp = size@var:bu_token }
-
-						set_temp_variable = { downsize_temp = profit@var:bu_token }
-						multiply_temp_variable = { downsize_temp = -1 }
-						divide_temp_variable = { downsize_temp = scrap_per_size_temp }
-
-						# ceiling(downsize_temp)
-						set_temp_variable = { downsize_ceil_temp = downsize_temp }
-						round_temp_variable = downsize_ceil_temp
-						if = {
-							limit = { check_variable = { downsize_ceil_temp < downsize_temp } }
-							add_to_temp_variable = { downsize_ceil_temp = 1 }
-						}
-						# cap at locally-owned size (never shed company holdings)
-						if = {
-							limit = { check_variable = { downsize_ceil_temp > owner_sizes_local@var:bu_token } }
-							set_temp_variable = { downsize_ceil_temp = owner_sizes_local@var:bu_token }
-						}
-						set_variable = { downsize_amount@var:bu_token = downsize_ceil_temp }
-					}
-					else = {
-						# No downsizing (over-staffed, or nothing local/non-RGO to scrap): owners cover the
-						# uncovered loss as negative dividends; drain cash reserves to 0.
-						set_variable = { money_accumulation@var:bu_token = money@var:bu_token }
-						multiply_variable = { money_accumulation@var:bu_token = -1 }
-						set_variable = { dividends@var:bu_token = cash_after_temp }
-					}
-				}
-			}
-			else = {
-				# Profitable: half to cash reserves (capped at money_limit, excess to dividends), half to dividends.
-				set_variable = { money_accumulation@var:bu_token = profit@var:bu_token }
-				divide_variable = { money_accumulation@var:bu_token = 2 }
-				set_variable = { dividends@var:bu_token = profit@var:bu_token }
-				divide_variable = { dividends@var:bu_token = 2 }
-
-				set_temp_variable = { money_temp = money@var:bu_token }
-				add_to_temp_variable = { money_temp = money_accumulation@var:bu_token }
-				if = {
-					limit = { check_variable = { money_temp > money_limit@var:bu_token } }
-					subtract_from_temp_variable = { money_temp = money_limit@var:bu_token }
-					subtract_from_variable = { money_accumulation@var:bu_token = money_temp }
-					add_to_variable = { dividends@var:bu_token = money_temp }
-				}
+		}
+	}
+	industry_asset_value_calc = {
+		# State scope. Input: bu_token. Output: asset_value_temp
+		# What the industry is worth as an asset (acquisition cost, company valuation): what it would cost to build as it stands
+		# (size, PM and AM, from the PM/AM cache) scaled by its trailing margin. A profitable plant carries a goodwill premium, a
+		# loss-making one a discount, floored so the plant always keeps a quarter of its value
+		set_temp_variable = { asset_pm_temp = production_method@var:bu_token }
+		set_temp_variable = { asset_am_temp = automation_method@var:bu_token }
+		set_temp_variable = {
+			asset_value_temp = {
+				value = controller:method_construction_cost@var:asset_pm_temp
+				add = controller:method_construction_cost@var:asset_am_temp
+				multiply = global.building_base_employees@var:bu_token
+				multiply = { value = 1 add = controller:industry_construction_cost_factor }
+				multiply = size@var:bu_token
+				multiply = { value = 1 add = margin@var:bu_token clamp = { min = 0.25 max = 2 } }
 			}
 		}
 	}
+
+	# PM/AM cache (Q55). Layers, from the top:
+	#   Global: static PM and AM data (global.pm_*).
+	#   Market: market_cache_update, at the market's prices and before modifiers. On every country, copied from its market leader:
+	#     market_output_value@<sector> - the value of one bundle of the sector's base production (global.building_base_production_amount@).
+	#       A state-industry's output@ counts the bundles it makes
+	#     method_input_cost@<method> - what a PM's or AM's inputs cost, per K of base workforce
+	#     method_construction_cost@<method> - what a PM's or AM's construction list costs, per K of base workforce
+	#   Country: the country's own sector and method modifiers, industry_*_factor@<sector> and pm_*_factor@<method>
+	#     (r_update_modifiers_country_effects, update_pm_modifier_factors). Output value and input cost stay separate, since some
+	#     modifiers scale only one of them, and a state-industry combines its PM's and AM's with them when it reads them.
+	#   State: local wage, Infrastructure Efficiency, economy of scale (industry_production_update).
+	# A country lists the sectors and methods its state-industries use (sectors, methods_in_use), and its market works out only those.
+	cache_register_industry = {
+		# State scope. Input: bu_token
+		# Puts the industry's sector and methods on the controller's lists, working out their values the first time
+		set_temp_variable = { cache_token = bu_token }
+		if = {
+			limit = { NOT = { is_in_array = { controller:sectors = cache_token } } }
+			controller = {
+				add_to_array = { sectors = cache_token }
+				cache_sector_calc = yes
+				if = {
+					limit = { check_variable = { sector_utilisation@var:cache_token = 0 } }
+					set_variable = { sector_utilisation@var:cache_token = global.sector_utilisation_start }
+				}
+			}
+		}
+		set_temp_variable = { cache_token = production_method@var:bu_token }
+		if = {
+			limit = {
+				NOT = { check_variable = { cache_token = 0 } }
+				NOT = { is_in_array = { controller:methods_in_use = cache_token } }
+			}
+			controller = {
+				add_to_array = { methods_in_use = cache_token }
+				cache_method_calc = yes
+			}
+		}
+		set_temp_variable = { cache_token = automation_method@var:bu_token }
+		if = {
+			limit = {
+				NOT = { check_variable = { cache_token = 0 } }
+				NOT = { is_in_array = { controller:methods_in_use = cache_token } }
+			}
+			controller = {
+				add_to_array = { methods_in_use = cache_token }
+				cache_method_calc = yes
+			}
+		}
+	}
+	cache_sector_calc = {
+		# Country scope. Input: cache_token - a sector
+		# Output: market_output_value@<sector>, the value of one bundle of its base production at this country's prices
+		set_variable = { market_output_value@var:cache_token = 0 }
+		for_each_loop = {
+			array = global.building_base_production@var:cache_token
+			value = cache_good
+			index = cache_i
+
+			set_temp_variable = { cache_amount_temp = global.building_base_production_amount@var:cache_token^cache_i }
+			multiply_temp_variable = { cache_amount_temp = price@var:cache_good }
+			add_to_variable = { market_output_value@var:cache_token = cache_amount_temp }
+		}
+	}
+	cache_method_calc = {
+		# Country scope. Input: cache_token - a PM or AM
+		# Outputs: method_input_cost@<method>, method_construction_cost@<method>, at this country's prices
+		set_variable = { method_input_cost@var:cache_token = 0 }
+		for_each_loop = {
+			array = global.pm_input@var:cache_token
+			value = cache_good
+			index = cache_i
+
+			set_temp_variable = { cache_amount_temp = global.pm_input_amount@var:cache_token^cache_i }
+			multiply_temp_variable = { cache_amount_temp = price@var:cache_good }
+			add_to_variable = { method_input_cost@var:cache_token = cache_amount_temp }
+		}
+		set_variable = { method_construction_cost@var:cache_token = 0 }
+		for_each_loop = {
+			array = global.pm_construction_input@var:cache_token
+			value = cache_good
+			index = cache_i
+
+			set_temp_variable = { cache_amount_temp = global.pm_construction_input_amount@var:cache_token^cache_i }
+			multiply_temp_variable = { cache_amount_temp = price@var:cache_good }
+			add_to_variable = { method_construction_cost@var:cache_token = cache_amount_temp }
+		}
+	}
+
 	industry_update_construction_retooling = {
 		# iuc_industry
 		set_variable = { retooling_cost@var:iuc_industry = 0 }
@@ -1298,11 +1334,8 @@
 
 		# Reset to 0
 		set_variable = { jobs@var:bu_token = 0 }
-		set_variable = { jobs_available@var:bu_token = 0 }
 		set_variable = { employed@var:bu_token = 0 }
 
-		set_variable = { money_limit@var:bu_token = 0 }
-		set_variable = { revenue_goods@var:bu_token = 0 }
 		set_variable = { expenses_input@var:bu_token = 0 }
 
 		# Update Industry Size
@@ -1352,8 +1385,6 @@
 
 		set_variable = { owner_jobs@var:bu_token = 0.02 }
 		multiply_variable = { owner_jobs@var:bu_token = base_jobs_temp }
-
-		set_variable = { employment_target@var:bu_token = 100 }
 
 		set_variable = {
 			working_employed@var:bu_token = {
@@ -1479,7 +1510,6 @@
 			set_variable = { profit@var:bu_token = revenue@var:bu_token }
 			subtract_from_variable = { profit@var:bu_token = expenses@var:bu_token }
 
-			set_variable = { money_accumulation@var:bu_token = 0 }
 			set_variable = { dividends@var:bu_token = profit@var:bu_token }
 
 			#Profitability
@@ -1499,7 +1529,11 @@
 			break = ind_break
 
 			# Add up arable land use
-			add_to_variable = { arable_land_use = arable_land_use@var:bu_token }
+			if = {
+				limit = { check_variable = { global.building_arable_land_use@var:bu_token > 0 } }
+				set_temp_variable = { land_use_temp = { value = size@var:bu_token multiply = global.building_arable_land_use@var:bu_token } }
+				add_to_variable = { arable_land_use = land_use_temp }
+			}
 		}
 
 		set_variable = { arable_land_available = arable_land }
@@ -1549,11 +1583,24 @@
 		clamp_variable = { var = peasants_marginal_land min = 0 max = pops_workforce@token:peasants }
 
 		# Subsistence Farm Production & Income
-		set_temp_variable = { market_reach_modifier = global.peasant_market_interaction } # Portion of production that can be sold at market price due to limited market reach
-		set_temp_variable = { basic_production_revenue = 0 } # Revenue from static production independent of price (to represent consumption of self-production)
+		# Peasants beyond the land's capacity farm marginal land, 70% as productively. Only global.peasant_market_interaction of
+		# what they make reaches the market: that share is output@, in bundles of the farm's base production as for other
+		# industries. The rest feeds them, and counts in revenue at base prices
+		set_temp_variable = { market_reach_modifier = global.peasant_market_interaction }
+		set_temp_variable = {
+			subs_output_temp = {
+				value = peasants_marginal_land
+				multiply = 0.7
+				add = peasants_employed@token:subsistence_farm
+				multiply = global.pm_output_amount@token:pm_subsistence_farming
+				multiply = global.building_production_multiplier@token:subsistence_farm
+				multiply = output_modifier_temp
+			}
+		}
+		set_variable = { output@token:subsistence_farm = { value = subs_output_temp multiply = market_reach_modifier } }
+
 		set_temp_variable = { revenue_temp = 0 }
-		set_variable = { revenue_goods@token:subsistence_farm = 0 }
-		clear_array = production@token:subsistence_farm
+		set_variable = { revenue@token:subsistence_farm = 0 }
 		for_each_loop = {
 			array = global.building_base_production@token:subsistence_farm
 			value = r_token
@@ -1563,34 +1610,22 @@
 			multiply_temp_variable = { output_per_k_temp = global.pm_output_amount@token:pm_subsistence_farming }
 			multiply_temp_variable = { output_per_k_temp = global.building_production_multiplier@token:subsistence_farm }
 
-			# Production. Peasants in excess of productive capacity are 70% as productive
+			# Goods Revenue: the share sold at the market price, the rest at base price
+			set_temp_variable = { subs_amount_temp = global.building_base_production_amount@token:subsistence_farm^ii }
 			set_temp_variable = {
-				prod_temp = {
-					value = peasants_marginal_land
-					multiply = 0.7
-					add = peasants_employed@token:subsistence_farm
-					multiply = output_per_k_temp
-					multiply = output_modifier_temp
+				money_temp = {
+					value = controller:price@var:r_token
+					multiply = market_reach_modifier
+					add = {
+						value = 1
+						subtract = market_reach_modifier
+						multiply = global.base_price@var:r_token
+					}
+					multiply = subs_amount_temp
+					multiply = subs_output_temp
 				}
 			}
-
-			# Goods Revenue
-			set_temp_variable = { money_temp = prod_temp }
-			multiply_temp_variable = { money_temp = controller:price@var:r_token }
-
-			set_temp_variable = { non_market_money = 1 }
-			subtract_from_temp_variable = { non_market_money = market_reach_modifier }
-			multiply_temp_variable = { money_temp = market_reach_modifier } # Portion sold
-
-			multiply_temp_variable = { non_market_money = prod_temp }
-			multiply_temp_variable = { non_market_money = global.base_price@var:r_token }
-			add_to_temp_variable = { money_temp = non_market_money } # Portion consumed internally at base price
-			
-			multiply_temp_variable = { prod_temp = market_reach_modifier } # Portion sold
-			add_to_array = { production@token:subsistence_farm = prod_temp }
-
-			add_to_array = { revenue_goods@token:subsistence_farm = money_temp }
-			add_to_variable = { revenue_goods@token:subsistence_farm = money_temp }
+			add_to_variable = { revenue@token:subsistence_farm = money_temp }
 
 			# For productivity
 			set_temp_variable = { productivity_temp = output_per_k_temp }
@@ -1606,9 +1641,6 @@
 			add_to_temp_variable = { revenue_temp = productivity_temp }
 		}
 
-		# Revenue
-		set_variable = { revenue@token:subsistence_farm = revenue_goods@token:subsistence_farm }
-
 		# Expenses
 		set_variable = { expenses_payroll@token:subsistence_farm = revenue@token:subsistence_farm }
 		multiply_variable = { expenses_payroll@token:subsistence_farm = 0.8 }				 # The upper class takes 20% as rent
@@ -1623,8 +1655,8 @@
 
 		# Productivity
 		if = { 
-			limit = { check_variable = { pops_workforce@token:peasants > 0 } check_variable = { revenue_goods@token:subsistence_farm > 0 } } 
-			set_variable = { productivity@token:subsistence_farm = revenue_goods@token:subsistence_farm }
+			limit = { check_variable = { pops_workforce@token:peasants > 0 } check_variable = { revenue@token:subsistence_farm > 0 } } 
+			set_variable = { productivity@token:subsistence_farm = revenue@token:subsistence_farm }
 			divide_variable = { productivity@token:subsistence_farm = pops_workforce@token:peasants }
 		}
 		else = {
@@ -1930,45 +1962,10 @@
 #
 
 # Industry Scripts
-	industry_productivity_sort = {
-		# Puts industries into an array sorted by the base productivity
-
-		clear_array = industries_productivity_sort
-		for_each_loop = {
-			array = industries
-			value = om_building
-
-			set_temp_variable = { effective_wage_om = productivity@var:om_building }
-
-			for_each_loop = {
-				array = industries_productivity_sort
-				index = ii
-				value = vv
-				break = bb
-
-				set_temp_variable = { effective_wage_vv = productivity@var:vv }
-
-				if = {
-					limit = {
-						check_variable = { effective_wage_vv < effective_wage_om }
-					}
-					add_to_array = {
-						array = industries_productivity_sort
-						value = om_building
-						index = ii
-					}
-					set_temp_variable = { bb = 1 }
-				}
-			}
-			if = {
-				limit = {
-					check_variable = { bb = 0 }
-				}
-				add_to_array = { industries_productivity_sort = om_building }
-			}
-		}
-	}
 	base_wage_calculation = {
+		# The startup wage when neither the state's history nor its controller's sets one (base_wage_seed): what peasants make
+		# on the land, at least 1, times wage_factor. No state on the 1857 map needs it, since every set_tech_* sets a default.
+		# It used to weight in the most productive industries, but state-industries no longer store their productivity (M04)
 		set_temp_variable = { subs_farm_productivity = 1 }
 		if = {
 			limit = {
@@ -1976,85 +1973,7 @@
 			}
 			set_temp_variable = { subs_farm_productivity = productivity@token:subsistence_farm }
 		}
-
-		# Is the sum of payroll_multiplier * size * productivity across every industry.
-		set_temp_variable = { base_wage_counting = 0 }
-
-		# Sourcing all job types, weighted by their wage multiples
-		set_temp_variable = {
-			total_jobs_weight = {
-				value = 0.1
-				add = pops_workforce@token:slaves
-				add = pops_workforce@token:peasants
-				add = { value = pops_workforce@token:working_class multiply = global.wage_multiplier@token:working_class }
-				add = { value = pops_workforce@token:middle_class multiply = global.wage_multiplier@token:middle_class }
-			}
-		}
-		# log = "Jobs Weight: [?total_jobs_weight]"
-
-		set_temp_variable = { remaining_jobs = total_jobs_weight }
-
-		for_each_loop = {
-			array = industries_productivity_sort
-			value = b_temp
-
-			# Base Wage Addition
-			if = {
-				limit = {
-					check_variable = { remaining_jobs > 0 }
-					NOT = { check_variable = { b_temp = token:subsistence_farm } }
-				}
-				# If there are still jobs to account for, then weight the jobs from this industry and add them up
-				set_temp_variable = { jobs_wage_to_count = payroll_multiplier@var:b_temp }
-				multiply_temp_variable = { jobs_wage_to_count = size@var:b_temp }
-				multiply_temp_variable = { jobs_wage_to_count = employment_target@var:b_temp }
-				divide_temp_variable = { jobs_wage_to_count = 100 }
-				
-				if = { limit = { check_variable = { jobs_wage_to_count > remaining_jobs } } set_temp_variable = { jobs_wage_to_count = remaining_jobs } }
-				subtract_from_temp_variable = { remaining_jobs = jobs_wage_to_count }
-				#set_temp_variable = { jobs_counted = jobs_wage_to_count }
-
-				# Add to base_wage_counting for calculating the base wage using the productivity of the most productive industries
-				if = {
-					limit = {
-						check_variable = { productivity@var:b_temp > subs_farm_productivity }
-					}
-					multiply_temp_variable = { jobs_wage_to_count = productivity@var:b_temp }
-				}
-				else = {
-					multiply_temp_variable = { jobs_wage_to_count = subs_farm_productivity }
-				}
-				if = { limit = { check_variable = { b_temp = token:valuables } } divide_temp_variable = { jobs_wage_to_count = 3 } }
-				add_to_temp_variable = { base_wage_counting = jobs_wage_to_count }
-				#log = "[?b_temp.GetTokenLocalizedKey]: [?jobs_counted] | [?jobs_wage_to_count]"
-			}
-		}
-
-		# log = "Remaining Jobs: [?remaining_jobs]"
-		# These remaining jobs get assigned the productivity of subsistence farms
-		if = {
-			limit = {
-				check_variable = { remaining_jobs > 0 }
-			}
-			# Multiply by subs farm prod and add to base wage counting
-			multiply_temp_variable = { remaining_jobs = subs_farm_productivity } # Productivity of 1 or more
-			add_to_temp_variable = { base_wage_counting = remaining_jobs }
-		}
-
-		# set_temp_variable = { base_wage_temp = base_wage_counting }
-		# divide_temp_variable = { base_wage_temp = total_jobs_weight }
-		# multiply_temp_variable = { base_wage_temp = wage_factor }
-		# log = "Base Wage: [?base_wage_temp]"
-
-		set_variable = { base_wage = base_wage_counting } # payroll_multiplier * size * productivity * employment_target
-		divide_variable = { base_wage = total_jobs_weight } # payroll_multiplier * size (pops)
-		if = {
-			limit = {
-				check_variable = { base_wage < subs_farm_productivity }
-			}
-			set_variable = { base_wage = subs_farm_productivity }
-		}
-
+		set_variable = { base_wage = subs_farm_productivity }
 		multiply_variable = { base_wage = wage_factor }
 	}
 	base_wage_seed = {
@@ -2068,7 +1987,7 @@
 				set_variable = { base_wage = controller:base_wage }
 			}
 			else = {
-				base_wage_calculation = yes # productivity fallback (keeps legacy behaviour)
+				base_wage_calculation = yes # Subsistence fallback
 			}
 		}
 
@@ -2213,20 +2132,11 @@
 			}
 			remove_from_array = { buildings = industry_token }
 			remove_from_array = { industries = industry_token }
-			set_variable = { employment_target@var:industry_token = 0 }
 
 			# Update industry
 			set_temp_variable = { bu_token = industry_token }
-			set_variable = { industry_dirty_var@var:r_token = 1 }
 			industry_update_size_jobs = yes
 			industry_update = yes
-
-			if = {
-				limit = {
-					check_variable = { money@var:industry_token > money_limit@var:industry_token }
-				}
-				set_variable = { money@var:industry_token = money_limit@var:industry_token }
-			}
 		}
 		else = {
 			# Add building to array if it doesn't exist yet
@@ -2239,19 +2149,8 @@
 				set_variable = { automation_method@var:industry_token = automation_method_temp }
 			}
 
-			# Adjust employment target to preserve ABSOLUTE employment across the resize (headcount sticks with
-			# the old plant): new_ET = old_ET * old_size / new_size, where old_size = new_size - x_temp.
-			# Adding idle capacity dilutes ET; shedding idle capacity (downsize, x<0) concentrates it.
-			set_variable = { employment_target@var:industry_token = {
-				value = employment_target@var:industry_token
-				multiply = { value = size@var:industry_token  subtract = x_temp }
-				divide = size@var:industry_token
-				clamp = { min = 0 max = 100 }
-			} }
-
-			# Update industry
+			# Update industry. New capacity works at its sector's target utilisation (industry_utilisation_calc)
 			set_temp_variable = { bu_token = industry_token }
-			set_variable = { industry_dirty_var@var:r_token = 1 }
 			industry_update_size_jobs = yes
 			industry_update = yes
 		}
@@ -2343,25 +2242,6 @@
 			set_temp_variable = { rgo_new_size_temp = rgo_old_size_temp }
 			add_to_temp_variable = { rgo_new_size_temp = deposit_temp }
 
-			# Preserve absolute employment on a resize: new_ET = old_ET * old_size / new_size. On full removal
-			# (new size <= 0) zero it out; a fresh exploit (old size 0) keeps its current target and ramps up.
-			if = {
-				limit = {
-					check_variable = { rgo_new_size_temp > 0 }
-					check_variable = { rgo_old_size_temp > 0 }
-				}
-				set_variable = { employment_target@var:r_token = {
-					value = employment_target@var:r_token
-					multiply = rgo_old_size_temp
-					divide = rgo_new_size_temp
-					clamp = { min = 0 max = 100 }
-				} }
-			}
-			else_if = {
-				limit = { check_variable = { rgo_new_size_temp < 1 } }
-				set_variable = { employment_target@var:r_token = 0 }
-			}
-
 			# Local ownership tracks the active-size delta.
 			add_to_variable = { owner_sizes_local@var:r_token = deposit_temp }
 			if = { limit = { check_variable = { owner_sizes_local@var:r_token < 0 } } set_variable = { owner_sizes_local@var:r_token = 0 } }
@@ -2393,7 +2273,6 @@
 
 		set_temp_variable = { bu_token = r_token }
 		industry_update_size_jobs = yes
-		set_variable = { industry_dirty_var@var:bu_token = 1 }
 		industry_update = yes
 	}
 

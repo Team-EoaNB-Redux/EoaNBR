@@ -1512,7 +1512,9 @@ defined_text = {
 		name = GetIndustryEmploymentIcon
 		text = {
 			trigger = {
-				set_temp_variable = { percent_temp = employment_percentage@var:v }
+				set_temp_variable = { industry_token = v }
+				get_industry_figures = yes
+				set_temp_variable = { percent_temp = employment_percent_temp }
 			}
 			localization_key = scripted_loc_inline_1910
 		}
@@ -1546,12 +1548,43 @@ defined_text = {
 			text = {
 				trigger = {
 					set_temp_variable = { pm_output_temp = global.building_base_production@var:industry_token^pm_output_i }
-					set_temp_variable = { amount_temp = production@var:industry_token^pm_output_i }
+					set_temp_variable = { amount_temp = global.building_base_production_amount@var:industry_token^pm_output_i }
+					multiply_temp_variable = { amount_temp = output@var:industry_token }
 
 					check_variable = { pm_output_i < global.building_base_production@var:industry_token^num }
 					NOT = { check_variable = { amount_temp = 0 } }
 				}
 				localization_key = industry_pm_output_loc
+			}
+		}
+		defined_text = { # GetIndustryOutputAmount0 - v
+			name = GetIndustryOutputAmount0
+			text = {
+				trigger = {
+					set_temp_variable = { amount_temp = global.building_base_production_amount@var:v^0 }
+					multiply_temp_variable = { amount_temp = output@var:v }
+				}
+				localization_key = scripted_loc_inline_1815
+			}
+		}
+		defined_text = { # GetIndustryOutputAmount1 - v
+			name = GetIndustryOutputAmount1
+			text = {
+				trigger = {
+					set_temp_variable = { amount_temp = global.building_base_production_amount@var:v^1 }
+					multiply_temp_variable = { amount_temp = output@var:v }
+				}
+				localization_key = scripted_loc_inline_1815
+			}
+		}
+		defined_text = { # GetIndustryOutputAmount2 - v
+			name = GetIndustryOutputAmount2
+			text = {
+				trigger = {
+					set_temp_variable = { amount_temp = global.building_base_production_amount@var:v^2 }
+					multiply_temp_variable = { amount_temp = output@var:v }
+				}
+				localization_key = scripted_loc_inline_1815
 			}
 		}
 		defined_text = { # GetIndustryOutputTextIcon - pm_output_temp
@@ -1564,7 +1597,10 @@ defined_text = {
 			name = GetIndustryOutputRevenue
 			text = {
 				trigger = {
-					set_temp_variable = { amount_temp = revenue_goods@var:industry_token^pm_output_i }
+					set_temp_variable = { pm_output_temp = global.building_base_production@var:industry_token^pm_output_i }
+					set_temp_variable = { amount_temp = global.building_base_production_amount@var:industry_token^pm_output_i }
+					multiply_temp_variable = { amount_temp = output@var:industry_token }
+					multiply_temp_variable = { amount_temp = controller:price@var:pm_output_temp }
 				}
 				localization_key = scripted_loc_inline_1912
 			}
@@ -1628,7 +1664,8 @@ defined_text = {
 			name = GetIndustryIndustrialCapacityRevenue
 			text = {
 				trigger = {
-					set_temp_variable = { amount_temp = revenue_industrial_capacity@var:industry_token }
+					get_industry_figures = yes
+					set_temp_variable = { amount_temp = revenue_industrial_temp }
 				}
 				localization_key = scripted_loc_inline_1919
 			}
@@ -1647,7 +1684,8 @@ defined_text = {
 			name = GetIndustryShippingCapacityRevenue
 			text = {
 				trigger = {
-					set_temp_variable = { amount_temp = revenue_shipping_capacity@var:industry_token }
+					get_industry_figures = yes
+					set_temp_variable = { amount_temp = revenue_shipping_temp }
 				}
 				localization_key = scripted_loc_inline_1921
 			}
@@ -1656,11 +1694,11 @@ defined_text = {
 			name = GetIndustryInputLoc
 			text = {
 				trigger = {
-					set_temp_variable = { pm_input_temp = input@var:industry_token^pm_input_i }
-					set_temp_variable = { amount_temp = input_amount@var:industry_token^pm_input_i }
-					set_temp_variable = { pm_amount_temp = input_cost@var:industry_token^pm_input_i }
+					get_industry_input = yes
+					set_temp_variable = { pm_amount_temp = amount_temp }
+					multiply_temp_variable = { pm_amount_temp = controller:price@var:pm_input_temp }
 
-					check_variable = { pm_input_i < input@var:industry_token^num }
+					NOT = { check_variable = { pm_input_temp = 0 } }
 					NOT = { check_variable = { pm_amount_temp = 0 } }
 				}
 				localization_key = industry_pm_input_loc
@@ -1670,7 +1708,8 @@ defined_text = {
 			name = GetIndustryInputCost
 			text = {
 				trigger = {
-					set_temp_variable = { amount_temp = input_cost@var:industry_token^pm_input_i }
+					get_industry_input = yes
+					multiply_temp_variable = { amount_temp = controller:price@var:pm_input_temp }
 				}
 				localization_key = scripted_loc_inline_1922
 			}
@@ -2257,7 +2296,7 @@ defined_text = {
 					set_temp_variable = { amount_temp = retooling_amount@var:industry_token^pm_input_i }
 					set_temp_variable = { pm_amount_temp = retooling_cost@var:industry_token^pm_input_i }
 
-					check_variable = { pm_input_i < input@var:industry_token^num }
+					check_variable = { pm_input_i < retooling_resources@var:industry_token^num }
 					NOT = { check_variable = { pm_amount_temp = 0 } }
 				}
 				localization_key = industry_retooling_input_loc
@@ -2404,7 +2443,8 @@ defined_text = {
 			name = GetIndustryRevenueGoods
 			text = {
 				trigger = {
-					set_temp_variable = { amount_temp = revenue_goods@var:industry_token }
+					get_industry_figures = yes
+					set_temp_variable = { amount_temp = revenue_goods_temp }
 				}
 				localization_key = scripted_loc_inline_1980
 			}
@@ -2413,7 +2453,8 @@ defined_text = {
 			name = GetIndustryIndustrialCapacityRevenue
 			text = {
 				trigger = {
-					set_temp_variable = { amount_temp = revenue_industrial_capacity@var:industry_token }
+					get_industry_figures = yes
+					set_temp_variable = { amount_temp = revenue_industrial_temp }
 				}
 				localization_key = scripted_loc_inline_1981
 			}
@@ -2431,7 +2472,8 @@ defined_text = {
 			name = GetIndustryExpenses
 			text = {
 				trigger = {
-					set_temp_variable = { amount_temp = expenses@var:industry_token }
+					get_industry_figures = yes
+					set_temp_variable = { amount_temp = expenses_total_temp }
 				}
 				localization_key = scripted_loc_inline_1983
 			}
@@ -2467,7 +2509,8 @@ defined_text = {
 			name = GetIndustryProfit
 			text = {
 				trigger = {
-					set_temp_variable = { amount_temp = profit@var:industry_token }
+					get_industry_figures = yes
+					set_temp_variable = { amount_temp = profit_temp }
 				}
 				localization_key = scripted_loc_inline_1987
 			}
@@ -2476,7 +2519,8 @@ defined_text = {
 			name = GetIndustryProfitability
 			text = {
 				trigger = {
-					set_temp_variable = { amount_temp = profitability@var:industry_token }
+					get_industry_figures = yes
+					set_temp_variable = { amount_temp = margin_temp }
 				}
 				localization_key = scripted_loc_inline_1988
 			}
@@ -2490,52 +2534,31 @@ defined_text = {
 				localization_key = scripted_loc_inline_1989
 			}
 		}
-		defined_text = { # GetIndustryMoney - industry_token
-			name = GetIndustryMoney
-			text = {
-				trigger = {
-					set_temp_variable = { amount_temp = money@var:industry_token }
-				}
-				localization_key = scripted_loc_inline_1990
-			}
-		}
-		defined_text = { # GetIndustryMoneyLimit - industry_token
-			name = GetIndustryMoneyLimit
-			text = {
-				trigger = {
-					set_temp_variable = { amount_temp = money_limit@var:industry_token }
-				}
-				localization_key = scripted_loc_inline_1991
-			}
-		}
-		defined_text = { # GetIndustryMoneyAccumulation - industry_token
-			name = GetIndustryMoneyAccumulation
-			text = {
-				trigger = {
-					set_temp_variable = { amount_temp = money_accumulation@var:industry_token }
-				}
-				localization_key = scripted_loc_inline_1992
-			}
-		}
 		defined_text = { # GetIndustryProductivityV - v
 			name = GetIndustryProductivityV
 			text = {
 				trigger = {
-					set_temp_variable = { amount_temp = productivity@var:v }
+					set_temp_variable = { industry_token = v }
+					get_industry_figures = yes
+					set_temp_variable = { amount_temp = productivity_temp }
 					check_variable = { amount_temp < 0 }
 				}
 				localization_key = scripted_loc_inline_1993
 			}
 			text = {
 				trigger = {
-					set_temp_variable = { amount_temp = productivity@var:v }
+					set_temp_variable = { industry_token = v }
+					get_industry_figures = yes
+					set_temp_variable = { amount_temp = productivity_temp }
 					check_variable = { amount_temp > base_wage }
 				}
 				localization_key = scripted_loc_inline_1994
 			}
 			text = {
 				trigger = {
-					set_temp_variable = { amount_temp = productivity@var:v }
+					set_temp_variable = { industry_token = v }
+					get_industry_figures = yes
+					set_temp_variable = { amount_temp = productivity_temp }
 					check_variable = { amount_temp > 0 }
 				}
 				localization_key = scripted_loc_inline_1995
@@ -2545,21 +2568,24 @@ defined_text = {
 			name = GetIndustryProductivity
 			text = {
 				trigger = {
-					set_temp_variable = { amount_temp = productivity@var:industry_token }
+					get_industry_figures = yes
+					set_temp_variable = { amount_temp = productivity_temp }
 					NOT = { check_variable = { amount_temp > 0 } }
 				}
 				localization_key = scripted_loc_inline_1996
 			}
 			text = {
 				trigger = {
-					set_temp_variable = { amount_temp = productivity@var:industry_token }
+					get_industry_figures = yes
+					set_temp_variable = { amount_temp = productivity_temp }
 					check_variable = { amount_temp > base_wage }
 				}
 				localization_key = scripted_loc_inline_1997
 			}
 			text = {
 				trigger = {
-					set_temp_variable = { amount_temp = productivity@var:industry_token }
+					get_industry_figures = yes
+					set_temp_variable = { amount_temp = productivity_temp }
 					check_variable = { amount_temp > 0 }
 				}
 				localization_key = scripted_loc_inline_1998
@@ -2580,7 +2606,8 @@ defined_text = {
 			name = GetIndustryEmployed
 			text = {
 				trigger = {
-					set_temp_variable = { amount_temp = employed@var:industry_token }
+					get_industry_figures = yes
+					set_temp_variable = { amount_temp = employed_temp }
 				}
 				localization_key = scripted_loc_inline_1999
 			}
@@ -2589,7 +2616,8 @@ defined_text = {
 			name = GetIndustryJobs
 			text = {
 				trigger = {
-					set_temp_variable = { amount_temp = jobs@var:industry_token }
+					get_industry_figures = yes
+					set_temp_variable = { amount_temp = jobs_temp }
 				}
 				localization_key = scripted_loc_inline_2000
 			}
@@ -2651,6 +2679,9 @@ defined_text = {
 		defined_text = { # GetIndustryEmploymentPercentage - industry_token
 			name = GetIndustryEmploymentPercentage
 			text = {
+				trigger = {
+					get_industry_figures = yes
+				}
 				localization_key = scripted_loc_inline_2009
 			}
 		}
@@ -2658,6 +2689,9 @@ defined_text = {
 		defined_text = { # GetIndustryEmploymentTarget - industry_token
 			name = GetIndustryEmploymentTarget
 			text = {
+				trigger = {
+					get_industry_utilisation = yes
+				}
 				localization_key = scripted_loc_inline_2010
 			}
 		}
@@ -2665,13 +2699,15 @@ defined_text = {
 			name = GetIndustryEmploymentAmount
 			text = {
 				trigger = {
-					set_temp_variable = { amount_temp = jobs@var:industry_token }
+					get_industry_figures = yes
+					get_industry_utilisation = yes
+					set_temp_variable = { amount_temp = jobs_temp }
 					if = { limit = { check_variable = { amount_temp > 1000 } }
 						divide_temp_variable = { amount_temp = 100 }
-						multiply_temp_variable = { amount_temp = employment_target@var:industry_token }
+						multiply_temp_variable = { amount_temp = utilisation_temp }
 					}
 					else = {
-						multiply_temp_variable = { amount_temp = employment_target@var:industry_token }
+						multiply_temp_variable = { amount_temp = utilisation_temp }
 						divide_temp_variable = { amount_temp = 100 }
 					}
 				}
@@ -2710,7 +2746,9 @@ defined_text = {
 		name = GetRailwayEmploymentIcon
 		text = {
 			trigger = {
-				set_temp_variable = { percent_temp = employment_percentage@token:railway }
+				set_temp_variable = { industry_token = token:railway }
+				get_industry_figures = yes
+				set_temp_variable = { percent_temp = employment_percent_temp }
 			}
 			localization_key = scripted_loc_inline_2017
 		}
@@ -2834,7 +2872,9 @@ defined_text = {
 		name = GetPortEmploymentIcon
 		text = {
 			trigger = {
-				set_temp_variable = { percent_temp = employment_percentage@token:port }
+				set_temp_variable = { industry_token = token:port }
+				get_industry_figures = yes
+				set_temp_variable = { percent_temp = employment_percent_temp }
 			}
 			localization_key = scripted_loc_inline_2022
 		}

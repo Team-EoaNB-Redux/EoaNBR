@@ -69,7 +69,6 @@
 		set_variable = { pops_col@var:current_pop_token = p_pops_col }
 		set_variable = { pops_income_tax_spending@var:current_pop_token = p_pops_income_tax_spending }
 		set_variable = { pops_sales_tax_spending@var:current_pop_token = p_pops_sales_tax_spending }
-		set_variable = { pops_corporate_tax_spending@var:current_pop_token = p_pops_corporate_tax_spending }
 		set_variable = { pops_debt_repayment_spending@var:current_pop_token = p_pops_debt_repayment_spending }
 
 		# Target
@@ -99,7 +98,6 @@
 		log = "pops_spending: [?pops_spending@var:current_pop_token]"
 		log = "pops_income_tax_spending: [?pops_income_tax_spending@var:current_pop_token]"
 		log = "pops_sales_tax_spending: [?pops_sales_tax_spending@var:current_pop_token]"
-		log = "pops_corporate_tax_spending: [?pops_corporate_tax_spending@var:current_pop_token]"
 		log = "pops_debt_repayment_spending: [?pops_debt_repayment_spending@var:current_pop_token]"
 		log = "pops_debt: [?pops_debt@var:current_pop_token]"
 		log = "pops_consumer_confidence: [?pops_consumer_confidence@var:current_pop_token]"
@@ -130,7 +128,6 @@
 
 		set_variable = { pops_income_tax_spending = 0 }
 		set_variable = { pops_sales_tax_spending = 0 }
-		set_variable = { pops_corporate_tax_spending = 0 }
 		set_variable = { pops_debt_repayment_spending = 0 }
 	}
 	pops_prepare_contextual_multipliers = {
@@ -167,9 +164,6 @@
 
 		set_temp_variable = { sales_tax_multiplier = controller:sales_tax_percentage_actual }
 		divide_temp_variable = { sales_tax_multiplier = 100 }
-
-		set_temp_variable = { corporate_tax_multiplier = controller:corporate_tax_percentage_actual }
-		divide_temp_variable = { corporate_tax_multiplier = 100 }
 	}
 	pops_compute_summary_metrics = {
 		set_variable = { pops_employed_percentage = pops_employed }
@@ -187,7 +181,6 @@
 		set_variable = { pops_spending = pops_needs_spending }
 		add_to_variable = { pops_spending = pops_income_tax_spending }
 		add_to_variable = { pops_spending = pops_sales_tax_spending }
-		add_to_variable = { pops_spending = pops_corporate_tax_spending }
 		add_to_variable = { pops_spending = pops_debt_repayment_spending }
 
 		# Average wealth of the civilian classes. Soldiers are outside them
@@ -214,8 +207,8 @@
 	}
 	pops_calculate_earnings = {
 		# current_pop_token
-		# Gross income, which income tax is charged on (Q83): base earnings, wages, bonuses, and the upper class's dividends,
-		# which include subsistence rent (industries_update)
+		# Gross income, which income tax is charged on (Q83): base earnings, wages, and the upper class's dividends, which
+		# include subsistence rent (industries_update). Sectors pay corporate tax before dividends (Q86)
 
 		# Base Earnings
 		set_temp_variable = { p_pops_earnings = p_pops }
@@ -241,9 +234,6 @@
 			add_to_temp_variable = { p_pops_earnings = p_pops_wage_earnings }
 		}
 
-		# Earnings from Bonuses
-		add_to_temp_variable = { p_pops_earnings = pops_bonuses@var:current_pop_token }
-
 		# Other Earnings (TODO: Corruption for Bureaucrats)
 	}
 	pops_calculate_needs_spending = {
@@ -268,8 +258,8 @@
 	}
 	pops_calculate_taxation = {
 		# current_pop_token
-		# Every tax a class pays is part of its spending: income tax on gross earnings, sales tax on goods, and the corporate
-		# tax that the budget collects on the upper class's dividends (taxes_update)
+		# Every tax a class pays is part of its spending: income tax on gross earnings and sales tax on goods. Corporate tax is
+		# paid by the sectors, out of profit (sectors_update)
 
 		# Income Tax
 		set_temp_variable = { avg_earnings_temp = p_pops_earnings }
@@ -296,14 +286,6 @@
 		set_temp_variable = { p_pops_sales_tax_spending = p_pops_needs_spending }
 		multiply_temp_variable = { p_pops_sales_tax_spending = sales_tax_multiplier }
 		add_to_temp_variable = { p_pops_spending = p_pops_sales_tax_spending }
-
-		#Corporate Tax
-		set_temp_variable = { p_pops_corporate_tax_spending = 0 }
-		if = {
-			limit = { check_variable = { p_pops_dividends > 0 } }
-			set_temp_variable = { p_pops_corporate_tax_spending = { value = p_pops_dividends multiply = corporate_tax_multiplier max = 0 min = p_pops_dividends } }
-			add_to_temp_variable = { p_pops_spending = p_pops_corporate_tax_spending }
-		}
 	}
 	pops_calculate_investment = {
 		# current_pop_token
@@ -330,7 +312,6 @@
 					multiply = {
 						value = p_pops_earnings
 						subtract = p_pops_income_tax_spending
-						subtract = p_pops_corporate_tax_spending
 						max = 0
 					}
 				}
@@ -419,7 +400,6 @@
 
 		add_to_variable = { pops_income_tax_spending = p_pops_income_tax_spending }
 		add_to_variable = { pops_sales_tax_spending = p_pops_sales_tax_spending }
-		add_to_variable = { pops_corporate_tax_spending = p_pops_corporate_tax_spending }
 		add_to_variable = { pops_debt_repayment_spending = p_pops_debt_repayment_spending }
 	}
 	pops_clear_inactive_pop_data = {
@@ -434,7 +414,6 @@
 		set_variable = { pops_spending_target@var:current_pop_token = 0 }
 		set_variable = { pops_income_tax_spending@var:current_pop_token = 0 }
 		set_variable = { pops_sales_tax_spending@var:current_pop_token = 0 }
-		set_variable = { pops_corporate_tax_spending@var:current_pop_token = 0 }
 		set_variable = { pops_debt_repayment_spending@var:current_pop_token = 0 }
 		set_variable = { pops_debt@var:current_pop_token = 0 }
 	}
@@ -2587,59 +2566,24 @@
 	}
 
 	gdp_update = {
-		#State
+		# State. Value added: each industry's revenue less the goods it bought. That covers subsistence farms (what peasants
+		# eat themselves counts at base prices), railways and ports (nobody buys transport, so what they're paid is value
+		# added) and the government buildings (their output's value, with no goods inputs)
 		set_variable = { gdp_amount = 0 }
 		for_each_loop = {
-			array = global.resource_token_array
-			value = r_token
-
-			set_temp_variable = { gdp_temp = production@var:r_token }
-			subtract_from_temp_variable = { gdp_temp = demand_input@var:r_token }
-			multiply_temp_variable = { gdp_temp = controller:price@var:r_token }
-			add_to_variable = { gdp_amount = gdp_temp }
+			array = industries
+			value = gdp_token
+			if = {
+				limit = {
+					OR = {
+						check_variable = { size@var:gdp_token > 0 } # Special buildings at size 0 aren't updated, and keep old figures
+						check_variable = { gdp_token = token:subsistence_farm } # Peasants farm marginal land without any
+					}
+				}
+				add_to_variable = { gdp_amount = revenue@var:gdp_token }
+				subtract_from_variable = { gdp_amount = expenses_input@var:gdp_token }
+			}
 		}
-		# Subsistence Farming
-		for_each_loop = {
-			array = global.building_base_production@token:subsistence_farm
-			value = r_token
-			index = sub_i_temp
-
-			set_temp_variable = { sub_temp = production@token:subsistence_farm^sub_i_temp }
-			divide_temp_variable = { sub_temp = global.peasant_market_interaction }
-
-			set_temp_variable = { market_reach_temp = 1 }
-			subtract_from_temp_variable = { market_reach_temp = global.peasant_market_interaction }
-			multiply_temp_variable = { sub_temp = market_reach_temp }
-
-			multiply_temp_variable = { sub_temp = global.base_price@var:r_token }
-			add_to_variable = { gdp_amount = sub_temp }
-		}
-
-		# Railways & ports: nobody buys transport, so what they're paid counts as value added
-		add_to_variable = { gdp_amount = revenue_industrial_capacity@railway }
-		add_to_variable = { gdp_amount = revenue_shipping_capacity@port }
-
-		# Special
-		set_temp_variable = { gdp_temp = productivity@industrial_complex }
-		multiply_temp_variable = { gdp_temp = payroll_multiplier@industrial_complex }
-		multiply_temp_variable = { gdp_temp = production_percentage@industrial_complex }
-		divide_temp_variable = { gdp_temp = 100 }
-		multiply_temp_variable = { gdp_temp = size@industrial_complex }
-		add_to_variable = { gdp_amount = gdp_temp }
-		
-		set_temp_variable = { gdp_temp = productivity@arms_factory }
-		multiply_temp_variable = { gdp_temp = payroll_multiplier@arms_factory }
-		multiply_temp_variable = { gdp_temp = production_percentage@arms_factory }
-		divide_temp_variable = { gdp_temp = 100 }
-		multiply_temp_variable = { gdp_temp = size@arms_factory }
-		add_to_variable = { gdp_amount = gdp_temp }
-		
-		set_temp_variable = { gdp_temp = productivity@dockyard }
-		multiply_temp_variable = { gdp_temp = payroll_multiplier@dockyard }
-		multiply_temp_variable = { gdp_temp = production_percentage@dockyard }
-		divide_temp_variable = { gdp_temp = 100 }
-		multiply_temp_variable = { gdp_temp = size@dockyard }
-		add_to_variable = { gdp_amount = gdp_temp }
 
 
 		# GDP per Capita
@@ -3218,9 +3162,6 @@
         for_each_loop = {
             array = global.industry_token_array
             value = modifier_token
-			set_variable = { prev_industry_input_factor@var:modifier_token = industry_input_factor@var:modifier_token }
-			set_variable = { prev_industry_output_factor@var:modifier_token = industry_output_factor@var:modifier_token }
-			set_variable = { prev_industry_throughput_factor@var:modifier_token = industry_throughput_factor@var:modifier_token }
 			
 			set_variable = { industry_input_factor@var:modifier_token = modifier@industry_input_factor }
 			set_variable = { industry_output_factor@var:modifier_token = modifier@industry_output_factor }
@@ -3642,30 +3583,6 @@
             add_to_variable = { industry_attractiveness_factor@token:entertainment = modifier@entertainment_attractiveness_factor }
         #
 
-		# Check for Changes
-			for_each_loop = {
-				array = global.industry_token_array
-				value = modifier_token
-				if = {
-					limit = {
-						NOT = { AND = {
-							check_variable = { prev_industry_input_factor@var:modifier_token = industry_input_factor@var:modifier_token }
-							check_variable = { prev_industry_output_factor@var:modifier_token = industry_output_factor@var:modifier_token }
-							check_variable = { prev_industry_throughput_factor@var:modifier_token = industry_throughput_factor@var:modifier_token }
-						}}
-					}
-					every_controlled_state = {
-						limit = {
-							check_variable = { size@var:modifier_token > 0 }
-						}
-						set_variable = { industry_dirty_var@var:modifier_token = 1 }
-					}
-				}
-				clear_variable = prev_industry_input_factor@var:modifier_token
-				clear_variable = prev_industry_output_factor@var:modifier_token
-				clear_variable = prev_industry_throughput_factor@var:modifier_token
-			}
-		#
         
 	}
 #

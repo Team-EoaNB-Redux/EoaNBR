@@ -70,6 +70,11 @@ _reset = {
         _update_market = yes
     }
 
+    # Sector accounts, so the states' finalization pays their first dividends
+    every_country = {
+        sectors_update = yes
+    }
+
     # State Finalization
     every_state = {
         _state_fin = yes
@@ -148,8 +153,7 @@ _init_state = {
     # Sets up initial employment & population workforce scheme
     state_eco_employment_init = yes
 
-    # Seed the persistent base wage (state/country history or productivity fallback) - industries updated after for proper margins
-    industry_productivity_sort = yes
+    # Seed the persistent base wage (state/country history or subsistence fallback) - industries updated after for proper margins
     base_wage_seed = yes
 	industries_update = yes
 	pops_update = yes
@@ -355,26 +359,7 @@ _state_fin = {
 	employment_update = yes
     subsist_and_arable_update = yes
     industries_update = yes
-    industry_productivity_sort = yes
     base_wage_seed = yes
-
-    # Max out cash reserves for all industries
-    for_each_loop = {
-        array = industries
-        value = b_token
-
-        if = {
-            limit = {
-                check_variable = { profit@var:b_token > 0 }
-            }
-            set_variable = { money@var:b_token = money_limit@var:b_token }
-            set_variable = { dividends@var:b_token = profit@var:b_token }
-        }
-        else = {
-            set_variable = { money@var:b_token = 0 }
-            set_variable = { money_accumulation@var:b_token = profit@var:b_token }
-        }
-    }
 
     # Update Pops. They start with no savings, which they don't hold (Q15), and no debt
 	employment_update = yes
@@ -398,11 +383,14 @@ _state_fin = {
 _country_fin = {
     # Country
 
+    sectors_update = yes # The first month's dividends and profit tax
+
     if = { # Finalize market details
         limit = {
             check_variable = { market_leader = THIS }
         }
         market_update = yes
+        market_statistics_update = yes
         trade_update = yes
         market_calc_gdp = yes
     }
@@ -537,6 +525,9 @@ _country_reset = {
 
     # Update Market Again
     _update_market = yes
+
+    # Sector accounts, so the states' finalization pays their first dividends
+    sectors_update = yes
 
     # State Finalization
     every_controlled_state = {
@@ -1289,7 +1280,6 @@ initialize_country = {
         #
     }
     buildings_global_var_setup = {
-        set_variable = { global.building_money_limit = 1 } #Money limit for an building for its output times the base price of the outputted resource
         set_variable = { global.base_wage_factor = 0.8 } #What percentage of profits go to pops
         set_variable = { global.minimum_base_wage = 0.01 } #Minimum base wage (not average) for an building
         set_variable = { global.buildings_economy_of_scale_factor = 0.01 } #What bonus gets added to throughput for each size building in a state
@@ -1302,6 +1292,20 @@ initialize_country = {
         set_variable = { global.transport_pay_floor = 0.25 } # Lowest rate paid to railways & ports, as a multiple of the base price
         set_variable = { global.transport_pay_cap = 2 } # Highest rate paid to railways & ports, as a multiple of the base price
         set_variable = { global.maintenance_rate = 0.0025 } # Monthly upkeep as a share of an industry's construction cost at base prices
+        set_variable = { global.sector_retained_share = 0.3 } # Share of a sector's after-tax profit kept as its capital, x investment appetite (incentives, Q39). The rest is dividends
+        # Target utilisation (Q20, sectors_monthly): the share of a sector's jobs on offer, in %
+        set_variable = { global.sector_utilisation_start = 80 } # Where every sector starts
+        set_variable = { global.sector_utilisation_min = 10 }
+        set_variable = { global.sector_utilisation_rise_margin = 0.1 } # It rises while the national margin is above this, and falls while it's negative
+        set_variable = { global.sector_utilisation_gain = 50 } # Points a month per unit of margin beyond those, plus 1
+        set_variable = { global.sector_utilisation_step_max = 5 } # Most points it moves a month
+        set_variable = { global.local_utilisation_gain = 50 } # Points a state-industry shifts per unit by which its trailing margin beats the national margin (industry_utilisation_calc)
+        set_variable = { global.local_utilisation_shift = 5 } # Most points it shifts either way
+        set_variable = { global.industry_margin_weight = 0.2 } # How far each month moves a state-industry's trailing margin toward the month's (industries_monthly)
+        # Capacity decay (Q23, Q87, industries_monthly). Only while global.eco_investment_enabled
+        set_variable = { global.industry_decay_margin = -0.05 } # Trailing margin below which a building shrinks
+        set_variable = { global.industry_decay_rate = 0.01 } # Share of its generic size it loses a month
+        set_variable = { global.industry_decay_floor = 0.1 } # Size below which its generic share closes
         set_variable = { global.eco_investment_enabled = 0 } # Investment opportunities, the fund's spending & national opportunities. Off until the investment rework
 
         # Infrastructure dependence by global.building_type (0 = no type set: RGOs of factory goods)
@@ -2121,12 +2125,6 @@ for_each_loop = {
         industries_update = yes
     }
     state_eco_employment_init = {
-        # Add up all the jobs
-        for_each_loop = {
-            array = industries
-            value = emp_ind_token
-            set_variable = { employment_target@var:emp_ind_token = 80 }
-        }
         # Everyone starts as a peasant. History's slaves and the state's share of active manpower come out first
         set_variable = { pops_workforce@token:peasants = pops_workforce }
 

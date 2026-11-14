@@ -4,7 +4,7 @@ Questions raised against the new spec, [EOANB_Redux_Economy_Redesign_Updated.md]
 
 When Strat answers, write the answer under the question, mark it **Decided** with the date, and update the milestone file it belongs to. The tuning values the spec leaves to testing (§34) aren't asked here: they get settled in the milestone that builds them.
 
-**Status:** Strat answered Q1–Q54 on 2026-11-12. Where an answer differs from the recommendation, it says "Not as recommended". The answers raised follow-up questions Q55–Q68, which Strat also answered on 2026-11-12. Those raised Q69–Q72, also answered the same day. M02's code reading raised Q73–Q80, and M03's raised Q81–Q84. Strat answered all of them on 2026-11-12. Every question is now decided.
+**Status:** Strat answered Q1–Q54 on 2026-11-12. Where an answer differs from the recommendation, it says "Not as recommended". The answers raised follow-up questions Q55–Q68, which Strat also answered on 2026-11-12. Those raised Q69–Q72, also answered the same day. M02's code reading raised Q73–Q80, and M03's raised Q81–Q84. Strat answered all of them on 2026-11-12. M04's raised Q85–Q91, answered on 2026-11-13.
 
 ---
 
@@ -735,3 +735,54 @@ These came up while reading the code for M03, together with a bug Strat reported
 > **Decided 2026-11-12:** not as recommended. (b): owner jobs are 2% of all peasants, including those on marginal land.
 
 Saves made before the fix keep their all-upper-class states, because `pops_balance` only moves a surplus into another class's shortfall. Start a new game.
+
+---
+
+## National sectors follow-ups (raised 2026-11-13, M04)
+
+These came out of reading the industry code for M04. Strat answered Q85–Q91 on 2026-11-13.
+
+**Q85. Which industries become sectors.** Q18 makes every industry token a sector. Subsistence farms are worked by peasants on land, and M05 reworks them. Arms factories, industrial complexes and dockyards are always fully staffed and paid by the state, and M08 reworks them.
+*Recommend:* leave these four out of the sector layer until their own milestones, so neither is written twice. Sectors cover the 25 buildings, the RGOs, railway and port.
+
+> **Decided 2026-11-13:** yes.
+
+**Q86. Profit tax (step 6).** Corporate tax is now the rate × the upper class's dividends, subsistence rent included, and the upper class pays it (M03). Step 6 has sectors pay profit tax before the retained share.
+*Recommend:* each sector pays corporate tax on its positive operating profit only, with no tax on losses and no carry-forward. Dividends and subsistence rent aren't taxed again, so rent goes untaxed until M05 decides land rent.
+
+> **Decided 2026-11-13:** yes.
+
+**Q87. Capacity decay before investment (step 7).** The old downsizing was switched off along with investment, because nothing could rebuild what it shed.
+*Recommend:* build decay and test it in the simulator, but gate it behind `global.eco_investment_enabled` until M09. It applies to buildings only: an RGO's size stays tied to its deposits until M06.
+
+> **Decided 2026-11-13:** yes.
+
+**Q88. Owner slices before companies (step 4).** No companies exist in play, because founding is gated off, and M10 rebuilds companies on the MVP.
+*Recommend:* M04 builds each sector as the generic owner's slice (the sector minus company-held size), with room for company slices but no code for them. M10 ports the MVP onto it.
+
+> **Decided 2026-11-13:** yes.
+
+**Q89. Per-state goods figures once the state-industry is slim (step 3).** Slimming drops each state-industry's per-good arrays (`production@<industry>^i`, `input_amount@<industry>^i`). Two things are built from them: each state's GDP, Σ (`production@<good>` − `demand_input@<good>`) × price, and the market screen's five biggest producing and consuming states per good. National supply and demand could come from the sector records instead.
+- (a) Keep per-state goods totals. Each state-industry still adds its goods into its state's `production@<good>` and `demand_input@<good>` once a month, but stores no arrays of its own. Everything that reads them keeps working.
+- (b) Drop them. State GDP becomes Σ (revenue − input cost) over its industries, the same number, and national supply and demand come from the sectors. The market screen lists producing countries only, or works out its states when it opens.
+
+*Recommend:* (a). Since the market now adds up each state once a month instead of five times, the per-good loop is cheap, and it keeps the market screen and the GDP as they are. (b) saves about 45 variables per state.
+
+> **Decided 2026-11-13:** (b), not as recommended. Iterating over every good for every state is the cost to cut. State GDP is each industry's value added (revenue less goods bought), summed per state. The market loses its per-state lists, which only partly worked; the sectors list their biggest states instead.
+
+**Q90. Which per-industry figures stay stored (step 3).** The industry tooltips show revenue, expenses, payroll, maintenance, profit, profitability, productivity, jobs per class and the goods made and used. `sectors_update` adds up revenue, inputs, payroll, maintenance and employment from what each state-industry stores, rather than inside `industry_update`, because content, construction and the GUI also run `industry_update` mid-month.
+- (a) Keep the money figures (revenue, input cost, payroll, maintenance, profit and margin) and employment per class. Drop the rest (jobs available, the payroll multiplier, the transport maxima, `asset_value@`, `productivity@`), working them out in the scripted localisation when a tooltip needs them.
+- (b) Keep only the spec's list (size, employment, PM/AM, ownership, a trailing margin, construction state), and work every money figure out on demand. `sectors_update` would then add up during the state loop, and mid-month recomputes would need a guard against double counting.
+
+*Recommend:* (a). About ten variables per state-industry, and the national accounts stay correct whatever calls `industry_update`.
+
+> **Decided 2026-11-13:** keep only what calculations need, where dropping it would cost performance. Anything only the localisation reads goes, and the scripted localisation works it out. Something that has to be worked out anyway can be stored.
+
+**Q91. National sector figures for the UI.** The national sector screen should show most of what the state-industry tooltips show, plus the sector's own accounts. Most of it is stored or derivable already. Six things aren't (the gaps in the M04 file's "National sector UI" section): jobs and employment per class, the method mix, goods used per good, transport, construction under way, and reserves. Q90 would have the localisation work them out, but at national level that means looping over every state for every figure each frame the screen shows. A screen with 30 sectors would loop every state and industry thousands of times a second.
+- (a) Store them monthly in the passes that already visit every state-industry (`sectors_update`, `national_market_states_update`). That's about ten values and four short arrays per sector, and a few additions per state-industry a month. Gap 3's arrays would replace `method_scale@`, since they hold the same sums split by sector.
+- (b) Work them out in the scripted localisation by looping over the country's states when the screen shows them. Nothing is stored, but every visible figure loops every state each frame.
+- (c) Store the cheap sums (gaps 1, 4, 5, 6) and leave the method mix and goods used (gaps 2 and 3) to the localisation.
+
+*Recommend:* (a). By Q90's own test (performance) these belong in storage at national level. They're cheap to add up in passes that already run, and costly to rebuild in the GUI.
+
+> **Decided 2026-11-13:** (a).

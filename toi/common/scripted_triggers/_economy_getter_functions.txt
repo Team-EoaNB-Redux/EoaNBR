@@ -53,24 +53,13 @@
         multiply_temp_variable = { common_modifier_temp = getter_factor_temp }
 
         # Output
-        set_temp_variable = { output_temp = global.pm_output_amount@var:pm_temp }
-        multiply_temp_variable = { output_temp = global.building_production_multiplier@var:industry_token }
-        multiply_temp_variable = { output_temp = employees_temp }
-        multiply_temp_variable = { output_temp = common_modifier_temp }
+        get_sector_output_value = yes
+        set_temp_variable = { revenue_temp = sector_value_temp }
+        multiply_temp_variable = { revenue_temp = global.pm_output_amount@var:pm_temp }
+        multiply_temp_variable = { revenue_temp = common_modifier_temp }
         set_temp_variable = { getter_factor_temp = controller:industry_output_factor@var:industry_token }
         add_to_temp_variable = { getter_factor_temp = 1 }
-        multiply_temp_variable = { output_temp = getter_factor_temp }
-
-        set_temp_variable = { revenue_temp = 0 }
-        all_of = {
-            array = global.building_base_production@var:industry_token
-            value = br_token
-            index = getter_i
-            set_temp_variable = { getter_amount_temp = global.building_base_production_amount@var:industry_token^getter_i }
-            multiply_temp_variable = { getter_amount_temp = output_temp }
-            multiply_temp_variable = { getter_amount_temp = controller:price@var:br_token }
-            add_to_temp_variable = { revenue_temp = getter_amount_temp }
-        }
+        multiply_temp_variable = { revenue_temp = getter_factor_temp }
 
         # Railways & ports are paid for the service they provide
         set_temp_variable = { getter_amount_temp = global.pm_industrial_capacity@var:pm_temp }
@@ -86,16 +75,10 @@
         add_to_temp_variable = { getter_factor_temp = 1 }
         multiply_temp_variable = { input_temp = getter_factor_temp }
 
-        set_temp_variable = { expenses_temp = 0 }
-        all_of = {
-            array = global.pm_input@var:pm_temp
-            value = br_token
-            index = getter_i
-            set_temp_variable = { getter_amount_temp = global.pm_input_amount@var:pm_temp^getter_i }
-            multiply_temp_variable = { getter_amount_temp = input_temp }
-            multiply_temp_variable = { getter_amount_temp = controller:price@var:br_token }
-            add_to_temp_variable = { expenses_temp = getter_amount_temp }
-        }
+        set_temp_variable = { getter_method_temp = pm_temp }
+        get_method_input_cost = yes
+        set_temp_variable = { expenses_temp = method_cost_temp }
+        multiply_temp_variable = { expenses_temp = input_temp }
 
         # Maintenance
         set_temp_variable = { getter_amount_temp = global.pm_construction_value@var:pm_temp }
@@ -130,6 +113,166 @@
         divide_temp_variable = { expenses_temp = 100 }
         multiply_temp_variable = { expenses_temp = size@var:industry_token }
     }
+    get_industry_figures = {
+        # What a state-industry's tooltips show beyond what it stores (M04 slimmed it), worked out from what it does store
+        # State scope
+        # Input: industry_token
+        # Outputs:
+        #   employed_temp, jobs_temp - K workers, working and middle class together
+        #   employment_percent_temp - the share of its payroll it employs, in %
+        #   revenue_shipping_temp, revenue_industrial_temp - what a railway or port is paid for transport
+        #   revenue_goods_temp - what its goods sold for
+        #   expenses_total_temp, profit_temp, margin_temp (this month's profit over revenue)
+        #   productivity_temp - what each wage-weighted worker adds after inputs and maintenance. The government buildings
+        #     store their own
+        set_temp_variable = { employed_temp = working_employed@var:industry_token }
+        add_to_temp_variable = { employed_temp = middle_employed@var:industry_token }
+        set_temp_variable = { jobs_temp = working_jobs@var:industry_token }
+        add_to_temp_variable = { jobs_temp = middle_jobs@var:industry_token }
+
+        # Wage-weighted workers
+        set_temp_variable = { getter_units_temp = working_employed@var:industry_token }
+        multiply_temp_variable = { getter_units_temp = global.wage_multiplier@token:working_class }
+        set_temp_variable = { getter_amount_temp = middle_employed@var:industry_token }
+        multiply_temp_variable = { getter_amount_temp = global.wage_multiplier@token:middle_class }
+        add_to_temp_variable = { getter_units_temp = getter_amount_temp }
+
+        set_temp_variable = { employment_percent_temp = 0 }
+        if = { # Idle and empty industries have no payroll or size: guarded so the GUI doesn't fill error.log
+            limit = {
+                check_variable = { payroll_multiplier@var:industry_token > 0 }
+                check_variable = { size@var:industry_token > 0 }
+            }
+            set_temp_variable = { employment_percent_temp = getter_units_temp }
+            divide_temp_variable = { employment_percent_temp = payroll_multiplier@var:industry_token }
+            divide_temp_variable = { employment_percent_temp = size@var:industry_token }
+            multiply_temp_variable = { employment_percent_temp = 100 }
+            clamp_temp_variable = { var = employment_percent_temp min = 0 max = 100 }
+        }
+
+        set_temp_variable = { revenue_shipping_temp = 0 }
+        set_temp_variable = { revenue_industrial_temp = 0 }
+        if = {
+            limit = { check_variable = { global.building_type@var:industry_token = 2 } }
+            set_temp_variable = { revenue_shipping_temp = shipping_capacity@var:industry_token }
+            multiply_temp_variable = { revenue_shipping_temp = price_industrial_capacity }
+            set_temp_variable = { revenue_industrial_temp = shipping_capacity@var:industry_token }
+            multiply_temp_variable = { revenue_industrial_temp = global.port_transport_share }
+            multiply_temp_variable = { revenue_industrial_temp = -1 }
+            add_to_temp_variable = { revenue_industrial_temp = industrial_capacity@var:industry_token }
+            multiply_temp_variable = { revenue_industrial_temp = price_industrial_capacity }
+        }
+        set_temp_variable = { revenue_goods_temp = revenue@var:industry_token }
+        subtract_from_temp_variable = { revenue_goods_temp = revenue_shipping_temp }
+        subtract_from_temp_variable = { revenue_goods_temp = revenue_industrial_temp }
+
+        set_temp_variable = { expenses_total_temp = expenses_payroll@var:industry_token }
+        add_to_temp_variable = { expenses_total_temp = expenses_input@var:industry_token }
+        add_to_temp_variable = { expenses_total_temp = expenses_maintenance@var:industry_token }
+        set_temp_variable = { profit_temp = revenue@var:industry_token }
+        subtract_from_temp_variable = { profit_temp = expenses_total_temp }
+        set_temp_variable = { margin_temp = 0 }
+        if = {
+            limit = { check_variable = { revenue@var:industry_token > 0 } }
+            set_temp_variable = { margin_temp = profit_temp }
+            divide_temp_variable = { margin_temp = revenue@var:industry_token }
+        }
+
+        if = {
+            limit = { check_variable = { global.building_government_control@var:industry_token = 1 } }
+            set_temp_variable = { productivity_temp = productivity@var:industry_token }
+        }
+        else_if = {
+            limit = { check_variable = { getter_units_temp > 0 } }
+            set_temp_variable = { productivity_temp = revenue@var:industry_token }
+            subtract_from_temp_variable = { productivity_temp = expenses_input@var:industry_token }
+            subtract_from_temp_variable = { productivity_temp = expenses_maintenance@var:industry_token }
+            divide_temp_variable = { productivity_temp = getter_units_temp }
+        }
+        else = {
+            set_temp_variable = { productivity_temp = 0 }
+        }
+    }
+    get_industry_utilisation = {
+        # The share of its jobs a state-industry offers, as industry_utilisation_calc works it out: its sector's national
+        # target utilisation, shifted by how its trailing margin compares with the national one. The government buildings
+        # work at 100%
+        # State scope
+        # Input: industry_token
+        # Output: utilisation_temp, in %
+        if = {
+            limit = { check_variable = { global.building_government_control@var:industry_token = 1 } }
+            set_temp_variable = { utilisation_temp = 100 }
+        }
+        else = {
+            set_temp_variable = { utilisation_temp = controller:sector_utilisation@var:industry_token }
+            if = {
+                limit = { check_variable = { utilisation_temp = 0 } }
+                set_temp_variable = { utilisation_temp = global.sector_utilisation_start }
+            }
+            if = {
+                limit = { NOT = { check_variable = { margin@var:industry_token = 0 } } }
+                set_temp_variable = { getter_shift_temp = margin@var:industry_token }
+                subtract_from_temp_variable = { getter_shift_temp = controller:sector_margin@var:industry_token }
+                multiply_temp_variable = { getter_shift_temp = global.local_utilisation_gain }
+                set_temp_variable = { getter_amount_temp = global.local_utilisation_shift }
+                if = {
+                    limit = { check_variable = { getter_shift_temp > getter_amount_temp } }
+                    set_temp_variable = { getter_shift_temp = getter_amount_temp }
+                }
+                multiply_temp_variable = { getter_amount_temp = -1 }
+                if = {
+                    limit = { check_variable = { getter_shift_temp < getter_amount_temp } }
+                    set_temp_variable = { getter_shift_temp = getter_amount_temp }
+                }
+                add_to_temp_variable = { utilisation_temp = getter_shift_temp }
+                clamp_temp_variable = { var = utilisation_temp min = global.sector_utilisation_min max = 100 }
+            }
+        }
+    }
+    get_industry_input = {
+        # The pm_input_i-th good a state-industry uses: its PM's inputs, then the AM's that its PM lacks, each in the amount
+        # both use this month. An AM input its PM also uses shows 0, since its PM line counts it
+        # State scope
+        # Input: industry_token, pm_input_i
+        # Output: pm_input_temp (0 past the end), amount_temp
+        set_temp_variable = { getter_pm_temp = production_method@var:industry_token }
+        set_temp_variable = { getter_am_temp = automation_method@var:industry_token }
+        set_temp_variable = { pm_input_temp = 0 }
+        set_temp_variable = { amount_temp = 0 }
+        set_temp_variable = { getter_n_temp = global.pm_input@var:getter_pm_temp^num }
+        if = {
+            limit = { check_variable = { pm_input_i < getter_n_temp } }
+            set_temp_variable = { pm_input_temp = global.pm_input@var:getter_pm_temp^pm_input_i }
+            set_temp_variable = { amount_temp = global.pm_input_amount@var:getter_pm_temp^pm_input_i }
+            if = {
+                limit = { NOT = { check_variable = { getter_am_temp = 0 } } }
+                all_of = {
+                    array = global.pm_input@var:getter_am_temp
+                    value = getter_good_temp
+                    index = getter_i
+                    if = {
+                        limit = { check_variable = { getter_good_temp = pm_input_temp } }
+                        add_to_temp_variable = { amount_temp = global.pm_input_amount@var:getter_am_temp^getter_i }
+                    }
+                }
+            }
+        }
+        else_if = {
+            limit = { NOT = { check_variable = { getter_am_temp = 0 } } }
+            set_temp_variable = { getter_j_temp = pm_input_i }
+            subtract_from_temp_variable = { getter_j_temp = getter_n_temp }
+            if = {
+                limit = { check_variable = { getter_j_temp < global.pm_input@var:getter_am_temp^num } }
+                set_temp_variable = { pm_input_temp = global.pm_input@var:getter_am_temp^getter_j_temp }
+                if = {
+                    limit = { NOT = { is_in_array = { global.pm_input@var:getter_pm_temp = pm_input_temp } } }
+                    set_temp_variable = { amount_temp = global.pm_input_amount@var:getter_am_temp^getter_j_temp }
+                }
+            }
+        }
+        multiply_temp_variable = { amount_temp = input_scale@var:industry_token }
+    }
     get_am_values = {
         # Returns a list of values of a AM, per K of base workforce
         # State or Country scope
@@ -139,17 +282,57 @@
         #   expenses_temp
         #   payroll_multiplier_temp
 
-        set_temp_variable = { expenses_temp = 0 }
-        all_of = {
-            array = global.pm_input@var:pm_temp
-            value = br_token
-            index = getter_i
-            set_temp_variable = { getter_amount_temp = global.pm_input_amount@var:pm_temp^getter_i }
-            multiply_temp_variable = { getter_amount_temp = controller:price@var:br_token }
-            add_to_temp_variable = { expenses_temp = getter_amount_temp }
-        }
+        set_temp_variable = { getter_method_temp = pm_temp }
+        get_method_input_cost = yes
+        set_temp_variable = { expenses_temp = method_cost_temp }
 
         get_method_payroll = yes
+    }
+    get_sector_output_value = {
+        # What one size of a sector makes at the market's prices, per unit of its PM's output amount, before modifiers
+        # From the PM/AM cache (market_output_value@) when the controller has the sector, otherwise at the controller's prices
+        # State or Country scope
+        # Input: industry_token
+        # Output: sector_value_temp
+        if = { # The cache holds the value of one bundle of the sector's base production
+            limit = { is_in_array = { controller:sectors = industry_token } }
+            set_temp_variable = { sector_value_temp = controller:market_output_value@var:industry_token }
+        }
+        else = {
+            set_temp_variable = { sector_value_temp = 0 }
+            all_of = {
+                array = global.building_base_production@var:industry_token
+                value = br_token
+                index = getter_i
+                set_temp_variable = { getter_amount_temp = global.building_base_production_amount@var:industry_token^getter_i }
+                multiply_temp_variable = { getter_amount_temp = controller:price@var:br_token }
+                add_to_temp_variable = { sector_value_temp = getter_amount_temp }
+            }
+        }
+        multiply_temp_variable = { sector_value_temp = global.building_production_multiplier@var:industry_token }
+        multiply_temp_variable = { sector_value_temp = global.building_base_employees@var:industry_token }
+    }
+    get_method_input_cost = {
+        # What a PM's or AM's inputs cost at the market's prices, per K of base workforce, before modifiers
+        # From the PM/AM cache (method_input_cost@) when the controller uses the method, otherwise at the controller's prices
+        # State or Country scope
+        # Input: getter_method_temp
+        # Output: method_cost_temp
+        if = {
+            limit = { is_in_array = { controller:methods_in_use = getter_method_temp } }
+            set_temp_variable = { method_cost_temp = controller:method_input_cost@var:getter_method_temp }
+        }
+        else = {
+            set_temp_variable = { method_cost_temp = 0 }
+            all_of = {
+                array = global.pm_input@var:getter_method_temp
+                value = br_token
+                index = getter_i
+                set_temp_variable = { getter_amount_temp = global.pm_input_amount@var:getter_method_temp^getter_i }
+                multiply_temp_variable = { getter_amount_temp = controller:price@var:br_token }
+                add_to_temp_variable = { method_cost_temp = getter_amount_temp }
+            }
+        }
     }
     get_method_payroll = {
         # Returns the wage multiplier of a PM or AM, per K of base workforce
@@ -164,15 +347,22 @@
     }
     get_method_construction_cost = {
         # Adds a PM or AM construction list at current prices to getter_cost_temp, per K of base workforce
+        # From the PM/AM cache (method_construction_cost@) when the controller uses the method, otherwise at the controller's prices
         # Input: getter_method_temp
 
-        all_of = {
-            array = global.pm_construction_input@var:getter_method_temp
-            value = br_token
-            index = getter_i
-            set_temp_variable = { getter_amount_temp = global.pm_construction_input_amount@var:getter_method_temp^getter_i }
-            multiply_temp_variable = { getter_amount_temp = controller:price@var:br_token }
-            add_to_temp_variable = { getter_cost_temp = getter_amount_temp }
+        if = {
+            limit = { is_in_array = { controller:methods_in_use = getter_method_temp } }
+            add_to_temp_variable = { getter_cost_temp = controller:method_construction_cost@var:getter_method_temp }
+        }
+        else = {
+            all_of = {
+                array = global.pm_construction_input@var:getter_method_temp
+                value = br_token
+                index = getter_i
+                set_temp_variable = { getter_amount_temp = global.pm_construction_input_amount@var:getter_method_temp^getter_i }
+                multiply_temp_variable = { getter_amount_temp = controller:price@var:br_token }
+                add_to_temp_variable = { getter_cost_temp = getter_amount_temp }
+            }
         }
     }
     get_construction_cost = {

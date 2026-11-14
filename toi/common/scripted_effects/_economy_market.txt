@@ -31,7 +31,8 @@
 		# Make sure current scope is a market leader by doing check_variable = { market_leader = THIS }
 		
 		# The following two inputs allow market_update to run without running more strenuous operations. For performance
-		# ignore_state_market_temp - Does not recalc state markets if non-zero
+		# ignore_state_market_temp - Uses each member's goods totals from its last monthly tick (national_market_states_update)
+		#   instead of adding them up again. The monthly and weekly ticks set it: industries and pops only change once a month
 		# ignore_national_market_temp - Does not recalc state OR national markets if non-zero
 
 		set_temp_variable = { market_leader_temp = THIS }
@@ -56,15 +57,6 @@
                     limit = {
                         check_variable = { ignore_national_market_temp = 0 }
                     }
-                    if = {
-                        limit = {
-                            check_variable = { ignore_state_market_temp = 0 }
-                        }
-                        every_controlled_state = {
-                            state_market_update = yes
-                        }
-                    }
-
                     national_market_update = yes
                 }
 
@@ -193,16 +185,19 @@
 		}
 		
 		
+	}
+	market_statistics_update = {
+		# Scope: Market Leader. The market screen's biggest producing and consuming countries for each good. States keep no
+		# per-good totals: each country lists its sectors' biggest states instead (sector_states@, sectors_update).
+		# Monthly and at startup: production and demand only change once a month
+		set_temp_variable = { market_leader_temp = THIS }
+
 		for_each_loop = { # Market Statistics
 			array = global.resource_token_array
 			value = r_type
 
 			clear_array = market_production_countries@var:r_type
 			clear_array = market_consumption_countries@var:r_type
-
-			# Only includes top 5 states
-			clear_array = market_production_states@var:r_type
-			clear_array = market_consumption_states@var:r_type
 			
 			for_each_scope_loop = {
 				array = market_countries
@@ -230,64 +225,6 @@
 					}
 				}
 				if = { limit = { check_variable = { bb = 0 } } add_to_array = { market_leader_temp:market_consumption_countries@var:r_type = THIS } }
-
-				# Check the top 5 producing states of each country. Put them in a list.
-				set_temp_variable = { highest_state_temp = production_states@var:r_type^0 }
-				if = { limit = { check_variable = { highest_state_temp:production@var:r_type > market_leader_temp:market_production_states@var:r_type^4 } }
-					for_loop_effect = {
-						end = 5 value = ii break = bbb
-						set_temp_variable = { market_state_temp = production_states@var:r_type^ii }
-
-						if = { limit = { check_variable = { ii < production_states@var:r_type^num } }
-							for_each_loop = {
-								array = market_leader_temp:market_production_states@var:r_type
-								index = ii value = vv break = bb
-
-								if = { limit = { check_variable = { vv:production@var:r_type < market_state_temp:production@var:r_type } }
-									add_to_array = { array = market_leader_temp:market_production_states@var:r_type value = market_state_temp index = ii }
-									set_temp_variable = { bb = 1 }
-								}
-							}
-							if = { limit = { check_variable = { bb = 0 } } add_to_array = { market_leader_temp:market_production_states@var:r_type = market_state_temp } }
-							
-							if = { limit = { check_variable = { market_leader_temp:market_production_states@var:r_type^num > 5 } } 
-								remove_from_array = { array = market_leader_temp:market_production_states@var:r_type index = 5 } 
-							}
-						}
-						else = {
-							set_temp_variable = { bbb = 1 }
-						}
-					}
-				}
-				
-				# Check the top 5 consuming states of each country. Put them in a list.
-				set_temp_variable = { highest_state_temp = consumption_states@var:r_type^0 }
-				if = { limit = { check_variable = { highest_state_temp:demand@var:r_type > market_leader_temp:market_consumption_states@var:r_type^4 } }
-					for_loop_effect = {
-						end = 5 value = ii break = bbb
-						set_temp_variable = { market_state_temp = consumption_states@var:r_type^ii }
-
-						if = { limit = { check_variable = { ii < consumption_states@var:r_type^num } }
-							for_each_loop = {
-								array = market_leader_temp:market_consumption_states@var:r_type
-								index = ii value = vv break = bb
-
-								if = { limit = { check_variable = { vv:demand@var:r_type < market_state_temp:demand@var:r_type } }
-									add_to_array = { array = market_leader_temp:market_consumption_states@var:r_type value = market_state_temp index = ii }
-									set_temp_variable = { bb = 1 }
-								}
-							}
-							if = { limit = { check_variable = { bb = 0 } } add_to_array = { market_leader_temp:market_consumption_states@var:r_type = market_state_temp } }
-							
-							if = { limit = { check_variable = { market_leader_temp:market_consumption_states@var:r_type^num > 5 } } 
-								remove_from_array = { array = market_leader_temp:market_consumption_states@var:r_type index = 5 } 
-							}
-						}
-						else = {
-							set_temp_variable = { bbb = 1 }
-						}
-					}
-				}
 			}
 		}
 	}
@@ -346,29 +283,69 @@
 				}
 			}
 		}
+
+		market_cache_update = yes
 	}
-	national_market_update = {
-		
-		calculate_military_demand = yes
+	market_cache_update = {
+		# Scope: Market Leader. Runs from market_prices_update, once the members have the new prices
+		# The market layer of the PM/AM cache (see cache_register_industry): each sector's output value and each method's input and
+		# construction cost, at the market's prices. Worked out once per market for every sector and method a member uses, and
+		# copied to each member that uses it. The leader keeps the market's copy, stamped with the price update it belongs to.
+		add_to_variable = { market_cache_stamp = 1 }
+		set_temp_variable = { market_leader_temp = THIS }
 
-		for_each_loop = { # Reset to 0
-			array = global.resource_token_array
-			value = r_type
-			
-			set_variable = { local_need@var:r_type = military_demand@var:r_type }
-			set_variable = { local_production@var:r_type = 0 }
-		}
+		for_each_scope_loop = {
+			array = market_countries
 
-		every_controlled_state = { # Calculate & Add up each state			
-			for_each_loop = { # Add to national scope
-				array = global.resource_token_array
-				value = r_type
-
-				add_to_variable = { PREV.local_need@var:r_type = demand@var:r_type }
-				add_to_variable = { PREV.local_production@var:r_type = production@var:r_type }
+			for_each_loop = {
+				array = sectors
+				value = cache_token
+				if = {
+					limit = { check_variable = { market_leader_temp:market_output_stamp@var:cache_token = market_leader_temp:market_cache_stamp } }
+					set_variable = { market_output_value@var:cache_token = market_leader_temp:market_output_value@var:cache_token }
+				}
+				else = { # Each member has the market's prices, so the first member to need it works it out for the market
+					cache_sector_calc = yes
+					set_variable = { market_leader_temp:market_output_value@var:cache_token = market_output_value@var:cache_token }
+					set_variable = { market_leader_temp:market_output_stamp@var:cache_token = market_leader_temp:market_cache_stamp }
+				}
+			}
+			for_each_loop = {
+				array = methods_in_use
+				value = cache_token
+				if = {
+					limit = { check_variable = { market_leader_temp:method_cost_stamp@var:cache_token = market_leader_temp:market_cache_stamp } }
+					set_variable = { method_input_cost@var:cache_token = market_leader_temp:method_input_cost@var:cache_token }
+					set_variable = { method_construction_cost@var:cache_token = market_leader_temp:method_construction_cost@var:cache_token }
+				}
+				else = {
+					cache_method_calc = yes
+					set_variable = { market_leader_temp:method_input_cost@var:cache_token = method_input_cost@var:cache_token }
+					set_variable = { market_leader_temp:method_construction_cost@var:cache_token = method_construction_cost@var:cache_token }
+					set_variable = { market_leader_temp:method_cost_stamp@var:cache_token = market_leader_temp:market_cache_stamp }
+				}
 			}
 		}
-		
+	}
+	national_market_update = {
+		# The country's goods demand and supply for its market: its industries' and pops' totals (states_need@,
+		# states_production@), plus military demand, which changes daily. ignore_state_market_temp keeps the totals from the
+		# country's last monthly tick. Otherwise they're added up again
+		if = {
+			limit = { check_variable = { ignore_state_market_temp = 0 } }
+			national_market_states_update = yes
+		}
+
+		calculate_military_demand = yes
+
+		for_each_loop = {
+			array = global.resource_token_array
+			value = r_type
+
+			set_variable = { local_need@var:r_type = { value = military_demand@var:r_type add = states_need@var:r_type } }
+			set_variable = { local_production@var:r_type = states_production@var:r_type }
+		}
+
 		set_temp_variable = { modifier_temp = modifier@military_production_cost_factor }
 		add_to_temp_variable = { modifier_temp = 1 }
 
@@ -387,102 +364,178 @@
 			add_to_variable = { local_need@var:r_type = amount_temp }
 			#set_variable = { balance@var:r_type = resource@var:r_type }
 		}
-		
+	}
+	national_market_states_update = {
+		# Country scope. The goods its states make and use, for its market: states_production@<good> and states_need@<good>.
+		# No state keeps per-good totals. Industries are added up by sector, and those are turned into goods once per country:
+		#   output@<sector> - the bundles of base production its state-industries made
+		#   sector_pm_scale@<sector>, sector_am_scale@<sector> - the input_scale@ of its state-industries on each PM and AM, in
+		#     arrays parallel to the building's method lists (global.building_production_methods@, building_automation_methods@)
+		#   sector_pm_size@<sector>, sector_am_size@<sector> - the method mix: the sector's size on each PM and AM, in the same
+		#     arrays. Not needed for the goods, but this pass finds each method's place in the lists anyway
+		# Subsistence farms (not a sector) add their goods, and each state its pops' demand (pops_need@<good>, get_pop_needs),
+		# construction and retooling. Runs once a month after the country's states update, and whenever market_update asks
+		# for fresh totals
 		for_each_loop = {
 			array = global.resource_token_array
 			value = r_type
-			clear_array = production_states@var:r_type
-			clear_array = consumption_states@var:r_type
-			if = { limit = { check_variable = { local_production@var:r_type > 0 } }
-				every_controlled_state = {
-					# Add production from this state to production states array, sorted
-					if = { limit = { check_variable = { production@var:r_type > 0 } }
-						for_each_loop = {
-							array = controller:production_states@var:r_type
-							index = ii value = vv break = bb
-							
-							if = { limit = { check_variable = { vv:production@var:r_type < production@var:r_type } }
-								add_to_array = { array = controller:production_states@var:r_type value = THIS index = ii }
-								set_temp_variable = { bb = 1 }
+			set_variable = { states_need@var:r_type = 0 }
+			set_variable = { states_production@var:r_type = 0 }
+		}
+		for_each_loop = {
+			array = sectors
+			value = g_token
+			set_variable = { output@var:g_token = 0 }
+			set_temp_variable = { g_n_temp = global.building_production_methods@var:g_token^num }
+			clear_array = sector_pm_size@var:g_token
+			clear_array = sector_pm_scale@var:g_token
+			resize_array = { array = sector_pm_size@var:g_token value = 0 size = g_n_temp }
+			resize_array = { array = sector_pm_scale@var:g_token value = 0 size = g_n_temp }
+			set_temp_variable = { g_n_temp = global.building_automation_methods@var:g_token^num }
+			clear_array = sector_am_size@var:g_token
+			clear_array = sector_am_scale@var:g_token
+			resize_array = { array = sector_am_size@var:g_token value = 0 size = g_n_temp }
+			resize_array = { array = sector_am_scale@var:g_token value = 0 size = g_n_temp }
+		}
+
+		every_controlled_state = {
+			for_each_loop = {
+				array = industries
+				value = g_token
+				if = {
+					limit = {
+						check_variable = { size@var:g_token > 0 } # Railways and ports at size 0 aren't updated, and keep old figures
+						NOT = { check_variable = { g_token = token:subsistence_farm } }
+						NOT = { check_variable = { global.building_government_control@var:g_token = 1 } }
+					}
+					if = {
+						limit = { check_variable = { output@var:g_token > 0 } }
+						add_to_variable = { PREV.output@var:g_token = output@var:g_token }
+					}
+					set_temp_variable = { g_size_temp = size@var:g_token }
+					set_temp_variable = { g_scale_temp = input_scale@var:g_token }
+					set_temp_variable = { g_pm_temp = production_method@var:g_token }
+					set_temp_variable = { g_am_temp = automation_method@var:g_token }
+					PREV = {
+						if = {
+							limit = { check_variable = { sector_pm_size@var:g_token^num > 0 } } # Unregistered: a state taken this month
+							set_temp_variable = { g_break_temp = 0 }
+							for_each_loop = {
+								array = global.building_production_methods@var:g_token
+								index = g_m value = g_method_temp break = g_break_temp
+								if = { limit = { check_variable = { g_method_temp = g_pm_temp } }
+									add_to_variable = { sector_pm_size@var:g_token^g_m = g_size_temp }
+									add_to_variable = { sector_pm_scale@var:g_token^g_m = g_scale_temp }
+									set_temp_variable = { g_break_temp = 1 }
+								}
 							}
 						}
-						if = { limit = { check_variable = { bb = 0 } } add_to_array = { controller:production_states@var:r_type = THIS } }
-					}
-					
-					# Add consumption from this state to consumption states array, sorted
-					if = { limit = { check_variable = { demand@var:r_type > 0 } }
-						for_each_loop = {
-							array = controller:consumption_states@var:r_type
-							index = ii value = vv break = bb
-
-							if = { limit = { check_variable = { vv:demand@var:r_type < demand@var:r_type } }
-								add_to_array = { array = controller:consumption_states@var:r_type value = THIS index = ii }
-								set_temp_variable = { bb = 1 }
+						if = {
+							limit = {
+								NOT = { check_variable = { g_am_temp = 0 } }
+								check_variable = { sector_am_size@var:g_token^num > 0 }
+							}
+							set_temp_variable = { g_break_temp = 0 }
+							for_each_loop = {
+								array = global.building_automation_methods@var:g_token
+								index = g_m value = g_method_temp break = g_break_temp
+								if = { limit = { check_variable = { g_method_temp = g_am_temp } }
+									add_to_variable = { sector_am_size@var:g_token^g_m = g_size_temp }
+									add_to_variable = { sector_am_scale@var:g_token^g_m = g_scale_temp }
+									set_temp_variable = { g_break_temp = 1 }
+								}
 							}
 						}
-						if = { limit = { check_variable = { bb = 0 } } add_to_array = { controller:consumption_states@var:r_type = THIS } }
 					}
 				}
 			}
-		}
-	}
-	state_market_update = {
 
-		for_each_loop = { # Resets values to 0
-			array = global.resource_token_array
-			value = r_type
-			set_variable = { supply@var:r_type = 0 }
-			set_variable = { production@var:r_type = 0 }
-
-			set_variable = { demand@var:r_type = 0 }
-			add_to_variable = { demand@var:r_type = pops_need@var:r_type }
-			set_variable = { demand_input@var:r_type = 0 }
-		}
-
-		for_each_loop = { # Industries - Adding production to supply & inputs to demand
-			array = industries
-			value = b_type
-
-			for_each_loop = { # Output
-				array = global.building_base_production@var:b_type
-				value = br_token
-				index = ii
-
-				add_to_variable = { production@var:br_token = production@var:b_type^ii }
+			# Subsistence farms aren't a sector (Q85), so their goods are added here
+			for_each_loop = {
+				array = global.building_base_production@token:subsistence_farm
+				value = r_type
+				index = g_i
+				set_temp_variable = { g_amount_temp = global.building_base_production_amount@token:subsistence_farm^g_i }
+				multiply_temp_variable = { g_amount_temp = output@token:subsistence_farm }
+				add_to_variable = { PREV.states_production@var:r_type = g_amount_temp }
 			}
-			for_each_loop = { # Input
-				array = input@var:b_type
-				value = br_token
-				index = ii
 
-				add_to_variable = { demand_input@var:br_token = input_amount@var:b_type^ii }
+			for_each_loop = {
+				array = global.pop_needs_resources
+				value = r_type
+				add_to_variable = { PREV.states_need@var:r_type = pops_need@var:r_type }
 			}
-			if = { # Retooling
-				limit = { NOT = { check_variable = { retooling_pm@var:b_type = 0 } } }
+
+			for_each_loop = { # Construction
+				array = industries_construction_array
+				value = g_token
 				for_each_loop = {
-					array = retooling_resources@var:b_type
-					value = br_token
-					index = ii
-
-					add_to_variable = { demand@var:br_token = retooling_amount@var:b_type^ii }
+					array = construction_resources@var:g_token
+					value = r_type
+					index = g_i
+					add_to_variable = { PREV.states_need@var:r_type = construction_amount@var:g_token^g_i }
 				}
 			}
-			if = { # Construction
-				limit = { NOT = { check_variable = { construction@var:b_type = 0 } } }
+			for_each_loop = { # Retooling
+				array = industries_retooling_array
+				value = g_token
 				for_each_loop = {
-					array = construction_resources@var:b_type
-					value = br_token
-					index = ii
-
-					add_to_variable = { demand@var:br_token = construction_amount@var:b_type^ii }
+					array = retooling_resources@var:g_token
+					value = r_type
+					index = g_i
+					add_to_variable = { PREV.states_need@var:r_type = retooling_amount@var:g_token^g_i }
 				}
 			}
 		}
-		
-		for_each_loop = { # Adds values together
-			array = global.resource_token_array
-			value = r_type
-			add_to_variable = { demand@var:r_type = demand_input@var:r_type }
+
+		for_each_loop = { # What each sector made and used
+			array = sectors
+			value = g_token
+			if = {
+				limit = { check_variable = { output@var:g_token > 0 } }
+				for_each_loop = {
+					array = global.building_base_production@var:g_token
+					value = r_type
+					index = g_i
+					set_temp_variable = { g_amount_temp = global.building_base_production_amount@var:g_token^g_i }
+					multiply_temp_variable = { g_amount_temp = output@var:g_token }
+					add_to_variable = { states_production@var:r_type = g_amount_temp }
+				}
+			}
+			for_each_loop = {
+				array = sector_pm_scale@var:g_token
+				value = g_scale_temp
+				index = g_m
+				if = {
+					limit = { check_variable = { g_scale_temp > 0 } }
+					set_temp_variable = { g_method_temp = global.building_production_methods@var:g_token^g_m }
+					for_each_loop = {
+						array = global.pm_input@var:g_method_temp
+						value = r_type
+						index = g_i
+						set_temp_variable = { g_amount_temp = global.pm_input_amount@var:g_method_temp^g_i }
+						multiply_temp_variable = { g_amount_temp = g_scale_temp }
+						add_to_variable = { states_need@var:r_type = g_amount_temp }
+					}
+				}
+			}
+			for_each_loop = {
+				array = sector_am_scale@var:g_token
+				value = g_scale_temp
+				index = g_m
+				if = {
+					limit = { check_variable = { g_scale_temp > 0 } }
+					set_temp_variable = { g_method_temp = global.building_automation_methods@var:g_token^g_m }
+					for_each_loop = {
+						array = global.pm_input@var:g_method_temp
+						value = r_type
+						index = g_i
+						set_temp_variable = { g_amount_temp = global.pm_input_amount@var:g_method_temp^g_i }
+						multiply_temp_variable = { g_amount_temp = g_scale_temp }
+						add_to_variable = { states_need@var:r_type = g_amount_temp }
+					}
+				}
+			}
 		}
 	}
 
