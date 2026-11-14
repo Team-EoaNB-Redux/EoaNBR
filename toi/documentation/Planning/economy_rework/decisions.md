@@ -4,7 +4,7 @@ Questions raised against the new spec, [EOANB_Redux_Economy_Redesign_Updated.md]
 
 When Strat answers, write the answer under the question, mark it **Decided** with the date, and update the milestone file it belongs to. The tuning values the spec leaves to testing (§34) aren't asked here: they get settled in the milestone that builds them.
 
-**Status:** Strat answered Q1–Q54 on 2026-11-12. Where an answer differs from the recommendation, it says "Not as recommended". The answers raised follow-up questions Q55–Q68, which Strat also answered on 2026-11-12. Those raised Q69–Q72, also answered the same day. M02's code reading raised Q73–Q80, and M03's raised Q81–Q84. Strat answered all of them on 2026-11-12. M04's raised Q85–Q91, answered on 2026-11-13.
+**Status:** Strat answered Q1–Q54 on 2026-11-12. Where an answer differs from the recommendation, it says "Not as recommended". The answers raised follow-up questions Q55–Q68, which Strat also answered on 2026-11-12. Those raised Q69–Q72, also answered the same day. M02's code reading raised Q73–Q80, and M03's raised Q81–Q84. Strat answered all of them on 2026-11-12. M04's raised Q85–Q91, answered on 2026-11-13. M05's raised Q92–Q95, answered on 2026-11-14. M06's raised Q96–Q101, answered on 2026-11-14.
 
 ---
 
@@ -576,6 +576,8 @@ The politics rework has insolvency laws (`insolvency_law_tokens`: peonage, debto
 
 > **Decided 2026-11-12:** yes.
 
+> **Note, 2026-11-14 (M06):** Strat meant known deposits as the found deposits nobody works yet. M06 stores them including the worked part, so they cap the size the way arable land caps farms. Strat kept it that way, as more consistent. The unworked part is `known_deposits@` − `size@`, and every operation works out the same either way.
+
 ---
 
 ## Second follow-ups (raised 2026-11-12)
@@ -786,3 +788,103 @@ These came out of reading the industry code for M04. Strat answered Q85–Q91 on
 *Recommend:* (a). By Q90's own test (performance) these belong in storage at national level. They're cheap to add up in passes that already run, and costly to rebuild in the GUI.
 
 > **Decided 2026-11-13:** (a).
+
+---
+
+## Land and subsistence follow-ups (raised 2026-11-14, M05)
+
+These came out of M05's baseline (`redux-eco-sim/runs/m05_base`, and a month-12 dump). Strat answered Q92–Q95 on 2026-11-14.
+
+**Q92. Land can't lift peasants off wealth 1.** Under Q25's formula, land beyond carrying capacity adds nothing, so even unlimited land only raised East Anglia's peasants from 75% to 82% of what their wealth-1 basket cost (the median state from 75% to 79%). The squeeze was pricing: their income counted the 80% of their output they eat at base price, but their basket charged all of it at market price. At ENG's month-12 prices the wealth-1 basket cost 0.245 per K pops, against 0.100 at base prices (food 2.1× base, fiber 4×, wood 2.6×).
+- (a) Charge the home-grown share of the peasant basket at base price, as their income counts it. Peasants then feel market prices only on the 20% they buy.
+- (b) Value all subsistence output at market price on the income side instead.
+- (c) Keep the pricing and raise the subsistence yield in the sheet (pm_subsistence_farming's output, 0.15 to about 0.22).
+- (d) Leave it for M14.
+
+*Recommend:* (a). It's consistent, leaves GDP alone, and matches §25's partial market participation.
+
+> **Decided 2026-11-14:** (a).
+
+**Q93. The fallback for arable land.** Half returns past carrying capacity (Q25) replace the old 70%. Under the fallback (`arable_land = workforce / 20 + 1`), 44.5% of the world's peasants were past it, so world subsistence output would fall about 10%.
+- (a) Keep workforce / 20 + 1.
+- (b) workforce / 15 + 1: world subsistence output stays flat (99.4% of M04's).
+- (c) workforce / 10 + 1: fallback states hold about all their peasants, and output rises 15%.
+
+*Recommend:* (b), which meets M05's Done-when.
+
+> **Decided 2026-11-14:** (b).
+
+**Q94. Which modifiers count as yield technology.** Q25 has technology raise carrying capacity only, at a fixed yield per peasant. Two modifiers touched subsistence: the PM throughput factor on `pm_subsistence_farming`, where technology modifiers go when they're re-added, and `subsistence_farm_output_factor`, which ideas and laws use (+10% from generic ideas, −5% to −25% from some economic laws).
+- (a) PM throughput (technology) raises K, and `subsistence_farm_output_factor` (ideas and laws) scales the yield per peasant.
+- (b) Both raise K.
+- (c) Both scale the yield.
+
+*Recommend:* (a), so existing content keeps its effect.
+
+> **Decided 2026-11-14:** (a).
+
+**Q95. What land quality scales.** Land quality multiplies carrying capacity. Should it also scale commercial farms' output in the state?
+- (a) K only for now, and farms when M09 needs states to compete for farm investment.
+- (b) Farm output too.
+
+*Recommend:* (a).
+
+> **Decided 2026-11-14:** (b), not as recommended. A farm's output in a state is multiplied by its land quality, from the same inputs.
+
+---
+
+## Resources follow-ups (raised 2026-11-14, M06)
+
+These came out of reading the deposit code for M06. Baseline: `redux-eco-sim/runs/m06_base` (`world_1857_eng`, 60 months, `--watch-file watches/m06.txt`). Today an RGO's size is the state's HOI4 resource count (`update_base_resource_count` reads `resource@`), known reserves exclude the worked deposit, and startup rolls potential reserves at random.
+
+**Q96. Content that adds HOI4 resources.** Content grows RGOs with vanilla `add_resource`, because the economy reads the state's HOI4 resources: 536 live calls, in focuses (214), decisions (196) and events (126, of which 60 are the dated discoveries in `_eoanbsys_resource_deposits.txt`). 29 remove resources, and 105 use the country-scope form with `state =`. Once the economy stops reading HOI4 resources, these calls would give the army free resources on top of `resource_trade`, and the economy would never see them.
+- (a) Convert them by script to the economy's wrappers, one for one: adding becomes `add_x_deposit` (worked size, with known deposits raised to match), and removing becomes `remove_x_deposit`. Content keeps doing what it does today.
+- (b) Convert them to known deposits, so content finds deposits and investment works them. Nothing invests until M09, so they'd sit idle until then.
+- (c) Leave them until M14.
+
+*Recommend:* (a). M09 or M14 can turn some of them into known deposits once investment exists.
+
+> **Decided 2026-11-14:** (a).
+
+**Q97. Which goods are RGOs.** All 32 goods are RGOs, services and computers included, because all of them were HOI4 resources. On the old map 15 manufactured goods had RGOs (textiles 156 levels, steel 28, consumer goods 2), and content adds them about 70 times (textiles 37, steel 18). Deposits make no sense for them, and each has its own factory.
+- (a) Leave the list alone. The deposit code works on any RGO, so nothing breaks.
+- (b) Drop the 15 manufactured goods (steel, tools, machinery, plastics, composites, electronics, portable power, consumer goods, textiles, vehicles, appliances, computers, electricity, services, entertainment) from the RGOs. Under Q96 (a), content that adds them gets the matching factory instead, at the same number of jobs (textiles 10 becomes textile mill 4). A factory needs its technology and a free industry slot, so such a reward can fail where the RGO wouldn't have. Their RGO rows in the sheet become unused.
+
+  The RGOs left are wood, coal, iron, copper, valuables, oil, rubber, aluminum, tungsten, chromium, titanium, silicon, rare earths, chemicals (nitrates, guano and sulphur: 983 levels on the old map), and the gathered farm goods food, fiber and luxuries.
+
+*Recommend:* (b).
+
+> **Decided 2026-11-14:** (b).
+
+**Q98. Does deposit quality scale inputs?** Q29 has quality multiply throughput, not jobs. In the code, throughput scales inputs and outputs together, while land quality (Q95) scales output only, from the same inputs. The spec's formula puts quality on output.
+- (a) Output only, like land quality: a richer seam yields more from the same tools and workers.
+- (b) Inputs and outputs: quality then raises revenue and input costs together.
+
+*Recommend:* (a). It makes good deposits pay better, which M09's investors should see.
+
+> **Decided 2026-11-14:** (a).
+
+**Q99. Prospecting until M09.** Today the state screen's Prospect button starts a government-paid search that resolves the next month. A normal find moves a random amount of potential into known. A major find adds known deposits *and new potential from nothing*, and fires an event for the player. The amounts are sized by the good's price, and the cost (£1M to £10M) rises as more of the state's deposit is found.
+- (a) Keep the button as the only way to prospect until M09. A find moves a random 10–30% of the remaining potential into known, scaled by prospecting ability. A major find (a chance that falls as more is found, as now) moves 50–100% and fires the event. Nothing comes from nothing, since potential is the geology history sets (Q28). The cost stays as it is.
+- (b) Keep today's rolls, pointed at the new variables, finds from nothing included.
+- (c) Switch prospecting off until M09.
+
+*Recommend:* (a).
+
+> **Decided 2026-11-14:** (a). Strat may rework prospecting later: many deposits were found much later than 1857, and Victorian prospecting was mostly looking around and guessing, so modern deposits shouldn't be within reach early. That's in the backlog.
+
+**Q100. Where potential deposits come from before M14.** Startup rolls random potential reserves: every state with a worked deposit gets some of that good, and every state on the `has_coal_desposits`, `has_oil`, `has_tungsten` and `has_chromium` lists gets some of that good. ENG's coal sector starts with 417 levels no history set, and runs and saves differ by the roll.
+- (a) History only. Startup sets nothing, so until M14 only the test blocks have deposits. `_init_resources` is deleted. The state lists stay, since content uses them and M14 can build history from them.
+- (b) A fixed fallback, like M05's land: states on the lists get a set amount of potential unless history sets it.
+
+*Recommend:* (a). Unlike land, nothing breaks without potential: prospecting just has nothing to find.
+
+> **Decided 2026-11-14:** (a). The random rolls were a stopgap.
+
+**Q101. The old history setup file.** `_economy_states_setup_rework.txt` (`set_historical_state_deposits`) has never been called: `_reset` comments it out. It holds arable land, deposits (wood, coal, iron, luxuries, fiber, food, valuables) and a soil-quality modifier for 108 US states. M05's land quality replaced the soil modifiers, and nothing else uses them.
+- (a) Delete the file and the five `soil_quality_*` modifiers, and note in M14's file which commit has the data.
+- (b) Keep it as reference until M14.
+
+*Recommend:* (a), under Q4.
+
+> **Decided 2026-11-14:** (a).

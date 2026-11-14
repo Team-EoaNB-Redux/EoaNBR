@@ -2,7 +2,7 @@
 
 # The setup file for the economy system - All setup related scripts are located here.
 # This includes not only INITIAL setup scripts, for the start of the game, but also setup scripts for tribals westernizing
-# This does NOT include history setup for undiscovered resource deposits, arable land, and others. Those are located in _economy_states_setup_rework.txt
+# State history (industry sizes, deposits, arable land) is read from the state history files, in _init_state
 
 # As a rule, one should be able to reset the economy with every value being the same as before. Note that this will start breaking upon unpausing the game due
 # to resource calculations
@@ -22,10 +22,6 @@ _reset = {
     #   Initializes project-related global data
     #proj_setup = yes
 
-    # Initialize State Histories (_economy_states_setup_rework.txt)
-    #set_historical_state_deposits = yes
-    #set_historical_state_buildings = yes
-
     # Initialize Countries
     every_country = {
         _init_country = yes
@@ -35,9 +31,6 @@ _reset = {
     every_state = {
         _init_state = yes
     }
-
-    # Initialize global resources
-    _init_resources = yes
 
     # Update Markets
     every_country = {
@@ -165,146 +158,6 @@ _init_state = {
 	employment_update = yes
     industries_update = yes
     pops_update = yes
-}
-_init_resources = {
-    every_state = {
-        for_each_loop = {
-            array = global.rgo_token_array
-            value = resource_temp
-
-            set_temp_variable = { r_token = resource_temp }
-            if = {
-                limit = {
-                    check_variable = { base_resource@var:r_token > 0 }
-                }
-                set_temp_variable = { resource_value_temp = base_resource@var:r_token }
-                multiply_temp_variable = { resource_value_temp = global.base_price@var:r_token }
-                divide_temp_variable = { resource_value_temp = 4 }
-
-                set_temp_variable = { resource_amount_temp = random }
-                multiply_temp_variable = { resource_amount_temp = 50 }
-                add_to_temp_variable = { resource_amount_temp = 50 }
-                subtract_from_temp_variable = { resource_amount_temp = resource_value_temp }
-                divide_temp_variable = { resource_amount_temp = global.base_price@var:r_token }
-                
-                if = { limit = { check_variable = { resource_amount_temp < 0 } } set_temp_variable = { resource_amount_temp = 0 } }
-                round_temp_variable = resource_amount_temp
-
-                set_temp_variable = { x_temp = resource_amount_temp }
-                add_potential_reserves = yes
-            }
-        }
-
-        # Checks for resource triggers
-        if = {
-            limit = {
-                has_coal_desposits = yes
-            }
-            set_temp_variable = { resource_amount_temp = random }
-            multiply_temp_variable = { resource_amount_temp = 50 }
-            add_to_temp_variable = { resource_amount_temp = 50 }
-            divide_temp_variable = { resource_amount_temp = global.base_price@token:coal }
-            
-            if = { limit = { check_variable = { resource_amount_temp < 0 } } set_temp_variable = { resource_amount_temp = 0 } }
-            round_temp_variable = resource_amount_temp
-
-            set_temp_variable = { r_token = token:coal }
-            set_temp_variable = { x_temp = resource_amount_temp }
-            add_potential_reserves = yes
-        }
-        if = {
-            limit = {
-                has_oil = yes
-            }
-            set_temp_variable = { resource_amount_temp = random }
-            multiply_temp_variable = { resource_amount_temp = 50 }
-            add_to_temp_variable = { resource_amount_temp = 50 }
-            divide_temp_variable = { resource_amount_temp = global.base_price@token:oil }
-			if = {
-				limit = {
-					state = 724
-				}
-				log = "OIL: [?resource_amount_temp]"
-			}
-            
-            if = { limit = { check_variable = { resource_amount_temp < 0 } } set_temp_variable = { resource_amount_temp = 0 } }
-            round_temp_variable = resource_amount_temp
-
-            set_temp_variable = { r_token = token:oil }
-            set_temp_variable = { x_temp = resource_amount_temp }
-            add_potential_reserves = yes
-        }
-        # if = {
-        #     limit = {
-        #         has_aluminum = yes
-        #     }
-        #     set_temp_variable = { resource_amount_temp = random }
-        #     multiply_temp_variable = { resource_amount_temp = 50 }
-        #     add_to_temp_variable = { resource_amount_temp = 50 }
-        #     divide_temp_variable = { resource_amount_temp = global.base_price@token:aluminum }
-            
-        #     if = { limit = { check_variable = { resource_amount_temp < 0 } } set_temp_variable = { resource_amount_temp = 0 } }
-        #     round_temp_variable = resource_amount_temp
-
-        #     set_temp_variable = { r_token = token:aluminum }
-        #     set_temp_variable = { x_temp = resource_amount_temp }
-        #     add_potential_reserves = yes
-        # }
-        if = {
-            limit = {
-                has_tungsten = yes
-            }
-            set_temp_variable = { resource_amount_temp = random }
-            multiply_temp_variable = { resource_amount_temp = 50 }
-            add_to_temp_variable = { resource_amount_temp = 50 }
-            divide_temp_variable = { resource_amount_temp = global.base_price@token:tungsten }
-			if = {
-				limit = {
-					state = 724
-				}
-				log = "TUNGSTEN: [?resource_amount_temp]"
-			}
-            
-            if = { limit = { check_variable = { resource_amount_temp < 0 } } set_temp_variable = { resource_amount_temp = 0 } }
-            round_temp_variable = resource_amount_temp
-
-            set_temp_variable = { r_token = token:tungsten }
-            set_temp_variable = { x_temp = resource_amount_temp }
-            add_potential_reserves = yes
-        }
-        if = {
-            limit = {
-                has_chromium = yes
-            }
-            set_temp_variable = { resource_amount_temp = random }
-            multiply_temp_variable = { resource_amount_temp = 50 }
-            add_to_temp_variable = { resource_amount_temp = 50 }
-            divide_temp_variable = { resource_amount_temp = global.base_price@token:chromium }
-            
-            if = { limit = { check_variable = { resource_amount_temp < 0 } } set_temp_variable = { resource_amount_temp = 0 } }
-            round_temp_variable = resource_amount_temp
-
-            set_temp_variable = { r_token = token:chromium }
-            set_temp_variable = { x_temp = resource_amount_temp }
-            add_potential_reserves = yes
-        }
-        # if = {
-        #     limit = {
-        #         has_titanium = yes
-        #     }
-        #     set_temp_variable = { resource_amount_temp = random }
-        #     multiply_temp_variable = { resource_amount_temp = 50 }
-        #     add_to_temp_variable = { resource_amount_temp = 50 }
-        #     divide_temp_variable = { resource_amount_temp = global.base_price@token:titanium }
-            
-        #     if = { limit = { check_variable = { resource_amount_temp < 0 } } set_temp_variable = { resource_amount_temp = 0 } }
-        #     round_temp_variable = resource_amount_temp
-
-        #     set_temp_variable = { r_token = token:titanium }
-        #     set_temp_variable = { x_temp = resource_amount_temp }
-        #     add_potential_reserves = yes
-        # }
-    }
 }
 _update_market = {
     # Country
@@ -750,6 +603,8 @@ initialize_country = {
             set_variable = { global.pops_maximum_starvation_death_rate = 25.0 } #Per year rate
 
 			set_variable = { global.peasant_market_interaction = 0.2 } # How much output from subsistence farms is sold in the market. Also determines peasant consumption effect on market demand
+			set_variable = { global.subsistence_marginal_yield = 0.5 } # Peasants past the land's carrying capacity make this share of the yield (Q25)
+			set_variable = { global.subsistence_rent_share = 0.2 } # The upper class's rent, as a share of subsistence output. Commercial farms pay none (Q27)
 			set_variable = { global.base_pop_earnings = 0.1 } # Base earnings per pop(k) per month
 
 			# Spending and debt (M03). Pops hold no savings (Q15): they spend toward a target of their income after investment x
@@ -1386,24 +1241,7 @@ initialize_country = {
         define_titanium_rgo = yes
         define_silicon_rgo = yes
         define_rare_earths_rgo = yes
-        
-        define_steel_rgo = yes
-        define_tools_rgo = yes
-        define_machinery_rgo = yes
         define_chemicals_rgo = yes
-        define_plastics_rgo = yes
-        define_composites_rgo = yes
-        define_electronics_rgo = yes
-        define_portable_power_rgo = yes
-        
-        define_consumer_goods_rgo = yes
-        define_textiles_rgo = yes
-        define_vehicles_rgo = yes
-        define_appliances_rgo = yes
-        define_computers_rgo = yes
-        define_electricity_rgo = yes
-        define_services_rgo = yes
-        define_entertainment_rgo = yes
         
         # Define PMs
         define_all_production_methods = yes
@@ -1728,6 +1566,15 @@ for_each_loop = {
         set_variable = { global.price_step_slope = 0.2 }  # Extra share closed per 100% of gap
         set_variable = { global.price_step_max = 0.7 }    # Most of the gap closed in one month
 
+        # Prospecting (update_prospecting, Q99). A find moves this share of a deposit's potential into known deposits
+        set_variable = { global.prospecting_find_min = 0.1 }          # Normal find, times prospecting ability
+        set_variable = { global.prospecting_find_max = 0.3 }
+        set_variable = { global.prospecting_major_find_min = 0.5 }    # Major find
+        set_variable = { global.prospecting_major_find_max = 1 }
+        set_variable = { global.prospecting_major_chance = 0.25 }     # Chance of a major find, times prospecting ability, less the share found
+        set_variable = { global.prospecting_major_chance_fall = 0.4 } # ...and less this for each earlier major find
+        set_variable = { global.prospecting_base_cost = 1000 }        # Cost of a search, rising up to 10x as more of the deposit is found
+
         # In Units per 1K employees                                             # Value per 1k employees. Higher this is, the more lucrative it is to trade
         set_variable = { global.shipping_amount@token:food = 50 }               # 125
         set_variable = { global.shipping_amount@token:luxuries = 50 }           # 200
@@ -1874,14 +1721,33 @@ for_each_loop = {
         }
     }
     state_eco_arable_land_init = {
-        if = { # If state doesn't have arable land set, set it to a portion of pops_workforce
+        # Arable land, land quality and crop eligibility come from history (M05)
+        if = { # Until every state's history sets arable land, it falls back to a share of the workforce (Q24). /15 keeps world
+            # subsistence output where it was before half returns past carrying capacity (Q93)
             limit = {
                 NOT = { has_variable = arable_land }
             }
             set_variable = { arable_land = pops_workforce }
-            divide_variable = { arable_land = 20 }
+            divide_variable = { arable_land = 15 }
             round_variable = arable_land
             add_to_variable = { arable_land = 1 }
+        }
+        if = {
+            limit = { NOT = { has_variable = land_quality } }
+            set_variable = { land_quality = 1 }
+        }
+
+        # History sets crop_eligible@<farm> = 1 where an uncommon crop grows, or 0 where a common one can't (Q63)
+        for_each_loop = {
+            array = global.building_token_array
+            value = crop_token
+            if = {
+                limit = {
+                    check_variable = { global.building_common_crop@var:crop_token = 1 }
+                    NOT = { has_variable = crop_eligible@var:crop_token }
+                }
+                set_variable = { crop_eligible@var:crop_token = 1 }
+            }
         }
 
         # Updates arable land.
@@ -1912,6 +1778,27 @@ for_each_loop = {
                 INDUSTRY = "[?industry_token.GetTokenKey]"
             }
 
+            # RGOs (M06): history sets the worked size (<rgo>_size, Q68), known_deposits@ (found, worked or not),
+            # potential_deposits@ (not found yet) and deposit_quality@. Known deposits are at least the size, and quality is
+            # 1 unless history sets it
+            if = {
+                limit = { check_variable = { global.building_rgo@var:industry_token > 0 } }
+                if = {
+                    limit = { check_variable = { known_deposits@var:industry_token < size@var:industry_token } }
+                    set_variable = { known_deposits@var:industry_token = size@var:industry_token }
+                }
+                if = {
+                    limit = {
+                        OR = {
+                            check_variable = { known_deposits@var:industry_token > 0 }
+                            check_variable = { potential_deposits@var:industry_token > 0 }
+                        }
+                        NOT = { has_variable = deposit_quality@var:industry_token }
+                    }
+                    set_variable = { deposit_quality@var:industry_token = 1 }
+                }
+            }
+
             if = {
                 limit = {
                     has_variable = starting_pm@var:industry_token
@@ -1925,8 +1812,14 @@ for_each_loop = {
                 set_variable = { automation_method@var:industry_token = starting_am@var:industry_token }
             }
 
-            if = { # Set PM & AM to country's starting pm
-                limit = { check_variable = { size@var:industry_token > 0 } }
+            if = { # Set PM & AM to country's starting pm. An RGO gets them once it has a deposit, worked or not
+                limit = {
+                    OR = {
+                        check_variable = { size@var:industry_token > 0 }
+                        check_variable = { known_deposits@var:industry_token > 0 }
+                        check_variable = { potential_deposits@var:industry_token > 0 }
+                    }
+                }
                 if = {
                     limit = { NOT = { has_variable = starting_pm@var:industry_token } }
                     if = {
@@ -1966,61 +1859,6 @@ for_each_loop = {
             }
         }
         
-        # RGOs
-        for_each_loop = {
-            array = global.resource_token_array
-            value = r_token
-            set_variable = { resource_cost@var:r_token = 0 }
-            set_variable = { resource_additional_production@var:r_token = 0 }
-        }
-        update_base_resource_count = yes
-
-        for_each_loop = {
-            array = global.rgo_token_array
-            value = rgo_token
-            if = { 
-                limit = { check_variable = { resource@var:rgo_token > 0 } }
-                set_variable = { size@var:rgo_token = base_resource@var:rgo_token }
-
-                # Set PM & AM to country's starting pm
-                if = {
-                    limit = { NOT = { has_variable = starting_pm@var:industry_token } }
-                    if = {
-                        limit = {
-                            NOT = { is_core_of = var:controller }
-                            has_variable = controller:non_core_starting_pm@var:rgo_token
-                        }
-                        set_variable = { production_method@var:rgo_token = controller:non_core_starting_pm@var:rgo_token }
-                    }
-                    else_if = {
-                        limit = {
-                            has_variable = controller:starting_pm@var:rgo_token
-                        }
-                        set_variable = { production_method@var:rgo_token = controller:starting_pm@var:rgo_token }
-                    }
-                    else = { set_variable = { production_method@var:rgo_token = controller:latest_production_method@var:rgo_token } }
-                }
-                
-                if = {
-                    limit = { NOT = { has_variable = starting_am@var:industry_token } }
-                    if = {
-                        limit = {
-                            NOT = { is_core_of = var:controller }
-                            has_variable = controller:non_core_starting_am@var:rgo_token
-                        }
-                        set_variable = { automation_method@var:rgo_token = controller:non_core_starting_am@var:rgo_token }
-                    }
-                    else_if = {
-                        limit = {
-                            has_variable = controller:starting_am@var:rgo_token
-                        }
-                        set_variable = { automation_method@var:rgo_token = controller:starting_am@var:rgo_token }
-                    }
-                    else = { set_variable = { automation_method@var:rgo_token = controller:latest_automation_method@var:rgo_token } }
-                }
-            }
-        }
-
         # Special
 			# Subsistence Farms
 			set_variable = { production_method@token:subsistence_farm = token:pm_subsistence_farming }

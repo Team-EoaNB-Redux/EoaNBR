@@ -60,14 +60,19 @@
 			else = {
 				if = { limit = { check_variable = { size_temp = 0 } } set_temp_variable = { size_temp = 1 } }
 
-				if = { limit = { check_variable = { global.building_rgo@var:industry_token > 0 } }
-					NOT = { check_variable = { deposits@var:industry_token < size_temp } }
+				if = { # RGOs need known deposits nobody works or is opening up yet (Q29)
+					limit = { check_variable = { global.building_rgo@var:industry_token > 0 } }
+					set_temp_variable = { deposits_free_temp = known_deposits@var:industry_token }
+					subtract_from_temp_variable = { deposits_free_temp = size@var:industry_token }
+					subtract_from_temp_variable = { deposits_free_temp = construction@var:industry_token }
+					NOT = { check_variable = { deposits_free_temp < size_temp } }
 				}
 				
-				if = {
+				if = { # Farms need their crop to grow here (Q26) and free arable land
 					limit = {
 						check_variable = { global.building_arable_land_use@var:industry_token > 0 }
 					}
+					check_variable = { crop_eligible@var:industry_token = 1 }
 					set_temp_variable = { arable_land_use_temp = global.building_arable_land_use@var:industry_token }
 					multiply_temp_variable = { arable_land_use_temp = size_temp }
 					NOT = { check_variable = { arable_land_use_temp > arable_land_available } }
@@ -86,6 +91,14 @@
 		}
 		else = {
 			var:controller = { has_tech = var:global.building_tech_unlock@var:industry_token }
+		}
+	}
+	is_crop_eligible = {
+		# industry_token
+		# State Scope. Whether a farm's crop grows here (Q26, Q63). Industries that don't use arable land always pass
+		if = {
+			limit = { check_variable = { global.building_arable_land_use@var:industry_token > 0 } }
+			check_variable = { crop_eligible@var:industry_token = 1 }
 		}
 	}
 	is_sector = {

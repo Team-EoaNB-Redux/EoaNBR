@@ -60,6 +60,20 @@
         set_temp_variable = { getter_factor_temp = controller:industry_output_factor@var:industry_token }
         add_to_temp_variable = { getter_factor_temp = 1 }
         multiply_temp_variable = { revenue_temp = getter_factor_temp }
+        if = { # Farms yield more on better land. Country scope has no land quality, so takes none
+            limit = {
+                check_variable = { global.building_arable_land_use@var:industry_token > 0 }
+                has_variable = land_quality
+            }
+            multiply_temp_variable = { revenue_temp = land_quality }
+        }
+        if = { # RGOs yield more from a better deposit. Country scope has no deposits, so takes none
+            limit = {
+                check_variable = { global.building_rgo@var:industry_token > 0 }
+                has_variable = deposit_quality@var:industry_token
+            }
+            multiply_temp_variable = { revenue_temp = deposit_quality@var:industry_token }
+        }
 
         # Railways & ports are paid for the service they provide
         set_temp_variable = { getter_amount_temp = global.pm_industrial_capacity@var:pm_temp }
@@ -382,6 +396,36 @@
         set_temp_variable = { getter_factor_temp = controller:industry_construction_cost_factor }
         add_to_temp_variable = { getter_factor_temp = 1 }
         multiply_temp_variable = { total_construction_cost_temp = getter_factor_temp }
+    }
+    get_total_construction_cost = {
+        # Returns what one level of an industry costs to start building: its construction cost plus the start-up share
+        # (global.start_construction_cost_multiplier), divided by government investment efficiency when the government pays
+        # State or Country scope
+        # Input: industry_token, is_government (1 when the government pays; reset to 0 at the end), and optionally
+        #   production_method_temp / automation_method_temp. Without them it takes the industry's methods in the state, or else
+        #   the controller's latest
+        # Output: total_construction_cost_temp
+        if = { limit = { NOT = { check_variable = { production_method_temp = 0 } } } set_temp_variable = { pm_temp = production_method_temp } }
+        else_if = { limit = { NOT = { check_variable = { production_method@var:industry_token = 0 } } } set_temp_variable = { pm_temp = production_method@var:industry_token } }
+        else = { set_temp_variable = { pm_temp = controller:latest_production_method@var:industry_token } }
+
+        if = { limit = { NOT = { check_variable = { automation_method_temp = 0 } } } set_temp_variable = { am_temp = automation_method_temp } }
+        else_if = { limit = { NOT = { check_variable = { automation_method@var:industry_token = 0 } } } set_temp_variable = { am_temp = automation_method@var:industry_token } }
+        else = { set_temp_variable = { am_temp = controller:latest_automation_method@var:industry_token } }
+
+        get_construction_cost = yes
+        set_temp_variable = { getter_factor_temp = global.start_construction_cost_multiplier }
+        add_to_temp_variable = { getter_factor_temp = 1 }
+        multiply_temp_variable = { total_construction_cost_temp = getter_factor_temp }
+
+        if = {
+            limit = {
+                check_variable = { is_government = 1 }
+                check_variable = { controller:modifier@government_investment_efficiency_factor > 0 }
+            }
+            divide_temp_variable = { total_construction_cost_temp = controller:modifier@government_investment_efficiency_factor }
+        }
+        set_temp_variable = { is_government = 0 }
     }
     get_retooling_cost = {
         # Returns the cost of retooling an industry of size 1: the new method's construction list

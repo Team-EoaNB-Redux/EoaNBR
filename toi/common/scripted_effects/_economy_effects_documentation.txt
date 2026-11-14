@@ -162,9 +162,9 @@
 					limit = {
 						check_variable = { cost_factor_temp > 0 }
 					}
-					if = {
+					if = { # A government pays (a country; companies have small ids)
 						limit = {
-							check_variable = { financer_temp > 0 }
+							check_variable = { financer_temp > 10500 }
 						}
 						set_temp_variable = { is_government = 1 }
 					}
@@ -174,7 +174,7 @@
 					
 					if = {
 						limit = {
-							check_variable = { financer_temp > 0 }
+							check_variable = { financer_temp > 10500 }
 						}
 						var:financer_temp = {
 							set_temp_variable = { x_temp = total_construction_cost_temp }
@@ -231,7 +231,8 @@
 			set_temp_variable = { industry_token = 0 }
 		}
 
-		#	Adds deposits to the state - does not decrease known reserves or potential reserves
+		#	Adds worked deposits to the state: the RGO grows by x_temp, and its known deposits by the same, so the known deposits
+		#	nobody works yet and the potential deposits don't change
 		add_x_deposit = {
 			# r_token
 			# x_temp
@@ -262,13 +263,13 @@
 					}
 
 					set_temp_variable = { deposit_temp = x_temp }
+					set_temp_variable = { known_temp = x_temp }
 					add_rgo_internal = yes
+					reload_industries_array = yes # Lists a deposit new to the state, so it works from today
 
 					# Update labor satisfaction (as this may have changed)
 					employment_update = yes
 					industries_update = yes
-
-					reload_industries_array = yes
 
 					add_to_variable = { update_state_econ_window = 1 }
 					set_temp_variable = { bu_token = 0 }
@@ -298,8 +299,10 @@
 				custom_effect_tooltip = remove_x_deposits_tt
 
 				hidden_effect = {
+					# The deposit is gone: the size and the known deposits fall together
 					set_temp_variable = { deposit_temp = x_temp }
 					multiply_temp_variable = { deposit_temp = -1 }
+					set_temp_variable = { known_temp = deposit_temp }
 					add_rgo_internal = yes
 
 					# Update labor satisfaction (as this may have changed)
@@ -317,8 +320,8 @@
 			set_temp_variable = { r_token = 0 }
 		}
 
-		#	Adds known reserves to the state
-		add_known_reserves = {
+		#	Adds known deposits to the state: found, and open to be worked once someone invests
+		add_known_deposits = {
 			# r_token
 			# x_temp
 
@@ -328,7 +331,7 @@
 					is_in_array = { global.rgo_token_array = r_token }
 					check_variable = { x_temp > 0 }
 				}
-				custom_effect_tooltip = add_x_known_reserves_tt
+				custom_effect_tooltip = add_x_known_deposits_tt
 				set_temp_variable = { production_method_temp = controller:latest_production_method@var:r_token }
 				set_temp_variable = { automation_method_temp = controller:latest_automation_method@var:r_token }
 
@@ -344,8 +347,8 @@
 			set_temp_variable = { x_temp = 0 }
 			set_temp_variable = { r_token = 0 }
 		}
-		#	Adds potential reserves to the state
-		add_potential_reserves = {
+		#	Adds potential deposits to the state: not found yet, until prospecting finds them
+		add_potential_deposits = {
 			# r_token
 			# x_temp
 
@@ -355,7 +358,7 @@
 					is_in_array = { global.rgo_token_array = r_token }
 					check_variable = { x_temp > 0 }
 				}
-				custom_effect_tooltip = add_x_potential_reserves_tt
+				custom_effect_tooltip = add_x_potential_deposits_tt
 				set_temp_variable = { production_method_temp = controller:latest_production_method@var:r_token }
 				set_temp_variable = { automation_method_temp = controller:latest_automation_method@var:r_token }
 
@@ -409,6 +412,61 @@
 				set_variable = { arable_land = 0 }
 			}
 			set_temp_variable = { arable_land_temp = 0 }
+		}
+
+		#	land_quality_temp - 1 is ordinary land. It scales the state's carrying capacity and its farms' output
+		set_land_quality = {
+			if = { limit = { check_variable = { land_quality_temp < 0 } }
+				set_temp_variable = { land_quality_temp = 0 }
+			}
+			custom_effect_tooltip = set_land_quality_tt
+
+			set_variable = { land_quality = land_quality_temp }
+			set_temp_variable = { land_quality_temp = 0 }
+		}
+		change_land_quality = {
+			custom_effect_tooltip = change_land_quality_tt
+			add_to_variable = { land_quality = land_quality_temp }
+			if = { limit = { check_variable = { land_quality < 0 } }
+				set_variable = { land_quality = 0 }
+			}
+			set_temp_variable = { land_quality_temp = 0 }
+		}
+
+		#	industry_token - a farm that uses arable land
+		#	crop_eligible_temp - 1 if its crop grows in the state, 0 if it doesn't. Farms can't be built where it doesn't
+		set_crop_eligible = {
+			if = { limit = { check_variable = { crop_eligible_temp = 1 } }
+				custom_effect_tooltip = set_crop_eligible_tt
+			}
+			else = {
+				custom_effect_tooltip = set_crop_ineligible_tt
+			}
+			set_variable = { crop_eligible@var:industry_token = crop_eligible_temp }
+			set_temp_variable = { crop_eligible_temp = 0 }
+		}
+
+		#	r_token - an RGO's good
+		#	deposit_quality_temp - 1 is an ordinary deposit. It scales the RGO's output in the state, from the same inputs
+		set_deposit_quality = {
+			if = { limit = { check_variable = { deposit_quality_temp < 0 } }
+				set_temp_variable = { deposit_quality_temp = 0 }
+			}
+			custom_effect_tooltip = set_deposit_quality_tt
+
+			set_variable = { deposit_quality@var:r_token = deposit_quality_temp }
+			set_temp_variable = { deposit_quality_temp = 0 }
+		}
+		change_deposit_quality = {
+			custom_effect_tooltip = change_deposit_quality_tt
+			if = { limit = { NOT = { has_variable = deposit_quality@var:r_token } }
+				set_variable = { deposit_quality@var:r_token = 1 }
+			}
+			add_to_variable = { deposit_quality@var:r_token = deposit_quality_temp }
+			if = { limit = { check_variable = { deposit_quality@var:r_token < 0 } }
+				set_variable = { deposit_quality@var:r_token = 0 }
+			}
+			set_temp_variable = { deposit_quality_temp = 0 }
 		}
 
 

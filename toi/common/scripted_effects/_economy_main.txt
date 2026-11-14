@@ -93,7 +93,6 @@ _country_advance_time = {
         fix_negative_workforce = yes
 
         ## UPDATING EVERYTHING ##
-        update_base_resource_count = yes
         reload_industries_array = yes
 
         subsist_and_arable_update = yes
@@ -486,9 +485,10 @@ on_monthly_industries = {
                     limit = {
                         check_variable = { global.building_rgo@var:om_building = 1 }
                     }
-					set_temp_variable = { known_temp = construction@var:om_building }
-					set_temp_variable = { deposit_temp = known_temp }
-					multiply_temp_variable = { known_temp = -1 }
+					# Opens up known deposits: the size grows into them, and the known deposits stay as they are
+					set_temp_variable = { deposit_temp = construction@var:om_building }
+					set_temp_variable = { known_temp = 0 }
+					set_temp_variable = { potential_temp = 0 }
 					set_temp_variable = { r_token = om_building }
 					add_rgo_internal = yes
                 }
@@ -572,16 +572,7 @@ on_monthly_industries = {
 			limit = {
 				check_variable = { prospecting@var:r_token = 1 }
 			}
-			set_temp_variable = { roll_temp = random }
-			if = {
-				limit = {
-					check_variable = { roll_temp < major_discovery_chance@var:r_token }
-				}
-				rgo_major_discovery = yes
-			}
-			else = {
-				rgo_discovery = yes
-			}
+			rgo_discovery = yes
 		}
 	}
 }

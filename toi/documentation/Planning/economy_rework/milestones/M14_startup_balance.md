@@ -14,7 +14,12 @@ Rebuild the 1857 map on the finished systems, so world supply and demand start r
 1. Remove the M00 test industries and turn the debt switch back on.
 2. Rebuild each sector across the map, checking each good's world supply against demand.
 3. **Land data:** set arable land, land quality and crop eligibility in state history wherever possible. The population fallback (Q24) stays only for states nobody has set.
-4. **Deposits:** potential, known and quality per state (M06).
+4. **Deposits:** potential, known and quality per state (M06), with `set_variable = { <rgo>_size = N }` for the worked part. Sources:
+   - the old map's values, commented out in each state's `resources` block (wood, coal, iron, chemicals, copper, fiber and food had the most);
+   - the state lists in `_eoanbsys_state_resources_scripted_triggers.txt` (`has_coal_desposits`, `has_oil`, `has_aluminum`, `has_tungsten`, `has_chromium`, `has_titanium`, `has_rare_earth_deposits`), which startup used for random potential until M06 (Q100);
+   - `_economy_states_setup_rework.txt`, deleted in M06 (Q101) and still in commit `9612e4cfb`: arable land, deposits and a soil quality for 108 US states.
+   - The dated discoveries in `_eoanbsys_resource_deposits.txt` and other content add worked deposits through `add_x_deposit` since M06 (Q96), at the old HOI4 amounts. Check their sizes against the rebuilt map, and decide which should be known deposits for investors instead.
+   - The sheet's RGO rows for the 15 manufactured goods are unused since M06 (Q97) and can go.
 5. **Debt:** bring back the real starting debts. ENG's `starting_debt = 1500` is commented out in `ENG - Britain.txt`.
 6. **Wages:** base wages for every tag. Only ENG and the Indian tags are set; the rest still use the `set_tech_*` seeds.
 7. **Money, banks and companies:** starting base money, reserves, bank stocks and companies.

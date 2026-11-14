@@ -26,7 +26,7 @@ Opportunities are ranked in ROI tiers. Retained capital uses the tiers to choose
 1. **Pools:** sector retained capital from the M04 profit split, and the general pool with the inflows listed above. Pop investment from the middle and upper classes (Q60) finally lands here.
 2. **Opportunities** per sector per location, in tiers: Exceptional over 20%, Good 10–20%, Fair 5–10%, Marginal −5% to 5%, and anything lower ignored. Only the tier is stored.
    - **Brownfield labour estimate:** unemployment plus a small share of employment.
-   - **Hard caps:** known deposits, arable land, crop eligibility and port sites.
+   - **Hard caps:** known deposits, arable land, crop eligibility and port sites. What an RGO can still open up is `known_deposits@` − `size@` − `construction@`, which `can_build_industry` checks (M06).
 3. **Who pays** (Q35):
    - A sector new to the country needs outside capital: the general pool, credit, the government or foreign money.
    - A sector opening in a new state pays from its own retained capital, under the §13.5 throttle.
@@ -34,7 +34,7 @@ Opportunities are ranked in ROI tiers. Retained capital uses the tiers to choose
 4. **Greenfield throttles** (§13.5): a coarse country-level pre-filter, a search budget that's smaller for small countries, and one new establishment per sector per month.
 5. **Construction** is paid for out of the pool that chose it. Government-funded capacity is a grant to the generic owner by default (Q37).
 6. **Upgrades** (Q38): PM and AM upgrades are an opportunity type, funded from retained capital through the same tiers, using the additive labour cuts from M04.
-7. **Prospecting** (Q30) is an opportunity type too.
+7. **Prospecting** (Q30) is an opportunity type too. M06 kept the state screen's government-paid Prospect button and its search (`update_prospecting`, `rgo_discovery`). The button hides while known deposits wait to be worked, so before M09 a state can find each good only once.
 8. **Delete** the old investment files, the buckets prototype and the `eco_investment_enabled` flag (Q4).
 
 ## Done when

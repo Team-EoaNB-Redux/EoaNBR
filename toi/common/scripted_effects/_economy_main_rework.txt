@@ -239,7 +239,7 @@
 	pops_calculate_needs_spending = {
 		# current_pop_token
 		# The basket for the class's wealth. Peasants grow most of what they eat, so only global.peasant_market_interaction of
-		# their basket shows up as market demand, though their subsistence income pays for all of it
+		# their basket shows up as market demand. Their subsistence income pays for all of it, the rest at base prices (Q92)
 		set_temp_variable = { wealth_temp = pops_wealth@var:current_pop_token }
 		set_temp_variable = { pop_temp = p_pops }
 		set_temp_variable = { market_share_temp = 1 }
@@ -596,7 +596,8 @@
 		#Input:
 		#	wealth_temp
 		#	pop_temp - K pops
-		#	market_share_temp - share of the basket bought at market. The rest still costs money: peasants pay for what they grow
+		#	market_share_temp - share of the basket bought at market, at market prices. Peasants grow the rest, which costs them
+		#		base prices, the value their subsistence income gives it (Q92)
 		#	state_electrification - a state variable, in %
 		#Output:
 		#	needs_spending_temp
@@ -637,14 +638,30 @@
 						set_temp_variable = { replaced_temp = { value = replaced_temp multiply = global.base_price@var:pop_r_token divide = global.base_price@var:replace_token } }
 						set_temp_variable = { market_need_temp = { value = replaced_temp multiply = market_share_temp } }
 						add_to_variable = { pops_need@var:replace_token = market_need_temp }
-						multiply_temp_variable = { replaced_temp = controller:price@var:replace_token }
+						set_temp_variable = {
+							replaced_temp = {
+								value = controller:price@var:replace_token
+								subtract = global.base_price@var:replace_token
+								multiply = market_share_temp
+								add = global.base_price@var:replace_token
+								multiply = replaced_temp
+							}
+						}
 						add_to_temp_variable = { needs_spending_temp = replaced_temp }
 					}
 				}
 
 				set_temp_variable = { market_need_temp = { value = need_temp multiply = market_share_temp } }
 				add_to_variable = { pops_need@var:pop_r_token = market_need_temp }
-				multiply_temp_variable = { need_temp = controller:price@var:pop_r_token }
+				set_temp_variable = {
+					need_temp = {
+						value = controller:price@var:pop_r_token
+						subtract = global.base_price@var:pop_r_token
+						multiply = market_share_temp
+						add = global.base_price@var:pop_r_token
+						multiply = need_temp
+					}
+				}
 				add_to_temp_variable = { needs_spending_temp = need_temp }
 			}
 		}
@@ -654,7 +671,15 @@
 		set_temp_variable = { need_temp = { value = need_temp multiply = pop_temp multiply = controller:modifier@pops_food_consumption_factor } }
 		set_temp_variable = { market_need_temp = { value = need_temp multiply = market_share_temp } }
 		add_to_variable = { pops_need@token:food = market_need_temp }
-		multiply_temp_variable = { need_temp = controller:price@token:food }
+		set_temp_variable = {
+			need_temp = {
+				value = controller:price@token:food
+				subtract = global.base_price@token:food
+				multiply = market_share_temp
+				add = global.base_price@token:food
+				multiply = need_temp
+			}
+		}
 		add_to_temp_variable = { needs_spending_temp = need_temp }
 	}
 

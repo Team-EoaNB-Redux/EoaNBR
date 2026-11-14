@@ -272,6 +272,46 @@ A list of effects that can be used in events, focus tree completion rewards, dec
         <td> Building tokens can be found under common/ideas/_economy_tokens.txt </td>
         <td> State </td>
     </tr>
+    <tr>
+        <td> set_land_quality / change_land_quality </td>
+        <td> <code> land_quality_temp = float </code> <br> The new land quality, or the change to it. 1 is ordinary land. </td>
+        <td> <code> set_temp_variable = { land_quality_temp = 0.1 } <br> change_land_quality = yes </code> </td>
+        <td> Sets or changes the state's land quality. It scales the land's carrying capacity for subsistence and the output of every farm in the state. </td>
+        <td> Never goes below 0. Takes effect at the next monthly tick. </td>
+        <td> State </td>
+    </tr>
+    <tr>
+        <td> set_crop_eligible </td>
+        <td> <code> industry_token = token:farm </code> <br> A farm that uses arable land. <br> <code> crop_eligible_temp = 0/1 </code> <br> 1 if its crop grows in the state, 0 if it doesn't. </td>
+        <td> <code> set_temp_variable = { industry_token = token:cotton_plantation } <br> set_temp_variable = { crop_eligible_temp = 1 } <br> set_crop_eligible = yes </code> </td>
+        <td> Lets a crop grow in the state, or stops it. Farms can't be built where their crop doesn't grow, but existing ones keep running. </td>
+        <td> Crop farms and livestock ranches grow everywhere unless history or this effect forbids them. Rice paddies and the cotton, luxuries and rubber plantations grow only where history or this effect allows them. History sets it with <code> set_variable = { crop_eligible@token:rice_paddy = 1 } </code>. </td>
+        <td> State </td>
+    </tr>
+    <tr>
+        <td> add_x_deposit / remove_x_deposit </td>
+        <td> <code> r_token = token:good </code> <br> An RGO's good: wood, coal, iron, copper, valuables, oil, rubber, aluminum, tungsten, chromium, titanium, silicon, rare_earths, chemicals, food, fiber or luxuries. <br> <code> x_temp = integer </code> <br> Levels to add or remove. </td>
+        <td> <code> set_temp_variable = { r_token = token:coal } <br> set_temp_variable = { x_temp = 5 } <br> add_x_deposit = yes </code> </td>
+        <td> Adds worked levels to the state's RGO, with known deposits to match, or removes them along with their known deposits. Use it where vanilla content would use <code> add_resource </code>, which the economy no longer reads. </td>
+        <td> Free, and at once. The known deposits nobody works and the potential deposits don't change. </td>
+        <td> State </td>
+    </tr>
+    <tr>
+        <td> add_known_deposits / add_potential_deposits </td>
+        <td> <code> r_token = token:good </code> <br> An RGO's good. <br> <code> x_temp = integer </code> <br> Levels to add. </td>
+        <td> <code> set_temp_variable = { r_token = token:oil } <br> set_temp_variable = { x_temp = 10 } <br> add_known_deposits = yes </code> </td>
+        <td> Adds deposits that are found but not worked yet (known), or not found yet (potential). Building the RGO, or prospecting, turns them into the next stage. </td>
+        <td> History sets them with <code> set_variable = { known_deposits@token:coal = 10 } </code> and <code> potential_deposits@token:coal </code>, and the worked size with <code> set_variable = { coal_size = 3 } </code>. Known deposits include the worked ones. </td>
+        <td> State </td>
+    </tr>
+    <tr>
+        <td> set_deposit_quality / change_deposit_quality </td>
+        <td> <code> r_token = token:good </code> <br> An RGO's good. <br> <code> deposit_quality_temp = float </code> <br> The new quality, or the change to it. 1 is an ordinary deposit. </td>
+        <td> <code> set_temp_variable = { r_token = token:iron } <br> set_temp_variable = { deposit_quality_temp = 1.2 } <br> set_deposit_quality = yes </code> </td>
+        <td> Sets or changes the quality of the state's deposit of a good. It scales the RGO's output there, from the same inputs and workers. </td>
+        <td> Never goes below 0. Takes effect at the next monthly tick. History sets it with <code> set_variable = { deposit_quality@token:iron = 1.2 } </code>. </td>
+        <td> State </td>
+    </tr>
 </table>
 
 ## Triggers
