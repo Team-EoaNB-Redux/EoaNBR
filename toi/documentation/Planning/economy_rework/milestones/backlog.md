@@ -2,6 +2,8 @@
 
 Small items that don't belong to one milestone. Do them when one is convenient. Most come from [archive/07](../archive/07_content_backlog.md), and the full lists are in `documentation/Planning/pm_generation_report.md`.
 
+- **Player downsizing** ([ui_planning.md](../ui_planning.md) UQ16 and UQ22, decided 2026-11-14): a wrapper, `downsize_x_industries`, that removes one level of size from a state-industry at once, with no refund. The workers lose their jobs that month. It's blocked while the industry has construction under way, since cancelling comes first. The AI doesn't use it, and capacity decay (Q23) stays automatic beside it. Content calls the wrapper. Build it before the UI's States tab (U3), which shows the button.
+- **Know-how** (ui_planning.md UQ24): Strat wants industrial know-how modelled, but what it is and what drives it are still open. Macro → General keeps a greyed place for it, where the mockup had industrial expertise. M15's company R&D may feed it.
 - **Techs:** 63 PMs have no tech, mostly after 1900. Reassign `pm_professional_services` and `pm_industrial_molded_goods` in `TECH_OVERRIDES` once real techs exist. `tech_hot_blast_furnace` and `tech_shaft_mining` unlock nothing.
 - **Tech effects:** every PM modifier was stripped from the techs. Add them back as `pm_<x>_throughput_modifier` and `pm_<x>_employment_modifier`, after M04, since the PM/AM cache changes where they apply.
 - **Missing sheet rows:** livestock, oil extraction, farm AMs after Tractors, and government buildings are still legacy conversions from `pm_legacy_data.json`. M08 may remove the government rows.
@@ -23,6 +25,5 @@ From Strat's answers in [decisions.md](../decisions.md):
 - **Upper-class population** that varies more than a flat 2% of jobs (Q11). Comes after M02.
 - **Two floating wages per state** (Q9), if one wage turns out to be too coarse.
 - **Manufacturing Base option (b)** (Q32): the government contracts a slice of the manufacturing sectors, which takes it out of civilian output. Comes after M08.
-- **Company reorganisation** (Chapter 11 in Strat's notepad), shares and valuations, gated by the insolvency laws (Q66). Comes after M10.
 - **Government bonds in the same credit market** as private loans (Q43). Comes after M11.
 - **Nominal values in the UI** (Q46): each currency's value against the pound, applied in scripted localisation only. Comes after M12.

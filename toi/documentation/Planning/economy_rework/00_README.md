@@ -24,6 +24,7 @@ Each one is a self-contained piece of work for a fresh session. Do them in order
 | M11 | [Banking, credit and base money](milestones/M11_banking_and_credit.md) | §14–16 | Q42–Q44, Q59, Q65, Q69, Q72 | Not started |
 | M12 | [Money, inflation and currency](milestones/M12_money_and_currency.md) | §16–18 | Q45–Q49, Q67, Q69, Q70 | Not started |
 | M13 | [Government, laws and controls](milestones/M13_government_and_laws.md) | §20–22 | Q50–Q51, Q61 | Not started |
+| M15 | [Companies completion](milestones/M15_companies_completion.md) | §19, §21.3 | Q40, Q66, UQ23 | Not started; runs before M14 |
 | M14 | [Startup balance](milestones/M14_startup_balance.md) | all | — | Not started |
 | — | [Backlog](milestones/backlog.md) | — | — | Small items, any time |
 
@@ -35,7 +36,8 @@ Q52 to Q54 apply across milestones.
 - Pops come before sectors because everything after them employs and pays by class.
 - The sector layer comes before land, resources and infrastructure, so those are written once, into the new structure.
 - Investment needs the physical caps in place. Companies need investment. Banking needs borrowers, and brings base money with it, since reserves are built from base money. Currency needs bank money.
-- Controls and balance come last.
+- Controls come next. Then M15 finishes the companies, since reorganisation and foreign branches need the laws. Strat added M15 on 2026-11-14, after the numbering, so it sits above M14 in the table.
+- Balance comes last.
 
 ## Rules for the rework
 - **Implementation, not balance.** Values only need to be sane enough to show a mechanism working. Don't retune the sheet to fix balance; note the issue for M14.
@@ -63,6 +65,7 @@ Q52 to Q54 apply across milestones.
 
 ## Other files here
 - **M14 reference:** [eng_economy.md](eng_economy.md) and [raj_economy.md](raj_economy.md) give 1857 output for the British Isles and India. The history files cite them by name, so keep them here. [pm_1857_tuning.md](pm_1857_tuning.md) and `pm_1857_tuning.csv` record the 1857 PM values already in the sheet.
+- [ui_planning.md](ui_planning.md): the economy window rework, tab by tab (Budget, Macro, States, Global), in phases U0–U5 plus the parts each later milestone adds. UQ1–UQ25 were decided on 2026-11-13 and 2026-11-14; UQ26 is open. U1 also replaces the budget sliders with five levels per line. The mockups (`*_window.png`, `global_economy.png`) sit beside it.
 - [archive/](archive/): the old segments 01–07, the old README, `pm_rework_plan.md` (the PM rework's locked decisions) and the old spec. Segments 01, 02 and 04 hold findings that still apply: array math in triggers, the AM labour-cut clamp, and the infrastructure formulas.
 
 ## Tools

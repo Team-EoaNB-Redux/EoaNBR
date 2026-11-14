@@ -17,7 +17,7 @@ A company is a permanent, cached national entity layered over state industries. 
 2. **Bonuses:** company bonuses apply where the company owns capacity. Market share follows from compounding profit.
 3. **Investment:** companies invest from retained earnings through the M09 tiers.
 4. **Founding** (Q41): startup companies first, then dynamic founding from the general pool.
-5. **Failure** (Q40, Q66): liquidation and the player bailout. In liquidation, capacity goes back to the generic owner, and loans are written off (against bank capital once M11 exists). Reorganisation (Chapter 11) waits in the backlog until shares exist.
+5. **Failure** (Q40, Q66): liquidation and the player bailout. In liquidation, capacity goes back to the generic owner, and loans are written off (against bank capital once M11 exists). Reorganisation (Chapter 11) waits for [M15](M15_companies_completion.md), which builds shares.
 6. Fix the gaps listed above.
 
 ## Done when

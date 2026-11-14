@@ -1,6 +1,6 @@
 # M04: National sectors and target utilisation
 
-**Spec:** §1, §2.1–2.2, §3, §4, §6. **Depends on:** M01, M03. **Questions:** Q18–Q23, Q38, Q55, and the follow-ups Q85–Q91, all decided. **Status:** in progress. Steps 1, 2, 3, 5, 6, 7, 8 and 9 are done, in the simulator and in Strat's month-1 save. Step 4 is built as far as Q88 goes. The national figures a sector screen needs are stored (Q91, simulator only so far). Still to do: the national sector UI. Strat's order: step 2, then 1, 3 and 6, then the rest. Reference run: `redux-eco-sim/runs/m04_q91` (`world_1857_eng`, 60 months, `--watch-file watches/m04.txt`). The M03-code baseline is `runs/m04_base`.
+**Spec:** §1, §2.1–2.2, §3, §4, §6. **Depends on:** M01, M03. **Questions:** Q18–Q23, Q38, Q55, and the follow-ups Q85–Q91, all decided. **Status:** in progress. Steps 1, 2, 3, 5, 6, 7, 8 and 9 are done, in the simulator and in Strat's month-1 save. Step 4 is built as far as Q88 goes. The national figures a sector screen needs are stored (Q91), checked the same way. Still to do: the national sector UI. Strat's order: step 2, then 1, 3 and 6, then the rest. Reference run: `redux-eco-sim/runs/m04_q91` (`world_1857_eng`, 60 months, `--watch-file watches/m04.txt`). The M03-code baseline is `runs/m04_base`.
 
 ## Goal
 The country-sector becomes the unit that makes decisions and keeps the accounts, and the state-industry is where it physically happens. PM/AM economics are cached once a month as high up as possible, and states only apply local factors. A national target utilisation replaces each industry's own hiring decision.
@@ -154,6 +154,7 @@ The figures a national sector screen needs that weren't stored are now kept on t
 - Every watched value matches within 0.0003%. The gap is rounding: a shared method's inputs are now multiplied sector by sector.
 - The two passes take 0.92 s instead of 0.81 s over 60 months, against 79 s of ticks.
 - A console test gives the expected sums. It added 2 railways and a port in Lancashire, started a steel foundry there and started two retools. The railway's 53.27 capacity × 0.25 is its 13.32 transport revenue, and the port's (5.91 − 25.70 × 0.23 + 25.70) × 0.25 is its 6.43.
+- **In-game check (2026-11-14), on Strat's month-1 autosave:** no zeroed math expressions, and the arrays have the simulator's lengths, with the same slots filled. In every country with sectors (ENG and USA), each national figure equals the sum of the save's own state figures: jobs and employment per class, transport demand, construction, retooling, revenue, goods made, and the size and input scale on each method. Against the simulator, jobs and employment match exactly, and goods, input scales and transport demand run about 1% higher, the throughput gap below. Reserves differ by state because startup rolls them at random. Five countries' reserves aren't the sum over the simulator's map because control differs: in-game QNG holds the GXC, SIC and YAL states, and D01, a dynamic tag the simulator lacks, holds Prussia's state 492. No railways or ports exist on the test bed, so their figures were checked only by the console test.
 
 ### Still to do
 - **Step 4** is built as far as Q88 goes: each sector is the generic owner's slice (`sector_generic_size@`), and dividends follow the generic size.
@@ -161,7 +162,7 @@ The figures a national sector screen needs that weren't stored are now kept on t
   - **Throughput:** HOI4's national industry throughput modifier is 1.3 points higher in-game for every industry (0.145 against 0.132 for coal). That's the 1%.
   - **Steel:** Prussia, Denmark and Spain use 1.5, 3 and 4 less steel for military production in-game. That halves steel's startup price (4.83 against 9.64), so the steel foundry and tooling workshop margins differ.
 - The new tooltip getter (`get_industry_figures`) logged thousands of divide-by-zero warnings in-game, for idle and empty industries. Its divides are now guarded.
-- **The national sector UI:** what it can show, and where each figure comes from, is in the next section. The Q91 figures still need an in-game check.
+- **The national sector UI:** what it can show, and where each figure comes from, is in the next section. The screen itself is planned in [ui_planning.md](../ui_planning.md) §5.2, Macro → Sectors (phase U2).
 
 ### UI fixes
 - **The PM selection tooltip** (`pm_entry_tt`) was deleted from the English localisation in "Economy rework part 1" (`487bd9311`). Korean and Russian still had it. It's restored. Hovering over the active PM worked because that tooltip (`building_production_method_tt`) is a different key around the same inner text (`GetPMLoc`).
