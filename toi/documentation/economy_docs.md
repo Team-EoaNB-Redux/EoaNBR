@@ -169,19 +169,19 @@ A list of effects that can be used in events, focus tree completion rewards, dec
         <td> Country </td>
     </tr>
     <tr>
-        <td> generate_investment_opportunity </td>
-        <td> </td>
-        <td> <code> generate_investment_opportunity = yes </code> </td>
-        <td> Generates a new investment opportunity. Does not generate a new investment opportunity if already at IO cap. </td>
-        <td> </td>
+        <td> change_development_fund </td>
+        <td> <code> percent_change_temp = float </code> <br> Change, in % of GDP </td>
+        <td> <code> set_temp_variable = { percent_change_temp = 1 } <br> change_development_fund = yes </code> </td>
+        <td> Changes the development fund, the government's monthly inflow to the general investment pool, as a share of GDP (M09). Between 0 and <code>global.government_investment_max</code>. </td>
+        <td> Nothing sets it until the Budget tab (U1) adds its control, so it's 0 for everyone, the AI included. </td>
         <td> Country </td>
     </tr>
     <tr>
-        <td> generate_all_investment_opportunities - NOT IMPLEMENTED </td>
-        <td> </td>
-        <td> <code> generate_all_investment_opportunities = yes </code> </td>
-        <td> Generates investment opportunities until cap is reached. Does not generate a new investment opportunity if already at IO cap. </td>
-        <td> </td>
+        <td> change_infrastructure_investment </td>
+        <td> <code> percent_change_temp = float </code> <br> Change, in % of GDP </td>
+        <td> <code> set_temp_variable = { percent_change_temp = 1 } <br> change_infrastructure_investment = yes </code> </td>
+        <td> Changes the infrastructure line, a share of GDP a month that builds railways where states are short of transport and ports on the coast while the market is short of shipping, whatever they earn (M09). Between 0 and <code>global.government_investment_max</code>. </td>
+        <td> As with the development fund, 0 for everyone until U1. </td>
         <td> Country </td>
     </tr>
     <tr>
@@ -404,14 +404,6 @@ NONE OF THESE ARE IMPLEMENTED
         <td> <code> x_temp = float </code> <br> (Optional) Spending amount. Default is 0. </td>
         <td> <code> set_temp_variable = { x_temp = 1200 } <br> has_investment_spending = yes </code> </td>
         <td> Checks if the investment fund's spending is greater than the given value.</td>
-        <td> </td>
-        <td> Country </td>
-    </tr>
-    <tr>
-        <td> has_attractive_opportunity </td>
-        <td> </td>
-        <td> <code> has_attractive_opportunity = no # Doesn't have an attractive opportunity </code> </td>
-        <td> Checks if the current scope has an investment opportunity with over 200 attractiveness.</td>
         <td> </td>
         <td> Country </td>
     </tr>
@@ -897,6 +889,14 @@ A list of modifiers that can be used in ideas and dynamic modifiers. Each of the
         <td> </td>
         <td> </td>
         <td> Share of the upper class's income that goes into the investment pool. </td>
+        <td> </td>
+        <td> Country </td>
+    </tr>
+    <tr>
+        <td> sector_capital_mobility </td>
+        <td> </td>
+        <td> </td>
+        <td> Added to <code>global.sector_capital_mobility_base</code> (0.2): the share of sectors' retained earnings that goes to the general investment pool instead of staying with the sector (M09, spec §13.2). For the financial-system laws. </td>
         <td> </td>
         <td> Country </td>
     </tr>

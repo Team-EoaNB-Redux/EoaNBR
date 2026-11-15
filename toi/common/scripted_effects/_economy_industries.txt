@@ -99,16 +99,14 @@
 	# state-industries are where the work happens
 	sectors_monthly = {
 		# Country scope. Runs once a tick, before the state loop, from last month's accounts (sectors_update):
-		# - Retained earnings become sector capital (Q21), which M09 spends. A loss drawn from capital is negative retained
-		#   earnings, and never takes capital below 0 (Q22).
 		# - Target utilisation (Q20), sector_utilisation@, in %: a damped step on the national margin. It rises while the margin
 		#   is above global.sector_utilisation_rise_margin and falls while it's negative, by 1 point plus
 		#   global.sector_utilisation_gain points per unit of margin beyond those, at most global.sector_utilisation_step_max
 		#   a month, between global.sector_utilisation_min and 100. A sector with no industries holds its target
+		# Retained earnings become sector capital in investment_monthly (M09), which also spends it
 		for_each_loop = {
 			array = sectors
 			value = s_token
-			add_to_variable = { sector_capital@var:s_token = sector_retained@var:s_token }
 
 			if = {
 				limit = { check_variable = { sector_size@var:s_token > 0 } }
@@ -146,8 +144,9 @@
 		#   capacity decay. It's 0 until the industry first earns revenue, and then starts at that month's margin.
 		# - Capacity decay (Q23, Q87): a building whose trailing margin is below global.industry_decay_margin loses
 		#   global.industry_decay_rate of its generic owner's size a month (companies decide for their own), and the generic
-		#   share closes once the building is below global.industry_decay_floor. Only while investment is on
-		#   (global.eco_investment_enabled), since nothing rebuilds capacity before M09. RGOs follow their deposits
+		#   share closes once the building is below global.industry_decay_floor. RGOs follow their deposits, and railways and
+		#   ports aren't paid for what they carry until Q31, so neither decays
+		clear_temp_array = decay_tokens_temp # Collected first, since closing a building changes the state's arrays
 		for_each_loop = {
 			array = industries
 			value = bu_token
@@ -179,33 +178,33 @@
 						}
 					}
 				}
-			}
-		}
-
-		if = {
-			limit = { check_variable = { global.eco_investment_enabled = 1 } }
-			for_each_loop = { # Not the state's buildings array, which closing a building changes
-				array = global.building_token_array
-				value = decay_token
 				if = {
 					limit = {
-						check_variable = { owner_sizes_local@var:decay_token > 0 }
-						check_variable = { construction@var:decay_token = 0 }
-						check_variable = { margin@var:decay_token < global.industry_decay_margin }
-						NOT = { check_variable = { margin@var:decay_token = 0 } }
+						check_variable = { margin@var:bu_token < global.industry_decay_margin }
+						check_variable = { construction@var:bu_token = 0 }
+						check_variable = { owner_sizes_local@var:bu_token > 0 }
+						check_variable = { global.building_rgo@var:bu_token = 0 }
+						NOT = { check_variable = { global.building_type@var:bu_token = 2 } }
 					}
-					set_temp_variable = { industry_token = decay_token }
-					set_temp_variable = { x_temp = { value = owner_sizes_local@var:decay_token multiply = global.industry_decay_rate multiply = -1 } }
-					if = {
-						limit = { check_variable = { size@var:decay_token < global.industry_decay_floor } }
-						set_temp_variable = { x_temp = { value = owner_sizes_local@var:decay_token multiply = -1 } }
-					}
-					set_temp_variable = { financer_temp = 0 }
-					set_temp_variable = { production_method_temp = production_method@var:decay_token }
-					set_temp_variable = { automation_method_temp = automation_method@var:decay_token }
-					add_x_industry_internal = yes
+					add_to_temp_array = { decay_tokens_temp = bu_token }
 				}
 			}
+		}
+		for_each_loop = {
+			array = decay_tokens_temp
+			value = decay_token
+			set_temp_variable = { industry_token = decay_token }
+			set_temp_variable = { x_temp = { value = owner_sizes_local@var:decay_token multiply = global.industry_decay_rate multiply = -1 } }
+			if = {
+				limit = { check_variable = { size@var:decay_token < global.industry_decay_floor } }
+				set_temp_variable = { x_temp = { value = owner_sizes_local@var:decay_token multiply = -1 } }
+			}
+			set_temp_variable = { financer_temp = 0 }
+			set_temp_variable = { production_method_temp = production_method@var:decay_token }
+			set_temp_variable = { automation_method_temp = automation_method@var:decay_token }
+			set_temp_variable = { skip_update_temp = 1 } # The state loop updates it later this month
+			add_x_industry_internal = yes
+			set_temp_variable = { skip_update_temp = 0 }
 		}
 	}
 	industry_utilisation_calc = {
@@ -250,6 +249,8 @@
 		#   Railways and ports: sector_industrial_capacity@, sector_shipping_capacity@, and sector_transport_revenue@ (what
 		#     they're paid for transport at each state's rate and for shipping at the shipping price, part of sector_revenue@)
 		#   sector_construction@ (size being built), sector_retooling@ (size retooling)
+		#   sector_construction_bill@ - this month's goods bills for the construction and retooling the sector pays for
+		#     (financer 0), which investment_monthly charges (M09, Q117, Q118)
 		#   RGOs: sector_known_deposits@ (found, worked or not), sector_potential_deposits@ (not found yet)
 		# Profit pays corporate tax when it's positive (Q86), then the sector keeps global.sector_retained_share of what's left,
 		# scaled by investment appetite (incentives, Q39), and pays the rest as dividends. A loss comes out of the sector's
@@ -274,6 +275,7 @@
 			set_variable = { sector_transport_demand@var:s_token = 0 }
 			set_variable = { sector_construction@var:s_token = 0 }
 			set_variable = { sector_retooling@var:s_token = 0 }
+			set_variable = { sector_construction_bill@var:s_token = 0 }
 			if = {
 				limit = { check_variable = { global.building_type@var:s_token = 2 } }
 				set_variable = { sector_industrial_capacity@var:s_token = 0 }
@@ -348,7 +350,19 @@
 					if = {
 						limit = { NOT = { check_variable = { construction@var:bu_token = 0 } } }
 						add_to_variable = { PREV.sector_construction@var:bu_token = construction@var:bu_token }
+						if = {
+							limit = { check_variable = { construction_financier@var:bu_token = 0 } }
+							add_to_variable = { PREV.sector_construction_bill@var:bu_token = construction_cost@var:bu_token }
+						}
 					}
+					if = {
+						limit = {
+							NOT = { check_variable = { retooling_pm@var:bu_token = 0 } }
+							check_variable = { retooling_financier@var:bu_token = 0 }
+						}
+						add_to_variable = { PREV.sector_construction_bill@var:bu_token = retooling_cost@var:bu_token }
+					}
+
 					if = {
 						limit = { check_variable = { global.building_rgo@var:bu_token > 0 } }
 						add_to_variable = { PREV.sector_known_deposits@var:bu_token = known_deposits@var:bu_token }
@@ -925,6 +939,8 @@
 
 	industry_update_construction_retooling = {
 		# iuc_industry
+		# The goods bills of its construction and retooling. A sector over its borrowing limit buys no goods for what it pays
+		# for itself (financer 0), and its progress stops (on_monthly_industries, Q118)
 		set_variable = { retooling_cost@var:iuc_industry = 0 }
 		clear_array = retooling_resources@var:iuc_industry
 		clear_array = retooling_amount@var:iuc_industry
@@ -954,6 +970,13 @@
 
 			set_temp_variable = { retooling_cost_temp = 1 }
 			add_to_temp_variable = { retooling_cost_temp = building_retooling_cost_factor }
+			if = {
+				limit = {
+					check_variable = { retooling_financier@var:iuc_industry = 0 }
+					check_variable = { controller:sector_construction_paused@var:iuc_industry = 1 }
+				}
+				set_temp_variable = { retooling_cost_temp = 0 }
+			}
 
 			# Input Costs: the new method's construction list, spread over its duration
 			set_temp_variable = {
@@ -1008,6 +1031,13 @@
 
 			set_temp_variable = { construction_cost_temp = 1 }
 			add_to_temp_variable = { construction_cost_temp = industry_construction_cost_factor }
+			if = {
+				limit = {
+					check_variable = { construction_financier@var:iuc_industry = 0 }
+					check_variable = { controller:sector_construction_paused@var:iuc_industry = 1 }
+				}
+				set_temp_variable = { construction_cost_temp = 0 }
+			}
 
 			set_temp_variable = { construction_multiplier = 1 }
 			if = { limit = { check_variable = { construction_time_left@var:iuc_industry < 1 } }
@@ -1055,221 +1085,6 @@
 		}
 	}
 
-	industries_highest_productivity_update = {
-		# Country Scope
-
-		for_each_loop = {
-			array = global.industry_token_array
-			value = industry_token
-
-			if = {
-				limit = {
-					is_valid_industry = yes
-				}
-				industry_get_highest_pm = yes
-				set_variable = { highest_productivity_pm@var:industry_token = highest_pm_temp }
-				set_variable = { highest_productivity@var:industry_token = highest_productivity_temp }
-				set_variable = { highest_productivity_revenue@var:industry_token = highest_pm_revenue_temp }
-				set_variable = { highest_productivity_expenses@var:industry_token = highest_pm_expenses_temp }
-				set_variable = { highest_productivity_cost@var:industry_token = highest_pm_construction_cost_temp }
-				set_variable = { highest_productivity_retooling_cost@var:industry_token = highest_pm_retooling_cost_temp }
-				set_variable = { highest_productivity_wage_mult@var:industry_token = highest_pm_wage_mult_temp }
-			}
-		}
-		
-		clear_array = industries_highest_productivity
-		for_each_loop = {
-			array = global.building_token_array
-			value = industry_token
-
-			for_each_loop = {
-				array = industries_highest_productivity 
-				index = ii 
-				value = vv 
-				break = bb
-
-				if = { limit = { 
-					AND = { 
-						check_variable = { highest_productivity@var:vv < highest_productivity@var:industry_token } 
-						is_valid_industry = yes 
-					} }
-					add_to_array = { array = industries_highest_productivity value = industry_token index = ii }
-					set_temp_variable = { bb = 1 }
-				}
-			}
-			if = { limit = { 
-				AND = { 
-					check_variable = { bb = 0 } 
-					is_valid_industry = yes
-				} }
-				add_to_array = { industries_highest_productivity = industry_token }
-			}
-		}
-		for_each_loop = {
-			array = global.special_token_array
-			value = industry_token
-
-			for_each_loop = {
-				array = industries_highest_productivity 
-				index = ii 
-				value = vv 
-				break = bb
-
-				if = { limit = { 
-					AND = { 
-						check_variable = { highest_productivity@var:vv < highest_productivity@var:industry_token } 
-						is_valid_industry = yes 
-					} }
-					add_to_array = { array = industries_highest_productivity value = industry_token index = ii }
-					set_temp_variable = { bb = 1 }
-				}
-			}
-			if = { limit = { 
-				AND = { 
-					check_variable = { bb = 0 } 
-					is_valid_industry = yes
-				} }
-				add_to_array = { industries_highest_productivity = industry_token }
-			}
-		}
-		for_each_loop = {
-			array = global.rgo_token_array
-			value = industry_token
-
-			for_each_loop = {
-				array = industries_highest_productivity 
-				index = ii 
-				value = vv 
-				break = bb
-
-				if = { limit = { 
-					AND = { 
-						check_variable = { highest_productivity@var:vv < highest_productivity@var:industry_token } 
-						is_valid_industry = yes 
-						any_controlled_state = {
-							check_variable = { known_deposits@var:industry_token > 0 }
-						}
-					} }
-					add_to_array = { array = industries_highest_productivity value = industry_token index = ii }
-					set_temp_variable = { bb = 1 }
-				}
-			}
-			if = { limit = { 
-				AND = { 
-					check_variable = { bb = 0 }
-					is_valid_industry = yes
-					any_controlled_state = {
-						check_variable = { known_deposits@var:industry_token > 0 }
-					}
-				} }
-				add_to_array = { industries_highest_productivity = industry_token }
-			}
-		}
-	}
-	industries_retoolable_update = {
-		# Country Scope
-		# Runs thru every industry to check if PM/AM is upgradable, then sets it if so.
-		# Also updates national unlocked AM values 
-		
-
-		# Find Upgradable PMs/AMs
-		clear_array = industries_pm_upgradable
-		clear_array = industries_am_upgradable
-
-		every_controlled_state = {
-			for_each_loop = {
-				array = industries
-				value = industry_token
-
-				# Check that PM isn't the best one
-				clear_variable = pm_upgradable@var:industry_token
-				if = {
-					limit = {
-						NOT = { check_variable = { controller:highest_productivity_pm@var:industry_token = production_method@var:industry_token } }
-						check_variable = { retooling_pm@var:industry_token = 0 }
-					}
-
-					set_variable = { pm_upgradable@var:industry_token = 1 }
-					
-					if = { 
-						limit = { NOT = { is_in_array = { PREV.industries_pm_upgradable = industry_token } } } 
-						add_to_array = { PREV.industries_pm_upgradable = industry_token } 
-					}
-				}
-
-				# AMs
-				clear_variable = am_upgradable@var:industry_token
-				if = {
-					limit = { check_variable = { global.building_automation_methods@var:industry_token^num > 1 } }
-
-					# Get index of PM
-					for_each_loop = {
-						array = global.building_automation_methods@var:industry_token
-						value = pm_temp
-						index = pm_i
-						break = pm_brk
-						if = { limit = { check_variable = { pm_temp = automation_method@var:industry_token } } set_temp_variable = { i_temp = pm_i } set_temp_variable = { pm_brk = 1 } }
-					}
-
-					# Check that PM isn't last one & that next PM is available
-					if = {
-						limit = {
-							add_to_temp_variable = { i_temp = 1 }
-							check_variable = { i_temp < global.building_automation_methods@var:industry_token^num }
-
-							set_temp_variable = { pm_temp = global.building_automation_methods@var:industry_token^i_temp }
-							is_valid_pm = yes
-
-							check_variable = { retooling_pm@var:industry_token = 0 }
-						}
-
-						# Compare next level PM productivity against base wage
-						# If greater, set upgradable to new divided by old
-						if = {
-							limit = {
-								set_temp_variable = { pm_temp = global.building_automation_methods@var:industry_token^i_temp }
-								get_pm_values = yes
-
-								set_temp_variable = { base_wage_temp = base_wage }
-								multiply_temp_variable = { base_wage_temp = 0.9 }
-								check_variable = { base_wage_temp > productivity_temp }
-								check_variable = { productivity_temp > 0 }
-							}
-							set_variable = { am_upgradable@var:industry_token = 1 }
-							
-							if = { 
-								limit = { NOT = { is_in_array = { PREV.industries_am_upgradable = industry_token } } } 
-								add_to_array = { PREV.industries_am_upgradable = industry_token } 
-							}
-							# log = "[?industry_token.GetTokenLocalizedKey] in [THIS.GetName]: [?am_upgradable@var:industry_token|+=] ([?pm_temp.GetTokenLocalizedKey])"
-						}
-					}
-
-				}
-			}
-		}
-
-		# Recalc AMs
-		for_each_loop = {
-			array = unlocked_ams
-			value = pm_temp
-
-			if = {
-				limit = {
-					get_am_values = yes
-				}
-			}
-			set_variable = { base_am_expenses@var:pm_temp = expenses_temp } # Per K of base workforce. Multiply by throughput/input
-			set_variable = { base_am_wage_mult@var:pm_temp = payroll_multiplier_temp } # Multiply by building_base_employees
-
-			if = {
-				limit = {
-					get_retooling_cost = yes
-				}
-			}
-			set_variable = { base_am_cost@var:pm_temp = total_retooling_cost_temp }
-		}
-	}
 	
 #
 
@@ -1617,77 +1432,7 @@
 		}
 	}
 
-	industry_get_highest_pm = {
-		# State/Country Scope
-		# industry_token
-		# returns highest_pm_temp, highest_productivity_temp
-		
-		set_temp_variable = { highest_productivity_temp = -10 }
-		set_temp_variable = { highest_pm_temp = global.building_production_methods@var:industry_token^0 }
 
-		for_each_loop = {
-			array = global.building_production_methods@var:industry_token
-			value = pm_temp
-
-			if = {
-				limit = {
-					is_in_array = { controller:building_unlocked_pms@var:industry_token = pm_temp }
-					get_pm_values = yes
-					check_variable = { highest_productivity_temp < productivity_temp }
-				}
-				set_temp_variable = { highest_productivity_temp = productivity_temp }
-				set_temp_variable = { highest_pm_temp = pm_temp }
-				set_temp_variable = { highest_pm_revenue_temp = core_revenue_temp }
-				set_temp_variable = { highest_pm_expenses_temp = core_expenses_temp }
-				set_temp_variable = { highest_pm_wage_mult_temp = payroll_multiplier_temp }
-
-				set_temp_variable = { am_temp = controller:latest_automation_method@var:industry_token }
-				calc_construction_cost = yes
-				set_temp_variable = { highest_pm_construction_cost_temp = total_construction_cost_temp }
-
-				if = {
-					limit = {
-						get_retooling_cost = yes
-					}
-				}
-				set_temp_variable = { highest_pm_retooling_cost_temp = total_retooling_cost_temp }
-			}
-		}
-	}
-	industry_get_highest_am = {
-		# State Scope (Can be used in country scope, but not advisable)
-		# industry_token
-		# returns highest_am_temp, highest_productivity_temp
-
-		set_temp_variable = { highest_productivity_temp = -10 }
-		set_temp_variable = { highest_am_temp = global.building_automation_methods@var:industry_token^0 }
-		set_temp_variable = { base_wage_temp = base_wage }
-		multiply_temp_variable = { base_wage_temp = 0.9 }
-
-		for_each_loop = {
-			array = global.building_automation_methods@var:industry_token
-			value = pm_temp
-
-			if = {
-				limit = {
-					is_in_array = { controller:building_unlocked_ams@var:industry_token = pm_temp }
-					get_pm_values = yes
-					# log = "[?industry_token.GetTokenLocalizedKey]: [?productivity_temp] < [?base_wage_temp]"
-					check_variable = { highest_productivity_temp < productivity_temp }
-					check_variable = { productivity_temp < base_wage_temp }
-				}
-				set_temp_variable = { highest_productivity_temp = productivity_temp }
-				set_temp_variable = { highest_am_temp = pm_temp }
-			}
-		}
-	}
-
-	calc_construction_cost = {
-		# Effect wrapper for get_construction_cost
-		# Input: pm_temp, am_temp, industry_token
-		# Output: total_construction_cost_temp
-		if = { limit = { get_construction_cost = yes } }
-	}
 
 	#	Adds x size industry. Limited to the single industry. Assumes everything is set correctly
 	#	Also works with subtraction technically
@@ -1697,6 +1442,7 @@
 		# industry_token - type
 		# production_method_temp - if relevant
 		# automation_method_temp - if relevant
+		# skip_update_temp - 1 in the state loop before employment_update, which works out its jobs and accounts anyway
 
 		add_to_variable = { size@var:industry_token = x_temp }
 		add_to_variable = { owner_sizes_local@var:industry_token = x_temp }
@@ -1710,9 +1456,12 @@
 			remove_from_array = { industries = industry_token }
 
 			# Update industry
-			set_temp_variable = { bu_token = industry_token }
-			industry_update_size_jobs = yes
-			industry_update = yes
+			if = {
+				limit = { check_variable = { skip_update_temp = 0 } }
+				set_temp_variable = { bu_token = industry_token }
+				industry_update_size_jobs = yes
+				industry_update = yes
+			}
 		}
 		else = {
 			# Add building to array if it doesn't exist yet
@@ -1726,9 +1475,12 @@
 			}
 
 			# Update industry. New capacity works at its sector's target utilisation (industry_utilisation_calc)
-			set_temp_variable = { bu_token = industry_token }
-			industry_update_size_jobs = yes
-			industry_update = yes
+			if = {
+				limit = { check_variable = { skip_update_temp = 0 } }
+				set_temp_variable = { bu_token = industry_token }
+				industry_update_size_jobs = yes
+				industry_update = yes
+			}
 		}
 
 		# Corporation-financed change: attribute the size delta to the funding company.
@@ -2078,10 +1830,10 @@
 				}
 			}
 
-			#Financer
+			#Financer: a new retool records who pays; one under way keeps its payer
 			if = {
 				limit = {
-					NOT = { check_variable = { retooling_pm@var:industry_token = 0 } }
+					check_variable = { retooling_pm@var:industry_token = 0 }
 				}
 				set_variable = { retooling_financier@var:industry_token = financer_temp }
 			}

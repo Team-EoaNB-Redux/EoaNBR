@@ -1149,7 +1149,13 @@
             add_to_variable = { social_spending = healthcare_spending }
         #
 
-        set_variable = { subsidies_spending = 0 }
+        # Government investment (M09, Q122), each a share of GDP: the development fund feeds the general investment pool,
+        # and the infrastructure line builds railways and ports where states are short of them (investment_monthly). Until
+        # the Budget tab (U1) adds their controls, only content sets them (change_development_fund,
+        # change_infrastructure_investment), and they're 0 for everyone, the AI included
+        set_variable = { development_fund_spending = { value = gdp_amount multiply = development_fund_percentage divide = 100 max = 0 } }
+        set_variable = { infrastructure_investment_spending = { value = gdp_amount multiply = infrastructure_investment_percentage divide = 100 max = 0 } }
+        set_variable = { subsidies_spending = { value = development_fund_spending add = infrastructure_investment_spending } }
 
         set_variable = { discretionary_spending = subsidies_spending }
         add_to_variable = { discretionary_spending = construction_spending }
@@ -1470,6 +1476,25 @@
             }
             investment_fund_update = yes
         }
+        budget_update = yes
+    }
+    change_development_fund = {
+        #Scope: Country
+        #Changes the development fund, the government's inflow to the general investment pool (M09, Q122), as a % of GDP
+        #INPUT:
+            #percent_change_temp - Amount to change it by. 1.0 increases it by 1% of GDP, -1.0 decreases it by 1%
+        add_to_variable = { development_fund_percentage = percent_change_temp }
+        clamp_variable = { var = development_fund_percentage min = 0 max = global.government_investment_max }
+        budget_update = yes
+    }
+    change_infrastructure_investment = {
+        #Scope: Country
+        #Changes the infrastructure line, which builds railways and ports where states are short of them (M09, Q122), as a
+        #% of GDP
+        #INPUT:
+            #percent_change_temp - Amount to change it by. 1.0 increases it by 1% of GDP, -1.0 decreases it by 1%
+        add_to_variable = { infrastructure_investment_percentage = percent_change_temp }
+        clamp_variable = { var = infrastructure_investment_percentage min = 0 max = global.government_investment_max }
         budget_update = yes
     }
     change_import_tariff = {

@@ -4,7 +4,7 @@ Questions raised against the new spec, [EOANB_Redux_Economy_Redesign_Updated.md]
 
 When Strat answers, write the answer under the question, mark it **Decided** with the date, and update the milestone file it belongs to. The tuning values the spec leaves to testing (§34) aren't asked here: they get settled in the milestone that builds them.
 
-**Status:** Strat answered Q1–Q54 on 2026-11-12. Where an answer differs from the recommendation, it says "Not as recommended". The answers raised follow-up questions Q55–Q68, which Strat also answered on 2026-11-12. Those raised Q69–Q72, also answered the same day. M02's code reading raised Q73–Q80, and M03's raised Q81–Q84. Strat answered all of them on 2026-11-12. M04's raised Q85–Q91, answered on 2026-11-13. M05's raised Q92–Q95, answered on 2026-11-14. M06's raised Q96–Q101, answered on 2026-11-14. M07's raised Q102–Q105, answered on 2026-11-14. M08's raised Q106–Q113, answered on 2026-11-14. Strat's playtest of M08 raised Q114–Q116, answered the same day.
+**Status:** Strat answered Q1–Q54 on 2026-11-12. Where an answer differs from the recommendation, it says "Not as recommended". The answers raised follow-up questions Q55–Q68, which Strat also answered on 2026-11-12. Those raised Q69–Q72, also answered the same day. M02's code reading raised Q73–Q80, and M03's raised Q81–Q84. Strat answered all of them on 2026-11-12. M04's raised Q85–Q91, answered on 2026-11-13. M05's raised Q92–Q95, answered on 2026-11-14. M06's raised Q96–Q101, answered on 2026-11-14. M07's raised Q102–Q105, answered on 2026-11-14. M08's raised Q106–Q113, answered on 2026-11-14. Strat's playtest of M08 raised Q114–Q116, answered the same day. M09's brief and code reading raised Q117–Q124, and its first simulator run Q125, all answered on 2026-11-14.
 
 ---
 
@@ -1050,3 +1050,124 @@ Strat played M08 on the USA, whose economy is back on the map, and found the con
 - The ramp moves toward last month's targets (`*_monthly` runs before `_update`), so a law change starts to move factories a month later. Content and the split buttons change the targets at once.
 - The contract cost is paid on the factories HOI4 has, not on the target.
 - Content's bonuses still count at Civilian Economy's 10% (`global.manufacturing_contract_share_default`, renamed from `_start`), whatever the country's law.
+
+---
+
+## Investment follow-ups (raised 2026-11-14, M09)
+
+Strat's M09 brief (2026-11-14) added a design for opportunities:
+- **Each tier says how much investment it can absorb,** as a capital cost: for example, steel has £12M of Exceptional opportunities, £27M Good, £41M Fair and £18M Marginal, so it can absorb £98M.
+- **Sectors target 80% utilisation.** Above it they expand toward the capacity they want.
+- **Headroom is cheap:** physical limits, a coarse labour figure (unemployment plus about 3% of employment, divided by employment per level) and a construction limit (how much a sector will build at once in one state). Investable value = headroom × construction cost.
+- **Order of funding:** sectors reinvest retained capital first, then the general pool funds what's left, then credit (M11). Everything is allocated before anything is committed, and a tier that can't be fully funded is funded pro rata (a £20M tier at 60% gets £12M).
+- **Cost:** the capital requirement is the investment cost (the 25% start-up share). The sector pays construction from retained earnings, borrowing when it runs out until it hits a limit, and then cuts construction.
+- **One resolution point:** construction is resolved once for all sectors, so the states are looped once.
+
+Reading the code against it raised Q117–Q124, and the first simulator run Q125. Strat answered them the same day.
+
+**Q117. Who pays the construction bill.** Under the brief, a project needs only its investment cost (25%) from a pool, and the sector pays the construction goods bill (the other 100%) from retained earnings. A sector new to the country has no earnings, so it would borrow its whole first plant, and the general pool would need only 25% to start it.
+- (a) The brief's rule for a sector's own reinvestment. When the general pool funds a project, it puts the full cost (investment + construction) into the sector, reserved for that project's bills.
+- (b) The brief's rule for every source. The borrowing limit counts what a sector is building, so a new sector can borrow its first plant's whole goods bill.
+- (c) Every source commits the full cost up front, and nothing borrows until M11.
+
+*Recommend:* (a). New sectors wait for real outside money (§13.3), and no pool spends more than it holds.
+
+> **Decided 2026-11-14:** (a).
+
+**Q118. Sector borrowing before M11 (contradiction with Q22).** Q22 said sectors don't borrow until M11. The brief has them borrow up to a point, then cut construction.
+- (a) Debt without interest, like pops' debt before M11 (Q59). The limit is a share of the value of the sector's plants, built and being built. Over it, the sector's construction pauses (no goods bought, no progress) and it starts nothing new. Retained earnings repay debt first. M11 makes the bank the creditor and adds interest.
+- (b) The same limit, but over it the newest projects are cancelled and what they spent is written off.
+- (c) Construction pauses whenever capital runs out, until M11.
+
+*Recommend:* (a).
+
+> **Decided 2026-11-14:** (a). This amends Q22 for construction bills. Operating losses still come out of capital, then dividends.
+
+**Q119. Labour headroom in peasant states.** Unemployment plus 3% of employment is 0 in a state with only peasants, which is most of the 1857 map, so no industry could ever open there. Peasants already join the working class when it's short of workers, at up to `arable_land` ÷ 10 K a month.
+- (a) Add the peasants who could move in a month (the migration cap).
+- (b) Count 3% of peasants, like the employed.
+- (c) Keep the brief's formula.
+
+*Recommend:* (a).
+
+> **Decided 2026-11-14:** not as recommended: unemployed + peasants + 3% of employed, in the working and middle classes.
+
+**Q120. The 80% rule and the construction limit.**
+- (a) A sector expands while its target utilisation is above 80%. Each state-industry may build up to size × (its utilisation ÷ 80% − 1), less what it's already building, so at 100% it adds 25%. That's the per-state construction limit. A new state or a new sector starts with one level.
+- (b) 80% only switches expansion on, and each project is capped at a fixed share of size (say 25%, at least one level).
+
+*Recommend:* (a).
+
+> **Decided 2026-11-14:** (a).
+
+**Q121. Indivisible projects.** PM and AM upgrades and prospecting can't be funded partially: a plant can't retool 60% of itself.
+- (a) In each tier, indivisible projects are funded whole first, in the order found, and expansions share what's left pro rata. Upgrades draw only on the sector's retained capital (Q38). Prospecting draws on the RGO sector's capital, then the general pool (Q30).
+- (b) Each goes ahead with probability equal to its tier's funded share.
+- (c) Expansions are funded first, pro rata, and indivisible projects get what's left.
+
+*Recommend:* (a).
+
+> **Decided 2026-11-14:** (a).
+
+**Q122. Government money (Q51, and the UI plan's M09 budget lines).** The UI plan gives M09 a Development fund line (into the general pool) and an Infrastructure line (railways and ports, which lose money until Q31 gives their pay a payer, so private capital never builds them). The Budget tab (U1) isn't built.
+- (a) Both as budget lines set by an effect, at 0 for everyone, the AI included, until U1 adds the controls. The development fund feeds the general pool. Infrastructure funds railway and port opportunities in states short of transport, whatever their ROI.
+- (b) The development fund only. Infrastructure waits for U1.
+- (c) Both wait for U1. The government invests through content and the state screen's Construct buttons, as now.
+
+*Recommend:* (a).
+
+> **Decided 2026-11-14:** (a).
+
+**Q123. Company projects.** `companies_select_project`, `companies_project_update`, `companies_fund_project` and `companies_drop_project` score projects with the old opportunity functions that M09 deletes, and they're switched off along with investment.
+- (a) Delete them now. Ownership and dividends stay, and M10 lets company capital fund opportunities through M09's tiers.
+- (b) Keep them, and the old scoring functions they call, until M10.
+
+*Recommend:* (a).
+
+> **Decided 2026-11-14:** (a).
+
+**Q124. The old investment screen.** `population_economy_window` lists the old investment opportunities and national opportunities, and its buttons call the old effects. Sectors (U2) will show the new tiers.
+- (a) Remove both blocks. A console effect in `_economy_debug.txt` logs each sector's tiers, pools and projects for in-game checks until U2.
+- (b) Replace the old list with a simple per-sector tier table now.
+
+*Recommend:* (a).
+
+> **Decided 2026-11-14:** (a).
+
+**Q125. Pro rata funding spreads capital too thin (raised by the first simulator run).** ENG's capital, about £0.9M a month, faced about £48M of opportunities, so pro rata funding gave every project about 2% of its headroom. New plants opened at 0.06–0.27 of a level, and each tiny project held its plant for its whole 15–30 month build, since a project takes as long whatever its size and nothing is added to a project under way.
+- (a) Pro rata by sector. Each sector gets the same share of its tier's value (60% of steel's £20M is £12M). Within the sector, the money funds whole projects in the order found, and only the last one is partial, if at least 0.1 levels. Unspent money stays where it came from.
+- (b) Pro rata across every opportunity, but a project starts only if its share is at least 0.1 levels, and the rest of the money waits for next month.
+- (c) Keep tiny projects.
+
+*Recommend:* (a).
+
+> **Decided 2026-11-14:** (a). The minimum is `global.investment_min_project`.
+
+**Strat's addition (2026-11-14):** a state-industry with construction under way gets no new expansion opportunity, since adding to a project only delays its completion. This is the spec's one project per state-industry at a time (§13.5).
+
+**Defaults taken without a question** (raise any of them to change it):
+- One opportunity per state-industry a month: whichever pays better of an upgrade and an expansion, and nothing while the state-industry is building or retooling. (Until 2026-11-15 an upgrade was looked at first, and Strat's July 1857 save showed a Marginal upgrade taking an Exceptional expansion's place.)
+- ROI is a year's operating profit over the full cost of a level (construction plus investment cost). An existing state-industry uses its trailing margin × last month's revenue. A new state or a new sector is worked out from the PM/AM cache at the sector's newest methods, with the state's wage, Infrastructure Efficiency and quality, at its target utilisation.
+- The tiers' money is capital cost (headroom × construction cost), as in the brief. Retained capital pays 25% of it, and the general pool pays 125% of it (Q117).
+- Opportunities are found in the state loop, from last month's accounts. They're funded and started the same month, after `sectors_update`, so the money matches exactly.
+- The greenfield search is a short country list: sectors that want to expand, and, when the general pool can afford a first plant, the best few sectors new to the country. Small countries get a shorter list. Each sector gets its best state, so at most one new establishment a month (§13.5).
+- Retained earnings move a share into the general pool through a new `sector_capital_mobility` modifier. Until the financial-system laws are in play, that's the base value in `_economy_setup.txt`, and M13/M14 set each law's value (§34 leaves the shares to tuning).
+- Capacity decay (Q87) is switched on, and `global.eco_investment_enabled` is deleted with the old system (Q4).
+
+## Investment playtest follow-ups (raised 2026-11-15, M09)
+
+**Q126. A minimum investment that falls with time (Strat, 2026-11-15).** Strat: "Maybe no investment should happen until after a point. Like they catalogue when their last investment was (probably comparing via year*12+month value), and the longer it's been the more willing they are to dump money in. It might start at enough for 1.0 size, then decrease by like 0.1 a month until a min of 0.1. This should probably also account for available capital." A build takes the same 15–24 months whatever its size, so today's harm is a 0.1-level sliver that holds its plant for a whole build. Four questions:
+- **What must reach the minimum:** (a) only partly funded projects. A project the money funds whole goes ahead at any size, since under the 80% rule it's all its plant can take. (b) Every project, which makes small plants in a busy sector wait as long as the sector keeps starting projects elsewhere.
+- **Whose clock:** (a) per sector, its last start anywhere in the country. (b) Per country. (c) Per state-industry, which would only reach first plants, since a plant's clock runs down during its own build.
+- **At game start:** (a) every clock starts at game start, so the first months need full levels. (b) As if long ago, at the floor.
+- **Available capital:** the minimum is checked against the money in hand, the sector's capital plus its share of the pool. Pool money a sector declines (a) goes to the tier's other declined projects in the order found, and what's still left waits for next month instead of funding a worse tier; (b) waits in the pool; (c) falls through to the next tier, as before.
+
+*Recommend:* (a) for each.
+
+> **Decided 2026-11-15:** (a) for each. The minimum is `global.investment_min_project_start` (1) levels in the month after the sector's last start, falling `global.investment_min_project_step` (0.1) a month to `global.investment_min_project` (0.1).
+
+**Defaults taken without a question** (raise any of them to change it):
+- The clock is a month index, `global.years_passed` × 12 + `global.month`, kept in `sector_last_investment@`. It reads 0 until the sector's first start, which is game start.
+- Only expansions and new plants start the clock again. Upgrades, prospecting and infrastructure are exempt from the minimum and leave the clock alone.
+- Each sector's minimum is set once a month, before funding (`sector_investment_min@`), so a sector can start several projects in the month it invests.
+- Pool money a tier declined also isn't used by a lower tier's prospecting that month.

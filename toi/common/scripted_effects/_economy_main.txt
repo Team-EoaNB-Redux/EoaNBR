@@ -76,7 +76,8 @@ _country_advance_time = {
     update_national_production_methods = yes
     r_update_modifiers_country_effects = yes
     bureaucracy_and_manpower_update = yes # Bureaucratic jobs and active manpower for the states below
-    sectors_monthly = yes # National sectors: last month's retained earnings become capital, and target utilisation steps
+    sectors_monthly = yes # National sectors: target utilisation steps
+    investment_prepare = yes # Clears last month's opportunities, pauses sectors over their debt limit, picks the greenfield search (M09)
     #buildings_update_base_latest_vals = yes
     every_controlled_state = {
         r_update_modifiers_state_effects = yes
@@ -88,6 +89,7 @@ _country_advance_time = {
 
         base_wage_update = yes # Floating wage: evolves base_wage from labor utilization + inflation (was base_wage_calculation)
         industries_monthly = yes # Trailing margins, capacity decay
+        investment_state_opportunities = yes # This month's investment opportunities, from last month's accounts (M09)
 
         pops_balance = yes
         fix_negative_workforce = yes
@@ -110,14 +112,6 @@ _country_advance_time = {
     manufacturing_contracts_monthly = yes # HOI4's offmap factories move toward last month's targets (M08)
     manufacturing_base_update = yes # The Manufacturing Base and its contracts' targets (M08)
 
-    ## INVESTMENT ##
-	if = {
-		limit = { check_variable = { global.eco_investment_enabled = 1 } }
-		io_cleanup_flags = yes
-		io_refresh_list = yes
-		io_update = yes
-	}
-	
     # Companies (MVP)
     # _monthly accrues last tick's retained earnings to treasuries; _update then recomputes P&L + the dividend
     # payout/retained from this tick's (freshly updated) building finances, consumed next tick by the pull in
@@ -125,17 +119,11 @@ _country_advance_time = {
     companies_monthly = yes
     companies_update = yes
 
-	# Investment Fund
-    investment_fund_update = yes
-	if = {
-		limit = { check_variable = { global.eco_investment_enabled = 1 } }
-		investment_funds_monthly = yes
-		investment_opportunities_monthly = yes
-		national_opportunities_monthly = yes # country-level actions (company founding); funds from leftover investment_fund
-	}
-
     ## UPDATING EVERYTHING ##
     update_country_pop_stats = yes
+
+    ## INVESTMENT ##
+    investment_monthly = yes # The pools take in the month's money, pay construction bills, and fund the opportunities (M09)
 
     # 0.2 secs
     market_leader_check = yes
@@ -462,6 +450,10 @@ on_monthly_industries = {
         if = {
             limit = {
                 check_variable = { construction@var:om_building > 0 }
+                OR = { # A sector over its borrowing limit pauses what it pays for itself (Q118)
+                    NOT = { check_variable = { construction_financier@var:om_building = 0 } }
+                    check_variable = { controller:sector_construction_paused@var:om_building = 0 }
+                }
             }
             set_temp_variable = { const_speed = construction@var:om_building }
             set_temp_variable = { construction_speed_temp = 1 }
@@ -480,7 +472,9 @@ on_monthly_industries = {
 				# RGOs are deposit-based: add_rgo_internal (below) handles size/jobs/ET/ownership. Only non-RGOs use add_x.
 				if = {
 					limit = { NOT = { check_variable = { global.building_rgo@var:om_building = 1 } } }
+					set_temp_variable = { skip_update_temp = 1 } # The state loop updates it later this month
 					add_x_industry_internal = yes
+					set_temp_variable = { skip_update_temp = 0 }
 				}
                 if = {
                     limit = {
@@ -494,16 +488,6 @@ on_monthly_industries = {
 					add_rgo_internal = yes
                 }
 
-                # Clear the financing company's active-build marker so it can start a new project.
-                if = {
-                    limit = {
-                        check_variable = { financer_temp > 0 }
-                        NOT = { check_variable = { financer_temp > 10500 } }
-                    }
-                    set_variable = { global.company_project_state@var:financer_temp = 0 }
-					set_variable = { global.company_project_industry@var:financer_temp = 0 }
-                }
-
                 set_variable = { construction_financier@var:om_building = 0 }
                 set_variable = { construction@var:om_building = 0 }
             }
@@ -511,6 +495,10 @@ on_monthly_industries = {
         if = {
             limit = {
                 NOT = { check_variable = { retooling_pm@var:om_building = 0 } }
+                OR = {
+                    NOT = { check_variable = { retooling_financier@var:om_building = 0 } }
+                    check_variable = { controller:sector_construction_paused@var:om_building = 0 }
+                }
             }
             set_temp_variable = { const_speed = 1 }
             add_to_temp_variable = { const_speed = building_retooling_speed_factor }

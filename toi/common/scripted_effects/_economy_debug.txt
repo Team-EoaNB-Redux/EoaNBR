@@ -186,3 +186,19 @@ calculate_manpower_recovery = {
 	round_variable = manpower_recovery
 	log = "Manpower Recovery: [?manpower_recovery|0]"
 }
+
+# Logs the country's investment (M09) until the Sectors tab (U2) shows it: the pools, what they funded this month, and each
+# sector's capital, debt, construction and opportunities by tier, at capital cost. Console: effect eco_investment_report = yes
+eco_investment_report = {
+	log = "[THIS.GetTag] investment: general pool [?investment_fund|0] (in [?investment_fund_income|0], out [?investment_fund_spending|0]), infrastructure fund [?infrastructure_fund|0]"
+	log = "  this month: opportunities [?investment_opportunities_value|0], funded by sector capital [?investment_funded_retained|0] and the pool [?investment_funded_pool|0], [?investment_projects_started|0] projects started"
+	for_each_loop = {
+		array = sectors
+		value = s_token
+		set_temp_variable = { report_1_temp = sector_opportunity_value@var:s_token^0 }
+		set_temp_variable = { report_2_temp = sector_opportunity_value@var:s_token^1 }
+		set_temp_variable = { report_3_temp = sector_opportunity_value@var:s_token^2 }
+		set_temp_variable = { report_4_temp = sector_opportunity_value@var:s_token^3 }
+		log = "  [?s_token.GetTokenKey]: size [?sector_size@var:s_token|1], target [?sector_utilisation@var:s_token|0]%, capital [?sector_capital@var:s_token|0], reserve [?sector_construction_reserve@var:s_token|0], debt [?sector_debt@var:s_token|0] (paused [?sector_construction_paused@var:s_token|0]), building [?sector_construction@var:s_token|1], minimum [?sector_investment_min@var:s_token|1] | Exceptional [?report_1_temp|0] Good [?report_2_temp|0] Fair [?report_3_temp|0] Marginal [?report_4_temp|0]"
+	}
+}

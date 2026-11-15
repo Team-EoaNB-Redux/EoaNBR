@@ -265,21 +265,8 @@ _country_fin = {
     # Update country pop stats
     update_country_pop_stats = yes
 
-    # Investment Opportunities Setup
+    # Investment (M09): the general pool's income for the budget screen
 	investment_fund_update = yes
-    industries_highest_productivity_update = yes
-    industries_retoolable_update = yes
-	if = {
-		limit = { check_variable = { global.eco_investment_enabled = 1 } }
-		investment_opportunities_cap_calc = yes
-		set_temp_variable = { needed_temp = investment_opportunities_cap }
-		io_add_random = yes
-		sort_io_list = yes
-		io_update = yes
-		investment_funds_monthly = yes
-		investment_opportunities_monthly = yes
-		io_update = yes
-	}
     
     # Initializes debt
 	#bank_update = yes - disable until bank system is done
@@ -475,9 +462,6 @@ initialize_country = {
         buildings_global_var_setup = yes
 
         #Investment
-            set_variable = { global.base_investment_opportunities_cap = 2 }     # Base amount of investment opportunities
-            set_variable = { global.upper_class_per_investment_opportunity = 5 } # How many upper-class pops (K) add 1 to the investment opportunity cap
-
             # Pop investment appetite is damped when the investment fund accumulates undeployed capital (it can't
             # find opportunities to spend on). Overhang = investment_fund / gdp*tolerance.
             set_variable = { global.investment_pool_tolerance = 0.25 } # Ratio of monthly GDP at when fund is dampened to floor
@@ -1174,11 +1158,36 @@ initialize_country = {
         set_variable = { global.local_utilisation_gain = 50 } # Points a state-industry shifts per unit by which its trailing margin beats the national margin (industry_utilisation_calc)
         set_variable = { global.local_utilisation_shift = 5 } # Most points it shifts either way
         set_variable = { global.industry_margin_weight = 0.2 } # How far each month moves a state-industry's trailing margin toward the month's (industries_monthly)
-        # Capacity decay (Q23, Q87, industries_monthly). Only while global.eco_investment_enabled
+        # Capacity decay (Q23, Q87, industries_monthly)
         set_variable = { global.industry_decay_margin = -0.05 } # Trailing margin below which a building shrinks
         set_variable = { global.industry_decay_rate = 0.01 } # Share of its generic size it loses a month
         set_variable = { global.industry_decay_floor = 0.1 } # Size below which its generic share closes
-        set_variable = { global.eco_investment_enabled = 0 } # Investment opportunities, the fund's spending & national opportunities. Off until the investment rework
+        # Investment (M09, §13, _economy_investment.txt)
+        set_variable = { global.investment_target_utilisation = 80 } # A sector expands while its target utilisation is above this, toward the capacity it wants (Q120)
+        set_variable = { global.investment_min_project = 0.1 } # Smallest expansion worth starting, in levels, and the lowest a sector's minimum for a partly funded one falls to (Q126)
+        set_variable = { global.investment_min_project_start = 1 } # A sector's minimum for a partly funded project, in levels, in the month after its last start (Q126)
+        set_variable = { global.investment_min_project_step = 0.1 } # How much that minimum falls each month the sector starts nothing
+        set_variable = { global.investment_new_plant_size = 1 } # Levels in a sector's first plant in a state (Q120), and in an infrastructure project
+        set_variable = { global.investment_upgrade_check_chance = 0.25 } # Chance a month that a plant behind its sector's newest PM or AM prices the upgrade
+        set_variable = { global.investment_employed_share = 0.03 } # Share of the employed counted as free labour, with the unemployed and peasants (Q119)
+        clear_array = global.investment_tier_roi # The lowest ROI of each tier, a year's profit over a level's full cost: Exceptional, Good, Fair, Marginal (§13.4)
+        add_to_array = { global.investment_tier_roi = 0.2 }
+        add_to_array = { global.investment_tier_roi = 0.1 }
+        add_to_array = { global.investment_tier_roi = 0.05 }
+        add_to_array = { global.investment_tier_roi = -0.05 }
+        clear_array = global.investment_lists # The opportunity lists: the four tiers, then infrastructure
+        add_to_array = { global.investment_lists = 1 }
+        add_to_array = { global.investment_lists = 2 }
+        add_to_array = { global.investment_lists = 3 }
+        add_to_array = { global.investment_lists = 4 }
+        add_to_array = { global.investment_lists = 5 }
+        set_variable = { global.sector_capital_mobility_base = 0.2 } # Share of retained earnings that goes to the general pool, before the sector_capital_mobility modifier (§13.2)
+        set_variable = { global.sector_debt_limit = 0.5 } # Most debt a sector runs up for construction, as a share of its plants' value, built and being built (Q118)
+        set_variable = { global.investment_search_base = 2 } # Sectors a country looks for new states for each month (§13.5) ...
+        set_variable = { global.investment_search_per_state = 0.05 } # ... plus this per controlled state ...
+        set_variable = { global.investment_search_max = 6 } # ... up to this
+        set_variable = { global.investment_new_sector_min_pool = 2000 } # The general pool a country needs before it looks at sectors new to it
+        set_variable = { global.government_investment_max = 5 } # Most of GDP, in %, each government investment line can take (change_development_fund, change_infrastructure_investment)
 
         # Infrastructure dependence by global.building_type (0 = no type set: RGOs of factory goods)
         clear_array = global.infrastructure_dependence_by_type
@@ -1191,10 +1200,6 @@ initialize_country = {
         add_to_array = { global.infrastructure_dependence_by_type = 0.5 } # Urban
         set_variable = { global.start_construction_cost_multiplier = 0.25 } #Multiplier on total cost on how much you need to put down to start construction
 
-        # Investment bucket system
-        set_variable = { global.investment_national_fraction_base = 0.5 } # Base share of raised capital sent to the national fund (rest stays in state buckets); financial-system law tilts via modifier@investment_national_fraction
-        set_variable = { global.investment_state_min_action = 100 } # Min investment_pool before a state bucket bothers scanning for a local action (perf gate - tune to typical build cost)
-        set_variable = { global.investment_saturation_ref = 1000 } # Category saturation reference: score /= (1 + pending_investment/ref). Higher = weaker diminishing-returns suppression (TUNE)
 
         # Manufacturing Base (M08): the size of a country's manufacturing industries, plus content's bonuses (manufacturing_base_update)
         set_variable = { global.manufacturing_contract_cost = 100 } # Monthly cost of each contracted factory (Q113)
@@ -1356,7 +1361,21 @@ initialize_country = {
                 add_to_array = { global.building_base_production@var:r_token = r_token }
             }
         }
-		
+
+        # The sectors a country can open with outside money (investment_prepare): its buildings and RGOs. The infrastructure
+        # fund builds railways and ports
+        clear_array = global.investment_new_sector_tokens
+        for_each_loop = {
+            array = global.building_token_array
+            value = b_token
+            add_to_array = { global.investment_new_sector_tokens = b_token }
+        }
+        for_each_loop = {
+            array = global.rgo_token_array
+            value = b_token
+            add_to_array = { global.investment_new_sector_tokens = b_token }
+        }
+
         # Initialize pm_token_array
         clear_array = global.pm_token_array
         add_to_array = { global.pm_token_array = token:pm_subsistence_farming }
@@ -2127,9 +2146,6 @@ for_each_loop = {
 
         # Calculates building vals based on latest available
         #buildings_update_base_latest_vals = yes 
-
-        # Initializes IO cap (requires pop stats), IO generation (requires GDP)
-        investment_opportunities_cap_calc = yes
 
         budget_update = yes
         national_debt_update = yes

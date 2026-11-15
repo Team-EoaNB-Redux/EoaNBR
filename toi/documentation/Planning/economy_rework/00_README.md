@@ -3,7 +3,7 @@
 **Strat's decision, 2026-11-11:** build the economy to the new spec first, then balance the 1857 start. Until then the map stays stripped to subsistence, and a few small test industries in Britain are fine for checking that mechanisms work. Balance waits for M14. Debt is off for every country for the same reason (`global.eco_debt_enabled = 0`, from M00).
 
 - **Target design:** [EOANB_Redux_Economy_Redesign_Updated.md](EOANB_Redux_Economy_Redesign_Updated.md) ("the spec"). The old spec is in [archive/](archive/redux_economy_redesign_spec.md) for history.
-- **Decisions:** [decisions.md](decisions.md). Strat answered every question: Q1–Q84 on 2026-11-12, Q85–Q91 on 2026-11-13 and Q92–Q113 on 2026-11-14. Each milestone lists the questions it depends on.
+- **Decisions:** [decisions.md](decisions.md). Strat answered every question: Q1–Q84 on 2026-11-12, Q85–Q91 on 2026-11-13 and Q92–Q125 on 2026-11-14. Each milestone lists the questions it depends on.
 
 ## Milestones
 Each one is a self-contained piece of work for a fresh session. Do them in order, since each builds on the ones before. The order itself is Q1.
@@ -13,13 +13,13 @@ Each one is a self-contained piece of work for a fresh session. Do them in order
 | M00 | [Test bed](milestones/M00_test_bed.md) | — | Q1–Q5 | Done |
 | M01 | [Gradual prices](milestones/M01_prices.md) | §7 | Q6–Q7, Q56 | Done |
 | M02 | [Pops and labour](milestones/M02_pops_and_labour.md) | §5, §23–30 | Q8–Q14, Q57, Q58, Q61, Q62, Q73–Q80 | Done; checked in-game (month-1 autosave) |
-| M03 | [Wealth and demand](milestones/M03_wealth_and_demand.md) | §24–25, §31–32 | Q15–Q17, Q59, Q60, Q81–Q84 | Done in the simulator; in-game check to do |
+| M03 | [Wealth and demand](milestones/M03_wealth_and_demand.md) | §24–25, §31–32 | Q15–Q17, Q59, Q60, Q81–Q84 | Done; figures checked in-game (July 1857 autosave), screens to check |
 | M04 | [National sectors and target utilisation](milestones/M04_national_sectors.md) | §2–4, §6 | Q18–Q23, Q55, Q85–Q91 | In progress: the systems are done, in the simulator and in Strat's month-1 save; the UI rework remains |
-| M05 | [Land, agriculture and subsistence](milestones/M05_land_and_subsistence.md) | §10–11, §25 | Q24–Q27, Q63, Q71, Q92–Q95 | Done in the simulator; in-game check to do |
-| M06 | [Natural resources](milestones/M06_resources.md) | §9 | Q28–Q30, Q68, Q96–Q101 | Done in the simulator; in-game check to do |
-| M07 | [Infrastructure](milestones/M07_infrastructure.md) | §8 | Q31, Q102–Q105 | Done in the simulator; in-game check to do |
-| M08 | [Manufacturing Base and HOI4 factories](milestones/M08_manufacturing_base.md) | §12 | Q32–Q33, Q64, Q106–Q116 | Done in the simulator; in-game check to do |
-| M09 | [Investment](milestones/M09_investment.md) | §13 | Q34–Q39, Q60 | Not started |
+| M05 | [Land, agriculture and subsistence](milestones/M05_land_and_subsistence.md) | §10–11, §25 | Q24–Q27, Q63, Q71, Q92–Q95 | Done; figures checked in-game (July 1857 autosave), screens to check |
+| M06 | [Natural resources](milestones/M06_resources.md) | §9 | Q28–Q30, Q68, Q96–Q101 | Done; figures checked in-game (July 1857 autosave), screens to check |
+| M07 | [Infrastructure](milestones/M07_infrastructure.md) | §8 | Q31, Q102–Q105 | Done; figures checked in-game (July 1857 autosave), screens to check |
+| M08 | [Manufacturing Base and HOI4 factories](milestones/M08_manufacturing_base.md) | §12 | Q32–Q33, Q64, Q106–Q116 | Done; figures checked in-game (July 1857 autosave), screens to check |
+| M09 | [Investment](milestones/M09_investment.md) | §13 | Q34–Q39, Q60, Q117–Q126 | Done; checked in-game (July 1857 autosave) |
 | M10 | [Companies](milestones/M10_companies.md) | §19 | Q40–Q41, Q66 | Not started |
 | M11 | [Banking, credit and base money](milestones/M11_banking_and_credit.md) | §14–16 | Q42–Q44, Q59, Q65, Q69, Q72 | Not started |
 | M12 | [Money, inflation and currency](milestones/M12_money_and_currency.md) | §16–18 | Q45–Q49, Q67, Q69, Q70 | Not started |
@@ -60,10 +60,10 @@ Q52 to Q54 apply across milestones.
 - **Committed** in `acece860c`: M05 (arable land, land quality, crop eligibility, carrying capacity, half returns past it, rent as a constant, and the peasant basket's home-grown share at base price) and M06 (deposits as state history data, deposit quality, prospecting without finds from nothing, RGOs for natural goods only, and content's `add_resource` calls converted to the economy's wrappers).
 - **Committed** in `4c0daf665`: M07 (the cap on transport supply from population, a shipping price that follows use, ports paid from it and for their local transport, and test railways and ports).
 - **Committed** in `639e32e9b` and `76855b074`: M08 (the Manufacturing Base, factory contracts and offmap factories, on-map factories removed and content converted, the military resource scale and the economic mobilisation share).
-- **Uncommitted:** M08's playtest follow-ups (the law sets the contracted share, and HOI4's factories ramp toward their targets, Q114–Q116).
-- **Switched off:** investment (`global.eco_investment_enabled = 0`), debt (`global.eco_debt_enabled = 0`: starting debt, interest and bankruptcy), the economic cycle (`global.eco_cycle_enabled = 0`), downsizing and banking. Pops borrow, but without interest until M11.
+- **Committed** in `619137bcb`: M08's playtest follow-ups (the law sets the contracted share, and HOI4's factories ramp toward their targets, Q114–Q116).
+- **Uncommitted:** M09 (opportunities in ROI tiers from sector capital and the general pool, construction bills and sector debt, the government's development fund and infrastructure lines, capacity decay on; the old opportunity system, the buckets prototype and company projects deleted), and the scoring system's O(n²) position search replaced.
+- **Switched off:** debt (`global.eco_debt_enabled = 0`: starting debt, interest and bankruptcy), the economic cycle (`global.eco_cycle_enabled = 0`) and banking. Pops and sectors borrow, but without interest until M11. Investment is on since M09, and the switch is deleted.
 - **Known bugs:**
-  - Pop investment money disappears until M09 gives it the general pool.
   - Pops start in debt: the first three ticks overspend against startup's figures (Q81, accepted until M14).
   - Wages rise 0.5% a month wherever jobs are filled exactly, since utilisation then sits at 1.0, above the stable band (M02, Left over).
 
@@ -79,6 +79,8 @@ Run them all from the repo. Simulator details are in `redux-eco-sim/CLAUDE.md`.
 |---|---|
 | Parse check | `redux-eco-sim/bin/ecosim_cli.exe check --parse-only` |
 | Run the simulator | `ecosim_cli.exe run --scenario scenarios/world_1857_eng.txt --months 60 --out runs/<name>`, then read `runs/<name>/report.md` |
+| Find what's slow | A recorded run's report lists scripted effects and triggers by self ops, and the hottest source lines (`profile.csv`, `lines.csv`). Ops don't depend on the machine, so `compare` shows real changes in cost |
+| Profile at full-map scale | `python redux-eco-sim/tools/make_stress_history.py`, then `run --scenario scenarios/world_1857_stress.txt --months 12`: industries and deposits in every state of 500K people or more |
 | A/B two runs | `ecosim_cli.exe compare runs/<baseline> runs/<name>` |
 | Change PM balance | Download the Google Sheet over `toi/documentation/Planning/EoaNBR Economy.xlsx`, run `python toi/documentation/scripts/generate_pm_data.py`, then start a new game |
 | Check script values against the sheet | `python -B toi/documentation/scripts/verify_pm_audit.py` |

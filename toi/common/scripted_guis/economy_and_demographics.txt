@@ -3732,84 +3732,7 @@ scripted_gui = {
 			}
 		}
 
-		triggers = {
-			add_new_opportunity_button_click_enabled = {
-				check_variable = { treasury > investment_opportunity_generation_cost }
-				check_variable = { active_investment_opportunities^num < investment_opportunities_cap }
-				NOT = { check_variable = { active_investment_opportunities^num = investment_opportunities^num } }
-			}
-			fund_all_opportunities_button_click_enabled = {
-				check_variable = { investment_fund_spending < investment_fund_target_spending }
-
-				check_variable = { treasury > investment_opportunity_fund_all_cost }
-				check_variable = { investment_opportunity_fund_all_cost > 0 }
-				check_variable = { active_investment_opportunities^num > 0 }
-			}
-			fund_opportunity_button_click_enabled = {
-				check_variable = { investment_fund_spending < investment_fund_target_spending }
-
-				set_temp_variable = { cost_temp = investment_opportunity_cost@var:v }
-				subtract_from_temp_variable = { cost_temp = investment_opportunity_investment@var:v }
-				check_variable = { treasury > cost_temp }
-				check_variable = { cost_temp > 0 }
-			}
-			company_project_currency_icon_visible = {
-				NOT = { check_variable = { global.company_project_type@var:v = 0 } }
-			}
-			company_project_cost_visible = {
-				NOT = { check_variable = { global.company_project_type@var:v = 0 } }
-			}
-			company_project_location_visible = {
-				NOT = { check_variable = { global.company_project_type@var:v = 0 } }
-			}
-			company_project_attractiveness_visible = {
-				NOT = { check_variable = { global.company_project_type@var:v = 0 } }
-			}
-		}
-
 		effects = {
-			add_new_opportunity_button_click = {
-				subtract_from_variable = { treasury = investment_opportunity_generation_cost }
-				set_temp_variable = { needed_temp = 1 }
-				io_add_random = yes
-				io_update = yes
-				sort_io_list = yes
-			}
-			fund_all_opportunities_button_click = {
-				subtract_from_variable = { treasury = investment_opportunity_fund_all_cost }
-				for_each_loop = {
-					array = active_investment_opportunities
-					value = io_num_temp
-					index = ii
-					if = {
-						limit = {
-							check_variable = { investment_opportunity_investment@var:io_num_temp < investment_opportunity_cost@var:io_num_temp }
-						}
-						set_variable = { investment_opportunity_investment@var:io_num_temp = investment_opportunity_cost@var:io_num_temp }
-					}
-				}
-				set_temp_variable = { i_temp = 0 }
-				while_loop_effect = {
-					limit = {
-						check_variable = { i_temp < investment_opportunities_cap }
-					}
-					set_temp_variable = { io_num_temp = active_investment_opportunities^0 }
-					evaluate_investment_opportunity = yes
-
-					add_to_temp_variable = { i_temp = 1 }
-				}
-				io_update = yes
-			}
-			fund_opportunity_button_click = {
-				set_temp_variable = { cost_temp = investment_opportunity_cost@var:v }
-				subtract_from_temp_variable = { cost_temp = investment_opportunity_investment@var:v }
-        		divide_temp_variable = { cost_temp = modifier@government_investment_efficiency_factor }
-				subtract_from_variable = { treasury = cost_temp }
-				set_variable = { investment_opportunity_investment@var:v = investment_opportunity_cost@var:v }
-
-				set_temp_variable = { io_num_temp = v }
-				evaluate_investment_opportunity = yes
-			}
 			close_button_click = {
 				clr_country_flag = population_economy_view_open
 				clr_country_flag = country_new_trade_route_view_open
@@ -3820,23 +3743,11 @@ scripted_gui = {
 			line_segment = {
 				frame = segment_value
 			}
-			investment_building_icon = {
-				image = "[GetInvestmentOpportunityIcon]"
-			}
 			currency_icon = {
 				image = "[GetCurrencyIcon]"
 			}
-			fund_all_opportunities_button = {
-				image = "[GetCurrencyButton]"
-			}
-			fund_opportunity_button = {
-				image = "[GetCurrencyButton]"
-			}
 			company_focus = {
 				image = "[GetCompanyIcon]"
-			}
-			company_project_currency_icon = {
-				image = "[GetCurrencyIcon]"
 			}
 		}
 
@@ -3850,10 +3761,6 @@ scripted_gui = {
 				array = companies
 				entry_container = company_entry
 				change_scope = no
-			}
-			investment_opportunities_entries = {
-				array = active_investment_opportunities
-				entry_container = investment_opportunity_entry
 			}
 			economy_graph = {
 				array = gdp_graph_frames

@@ -7,7 +7,7 @@ A company is a permanent, cached national entity layered over state industries. 
 
 ## Exists now
 - **MVP** (`_economy_companies.txt`): company records stored globally and keyed by id, holdings per state and building, dividends pulled to the HQ state, and a split between `companies_monthly` and `companies_update`. It was never finished, and the original full plans aren't available.
-- **Founding** is a national opportunity in `_economy_investment.txt`, switched off.
+- **Founding and company projects** were scored with the old investment opportunities, and M09 deleted them with that system (Q123). Company capital (`global.company_treasury@`) accumulates, but nothing spends it. Company investment can fund through M09's opportunity lists (`investment_states@<tier>`, `investment_industries@<tier>`). `investment_start_construction` sets financer 0, the generic owner; a company-funded start would set the company's id instead.
 - **Gaps** in the memory notes: holdings aren't reconciled when an industry shrinks, a state changing hands isn't handled, and the old upgrade financer convention is still in use.
 - **Failure plan:** Strat's notepad (`toi/documentation/Strats_notepad_while_hes_at_uni.txt`, "Failing Companies") describes Chapter 11 reorganisation, Chapter 7 liquidation and player bailouts. The politics rework has insolvency laws (`insolvency_law_tokens`).
 - No companies exist in play.

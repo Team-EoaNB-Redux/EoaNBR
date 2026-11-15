@@ -19,7 +19,7 @@ The economy ticks once a month for every country. Trade ticks weekly. Players ac
 
 ## 2. The whole system in one paragraph
 
-Every state has a population split into five classes, and a set of industries. Industries hire pops, turn input goods into output goods with a production method, sell the output at the market price, pay wages, and pass profit to their owners. Pops spend toward a target set by their income and consumer confidence, on a basket of goods that grows with their wealth. They hold no savings, and the classes that can borrow run into debt when they overspend. All production and consumption in a country and its subjects is pooled into one market, with one price per good, and each price moves with the ratio of demand to supply. Markets trade with each other weekly through a global market. Governments tax income, spending, dividends and trade, and spend on administration, the military, research, construction and subsidies. Deficits become debt, and too much debt ends in bankruptcy. Each state's wage floats with how tight its labour market is. The intended growth engine is investment, where retained profit and pops' investment build and upgrade industries. It is switched off while it's rewritten, so nothing grows on its own at the moment.
+Every state has a population split into five classes, and a set of industries. Industries hire pops, turn input goods into output goods with a production method, sell the output at the market price, pay wages, and pass profit to their owners. Pops spend toward a target set by their income and consumer confidence, on a basket of goods that grows with their wealth. They hold no savings, and the classes that can borrow run into debt when they overspend. All production and consumption in a country and its subjects is pooled into one market, with one price per good, and each price moves with the ratio of demand to supply. Markets trade with each other weekly through a global market. Governments tax income, spending, dividends and trade, and spend on administration, the military, research, construction and subsidies. Deficits become debt, and too much debt ends in bankruptcy. Each state's wage floats with how tight its labour market is. The growth engine is investment (M09): retained profit and pops' investment build and upgrade industries where they pay best, and grow the sectors that are working near capacity.
 
 ## 3. The building blocks
 
@@ -68,7 +68,7 @@ Industries unlock with technology. Every industry runs one production method and
 ### Production methods (PMs) and automation methods (AMs) [LIVE]
 - A **PM** is a recipe. Per thousand base workers it sets how much the industry makes, which inputs it needs, how the jobs split between the working and middle classes, how much transport it uses, and what it costs to build and how long that takes. PMs come in four eras: 1857, 1900, 1950 and 2000.
 - An **AM** is a second layer on top: steam engines, electrification, assembly lines, robots and so on. AMs mainly cut labour and add inputs such as machinery.
-- Technology unlocks PMs and AMs. New buildings start on the latest unlocked method. Existing buildings only change method by retooling, which costs goods and time, and the AI only retools through investment, which is off.
+- Technology unlocks PMs and AMs. New buildings start on the latest unlocked method. Existing buildings only change method by retooling, which costs goods and time. Investment retools them when the newer method pays (M09).
 - Every PM number is generated from Strat's "EoaNBR Economy" spreadsheet by a script. The sheet is where balancing happens.
 - Technology bonuses to individual PMs were stripped out in the October 2026 rework and haven't been added back.
 
@@ -115,24 +115,25 @@ Then each country, in rank order:
 
 1. Last month's net budget goes into the treasury. AI countries adjust their budget, and the spending sliders' bonuses update.
 2. Technology unlocks and their modifiers refresh. Each state's bureaucratic jobs and its share of active manpower are set.
-3. Each sector's last month's retained earnings become its capital, and its target utilisation steps toward what last month's margin calls for (M04).
+3. Each sector's target utilisation steps toward what last month's margin calls for (M04). Last month's investment opportunities are cleared, sectors over their debt limit pause their construction, and the country picks the sectors that will look for a new state (M09).
 4. For each state the country controls:
    1. Construction and retooling progress. Finished projects add size.
    2. Prospecting searches resolve.
    3. Pops settle last month's finances: overspending becomes debt for the classes that borrow, and wealth moves toward the level where spending meets the target. Population grows, slaves above their cap are freed, soldiers are drawn or returned, qualifications are gained and lost, and peasants and the working class move between farming and industry.
    4. The state's base wage moves according to last month's labour market.
-   5. Each industry's trailing margin moves toward last month's. A building that keeps losing money shrinks, but only while investment is on.
-   6. Pops move between the working, middle and upper classes to fit the jobs on offer, within their qualifications.
-   7. Everything is recomputed: arable land and subsistence, jobs and employment (bureaucratic jobs included), production and each industry's finances, the upper class's dividends from last month's sector accounts, then each class's earnings, needs, taxes, confidence and targets.
+   5. Each industry's trailing margin moves toward last month's. A building that keeps losing money shrinks.
+   6. Each industry's investment opportunity for the month, if it has one, and this state's place as a new home for the searching sectors (M09).
+   7. Pops move between the working, middle and upper classes to fit the jobs on offer, within their qualifications.
+   8. Everything is recomputed: arable land and subsistence, jobs and employment (bureaucratic jobs included), production and each industry's finances, the upper class's dividends from last month's sector accounts, then each class's earnings, needs, taxes, confidence and targets.
 5. The country works out the goods its industries and pops make and use, by sector and method rather than state by state, which its market reads until next month. Then each sector's national accounts: this month's revenue, costs, profit, profit tax, retained share and dividends (M04). Then HOI4's offmap factories move toward last month's contract targets, and the Manufacturing Base and its targets are recomputed (M08).
-6. Companies and investment-fund bookkeeping. Investment opportunities are off.
+6. Companies' bookkeeping. Then investment (M09): retained earnings, pops' investment and the government's lines come in, construction bills are paid, and the month's opportunities are funded, best tier first. What's funded starts at once.
 7. Market leaders recompute supply, demand and target prices for their whole market from the members' totals, the market screen's statistics, and GDP.
 8. The budget is recomputed: taxes, spending, debt and interest.
 9. Statistics and graphs. The boom and recession check would run here from the second year, but it's switched off during the rework.
 
 Weekly: markets recompute supply, demand and target prices with current trade and military demand, from each member's goods totals of its last monthly tick (industries and pops only change monthly), the global market updates, the trade AI adjusts routes, and trade flows recompute. Actual prices don't change during the month. Trade stays weekly so that HOI4's military factories get their resources within a week.
 
-**The lags matter.** Wages react to last month's labour market, target utilisation to last month's margins, and pops act on last month's earnings. These one-month delays are a big part of why the economy can swing (see section 6).
+**The lags matter.** Wages react to last month's labour market, target utilisation to last month's margins, investment to last month's accounts, and pops act on last month's earnings. These one-month delays are a big part of why the economy can swing (see section 6).
 
 ## 5. How the pieces work
 
@@ -151,7 +152,7 @@ Weekly: markets recompute supply, demand and target prices with current trade an
 - **Revenue:** output sold at the market price. Railways and ports get their transport fee instead. A state-industry stores only what the accounts add up (revenue, inputs, payroll, maintenance) and a trailing margin. The industry screens work out the rest.
 - **Costs:** wages (base wage × the class's multiple × employees, with nothing paid for slaves), inputs bought at market price, and **maintenance**. Maintenance is a fixed upkeep of about 3% of build cost a year, paid even on idle capacity.
 - **Sectors keep the accounts (M04).** Every industry token except subsistence farms is a national sector. Each month a country adds up each sector's revenue, inputs, payroll and maintenance from its states into one record (`sector_*@<sector>`), with its operating profit and margin. The record also holds what a national screen shows (Q91): jobs and employment per class, transport, construction and retooling under way, reserves, and the method mix.
-- **Profit** pays corporate tax when it's positive, at the country's rate. The sector keeps `global.sector_retained_share` (30%) of what's left as **sector capital**, scaled by investment appetite from incentives, and pays the rest as dividends. M09 will spend the capital; until then it only accumulates. Employees get no bonuses: wages are their share.
+- **Profit** pays corporate tax when it's positive, at the country's rate. The sector keeps `global.sector_retained_share` (30%) of what's left as **retained earnings**, scaled by investment appetite from incentives, and pays the rest as dividends. Retained earnings repay the sector's debt, a share goes to the general investment pool, and the rest is its capital (M09). Employees get no bonuses: wages are their share.
 - **Loss** comes out of the sector's capital first, then out of dividends, which go negative. Sectors can't borrow until M11.
 - **Dividends** are paid by size: each state's upper class gets the sector's dividend per size × the size it owns there, a month later. Subsistence rent (20% of subsistence output) goes to its own state's upper class directly.
 - **Ownership:** the upper class owns every industry's generic share, its size less what companies hold. Companies can own slices of an industry (see below).
@@ -177,7 +178,7 @@ Weekly: markets recompute supply, demand and target prices with current trade an
 Built in M03. Pops hold no savings.
 - **Income** is gross: a small universal base income, plus wages (or the subsistence share for peasants), and for the upper class its dividends, which include the subsistence rent. Slaves get nothing. Income tax is charged on all of it.
 - **Taxes** are part of what a class spends: income tax by bracket (lower, middle or upper, depending on a class's average earnings against the national average), and sales tax on what it spends on goods. Corporate tax is paid by the sectors before dividends.
-- **Investment:** the middle and upper classes put a share of their after-tax income into the investment pool (`middle_class_investment_contribution_factor`, base 10%, and `upper_class_investment_contribution_factor`, base 20%, at most 80%), scaled by incentives. The pool arrives in M09, so for now the money disappears.
+- **Investment:** the middle and upper classes put a share of their after-tax income into the investment pool (`middle_class_investment_contribution_factor`, base 10%, and `upper_class_investment_contribution_factor`, base 20%, at most 80%), scaled by incentives. It goes into the general investment pool (M09).
 - **Wealth,** from 1 to 200, sets each class's basket of goods (it was called standard of living until M03). The wealth-1 basket is worth `global.pops_base_spending` per thousand pops a month at base prices: 0.1 since M01, cut from 0.3, which had pinned food at its cap. Food comes first. Textiles, consumer goods and services follow, then luxuries from around wealth 21, and later electricity, appliances, vehicles and computers. The basket's value roughly doubles every 10 levels. It's defined in base-price value and bought at market price, so expensive goods squeeze pops. A separate SoL, worked out from wealth plus things like pollution, comes later.
 - **Technology gates needs.** If a good isn't available yet, such as electricity, an older substitute fills the need. A state's electrification shifts the basket over time, although nothing sets electrification yet.
 - **Target spending** = (income − investment) × consumer confidence. Spending is goods, taxes and debt repayments. Each month, wealth moves toward the level where spending meets the target: progress builds by `global.pops_wealth_speed` (6) × the gap ÷ goods spending, and each whole point moves wealth one level.
@@ -207,19 +208,42 @@ Built in M03. Pops hold no savings.
 - **Money scale:** 1,000 money units = £1 million, and every flow is per month. The historical UK national income in 1857 was roughly £665M a year, which would be about 55K a month. That's the reference scale for the rebuild, not a value the game currently hits.
 - GDP drives debt ratios, administration cost, each country's share of market trade, and the statistics screens.
 
-### Investment [OFF, being redesigned]
-How the old system works, which is still in the code behind a switch:
-- The upper class puts part of its income into a national **investment fund**. The share depends on their contribution rate, the *incentives* level, and how attractive the best opportunity looks. It's damped if the fund already sits on idle money.
-- The fund keeps a list of **investment opportunities**: build a new industry in a state, expand one, upgrade its PM or AM, exploit known reserves, prospect, or buy a slice of an industry. Each is scored by *attractiveness*, roughly annual return, where 10% ROI scores 100. The fund only backs opportunities scoring at least 100, up to a monthly spending target.
-- A project first pools about 25% of its build cost, then pays the monthly construction cost while it builds. Construction materials are real demand for goods.
-- Players can subsidise opportunities from the treasury.
-- **While it's off,** nothing builds or upgrades on its own. The money pops set aside for investment, and sector capital, aren't spent on anything. The old scrap-based downsizing is deleted (M04). Capacity decay replaces it (M04): a building whose trailing margin is below −5% loses 1% of its generic owner's size a month, but only once the switch is on.
+### Investment [LIVE, M09]
+All of it is in `_economy_investment.txt`, whose header explains the flow.
+
+**Where the money comes from:**
+- **Sector capital** (`sector_capital@`) is what each sector keeps of its profit, so profitable textiles build more textiles. Retained earnings repay the sector's debt first. Then `sector_capital_mobility` of them (20% before laws, for the financial-system laws to set) goes to the general pool.
+- **The general pool** (`investment_fund`) also takes the middle and upper classes' investment and the government's development fund. A sector new to a country can only be built with it, or with the government's money. Foreign capital and bank credit come with M11 and M12.
+- **The infrastructure fund** is the government's second line. It builds railways where states are short of transport and ports on the coast while the market is short of shipping, whatever they earn. Both government lines are a share of GDP that nothing sets until the Budget tab gets its controls.
+
+**Opportunities**, one per state-industry a month, and none while it's building or retooling:
+- **More of an existing plant,** while its sector's target utilisation is above 80%: up to size × (utilisation ÷ 80% − 1), within its known deposits, free farmland and the state's free labour (unemployed, peasants and 3% of the employed).
+- **A first plant in a new state** for each sector that looks for one. That's sectors that want to grow, and, when the general pool can afford it, the best sectors new to the country. The search is shorter for small countries, and each sector opens at most one new establishment a month.
+- **An upgrade** to the sector's newest PM or AM, priced as the plant would be against the plant as it is. A plant that could also expand offers whichever pays better.
+- **Prospecting,** by an RGO that wants to grow but works all its known deposits.
+- **Infrastructure,** from the infrastructure fund.
+
+Each opportunity is ranked in an **ROI tier**, a year's operating profit over a level's full cost: Exceptional over 20%, Good 10–20%, Fair 5–10%, Marginal −5% to 5%, and anything lower is ignored. A sector's tiers show how much each can absorb, at capital cost.
+
+**Funding**, best tier first:
+- Upgrades and prospecting are funded whole.
+- Expansions are funded **pro rata by sector**:
+  - each sector's capital pays the investment cost (25%) of as much of its own as it can;
+  - the general pool funds the same share of every sector's remainder, at full cost;
+  - within a sector, the money builds whole projects in turn;
+  - a project the money can only part-fund needs the sector's minimum: a full level in the month after the sector last started one, falling 0.1 a month to 0.1, so money waits and builds up instead of opening slivers that hold a plant for a whole build (Q126). Pool money a sector declines goes to the tier's other declined projects, and what's still left waits for next month.
+- What's built belongs to the sector's local owners.
+
+**Construction bills and debt:**
+- The goods are bought over the build time, and their cost comes from the money the pool set aside, then the sector's capital, then sector debt, which has no interest until banks arrive in M11.
+- A sector whose debt passes half of its plants' value pauses its construction until retained earnings bring it down.
+
+**Capacity decay:** a building whose trailing margin is below −5% loses 1% of its generic owner's size a month.
 
 ### Companies [PARTIAL]
 - Companies own fractional slices of industries: a size-14 mill might be 2 levels Company A, 4 levels Company B and 8 levels local owners. Each slice earns its share of that industry's profit.
 - A company keeps 30% of its dividends as its treasury and pays the rest to the upper class of its headquarters state, which can be a financial hub far from its holdings.
-- Companies are founded dynamically, as an investment-fund "national opportunity" that buys a slice of a profitable local industry. Each new company makes the next more expensive. Companies can also expand, exploit and prospect.
-- The bookkeeping runs every month, but founding and company investment sit behind the investment switch. In practice no companies exist yet.
+- Company founding and company projects went with the old investment system (M09). M10 rebuilds company investment on M09's tiers. The bookkeeping runs every month, but no companies exist yet.
 - Planned: companies defined at game start, valuations and a stock market, state-owned shares, mergers and acquisitions.
 
 ### Banking and finance [mostly OFF]
@@ -238,15 +262,15 @@ From the second year, every month, each state's GDP is compared with its 3-year 
 - **Price-employment swing (destabilising, much reduced by M01).** A shortage squares into a price spike, the producers' margins jump, they hire up to 20 points in one month, supply overshoots, the price crashes, and they fire. Revenue uses last month's price and hiring uses last month's profit, so the delays amplify the swing. On the test bed, most of the swing turned out to come from the trade AI toggling routes on and off every other week, which M01 fixed. Gradual prices damp the rest. Over 60 simulated months, ENG's GDP now settles instead of swinging ±5% a month, although on the stripped map many goods also sit still at their price cap. M04's target utilisation moves at most 5 points a month, where the old per-industry targets jumped up to 20: on the test bed the largest monthly swing in London's consumer goods output fell from 11 to 4 points.
 - **Wage-labour loop (stabilising).** Tight labour raises wages, which squeezes margins, which slows hiring. Wages are sticky downward, so a slump shows up as unemployment first, and wages fall later.
 - **Bankruptcy spiral.** Debt grows faster than GDP, bankruptcy follows, stability crashes, which cuts productivity and confidence, pops cut their spending, real incomes fall, and GDP falls further.
-- **Infrastructure loop (partial).** Growth raises transport demand, Infrastructure Efficiency falls, and railways and ports earn more. The planned half, where investment then builds more railways and ports, needs investment back.
-- **Investment loop (off).** Profit becomes dividends, dividends feed the investment pool, the pool builds capacity, wages and prices adjust, and the next round of opportunities changes. Without it the economy can only reshuffle labour; it can't grow.
+- **Infrastructure loop.** Growth raises transport demand, Infrastructure Efficiency falls, and railways and ports earn more. Where they still lose money, the government's infrastructure line builds them where states are short.
+- **Investment loop (stabilising, M09).** A sector working above 80% of its capacity, at a good return, builds more. The new capacity lowers its price and margins, its utilisation falls, and it stops building. Sector debt can make a sector overbuild for a while, until its borrowing limit pauses it.
 
 ## 7. Current state (November 2026)
 
 - **The map has been stripped back to subsistence farming,** on purpose. Every state's industries and deposits are commented out of the history files (the old deposits sit as comments in each state's `resources` block), leaving only subsistence. HOI4's own factories went too in M08: they're offmap and follow the Manufacturing Base, which on the stripped map gives almost no country a factory. On the old map, Britain went bankrupt in its first July, in both the game and the simulator. Historical targets for Britain and India are written as comments in the history files.
 - **The plan, decided November 2026: redesign first, balance last.** The economy is being rebuilt to a new design (section 8) in a series of milestones. Only after that will the 1857 map be rebuilt sector by sector so world supply and demand start roughly equal. Until then, the M00 test bed is used to check mechanics: small test industries in five British states (in `# >>> rework test industries` blocks), and debt switched off for every country, so no one goes bankrupt (20 countries did within five years before).
-- **Off:** investment, banking, national debt (starting debt, interest, bankruptcy) and the economic cycle. Pops borrow, but without interest until M11.
-- **Recently done:** the Manufacturing Base, with HOI4's factories offmap and contracted by the state, and military resources at a tenth of a good, shared out by the mobilisation law (M08), a cap on transport supply from population, and a shipping price that follows use, which ports are paid (M07), deposits as state history data (potential, known and worked, with quality), prospecting that only finds what history put there, and RGOs for natural resources only (M06), land quality, crop eligibility and a carrying capacity for subsistence, with peasants paying base prices for what they grow (M05), national sectors with a PM/AM cache, profit tax, retained capital, dividends by size, target utilisation and capacity decay, with no per-good figures kept by states (M04, in progress: the UI rework remains), wealth, spending toward a target, pop debt and middle-class investment (M03), five pop classes with qualifications, slaves, bureaucrats and active manpower (M02), gradual prices (M01), generated PMs, Infrastructure Efficiency, floating wages, maintenance costs, the companies MVP, incentives.
+- **Off:** banking, national debt (starting debt, interest, bankruptcy) and the economic cycle. Pops and sectors borrow, but without interest until M11.
+- **Recently done:** investment from sector capital and a general pool, in ROI tiers, with construction bills, sector debt and the government's development fund and infrastructure lines (M09), the Manufacturing Base, with HOI4's factories offmap and contracted by the state, and military resources at a tenth of a good, shared out by the mobilisation law (M08), a cap on transport supply from population, and a shipping price that follows use, which ports are paid (M07), deposits as state history data (potential, known and worked, with quality), prospecting that only finds what history put there, and RGOs for natural resources only (M06), land quality, crop eligibility and a carrying capacity for subsistence, with peasants paying base prices for what they grow (M05), national sectors with a PM/AM cache, profit tax, retained capital, dividends by size, target utilisation and capacity decay, with no per-good figures kept by states (M04, in progress: the UI rework remains), wealth, spending toward a target, pop debt and middle-class investment (M03), five pop classes with qualifications, slaves, bureaucrats and active manpower (M02), gradual prices (M01), generated PMs, Infrastructure Efficiency, floating wages, maintenance costs, the companies MVP, incentives.
 - **Testing:** a headless simulator called redux-eco-sim runs the mod's real economy scripts outside the game. It matched in-game British GDP to within about 0.5% at startup and after one month, so it's trusted for fast experiments. In-game testing is slow.
 
 ### Known problems
@@ -257,7 +281,7 @@ From the second year, every month, each state's GDP is compared with its 3-year 
 4. Budgets and debt don't scale with GDP: some spending lines stay large when the economy is small. On the test bed, Britain spends about twice its revenue (three times since M01's pop spending cut lowered sales tax), and Britain, France, Russia, Sweden and Spain hit the lending cap and run deeply negative treasuries.
 5. Railways lose money on the test bed: the population baseline covers all of the stripped map's transport demand, so they're paid the floor rate. Under the old 1857 map they were paid little in hubs too. Sizing them is M14's job.
 6. Many late automation upgrades are pointless: once an AM's labour cut hits zero, the extra input cost remains.
-7. Money pops divert to investment disappears while investment is off. So does sector capital: it accumulates (about 1.3K a month for Britain's test industries) until M09 spends it.
+7. Urban centres grow fastest on the test bed (2 to 10 levels in five years), because their margin is about 85%: a balance question for M14. Since Q126, money waits until it can build a sizeable project, but a whole expansion of a small plant can still be 0.1–0.2 levels, and a sector that has waited ten months accepts 0.1 levels again. A country that runs out of opportunities piles up its pool (the USA's holds about £32M by month 60).
 8. **Most goods sit at their price cap** on the stripped map. Military upkeep and the missing industry pin wood, fiber, iron, textiles, services, chemicals, machinery, consumer goods and coal. Peasants, about 98% of ENG's market, left wealth 1 in M05 once they stopped paying market prices for what they grow: by month 60 ENG's are at 5.3, India's at 2.0. Their extra demand puts food at about 2.8× base.
 
 ## 8. Where it's heading [PLANNED]
@@ -269,7 +293,6 @@ The target design is `documentation/Planning/economy_rework/EOANB_Redux_Economy_
 - **Five pop classes** (built in M02, see section 3): slaves, peasants, working class, middle class and upper class, with one floating wage per state. Unemployment is the gap between a class's labour pool and its jobs. Qualifications limit how fast pops move up, as a major barrier to industrialisation. Bureaucratic jobs come from bureaucratic strain and are paid by the government. Active manpower (fielded and training) is taken out of the civilian pools. Wealth (built in M03, see section 3) keeps the old SoL baskets. Pops hold no savings: they spend toward a target set by consumer confidence, and overspending becomes debt, owed to the bank from M11.
 - **Land and resources as state data.** Arable land, land quality and crop eligibility are set in history, with the population formula kept as a fallback for land until every state has it. Subsistence follows a carrying capacity with half returns beyond it, and pays rent to the upper class (built in M05, see section 3). Deposits are potential, known and worked, with quality kept separate from quantity (built in M06, see section 3).
 - **Manufacturing Base** (built in M08, see section 5): HOI4's civilian and military factories and dockyards are offmap buildings, a contracted share of the country's manufacturing industries, split by type, at a cost per factory. Later the contracts may take their output from civilian use (Q32's option (b)).
-- **Investment from capital pools.** Retained capital tends to expand the sector that earned it, and incentives decide how much profit is retained. A share flows into a general pool set by financial laws, alongside pops' own investment, which is how capital crosses sectors. A sector new to a country needs the general pool, credit, government or foreign money. Opportunities are ranked in ROI tiers (Exceptional over 20%, Good 10–20%, Fair 5–10%, Marginal −5% to 5%), with hard caps from deposits and land, and throttles on new establishments.
 - **Companies** are national accounting entities layered over state industries through ownership shares, competing on productivity, methods and leverage.
 - **Finance as the source of booms and busts.** One bank per country holds reserves, loans and capital. Reserves come from base money × banking confidence. Sectors, companies and pops borrow. Credit is capped by both reserves and capital, defaults destroy bank capital, and credit then contracts. The real economy should otherwise settle toward equilibrium.
 - **Money and currency.** All stored values stay real (1857 pounds). One currency per market, and the price level concerns only money in circulation: P × Y = M × V. Inflation erodes stored money, loans and wages. Commodity reserves in valuables, fed by the trade balance, set a damped exchange-rate scalar. Monetary laws change coefficients, not formulas.
@@ -307,7 +330,7 @@ A good proposal for this economy:
 - says what new state it needs to store and how often it runs, and prefers existing levers (modifiers, method data, wages, prices, budget lines) over new variables;
 - explains how AI countries will use it, not just players;
 - lists its tuning knobs and what values are safe;
-- says whether it depends on a system that's off or only planned (investment, banking, companies);
+- says whether it depends on a system that's off or only planned (banking, companies);
 - avoids global optimisation, forecasting and per-tick searches over everything.
 
 If you're unsure whether something exists or is switched on, say so and ask, rather than assuming.
@@ -336,7 +359,7 @@ If you're unsure whether something exists or is switched on, say so and ask, rat
 | Incentives | The long-term property-rights mood that drives investment appetite |
 | Market leader | The country whose market others belong to. It sets prices for all of them |
 | Infrastructure Efficiency | A state's transport supply against demand. It scales throughput |
-| IO | Investment opportunity |
-| Investment fund | A country's pool of owners' money for investment |
+| Investment fund | The general investment pool: pops' investment, a share of retained earnings and the development fund (M09) |
+| ROI tier | An investment opportunity's rank: Exceptional, Good, Fair or Marginal, by a year's profit over its full cost |
 | Debt level | Debt against annual GDP. About 200% triggers bankruptcy |
 | Money scale | 1,000 units = £1M, per month |
