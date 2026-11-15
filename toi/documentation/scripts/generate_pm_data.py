@@ -192,9 +192,6 @@ PLANTATION_AMS = ["pm_manual_farming", "pm_farm_equipment", "pm_automatic_irriga
 ASSIGNMENTS = [
     (["railway"], ["rail"], ["pm_no_automation", "rail_am"]),
     (["port"], ["port"], ["pm_no_automation", "port_am"]),
-    (["arms_factory"], ["pm_arms_factory"], []),
-    (["industrial_complex"], ["pm_industrial_complex"], []),
-    (["dockyard"], ["pm_dockyard"], []),
     (["steel_foundry", "steel"], ["steel"], FACTORY_AMS),
     (["mechanical_works", "machinery"], ["machinery"], FACTORY_AMS),
     (["chemical_plant", "chemicals"], ["chemicals"], FACTORY_AMS),
@@ -514,8 +511,6 @@ def resolve_assignments(methods):
                 amounts = OUTPUT_AMOUNTS[b]
             elif family in PARITY_REFERENCE:
                 mult = price[PARITY_REFERENCE[family]] / price[PARITY_GOOD[b]]
-            elif family.startswith("pm_") and methods[family].family == "govt":
-                amounts = []
             result.append((b, expand(pms), expand(ams), mult, amounts))
     return result, price
 

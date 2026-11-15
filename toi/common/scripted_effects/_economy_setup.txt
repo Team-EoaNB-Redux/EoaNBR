@@ -122,6 +122,18 @@ _init_country = {
 	set_variable = { procurement_spending_percentage = 50}
     budget_clamp = yes
 
+    # Manufacturing Base contracts (M08): the % of the base contracted and its split, which only the player changes.
+    # A country that's reset keeps them
+    if = {
+        limit = { NOT = { has_variable = manufacturing_contract_share } }
+        set_variable = { manufacturing_contract_share = global.manufacturing_contract_share_start }
+        for_each_loop = {
+            array = global.offmap_factory_types
+            value = f_token
+            set_variable = { manufacturing_split@var:f_token = global.manufacturing_split_start@var:f_token }
+        }
+    }
+
     for_each_loop = {
         array = global.resource_token_array
         value = r_token
@@ -237,6 +249,7 @@ _country_fin = {
     # Country
 
     sectors_update = yes # The first month's dividends and profit tax
+    manufacturing_base_update = yes # HOI4's factories, from the start
 
     if = { # Finalize market details
         limit = {
@@ -1182,16 +1195,21 @@ initialize_country = {
         set_variable = { global.investment_state_min_action = 100 } # Min investment_pool before a state bucket bothers scanning for a local action (perf gate - tune to typical build cost)
         set_variable = { global.investment_saturation_ref = 1000 } # Category saturation reference: score /= (1 + pending_investment/ref). Higher = weaker diminishing-returns suppression (TUNE)
 
-        set_variable = { global.base_govt_building_productivity = 1.5 } # Base productivity of Mil/Civ/Dockyards
-        set_variable = { global.additional_base_industrial_complex_building_productivity = 1.5 } # Base productivity of Mil/Civ/Dockyards
+        # Manufacturing Base (M08): the size of a country's manufacturing industries, plus content's bonuses (manufacturing_base_update)
+        set_variable = { global.manufacturing_contract_cost = 100 } # Monthly cost of each contracted factory (Q113)
+        set_variable = { global.manufacturing_contract_share_start = 10 } # % of the base a country contracts until its player changes it (Q110)
+        # HOI4's factory types, which follow the contracts as offmap buildings, and the % of the contracted factories each gets (Q107)
+        clear_array = global.offmap_factory_types
+        add_to_array = { global.offmap_factory_types = token:industrial_complex }
+        add_to_array = { global.offmap_factory_types = token:arms_factory }
+        add_to_array = { global.offmap_factory_types = token:dockyard }
+        set_variable = { global.manufacturing_split_start@token:industrial_complex = 20 }
+        set_variable = { global.manufacturing_split_start@token:arms_factory = 50 }
+        set_variable = { global.manufacturing_split_start@token:dockyard = 30 }
 
         # Define Buildings
         define_railway = yes
         define_port = yes
-
-        define_arms_factory = yes
-        define_industrial_complex = yes
-        define_dockyard = yes
         
         define_steel_foundry = yes
         define_mechanical_works = yes
@@ -1258,10 +1276,6 @@ initialize_country = {
         add_to_array = { global.special_token_array = token:subsistence_farm }
         add_to_array = { global.special_token_array = token:railway }
         add_to_array = { global.special_token_array = token:port }
-
-        add_to_array = { global.special_token_array = token:arms_factory }
-        add_to_array = { global.special_token_array = token:industrial_complex }
-        add_to_array = { global.special_token_array = token:dockyard }
         
         add_to_array = { global.building_token_array = token:steel_foundry }
         add_to_array = { global.building_token_array = token:mechanical_works }
@@ -1300,7 +1314,6 @@ initialize_country = {
 			if = {
 				limit = {
 					NOT = { check_variable = { global.building_unexpandable@var:b_token = 1 } }
-					NOT = { check_variable = { global.building_government_control@var:b_token = 1 } }
 				}
             	add_to_array = { global.private_building_token_array = b_token }
 			}
@@ -1313,7 +1326,6 @@ initialize_country = {
 			if = {
 				limit = {
 					NOT = { check_variable = { global.building_unexpandable@var:b_token = 1 } }
-					NOT = { check_variable = { global.building_government_control@var:b_token = 1 } }
 				}
             	add_to_array = { global.private_building_token_array = b_token }
 			}
@@ -1341,9 +1353,6 @@ initialize_country = {
         # Initialize pm_token_array
         clear_array = global.pm_token_array
         add_to_array = { global.pm_token_array = token:pm_subsistence_farming }
-        add_to_array = { global.pm_token_array = token:pm_industrial_complex }
-        add_to_array = { global.pm_token_array = token:pm_arms_factory }
-        add_to_array = { global.pm_token_array = token:pm_dockyard }
         for_each_loop = {
             array = global.industry_token_array
             value = ind_token
@@ -1568,6 +1577,10 @@ for_each_loop = {
         set_variable = { global.price_step_base = 0.3 }   # Share of the gap closed in a month, for a small gap
         set_variable = { global.price_step_slope = 0.2 }  # Extra share closed per 100% of gap
         set_variable = { global.price_step_max = 0.7 }    # Most of the gap closed in one month
+
+        # The production screen's resources are a tenth of a good each (M08): the economy's supply reaches it x this, times the
+        # mobilisation law's share (military_resource_share, Q109), and what military production uses counts as / this
+        set_variable = { global.military_resource_scale = 10 }
 
         # Prospecting (update_prospecting, Q99). A find moves this share of a deposit's potential into known deposits
         set_variable = { global.prospecting_find_min = 0.1 }          # Normal find, times prospecting ability
@@ -1940,21 +1953,6 @@ for_each_loop = {
                 }
                 else = { set_variable = { automation_method@token:port = controller:latest_automation_method@token:port } }
             }
-
-            # Military Factory
-            set_variable = { size@token:arms_factory = arms_factory_level }
-            if = { limit = { has_variable = arms_factory_pm } set_variable = { production_method@token:arms_factory = arms_factory_pm } }
-            else = { set_variable = { production_method@token:arms_factory = controller:latest_production_method@token:arms_factory } }
-
-            # Civilian Factory
-            set_variable = { size@token:industrial_complex = industrial_complex_level }
-            if = { limit = { has_variable = industrial_complex_pm } set_variable = { production_method@token:industrial_complex = industrial_complex_pm } }
-            else = { set_variable = { production_method@token:industrial_complex = controller:latest_production_method@token:industrial_complex } }
-
-            # Naval Dockyard
-            set_variable = { size@token:dockyard = building_level@dockyard }
-            if = { limit = { has_variable = dockyard_pm } set_variable = { production_method@token:dockyard = dockyard_pm } }
-            else = { set_variable = { production_method@token:dockyard = controller:latest_production_method@token:dockyard } }
         #
 
         # Update visual buildings array

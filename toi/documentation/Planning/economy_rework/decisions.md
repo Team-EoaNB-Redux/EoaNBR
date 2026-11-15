@@ -4,7 +4,7 @@ Questions raised against the new spec, [EOANB_Redux_Economy_Redesign_Updated.md]
 
 When Strat answers, write the answer under the question, mark it **Decided** with the date, and update the milestone file it belongs to. The tuning values the spec leaves to testing (§34) aren't asked here: they get settled in the milestone that builds them.
 
-**Status:** Strat answered Q1–Q54 on 2026-11-12. Where an answer differs from the recommendation, it says "Not as recommended". The answers raised follow-up questions Q55–Q68, which Strat also answered on 2026-11-12. Those raised Q69–Q72, also answered the same day. M02's code reading raised Q73–Q80, and M03's raised Q81–Q84. Strat answered all of them on 2026-11-12. M04's raised Q85–Q91, answered on 2026-11-13. M05's raised Q92–Q95, answered on 2026-11-14. M06's raised Q96–Q101, answered on 2026-11-14. M07's raised Q102–Q105, answered on 2026-11-14.
+**Status:** Strat answered Q1–Q54 on 2026-11-12. Where an answer differs from the recommendation, it says "Not as recommended". The answers raised follow-up questions Q55–Q68, which Strat also answered on 2026-11-12. Those raised Q69–Q72, also answered the same day. M02's code reading raised Q73–Q80, and M03's raised Q81–Q84. Strat answered all of them on 2026-11-12. M04's raised Q85–Q91, answered on 2026-11-13. M05's raised Q92–Q95, answered on 2026-11-14. M06's raised Q96–Q101, answered on 2026-11-14. M07's raised Q102–Q105, answered on 2026-11-14. M08's raised Q106–Q113, answered on 2026-11-14.
 
 ---
 
@@ -929,3 +929,82 @@ These came out of M07's baseline (`redux-eco-sim/runs/m07_base`, and `runs/m07_r
 *Recommend:* (a).
 
 > **Decided 2026-11-14:** (a).
+
+## Manufacturing Base follow-ups (raised 2026-11-14, M08)
+
+These came out of M08's code reading, against the baseline `redux-eco-sim/runs/m08_base`. Strat answered Q106–Q113 on 2026-11-14. With them came two instructions that weren't questions:
+- **Contract cost:** "the value of each Manufacturing Base". Q113 then set it at 100 a factory.
+- **The military resource scale:** a resource in the production screen is a tenth of an economy unit. Equipment resource costs are ×10, except ships, whose hull and module costs are only ×2: ships cost far too much *money* through procurement. Military production's demand and procurement cost count each production-screen resource as 0.1 of the good. Only a share of a country's resources reaches the production screen, set by its economic mobilisation law, and that share shows above the screen's resource grid (Q109).
+
+**Q106. Idle factories.** If each factory in use costs the base-price output it stands for, contracting all of them costs the whole manufacturing output at base prices: £0.90M a month for ENG's test industries, against £0.83M of arms, civilian and dockyard payroll today (£3.3M at market prices).
+- (a) The contracted shares can add up to less than 100%. Idle factories cost nothing and give no HOI4 factory.
+- (b) Always 100%.
+- (c) Every factory contracted, each at a share of its value.
+
+*Recommend:* (a), with the AI at 100%.
+
+> **Decided 2026-11-14:** (a), and not merely allowed: idle should be the norm. Most countries contract under 10%, and the AI must not contract 100%. ENG's figure looks fine now only because its GDP is mostly subsistence; once manufacturing is a third of GDP, contracting it all would be absurd. Follow-up: Q110.
+
+**Q107. The default split (the AI's, and the player's starting point).**
+- (a) Each mobilisation law sets military and naval shares through modifiers, and civilian takes the rest.
+- (b) One fixed split for everyone.
+- (c) Each country's 1857 history mix, in its history file.
+
+*Recommend:* (a).
+
+> **Decided 2026-11-14:** (b), not as recommended: 20% civilian, 50% military, 30% naval, of the contracted factories.
+
+**Q108. Content that adds on-map factories.** `add_building_construction` adds factories 411 times in 113 files (52 focus, 45 decision, 13 event and 3 effect files), and 44 calls already use `add_offsite_building`.
+- (a) Offmap factories of the same type and level, outside the economy.
+- (b) A matching manufacturing industry in the state, sized to the same Manufacturing Base.
+- (c) A permanent national bonus to the Manufacturing Base, split and contracted like the rest.
+
+*Recommend:* (a).
+
+> **Decided 2026-11-14:** (c), not as recommended. Its size is Q111.
+
+**Q109. Mobilisation shares.** The share of a country's resources the production screen gets, by economic mobilisation law: undisturbed isolation, isolation, civilian economy, low, partial, war economy, total mobilisation. With the scale above, at share s land equipment is 1/s times as resource-constrained as today, and ships 1/(5s) times; the money cost per unit made doesn't depend on s.
+- (a) 10 / 15 / 20 / 30 / 45 / 60 / 80%.
+- (b) 5 / 7.5 / 10 / 15 / 25 / 40 / 60%.
+- (c) 20 / 25 / 30 / 40 / 60 / 80 / 100%.
+
+*Recommend:* (a).
+
+> **Decided 2026-11-14:** (a).
+
+**Q110. The contracted share (from Q106).** The share of the Manufacturing Base a country contracts, which Q107's split then divides.
+- (a) By mobilisation law, 3 / 4 / 5 / 7.5 / 10 / 15 / 25%, so the AI contracts more at war.
+- (b) Fixed 10% until the player changes it.
+- (c) Fixed 5%.
+
+*Recommend:* (a).
+
+> **Decided 2026-11-14:** (b), not as recommended. The AI never changes it.
+
+**Q111. The size of a content bonus (from Q108).** At a contracted share near 10%, one factory of base is a tenth of a factory in use.
+- (a) +N ÷ the default contracted share, so a reward still gives about N factories in use at the default.
+- (b) +N, as written.
+- (c) +N contracted factories, outside the share.
+
+*Recommend:* (a).
+
+> **Decided 2026-11-14:** (a): a reward of N factories adds 10N to the Manufacturing Base.
+
+**Q112. Where the player sets the contracted share and the split.** UQ9 puts it on Sectors, which isn't built.
+- (a) A popup opened from the production screen, which U2's Sectors strip opens later.
+- (b) Defaults only until U2.
+
+*Recommend:* (a).
+
+> **Decided 2026-11-14:** (a).
+
+**Q113. What the Manufacturing Base is, and the cost of a factory.** Q64 derives the base from real output at base prices, ÷ a constant per factory that's also a factory's monthly contract cost.
+
+> **Decided 2026-11-14:** a contracted factory costs 100 (£0.1M) a month. The base is the **total size of the country's manufacturing industries**, not their output, which amends Q64: at a constant of 100, a British economy of £100k a month with a third of it manufacturing would have a base of about 330, and output-based bases scale too hard. Size scales more gently, and it's more intuitive: the state contracts factories that exist.
+
+**Defaults taken without a question** (raise any of them to change it):
+- The manufacturing industries are the Factories category (`global.building_type` 5), all 17 of them, power plants and synthetic refineries included.
+- A country without a coastal state gives its naval share to the military, since dockyards are no use to it.
+- The 44 content calls to `add_offsite_building` become Manufacturing Base bonuses too (Q108, Q111), so the economy owns every offmap factory.
+- The 303 history factories are commented out in place, as the map strip did, so M14 can read them.
+- `arms_factory_productivity_modifier`, `industrial_complex_productivity_modifier` and `dockyard_productivity_modifier` only fed the government buildings' revenue. They're deleted, with their 56 uses in ideas, a trait and technologies.

@@ -191,7 +191,7 @@ Reuse what `economy_window.gui` already uses:
 | Corporate tax | 5 levels | the corporate tax rate, charged on the sectors' positive profit (Q86) | `corporate_tax_revenue` | Exists |
 | Sales tax | 5 levels, and a goods picker | the sales tax rate; the picker chooses the goods it's charged on | `sales_tax_revenue` | Exists; the picker M13 |
 | Tariffs | read-only | import and export duties, set on the trade screen by the market leader (UQ6, UQ19) | `import_tariffs` + `export_tariffs`, split in the tooltip | Exists |
-| State enterprises | read-only | — | `public_enterprise_revenue`, the government buildings' revenue. After M08 removes those buildings, it becomes dividends on state-owned capacity (Q37, M10) | Exists; changes at M08 and M10 |
+| State enterprises | read-only | — | dividends on state-owned capacity (Q37, M10). `public_enterprise_revenue`, the government buildings' revenue, went with them in M08 | M10 |
 | Seigniorage | read-only; minting is set on Financial System (UQ7) | — | the minted amount ÷ P (Q49) | M11 |
 | Other | read-only | — | `other_revenue` less `public_enterprise_revenue`: modifiers (`modifier_revenue`), trade (`trade_revenue`) and, once something records it, income from other countries (the mockup's Diplomacy, UQ8), split in the tooltip | Exists |
 
@@ -206,8 +206,7 @@ The header shows `revenue` and the pie (`create_pie_chart_revenue`, with its slo
 | Procurement | 5 levels | the share of the army's goods bought | `military_production_resources_spending` | Exists |
 | Maintenance and repair | 5 levels | unit upkeep, which buys organisation and morale | `military_spending` | Exists |
 | Personnel | 5 levels, funding | a funding factor on the pay of fielded manpower | `military_payroll_spending` | The cost exists; the funding effect M13 (UQ18) |
-| Arsenals and dockyards | read-only | — | `military_production_payroll_spending`. Factory contracts replace it in M08 | Exists until M08 |
-| Factory contracts | read-only; the split is set on Sectors (UQ9) | — | the Manufacturing Base's contract cost (Q64) | M08 |
+| Factory contracts | read-only; the contracts are set in their popup (UQ9, Q112) | — | `manufacturing_contract_spending`, contracted factories × 100 (Q113) | Exists (M08) |
 | **Government** | | | | |
 | Patronage | 5 levels | — | — | Later |
 | Intelligence | 5 levels | `intelligence_spending_percentage` exists, with no cost or effect, and its buttons are disabled today | — | M13 |
@@ -300,7 +299,7 @@ U1 changes a mechanic as well as the window: the levels replace the sliders (UQ1
 - **Minting** moves to Financial System, where its effect on base money is shown beside it (UQ7). Seigniorage stays as a read-only revenue row.
 - **Tariffs** stay a read-only revenue row; their controls move to the trade screen, set by the market leader (UQ6).
 - **Diplomacy** joins Other (UQ8).
-- **Rows the mockup lacks,** because the code has them: Arsenals and dockyards (until M08), Factory contracts (M08), Trade subsidies, and Other spending.
+- **Rows the mockup lacks,** because the code has them: Factory contracts (M08), Trade subsidies, and Other spending.
 - **The revenue pie** moves from its own block into the section header, beside the title and total, and the expenditure section gets one too.
 - "Bureaucracy" is labelled Administration, as in the code.
 
@@ -658,7 +657,7 @@ Four subtabs, since the mockup's four sections don't fit one screen at 772 wide 
 | U3 | States and the state-industry detail, with Downsize (§6) | U2; the backlog's downsizing | |
 | U4 | Macro → General (§5.1) | U2 | Deletes `population_economy_window` |
 | U5 | Global, Overview and Industry (§7) | U2 | |
-| With M08 | The Manufacturing Base strip and popup (Sectors), the factory contracts line, the Capacity figure | M08 | |
+| With M08 | The Manufacturing Base strip (Sectors), the factory contracts line, the Capacity figure | M08 | M08 built the popup (`manufacturing_contracts_popup`), opened from the production screen; the Sectors strip opens it too |
 | With M09 | The infrastructure and development fund lines; the investment fund; opportunities on Sectors; fund expansion; tiers in the details; global investment | M09 | |
 | With M10 | Macro → Companies and the company detail; owners in the state-industry detail; Global → Companies | M10 | |
 | With M11 | Financial System's base money, central bank and banking; minting and seigniorage; the credit rating; Global → Finance's banks | M11 | |

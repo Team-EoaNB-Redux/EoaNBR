@@ -200,10 +200,6 @@
         }
 
         if = {
-            limit = { check_variable = { global.building_government_control@var:industry_token = 1 } }
-            set_temp_variable = { productivity_temp = productivity@var:industry_token }
-        }
-        else_if = {
             limit = { check_variable = { getter_units_temp > 0 } }
             set_temp_variable = { productivity_temp = revenue@var:industry_token }
             subtract_from_temp_variable = { productivity_temp = expenses_input@var:industry_token }
@@ -216,39 +212,32 @@
     }
     get_industry_utilisation = {
         # The share of its jobs a state-industry offers, as industry_utilisation_calc works it out: its sector's national
-        # target utilisation, shifted by how its trailing margin compares with the national one. The government buildings
-        # work at 100%
+        # target utilisation, shifted by how its trailing margin compares with the national one
         # State scope
         # Input: industry_token
         # Output: utilisation_temp, in %
+        set_temp_variable = { utilisation_temp = controller:sector_utilisation@var:industry_token }
         if = {
-            limit = { check_variable = { global.building_government_control@var:industry_token = 1 } }
-            set_temp_variable = { utilisation_temp = 100 }
+            limit = { check_variable = { utilisation_temp = 0 } }
+            set_temp_variable = { utilisation_temp = global.sector_utilisation_start }
         }
-        else = {
-            set_temp_variable = { utilisation_temp = controller:sector_utilisation@var:industry_token }
+        if = {
+            limit = { NOT = { check_variable = { margin@var:industry_token = 0 } } }
+            set_temp_variable = { getter_shift_temp = margin@var:industry_token }
+            subtract_from_temp_variable = { getter_shift_temp = controller:sector_margin@var:industry_token }
+            multiply_temp_variable = { getter_shift_temp = global.local_utilisation_gain }
+            set_temp_variable = { getter_amount_temp = global.local_utilisation_shift }
             if = {
-                limit = { check_variable = { utilisation_temp = 0 } }
-                set_temp_variable = { utilisation_temp = global.sector_utilisation_start }
+                limit = { check_variable = { getter_shift_temp > getter_amount_temp } }
+                set_temp_variable = { getter_shift_temp = getter_amount_temp }
             }
+            multiply_temp_variable = { getter_amount_temp = -1 }
             if = {
-                limit = { NOT = { check_variable = { margin@var:industry_token = 0 } } }
-                set_temp_variable = { getter_shift_temp = margin@var:industry_token }
-                subtract_from_temp_variable = { getter_shift_temp = controller:sector_margin@var:industry_token }
-                multiply_temp_variable = { getter_shift_temp = global.local_utilisation_gain }
-                set_temp_variable = { getter_amount_temp = global.local_utilisation_shift }
-                if = {
-                    limit = { check_variable = { getter_shift_temp > getter_amount_temp } }
-                    set_temp_variable = { getter_shift_temp = getter_amount_temp }
-                }
-                multiply_temp_variable = { getter_amount_temp = -1 }
-                if = {
-                    limit = { check_variable = { getter_shift_temp < getter_amount_temp } }
-                    set_temp_variable = { getter_shift_temp = getter_amount_temp }
-                }
-                add_to_temp_variable = { utilisation_temp = getter_shift_temp }
-                clamp_temp_variable = { var = utilisation_temp min = global.sector_utilisation_min max = 100 }
+                limit = { check_variable = { getter_shift_temp < getter_amount_temp } }
+                set_temp_variable = { getter_shift_temp = getter_amount_temp }
             }
+            add_to_temp_variable = { utilisation_temp = getter_shift_temp }
+            clamp_temp_variable = { var = utilisation_temp min = global.sector_utilisation_min max = 100 }
         }
     }
     get_industry_input = {

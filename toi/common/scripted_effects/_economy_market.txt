@@ -152,8 +152,12 @@
 			}
 		}
 
+        # The production screen's resources (resource_trade): a production-screen resource is a tenth of a good
+        # (global.military_resource_scale), and military production only gets the share of them its mobilisation law allows
+        # (military_resource_share, Q109). resource_cost@ is negative: it's a cost the modifier takes away
         for_each_scope_loop = { # Each country gets their own production + trade (multiplied by portion of GDP in market - only if it's imports)
 			array = market_countries
+			set_temp_variable = { mobilised_temp = { value = modifier@military_resource_share multiply = global.military_resource_scale multiply = -1 } }
 			for_each_loop = {
 				array = global.resource_token_array
 				value = r_type
@@ -169,10 +173,11 @@
 					add_to_variable = { resource_cost@var:r_type = trade_amount_temp }
 				}
 
-				multiply_variable = { resource_cost@var:r_type = -1 }
+				multiply_variable = { resource_cost@var:r_type = mobilised_temp }
 				round_variable = resource_cost@var:r_type
 			}
         }
+		set_temp_variable = { mobilised_temp = { value = modifier@military_resource_share multiply = global.military_resource_scale multiply = -1 } }
 		for_each_loop = { # Market leader gets a duplicate of all resources in the market
 			array = global.resource_token_array
 			value = r_type
@@ -180,7 +185,7 @@
 			set_variable = { resource_cost@var:r_type = local_production@var:r_type }
 			add_to_variable = { resource_cost@var:r_type = production@var:r_type }
 			add_to_variable = { resource_cost@var:r_type = trade@var:r_type }
-			multiply_variable = { resource_cost@var:r_type = -1 }
+			multiply_variable = { resource_cost@var:r_type = mobilised_temp }
 			round_variable = resource_cost@var:r_type
 		}
 		
@@ -348,6 +353,7 @@
 
 		set_temp_variable = { modifier_temp = modifier@military_production_cost_factor }
 		add_to_temp_variable = { modifier_temp = 1 }
+		divide_temp_variable = { modifier_temp = global.military_resource_scale } # A production-screen resource is a tenth of a good
 
 		for_each_loop = { # Military Resources
 			array = global.resource_token_array
@@ -406,7 +412,6 @@
 					limit = {
 						check_variable = { size@var:g_token > 0 } # Railways and ports at size 0 aren't updated, and keep old figures
 						NOT = { check_variable = { g_token = token:subsistence_farm } }
-						NOT = { check_variable = { global.building_government_control@var:g_token = 1 } }
 					}
 					if = {
 						limit = { check_variable = { output@var:g_token > 0 } }
@@ -2478,13 +2483,14 @@
 				set_trade = yes
 			}
 
-			if = { # Minimum trade - sets trade to resource consumption (for military production)
+			if = { # Minimum trade - sets trade to resource consumption (for military production), in goods (a production-screen resource is a tenth of one)
 				limit = {
 					check_variable = { trade_ai@var:resource_temp = 0 }
 					NOT = { is_in_array = { global.non_tradeable_resources = resource_temp } }
 				}
 				set_temp_variable = { amount_temp = resource_consumed@var:resource_temp }
-				if = { limit = { check_variable = { resource@var:resource_temp < 0 } } subtract_from_temp_variable = { amount_temp = resource_consumed@var:resource_temp } }
+				if = { limit = { check_variable = { resource@var:resource_temp < 0 } } subtract_from_temp_variable = { amount_temp = resource@var:resource_temp } }
+				divide_temp_variable = { amount_temp = global.military_resource_scale }
 				subtract_from_temp_variable = { amount_temp = supply@var:resource_temp }
 
 				if = {

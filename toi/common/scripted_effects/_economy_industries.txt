@@ -405,6 +405,76 @@
 			add_to_variable = { sectors_dividends = sector_dividends@var:s_token }
 		}
 	}
+	manufacturing_base_update = {
+		# Country scope. The Manufacturing Base (M08, §12): the size of the country's manufacturing industries (sector_size@ of
+		# the Factories category, global.building_type 5, Q113), plus content's bonuses (add_manufacturing_base): those are kept
+		# in factories in use at the default contracted share (manufacturing_base_bonus), so each is worth
+		# 100 / global.manufacturing_contract_share_start of base (Q111). The state contracts manufacturing_contract_share % of it (Q106, Q110), split by
+		# manufacturing_split@<factory type> (Q107), and HOI4's civilian factories, military factories and dockyards follow as
+		# offmap buildings (Q33). A country without a coastal state gives its naval share to the military. Each contracted
+		# factory costs global.manufacturing_contract_cost a month (spending_update). Runs monthly after sectors_update, at
+		# startup, and when the player changes the contracts
+		# Outputs: manufacturing_base, manufacturing_contracted (factories in use), offmap_factories@<factory type>
+		set_variable = { manufacturing_base = { value = manufacturing_base_bonus multiply = 100 divide = global.manufacturing_contract_share_start } }
+		for_each_loop = {
+			array = sectors
+			value = s_token
+			if = {
+				limit = { check_variable = { global.building_type@var:s_token = 5 } }
+				add_to_variable = { manufacturing_base = sector_size@var:s_token }
+			}
+		}
+		clamp_variable = { var = manufacturing_base min = 0 }
+
+		set_temp_variable = { mb_landlocked_temp = 1 }
+		if = {
+			limit = { any_owned_state = { is_coastal = yes } }
+			set_temp_variable = { mb_landlocked_temp = 0 }
+		}
+
+		set_variable = { manufacturing_contracted = 0 }
+		for_each_loop = {
+			array = global.offmap_factory_types
+			value = f_token
+
+			set_temp_variable = { mb_split_temp = manufacturing_split@var:f_token }
+			if = {
+				limit = { check_variable = { mb_landlocked_temp = 1 } }
+				if = {
+					limit = { check_variable = { f_token = token:dockyard } }
+					set_temp_variable = { mb_split_temp = 0 }
+				}
+				else_if = {
+					limit = { check_variable = { f_token = token:arms_factory } }
+					add_to_temp_variable = { mb_split_temp = manufacturing_split@token:dockyard }
+				}
+			}
+			set_temp_variable = {
+				mb_target_temp = {
+					value = manufacturing_base
+					multiply = manufacturing_contract_share
+					divide = 100
+					multiply = mb_split_temp
+					divide = 100
+				}
+			}
+			round_temp_variable = mb_target_temp
+
+			# HOI4 only adds or removes offsite buildings, so it gets the change from what this country was last given
+			set_temp_variable = { mb_change_temp = mb_target_temp }
+			subtract_from_temp_variable = { mb_change_temp = offmap_factories@var:f_token }
+			if = {
+				limit = { NOT = { check_variable = { mb_change_temp = 0 } } }
+				meta_effect = {
+					text = { add_offsite_building = { type = [TYPE] level = [CHANGE] } }
+					TYPE = "[?f_token.GetTokenKey]"
+					CHANGE = "[?mb_change_temp|0]"
+				}
+				set_variable = { offmap_factories@var:f_token = mb_target_temp }
+			}
+			add_to_variable = { manufacturing_contracted = mb_target_temp }
+		}
+	}
 
 	industry_update_size_jobs = {
 		# Calculates Industry Size & Job Figures
@@ -668,50 +738,46 @@
 
 		# Finances. A state-industry stores only what the sector accounts, the state GDP and its trailing margin need (revenue@,
 		# expenses_input@, expenses_payroll@, expenses_maintenance@). Tooltips work out the rest
-		if = {
-			limit = { NOT = { check_variable = { global.building_government_control@var:bu_token = 1 } } }
-
-			# Goods revenue and input costs from the PM/AM cache: the market's values for what it made and used. This country's
-			# sector and method modifiers and the local factors are already in output@ and input_scale@
-			set_variable = { revenue@var:bu_token = { value = controller:market_output_value@var:bu_token multiply = output@var:bu_token } }
-			set_variable = {
-				expenses_input@var:bu_token = {
-					value = controller:method_input_cost@var:production_method_temp
-					add = controller:method_input_cost@var:automation_method_temp
-					multiply = input_scale@var:bu_token
-				}
+		# Goods revenue and input costs from the PM/AM cache: the market's values for what it made and used. This country's
+		# sector and method modifiers and the local factors are already in output@ and input_scale@
+		set_variable = { revenue@var:bu_token = { value = controller:market_output_value@var:bu_token multiply = output@var:bu_token } }
+		set_variable = {
+			expenses_input@var:bu_token = {
+				value = controller:method_input_cost@var:production_method_temp
+				add = controller:method_input_cost@var:automation_method_temp
+				multiply = input_scale@var:bu_token
 			}
+		}
 
-			if = { # Railways & ports are paid for the service they provide: transport at the state's rate (calc_industrial_capacity),
-				# and shipping at the market's shipping price (calc_shipping_capacity, Q104). A port's industrial capacity is the share
-				# of its shipping that moves goods within the state, paid like a railway's (Q105)
-				limit = { check_variable = { global.building_type@var:bu_token = 2 } }
-				set_variable = {
-					revenue@var:bu_token = {
-						value = industrial_capacity@var:bu_token
-						multiply = price_industrial_capacity
-						add = {
-							value = shipping_capacity@var:bu_token
-							multiply = controller:price_shipping_capacity
-						}
-						add = revenue@var:bu_token
-					}
-				}
-			}
-
-			# Expenses. Wages for the free share of the working class and for the middle class: slaves cost nothing (Q12, Q62)
+		if = { # Railways & ports are paid for the service they provide: transport at the state's rate (calc_industrial_capacity),
+			# and shipping at the market's shipping price (calc_shipping_capacity, Q104). A port's industrial capacity is the share
+			# of its shipping that moves goods within the state, paid like a railway's (Q105)
+			limit = { check_variable = { global.building_type@var:bu_token = 2 } }
 			set_variable = {
-				expenses_payroll@var:bu_token = {
-					value = 1
-					subtract = slave_labor_share
-					multiply = working_employed@var:bu_token
-					multiply = global.wage_multiplier@token:working_class
+				revenue@var:bu_token = {
+					value = industrial_capacity@var:bu_token
+					multiply = price_industrial_capacity
 					add = {
-						value = middle_employed@var:bu_token
-						multiply = global.wage_multiplier@token:middle_class
+						value = shipping_capacity@var:bu_token
+						multiply = controller:price_shipping_capacity
 					}
-					multiply = base_wage
+					add = revenue@var:bu_token
 				}
+			}
+		}
+
+		# Expenses. Wages for the free share of the working class and for the middle class: slaves cost nothing (Q12, Q62)
+		set_variable = {
+			expenses_payroll@var:bu_token = {
+				value = 1
+				subtract = slave_labor_share
+				multiply = working_employed@var:bu_token
+				multiply = global.wage_multiplier@token:working_class
+				add = {
+					value = middle_employed@var:bu_token
+					multiply = global.wage_multiplier@token:middle_class
+				}
+				multiply = base_wage
 			}
 		}
 	}
@@ -1234,224 +1300,6 @@
 			}
 			industry_update = yes
 		}
-
-		# Civilian/Military/Naval Industry
-		set_temp_variable = { bu_token = token:industrial_complex }
-		if = {
-			limit = {
-				check_variable = { size@var:bu_token > 0 }
-			}
-			govt_building_update = yes
-		}
-
-		set_temp_variable = { bu_token = token:arms_factory }
-		if = {
-			limit = {
-				check_variable = { size@var:bu_token > 0 }
-			}
-			govt_building_update = yes
-		}
-
-		set_temp_variable = { bu_token = token:dockyard }
-		if = {
-			limit = {
-				check_variable = { size@var:bu_token > 0 }
-			}
-			govt_building_update = yes
-		}
-	}
-	govt_building_update = {
-		# bu_token
-		# For updating Arms Factory/Industrial Complex/Dockyard
-
-		# Helper Temp Variables
-		set_temp_variable = { production_method_temp = production_method@var:bu_token }
-
-
-		# Reset to 0
-		set_variable = { jobs@var:bu_token = 0 }
-		set_variable = { employed@var:bu_token = 0 }
-
-		set_variable = { expenses_input@var:bu_token = 0 }
-
-		# Update Industry Size
-		if = { # Civilian
-			limit = {
-				check_variable = { bu_token = token:industrial_complex }
-			}
-			set_variable = { size@var:bu_token = industrial_complex_level }
-		}
-		else_if = { # Military
-			limit = {
-				check_variable = { bu_token = token:arms_factory }
-			}
-			set_variable = { size@var:bu_token = arms_factory_level }
-		}
-		else_if = { # Naval
-			limit = {
-				check_variable = { bu_token = token:dockyard }
-			}
-			set_variable = { size@var:bu_token = building_level@dockyard }
-		}
-
-		# Production & Automation Method Jobs
-		set_temp_variable = { base_jobs_temp = global.building_base_employees@var:bu_token }
-		multiply_temp_variable = { base_jobs_temp = size@var:bu_token }
-
-		set_variable = { working_jobs@var:bu_token = global.pm_workforce_working@var:production_method_temp }
-		clamp_variable = { var = working_jobs@var:bu_token min = 0 }
-
-		set_variable = { middle_jobs@var:bu_token = global.pm_workforce_middle@var:production_method_temp }
-		clamp_variable = { var = middle_jobs@var:bu_token min = 0 }
-
-		set_variable = {
-			payroll_multiplier@var:bu_token = {
-				value = working_jobs@var:bu_token
-				multiply = global.wage_multiplier@token:working_class
-				add = {
-					value = middle_jobs@var:bu_token
-					multiply = global.wage_multiplier@token:middle_class
-				}
-				multiply = global.building_base_employees@var:bu_token
-			}
-		}
-
-		multiply_variable = { working_jobs@var:bu_token = base_jobs_temp }
-		multiply_variable = { middle_jobs@var:bu_token = base_jobs_temp }
-
-		set_variable = { owner_jobs@var:bu_token = 0.02 }
-		multiply_variable = { owner_jobs@var:bu_token = base_jobs_temp }
-
-		set_variable = {
-			working_employed@var:bu_token = {
-				value = 0
-				if = { limit = { value = working_jobs@var:bu_token greater_than = 0 }
-					add = working_jobs@var:bu_token
-					multiply = working_job_fulfillment
-					divide = 100
-				}
-			}
-		}
-
-		set_variable = {
-			middle_employed@var:bu_token = {
-				value = 0
-				if = { limit = { value = middle_jobs@var:bu_token greater_than = 0 }
-					add = middle_jobs@var:bu_token
-					multiply = job_fulfillment@token:middle_class
-					divide = 100
-				}
-			}
-		}
-
-		set_variable = { employed@var:bu_token = {
-			value = working_employed@var:bu_token
-			add = middle_employed@var:bu_token
-		} }
-
-		#Employment/Production Percentage
-
-		set_temp_variable = {
-			total_prod_temp = {
-				value = working_employed@var:bu_token
-				multiply = global.wage_multiplier@token:working_class
-				add = {
-					value = middle_employed@var:bu_token
-					multiply = global.wage_multiplier@token:middle_class
-				}
-				divide = payroll_multiplier@var:bu_token
-				divide = size@var:bu_token
-				clamp = { min = 0 max = 1 }
-			}
-		}
-		set_variable = { 
-			employment_percentage@var:bu_token = {
-				value = total_prod_temp
-				multiply = 100
-			} 
-		}
-		set_variable = {
-			production_percentage@var:bu_token = {
-				value = total_prod_temp
-				multiply = {
-					value = 120
-					subtract = {
-						value = total_prod_temp
-						pow = 3
-						multiply = 20
-					}
-				}
-			}
-		}
-
-		#Capacities
-			set_variable = {
-				industrial_capacity_use@var:bu_token = {
-					value = global.pm_industrial_capacity_use@var:production_method_temp
-					multiply = size@var:bu_token
-					multiply = production_percentage@var:bu_token
-					divide = 100
-				}
-			}
-		#
-
-		# Productivity
-			set_variable = { productivity@var:bu_token = global.base_govt_building_productivity }
-			if = { # Civilian
-				limit = {
-					check_variable = { bu_token = token:industrial_complex }
-				}
-				add_to_variable = { productivity@var:bu_token = global.additional_base_industrial_complex_building_productivity }
-				add_to_variable = { productivity@var:bu_token = controller:modifier@industrial_complex_productivity_modifier }
-			}
-			else_if = { # Military
-				limit = {
-					check_variable = { bu_token = token:arms_factory }
-				}
-				add_to_variable = { productivity@var:bu_token = controller:modifier@arms_factory_productivity_modifier }
-			}
-			else_if = { # Naval
-				limit = {
-					check_variable = { bu_token = token:dockyard }
-				}
-				add_to_variable = { productivity@var:bu_token = controller:modifier@dockyard_productivity_modifier }
-			}
-		#
-
-		# Finances
-			set_variable = { revenue@var:bu_token = productivity@var:bu_token }
-			multiply_variable = { revenue@var:bu_token = production_percentage@var:bu_token }
-			divide_variable = { revenue@var:bu_token = 100 }
-			multiply_variable = { revenue@var:bu_token = payroll_multiplier@var:bu_token }
-			multiply_variable = { revenue@var:bu_token = size@var:bu_token }
-
-			#Expenses. As industry_update: slaves cost nothing
-			set_variable = {
-				expenses_payroll@var:bu_token = {
-					value = 1
-					subtract = slave_labor_share
-					multiply = working_employed@var:bu_token
-					multiply = global.wage_multiplier@token:working_class
-					add = {
-						value = middle_employed@var:bu_token
-						multiply = global.wage_multiplier@token:middle_class
-					}
-					multiply = base_wage
-				}
-			}
-
-			set_variable = { expenses@var:bu_token = expenses_payroll@var:bu_token }
-
-			#Profit
-			set_variable = { profit@var:bu_token = revenue@var:bu_token }
-			subtract_from_variable = { profit@var:bu_token = expenses@var:bu_token }
-
-			set_variable = { dividends@var:bu_token = profit@var:bu_token }
-
-			#Profitability
-			set_variable = { profitability@var:bu_token = profit@var:bu_token }
-			divide_variable = { profitability@var:bu_token = revenue@var:bu_token }
-		#
 	}
 	subsist_and_arable_update = {
 		# State Scope

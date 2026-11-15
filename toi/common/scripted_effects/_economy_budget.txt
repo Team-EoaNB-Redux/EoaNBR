@@ -418,7 +418,6 @@
         set_temp_variable = { middle_income_earnings = 0 }
         set_temp_variable = { lower_income_earnings = 0 }
 
-        set_variable = { consumer_goods_earnings = 0 }
         every_controlled_state = {
             #Adding to Earnings
 			for_each_loop = {
@@ -448,12 +447,7 @@
 					}
                 }
             }
-
-            add_to_variable = { PREV.consumer_goods_earnings = revenue@token:industrial_complex }
-            add_to_variable = { PREV.consumer_goods_earnings = revenue@token:arms_factory }
-            add_to_variable = { PREV.consumer_goods_earnings = revenue@token:dockyard }
         }
-        set_variable = { public_enterprise_revenue = consumer_goods_earnings }
 
         set_variable = { income_tax_upper_strata_revenue = upper_income_earnings }
         set_variable = { income_tax_middle_strata_revenue = middle_income_earnings }
@@ -627,8 +621,7 @@
         add_to_variable = { revenue = corporate_tax_revenue }
         add_to_variable = { revenue = tariff_revenue }
 
-        set_variable = { other_revenue = public_enterprise_revenue }
-        add_to_variable = { other_revenue = modifier_revenue }
+        set_variable = { other_revenue = modifier_revenue }
 		#Trade
 			if = {
 				limit = {
@@ -868,8 +861,6 @@
 
         set_variable = { administration_spending = 0 }
         set_variable = { military_payroll_spending = 0 }
-        set_variable = { military_production_payroll_spending = 0 }
-        set_variable = { public_enterprise_payroll_spending = 0 }
         every_controlled_state = {
             for_each_loop = {
                 array = industries
@@ -902,12 +893,7 @@
                 }
 
             }
-            add_to_variable = { PREV.military_production_payroll_spending = expenses@token:arms_factory }
-            add_to_variable = { PREV.military_production_payroll_spending = expenses@token:dockyard }
-            add_to_variable = { PREV.public_enterprise_payroll_spending = expenses@token:industrial_complex }
         }
-        #divide_variable = { military_production_payroll_spending = modifier@bureaucratic_efficiency_factor }
-        #divide_variable = { public_enterprise_payroll_spending = modifier@bureaucratic_efficiency_factor }
 
         set_temp_variable = { modifier_temp = modifier@administration_cost_per_c }
         multiply_temp_variable = { modifier_temp = pops }
@@ -952,6 +938,7 @@
                 value = r_type
 
                 set_temp_variable = { spending_temp = resource_consumed@var:r_type }
+                divide_temp_variable = { spending_temp = global.military_resource_scale } # A production-screen resource is a tenth of a good
                 multiply_temp_variable = { spending_temp = price@var:r_type }
                 multiply_temp_variable = { spending_temp = modifier_temp }
 				multiply_temp_variable = { spending_temp = procurement_spending_production_cost_multiplier }
@@ -959,7 +946,10 @@
             }
             divide_variable = { military_production_resources_spending = modifier@bureaucratic_efficiency_factor }
         #
-        set_variable = { military_mandatory_spending = military_production_payroll_spending }
+        # Factory contracts (M08): each factory the state contracts from the Manufacturing Base costs a fixed amount (Q113)
+        set_variable = { manufacturing_contract_spending = { value = manufacturing_contracted multiply = global.manufacturing_contract_cost } }
+
+        set_variable = { military_mandatory_spending = manufacturing_contract_spending }
         add_to_variable = { military_mandatory_spending = military_payroll_spending }
 
         set_variable = { modifier_spending = modifier@treasury_cost_monthly }
@@ -970,8 +960,7 @@
         multiply_temp_variable = { exp_temp = modifier@treasury_cost_monthly_per_gdp }
         add_to_variable = { modifier_spending = exp_temp }
 
-        set_variable = { other_spending = public_enterprise_payroll_spending }
-        add_to_variable = { other_spending = modifier_spending }
+        set_variable = { other_spending = modifier_spending }
 
         #Military
             set_variable = { military_army_spending = 0 }
@@ -1541,6 +1530,55 @@
         budget_clamp = yes
         budget_update = yes
     }
+    change_manufacturing_contract_share = {
+        #Scope: Country
+        #Changes the share of the Manufacturing Base the state contracts (M08, Q106), and HOI4's offmap factories with it
+        #INPUT:
+            #percent_change_temp - Points to add, 1.0 = 1% of the base. Kept between 0 and 100
+
+        add_to_variable = { manufacturing_contract_share = percent_change_temp }
+        clamp_variable = { var = manufacturing_contract_share min = 0 max = 100 }
+        manufacturing_base_update = yes
+        budget_update = yes
+    }
+    change_manufacturing_split = {
+        #Scope: Country
+        #Moves points of the contracted factories' split (M08, Q107) to or from one factory type. The military share balances
+        #civilian and naval changes, and a military change is balanced by the civilian share, or by the naval share once the
+        #civilian share has run out
+        #INPUT:
+            #f_token - the factory type: token:industrial_complex, token:arms_factory or token:dockyard
+            #percent_change_temp - Points to add to it, 1.0 = 1%
+
+        set_temp_variable = { balance_token_temp = token:arms_factory }
+        if = {
+            limit = { check_variable = { f_token = token:arms_factory } }
+            set_temp_variable = { balance_token_temp = token:industrial_complex }
+            if = {
+                limit = {
+                    check_variable = { percent_change_temp > 0 }
+                    check_variable = { manufacturing_split@token:industrial_complex < percent_change_temp }
+                }
+                set_temp_variable = { balance_token_temp = token:dockyard }
+            }
+        }
+        # No share goes below 0
+        if = {
+            limit = { check_variable = { manufacturing_split@var:balance_token_temp < percent_change_temp } }
+            set_temp_variable = { percent_change_temp = manufacturing_split@var:balance_token_temp }
+        }
+        set_temp_variable = { lowest_change_temp = manufacturing_split@var:f_token }
+        multiply_temp_variable = { lowest_change_temp = -1 }
+        if = {
+            limit = { check_variable = { percent_change_temp < lowest_change_temp } }
+            set_temp_variable = { percent_change_temp = lowest_change_temp }
+        }
+
+        add_to_variable = { manufacturing_split@var:f_token = percent_change_temp }
+        subtract_from_variable = { manufacturing_split@var:balance_token_temp = percent_change_temp }
+        manufacturing_base_update = yes
+        budget_update = yes
+    }
     change_intelligence_spending = {
         #Scope: Country
         #Increases/Decreases the Intelligence Spending level
@@ -1708,7 +1746,6 @@
         divide_variable = { spending_piechart_military_percentage = spending }
         set_variable = { spending_piechart_government_percentage = administration_spending }
         add_to_variable = { spending_piechart_government_percentage = research_spending }
-        add_to_variable = { spending_piechart_government_percentage = public_enterprise_payroll_spending }
         add_to_variable = { spending_piechart_government_percentage = order_and_intel_spending }
         divide_variable = { spending_piechart_government_percentage = spending }
         set_variable = { spending_piechart_civilian_percentage = subsidies_spending }

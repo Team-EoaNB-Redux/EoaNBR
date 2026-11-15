@@ -312,6 +312,14 @@ A list of effects that can be used in events, focus tree completion rewards, dec
         <td> Never goes below 0. Takes effect at the next monthly tick. History sets it with <code> set_variable = { deposit_quality@token:iron = 1.2 } </code>. </td>
         <td> State </td>
     </tr>
+    <tr>
+        <td> add_manufacturing_base </td>
+        <td> <code> x_temp = integer </code> <br> Factories to add, or remove if negative. </td>
+        <td> <code> set_temp_variable = { x_temp = 1 } <br> add_manufacturing_base = yes </code> <br> From a state: <code> owner = { set_temp_variable = { x_temp = 1 } add_manufacturing_base = yes } </code> </td>
+        <td> Use it wherever content would build or remove a civilian factory, military factory or dockyard, which are offmap now and follow the Manufacturing Base (M08). It adds x_temp factories' worth of base at the default contracted share: +1 adds 10 base at 10%, which is about one more factory in use. The split decides the factory type. </td>
+        <td> Free, and at once. Works in country history too. Don't use <code> add_building_construction </code>, <code> remove_building </code> or <code> add_offsite_building </code> for factories: HOI4 can't build them on the map, and the Manufacturing Base owns every offmap factory. </td>
+        <td> Country </td>
+    </tr>
 </table>
 
 ## Triggers

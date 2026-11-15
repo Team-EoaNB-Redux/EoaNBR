@@ -61,7 +61,7 @@ An industry is one building type in one state, with a **size** (a number of leve
 - **Urban:** urban centre (services), power plant, entertainment hub.
 - **Transport:** railways and ports. They make transport capacity, not goods.
 - **Subsistence farms:** automatic. They fill all arable land nobody else uses and are worked by peasants.
-- **Government buildings:** HOI4's own civilian factories, military factories and dockyards. Their size follows the HOI4 building, they're always fully staffed, and the state budget pays their wages. They don't sell goods.
+- HOI4's civilian factories, military factories and dockyards **aren't industries** since M08: they're offmap, and follow the Manufacturing Base (section 5).
 
 Industries unlock with technology. Every industry runs one production method and one automation method.
 
@@ -86,7 +86,7 @@ Industries unlock with technology. Every industry runs one production method and
 - **Target price:** base price × (demand ÷ supply)², held between a quarter of base and four times base. A 10% shortage raises it about 21%, and a large shortage pins it at 4×. Valuables are fixed at twice base, money-like.
 - **The actual price moves toward the target gradually,** once a month at the start of the tick, before anyone is paid. Each month it closes a share of the gap: 30% for a small gap, 20 points more for every 100% of gap, and at most 70%. A gap under 2% doesn't move it. The gap counts a doubling and a halving the same. A 4× shortage therefore lifts the price about 3.1× in its first month. An ordinary 10% gap halves in about two months and is inside the dead band after five. The four values are globals in `resources_global_var_setup`. At startup, and for a new country, prices start at their targets.
 - Revenue, wages, pop spending, GDP, trade income and tariffs all use the actual price. The trade AI uses the target (see Trade).
-- Supply is production plus imports. Demand is pops' needs, industry inputs, materials for construction and retooling, military demand, and exports.
+- Supply is production plus imports. Demand is pops' needs, industry inputs, materials for construction and retooling, military demand (unit upkeep, and a tenth of a good for each resource military production uses, M08), and exports.
 - The target is recomputed weekly as trade changes, and monthly as production and consumption change.
 
 ### Trade [LIVE]
@@ -123,8 +123,8 @@ Then each country, in rank order:
    4. The state's base wage moves according to last month's labour market.
    5. Each industry's trailing margin moves toward last month's. A building that keeps losing money shrinks, but only while investment is on.
    6. Pops move between the working, middle and upper classes to fit the jobs on offer, within their qualifications.
-   7. Everything is recomputed: arable land and subsistence, jobs and employment (bureaucratic jobs included), government buildings, production and each industry's finances, the upper class's dividends from last month's sector accounts, then each class's earnings, needs, taxes, confidence and targets.
-5. The country works out the goods its industries and pops make and use, by sector and method rather than state by state, which its market reads until next month. Then each sector's national accounts: this month's revenue, costs, profit, profit tax, retained share and dividends (M04).
+   7. Everything is recomputed: arable land and subsistence, jobs and employment (bureaucratic jobs included), production and each industry's finances, the upper class's dividends from last month's sector accounts, then each class's earnings, needs, taxes, confidence and targets.
+5. The country works out the goods its industries and pops make and use, by sector and method rather than state by state, which its market reads until next month. Then each sector's national accounts: this month's revenue, costs, profit, profit tax, retained share and dividends (M04). Then the Manufacturing Base and its contracts, which set HOI4's offmap factories (M08).
 6. Companies and investment-fund bookkeeping. Investment opportunities are off.
 7. Market leaders recompute supply, demand and target prices for their whole market from the members' totals, the market screen's statistics, and GDP.
 8. The budget is recomputed: taxes, spending, debt and interest.
@@ -144,18 +144,27 @@ Weekly: markets recompute supply, demand and target prices with current trade an
   - Margin below 0: it falls the same way.
   - In between: it holds steady.
   - It moves at most 5 points a month. The old per-industry targets could jump 20 points.
-- **Local shift:** each state-industry works at its sector's target, shifted up to 5 points by how its own trailing margin compares with the national margin. Government buildings always work at 100%.
+- **Local shift:** each state-industry works at its sector's target, shifted up to 5 points by how its own trailing margin compares with the national margin.
 - Jobs are filled by pops of the matching class. If a state is short of a class, every industry there, and the bureaucracy, is short-staffed in proportion. Slaves take working-class jobs first.
 
 ### Profit and where the money goes [LIVE]
 - **Revenue:** output sold at the market price. Railways and ports get their transport fee instead. A state-industry stores only what the accounts add up (revenue, inputs, payroll, maintenance) and a trailing margin. The industry screens work out the rest.
 - **Costs:** wages (base wage × the class's multiple × employees, with nothing paid for slaves), inputs bought at market price, and **maintenance**. Maintenance is a fixed upkeep of about 3% of build cost a year, paid even on idle capacity.
-- **Sectors keep the accounts (M04).** Every industry token except subsistence farms and the three government buildings is a national sector. Each month a country adds up each sector's revenue, inputs, payroll and maintenance from its states into one record (`sector_*@<sector>`), with its operating profit and margin. The record also holds what a national screen shows (Q91): jobs and employment per class, transport, construction and retooling under way, reserves, and the method mix.
+- **Sectors keep the accounts (M04).** Every industry token except subsistence farms is a national sector. Each month a country adds up each sector's revenue, inputs, payroll and maintenance from its states into one record (`sector_*@<sector>`), with its operating profit and margin. The record also holds what a national screen shows (Q91): jobs and employment per class, transport, construction and retooling under way, reserves, and the method mix.
 - **Profit** pays corporate tax when it's positive, at the country's rate. The sector keeps `global.sector_retained_share` (30%) of what's left as **sector capital**, scaled by investment appetite from incentives, and pays the rest as dividends. M09 will spend the capital; until then it only accumulates. Employees get no bonuses: wages are their share.
 - **Loss** comes out of the sector's capital first, then out of dividends, which go negative. Sectors can't borrow until M11.
-- **Dividends** are paid by size: each state's upper class gets the sector's dividend per size × the size it owns there, a month later. Subsistence rent (20% of subsistence output) and government buildings pay their own state's upper class directly.
+- **Dividends** are paid by size: each state's upper class gets the sector's dividend per size × the size it owns there, a month later. Subsistence rent (20% of subsistence output) goes to its own state's upper class directly.
 - **Ownership:** the upper class owns every industry's generic share, its size less what companies hold. Companies can own slices of an industry (see below).
 - **The PM/AM cache (M04).** Each market works out, once per price change, the value of one bundle of each sector's goods and what each method's inputs and construction cost. Each country applies its own sector and method modifiers, and each state its local factors. The industry screens and getters read the same values.
+
+### Manufacturing Base and HOI4 factories [LIVE, M08]
+- **The Manufacturing Base** is the total size of a country's manufacturing industries (the Factories category), plus what focuses, decisions and events have added. Idle plants count: the state contracts factories that exist.
+- **Contracts:** the state contracts a share of the base, 10% to start, and only the player changes it, in a popup opened from the production screen. The AI keeps 10%. Idle factories cost nothing.
+- **The split:** the contracted factories divide 20% civilian, 50% military and 30% naval to start. A country without a coast gives the naval share to the military.
+- **HOI4's factories** are those contracts, held offmap: each month the game adds or removes offsite buildings to match. Nobody can build a factory on the map, and history has none.
+- **Cost:** each contracted factory costs £0.1M a month, a mandatory military budget line. The money goes to no one, since contracts don't take output from the factories yet; the planned option (b) would have the state buy that output.
+- **Content** that used to add or remove a factory adds or removes ten factories' worth of base, so at the default share it's still about one factory in use.
+- **Military resources:** a production-screen resource is a tenth of a good. Equipment costs ten times the resources it did (ships twice), so land equipment needs the same goods and ships a fifth. Only part of a country's resources reach the production screen: the economic mobilisation law's share, from 10% (undisturbed isolation) to 80% (total mobilisation), shown above the resource grid. Military production buys a tenth of a good for each resource it uses, at the market price.
 
 ### Wages [LIVE]
 - Each state has one **base wage**, and each class earns a fixed multiple of it.
@@ -187,14 +196,14 @@ Built in M03. Pops hold no savings.
 
 ### Government budget [LIVE]
 - **Revenue:** the taxes above, corporate tax on the sectors' positive profit, import and export tariffs and trade income. Effective rates are scaled by tax efficiency, and tariffs by bureaucratic efficiency. A short bureaucracy collects less income, sales and corporate tax: from half the rate with no bureaucrats, rising to the full rate at full administrative capacity.
-- **Spending:** administration (the bureaucrats' pay, plus per-head and per-GDP costs), military payroll (manpower × average earnings), military procurement (goods for equipment), research, construction (builds the government pays for), projects, subsidies, order and intelligence, and social spending.
+- **Spending:** administration (the bureaucrats' pay, plus per-head and per-GDP costs), military payroll (manpower × average earnings), factory contracts (M08), military procurement (goods for equipment), research, construction (builds the government pays for), projects, subsidies, order and intelligence, and social spending.
 - **Sliders have political effects.** Taxes cost political power, stability, war support and *incentives*, a property-rights mood that drives investment appetite. Spending buys HOI4 bonuses: military spending improves army organisation and morale, research spending speeds research, and procurement raises production efficiency and lowers equipment cost.
 - **Debt:** a negative treasury becomes debt, domestic or foreign. Interest starts around 8%, is cheaper for great and secondary powers, and rises when the lending pool is scarce. The *debt level* tracks debt against annual GDP. Passing roughly 200% fires **bankruptcy**: debt is wiped and spending is cut, but stability takes a heavy hit. Lower stability means lower productivity and consumer confidence, so pops spend less.
 - **Debt switch:** while the rework runs, `global.eco_debt_enabled = 0` skips every starting debt, sets both interest rates to 0 and stops bankruptcy. Deficits still borrow up to the lending cap (24 months of GDP). Past it, the treasury goes negative with no consequence. M14 turns the switch back on.
 - AI countries repay debt when they can and raise taxes when they're in deficit.
 
 ### GDP [LIVE]
-- A state's GDP is value added: each industry's revenue minus the goods it bought (M04). That counts subsistence food peasants eat themselves at base price, transport fees and government building output, as before. A market's GDP, added up when its leader ticks, values each member's last month at that month's prices.
+- A state's GDP is value added: each industry's revenue minus the goods it bought (M04). That counts subsistence food peasants eat themselves at base price and transport fees. Government buildings' output counted until M08 removed them. A market's GDP, added up when its leader ticks, values each member's last month at that month's prices.
 - **Money scale:** 1,000 money units = £1 million, and every flow is per month. The historical UK national income in 1857 was roughly £665M a year, which would be about 55K a month. That's the reference scale for the rebuild, not a value the game currently hits.
 - GDP drives debt ratios, administration cost, each country's share of market trade, and the statistics screens.
 
@@ -234,10 +243,10 @@ From the second year, every month, each state's GDP is compared with its 3-year 
 
 ## 7. Current state (November 2026)
 
-- **The map has been stripped back to subsistence farming,** on purpose. Every state's industries and deposits are commented out of the history files (the old deposits sit as comments in each state's `resources` block), leaving only subsistence and HOI4's own factories. On the old map, Britain went bankrupt in its first July, in both the game and the simulator. Historical targets for Britain and India are written as comments in the history files.
+- **The map has been stripped back to subsistence farming,** on purpose. Every state's industries and deposits are commented out of the history files (the old deposits sit as comments in each state's `resources` block), leaving only subsistence. HOI4's own factories went too in M08: they're offmap and follow the Manufacturing Base, which on the stripped map gives almost no country a factory. On the old map, Britain went bankrupt in its first July, in both the game and the simulator. Historical targets for Britain and India are written as comments in the history files.
 - **The plan, decided November 2026: redesign first, balance last.** The economy is being rebuilt to a new design (section 8) in a series of milestones. Only after that will the 1857 map be rebuilt sector by sector so world supply and demand start roughly equal. Until then, the M00 test bed is used to check mechanics: small test industries in five British states (in `# >>> rework test industries` blocks), and debt switched off for every country, so no one goes bankrupt (20 countries did within five years before).
 - **Off:** investment, banking, national debt (starting debt, interest, bankruptcy) and the economic cycle. Pops borrow, but without interest until M11.
-- **Recently done:** a cap on transport supply from population, and a shipping price that follows use, which ports are paid (M07), deposits as state history data (potential, known and worked, with quality), prospecting that only finds what history put there, and RGOs for natural resources only (M06), land quality, crop eligibility and a carrying capacity for subsistence, with peasants paying base prices for what they grow (M05), national sectors with a PM/AM cache, profit tax, retained capital, dividends by size, target utilisation and capacity decay, with no per-good figures kept by states (M04, in progress: the UI rework remains), wealth, spending toward a target, pop debt and middle-class investment (M03), five pop classes with qualifications, slaves, bureaucrats and active manpower (M02), gradual prices (M01), generated PMs, Infrastructure Efficiency, floating wages, maintenance costs, the companies MVP, incentives.
+- **Recently done:** the Manufacturing Base, with HOI4's factories offmap and contracted by the state, and military resources at a tenth of a good, shared out by the mobilisation law (M08), a cap on transport supply from population, and a shipping price that follows use, which ports are paid (M07), deposits as state history data (potential, known and worked, with quality), prospecting that only finds what history put there, and RGOs for natural resources only (M06), land quality, crop eligibility and a carrying capacity for subsistence, with peasants paying base prices for what they grow (M05), national sectors with a PM/AM cache, profit tax, retained capital, dividends by size, target utilisation and capacity decay, with no per-good figures kept by states (M04, in progress: the UI rework remains), wealth, spending toward a target, pop debt and middle-class investment (M03), five pop classes with qualifications, slaves, bureaucrats and active manpower (M02), gradual prices (M01), generated PMs, Infrastructure Efficiency, floating wages, maintenance costs, the companies MVP, incentives.
 - **Testing:** a headless simulator called redux-eco-sim runs the mod's real economy scripts outside the game. It matched in-game British GDP to within about 0.5% at startup and after one month, so it's trusted for fast experiments. In-game testing is slow.
 
 ### Known problems
@@ -259,7 +268,7 @@ The target design is `documentation/Planning/economy_rework/EOANB_Redux_Economy_
 - **Gradual prices** (built in M01, see section 3). Supply and demand set a target price, and the actual price moves toward it once a month, slowly for small gaps and fast for big ones. Trade stays weekly so military production gets its resources. Prices move fastest, utilisation and employment slower, and capacity slowest.
 - **Five pop classes** (built in M02, see section 3): slaves, peasants, working class, middle class and upper class, with one floating wage per state. Unemployment is the gap between a class's labour pool and its jobs. Qualifications limit how fast pops move up, as a major barrier to industrialisation. Bureaucratic jobs come from bureaucratic strain and are paid by the government. Active manpower (fielded and training) is taken out of the civilian pools. Wealth (built in M03, see section 3) keeps the old SoL baskets. Pops hold no savings: they spend toward a target set by consumer confidence, and overspending becomes debt, owed to the bank from M11.
 - **Land and resources as state data.** Arable land, land quality and crop eligibility are set in history, with the population formula kept as a fallback for land until every state has it. Subsistence follows a carrying capacity with half returns beyond it, and pays rent to the upper class (built in M05, see section 3). Deposits are potential, known and worked, with quality kept separate from quantity (built in M06, see section 3).
-- **Manufacturing Base:** HOI4's civilian and military factories and dockyards become offmap buildings derived from the country's manufacturing sectors and split by a national allocation, rather than economic industries. The state pays a contract cost per factory. All on-map factories go.
+- **Manufacturing Base** (built in M08, see section 5): HOI4's civilian and military factories and dockyards are offmap buildings, a contracted share of the country's manufacturing industries, split by type, at a cost per factory. Later the contracts may take their output from civilian use (Q32's option (b)).
 - **Investment from capital pools.** Retained capital tends to expand the sector that earned it, and incentives decide how much profit is retained. A share flows into a general pool set by financial laws, alongside pops' own investment, which is how capital crosses sectors. A sector new to a country needs the general pool, credit, government or foreign money. Opportunities are ranked in ROI tiers (Exceptional over 20%, Good 10–20%, Fair 5–10%, Marginal −5% to 5%), with hard caps from deposits and land, and throttles on new establishments.
 - **Companies** are national accounting entities layered over state industries through ownership shares, competing on productivity, methods and leverage.
 - **Finance as the source of booms and busts.** One bank per country holds reserves, loans and capital. Reserves come from base money × banking confidence. Sectors, companies and pops borrow. Credit is capped by both reserves and capital, defaults destroy bank capital, and credit then contracts. The real economy should otherwise settle toward equilibrium.
@@ -311,6 +320,8 @@ If you're unsure whether something exists or is switched on, say so and ask, rat
 | PM | Production method: the recipe an industry uses |
 | AM | Automation method: a labour-saving layer on top of the PM |
 | Wrk / Mid | Working- and middle-class job shares in method data |
+| Manufacturing Base | The size of a country's manufacturing industries plus content's bonuses. The state contracts a share of it as HOI4's offmap factories (M08) |
+| Mobilisation share | The share of a country's resources the production screen gets, set by its economic mobilisation law (M08) |
 | Target utilisation | A sector's national hiring decision, 10–100% of its jobs, which each state-industry shifts by up to 5 points (M04). It replaced each industry's employment target |
 | Profitability | Profit ÷ revenue (the margin) |
 | Qualifications | A state's stock of people qualified for middle- and upper-class work. Moves up need them |
