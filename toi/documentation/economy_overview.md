@@ -124,7 +124,7 @@ Then each country, in rank order:
    5. Each industry's trailing margin moves toward last month's. A building that keeps losing money shrinks, but only while investment is on.
    6. Pops move between the working, middle and upper classes to fit the jobs on offer, within their qualifications.
    7. Everything is recomputed: arable land and subsistence, jobs and employment (bureaucratic jobs included), production and each industry's finances, the upper class's dividends from last month's sector accounts, then each class's earnings, needs, taxes, confidence and targets.
-5. The country works out the goods its industries and pops make and use, by sector and method rather than state by state, which its market reads until next month. Then each sector's national accounts: this month's revenue, costs, profit, profit tax, retained share and dividends (M04). Then the Manufacturing Base and its contracts, which set HOI4's offmap factories (M08).
+5. The country works out the goods its industries and pops make and use, by sector and method rather than state by state, which its market reads until next month. Then each sector's national accounts: this month's revenue, costs, profit, profit tax, retained share and dividends (M04). Then HOI4's offmap factories move toward last month's contract targets, and the Manufacturing Base and its targets are recomputed (M08).
 6. Companies and investment-fund bookkeeping. Investment opportunities are off.
 7. Market leaders recompute supply, demand and target prices for their whole market from the members' totals, the market screen's statistics, and GDP.
 8. The budget is recomputed: taxes, spending, debt and interest.
@@ -159,11 +159,11 @@ Weekly: markets recompute supply, demand and target prices with current trade an
 
 ### Manufacturing Base and HOI4 factories [LIVE, M08]
 - **The Manufacturing Base** is the total size of a country's manufacturing industries (the Factories category), plus what focuses, decisions and events have added. Idle plants count: the state contracts factories that exist.
-- **Contracts:** the state contracts a share of the base, 10% to start, and only the player changes it, in a popup opened from the production screen. The AI keeps 10%. Idle factories cost nothing.
-- **The split:** the contracted factories divide 20% civilian, 50% military and 30% naval to start. A country without a coast gives the naval share to the military.
-- **HOI4's factories** are those contracts, held offmap: each month the game adds or removes offsite buildings to match. Nobody can build a factory on the map, and history has none.
-- **Cost:** each contracted factory costs £0.1M a month, a mandatory military budget line. The money goes to no one, since contracts don't take output from the factories yet; the planned option (b) would have the state buy that output.
-- **Content** that used to add or remove a factory adds or removes ten factories' worth of base, so at the default share it's still about one factory in use.
+- **Contracts:** the state contracts a share of the base, set by its economic mobilisation law: 5% under either isolation law, 10% in a civilian economy, then 20%, 30% and 40%, up to 50% under total mobilisation. The AI follows its law like the player. Idle factories cost nothing.
+- **The split:** the contracted factories divide 20% civilian, 50% military and 30% naval to start. Only the player changes it, in a popup opened from the production screen. A country without a coast gives the naval share to the military.
+- **HOI4's factories** are those contracts, held offmap. The contracts are targets, and the factories move toward them gradually, so a law change can't swing a war overnight: each month civilian and military factories close a tenth of the gap, dockyards a twenty-fifth, and cuts a quarter, by at least one factory. A switch to War Economy gets half way in about 7 months. Startup puts the factories at their targets. Nobody can build a factory on the map, and history has none.
+- **Cost:** each contracted factory in use costs £0.1M a month, a mandatory military budget line. The money goes to no one, since contracts don't take output from the factories yet; the planned option (b) would have the state buy that output.
+- **Content** that used to add or remove a factory adds or removes ten factories' worth of base, so at the civilian economy's share it's still about one factory in use. It moves the targets, and the factory arrives at the usual pace.
 - **Military resources:** a production-screen resource is a tenth of a good. Equipment costs ten times the resources it did (ships twice), so land equipment needs the same goods and ships a fifth. Only part of a country's resources reach the production screen: the economic mobilisation law's share, from 10% (undisturbed isolation) to 80% (total mobilisation), shown above the resource grid. Military production buys a tenth of a good for each resource it uses, at the market price.
 
 ### Wages [LIVE]
@@ -320,7 +320,7 @@ If you're unsure whether something exists or is switched on, say so and ask, rat
 | PM | Production method: the recipe an industry uses |
 | AM | Automation method: a labour-saving layer on top of the PM |
 | Wrk / Mid | Working- and middle-class job shares in method data |
-| Manufacturing Base | The size of a country's manufacturing industries plus content's bonuses. The state contracts a share of it as HOI4's offmap factories (M08) |
+| Manufacturing Base | The size of a country's manufacturing industries plus content's bonuses. The state contracts its mobilisation law's share of it, and HOI4's offmap factories move toward that target month by month (M08) |
 | Mobilisation share | The share of a country's resources the production screen gets, set by its economic mobilisation law (M08) |
 | Target utilisation | A sector's national hiring decision, 10–100% of its jobs, which each state-industry shifts by up to 5 points (M04). It replaced each industry's employment target |
 | Profitability | Profit ÷ revenue (the margin) |

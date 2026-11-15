@@ -4,7 +4,7 @@ Questions raised against the new spec, [EOANB_Redux_Economy_Redesign_Updated.md]
 
 When Strat answers, write the answer under the question, mark it **Decided** with the date, and update the milestone file it belongs to. The tuning values the spec leaves to testing (§34) aren't asked here: they get settled in the milestone that builds them.
 
-**Status:** Strat answered Q1–Q54 on 2026-11-12. Where an answer differs from the recommendation, it says "Not as recommended". The answers raised follow-up questions Q55–Q68, which Strat also answered on 2026-11-12. Those raised Q69–Q72, also answered the same day. M02's code reading raised Q73–Q80, and M03's raised Q81–Q84. Strat answered all of them on 2026-11-12. M04's raised Q85–Q91, answered on 2026-11-13. M05's raised Q92–Q95, answered on 2026-11-14. M06's raised Q96–Q101, answered on 2026-11-14. M07's raised Q102–Q105, answered on 2026-11-14. M08's raised Q106–Q113, answered on 2026-11-14.
+**Status:** Strat answered Q1–Q54 on 2026-11-12. Where an answer differs from the recommendation, it says "Not as recommended". The answers raised follow-up questions Q55–Q68, which Strat also answered on 2026-11-12. Those raised Q69–Q72, also answered the same day. M02's code reading raised Q73–Q80, and M03's raised Q81–Q84. Strat answered all of them on 2026-11-12. M04's raised Q85–Q91, answered on 2026-11-13. M05's raised Q92–Q95, answered on 2026-11-14. M06's raised Q96–Q101, answered on 2026-11-14. M07's raised Q102–Q105, answered on 2026-11-14. M08's raised Q106–Q113, answered on 2026-11-14. Strat's playtest of M08 raised Q114–Q116, answered the same day.
 
 ---
 
@@ -980,6 +980,8 @@ These came out of M08's code reading, against the baseline `redux-eco-sim/runs/m
 *Recommend:* (a).
 
 > **Decided 2026-11-14:** (b), not as recommended. The AI never changes it.
+>
+> **Amended 2026-11-14 (after playtesting, Q114):** the economic mobilisation law sets the share, for the player and the AI alike.
 
 **Q111. The size of a content bonus (from Q108).** At a contracted share near 10%, one factory of base is a tenth of a factory in use.
 - (a) +N ÷ the default contracted share, so a reward still gives about N factories in use at the default.
@@ -997,6 +999,8 @@ These came out of M08's code reading, against the baseline `redux-eco-sim/runs/m
 *Recommend:* (a).
 
 > **Decided 2026-11-14:** (a).
+>
+> **Amended 2026-11-14 (Q114):** the law sets the share, so the popup sets only the split.
 
 **Q113. What the Manufacturing Base is, and the cost of a factory.** Q64 derives the base from real output at base prices, ÷ a constant per factory that's also a factory's monthly contract cost.
 
@@ -1008,3 +1012,41 @@ These came out of M08's code reading, against the baseline `redux-eco-sim/runs/m
 - The 44 content calls to `add_offsite_building` become Manufacturing Base bonuses too (Q108, Q111), so the economy owns every offmap factory.
 - The 303 history factories are commented out in place, as the map strip did, so M14 can read them.
 - `arms_factory_productivity_modifier`, `industrial_complex_productivity_modifier` and `dockyard_productivity_modifier` only fed the government buildings' revenue. They're deleted, with their 56 uses in ideas, a trait and technologies.
+
+## Manufacturing Base playtest follow-ups (raised 2026-11-14, M08)
+
+Strat played M08 on the USA, whose economy is back on the map, and found the contracts too easy to swing: a player could contract everything for military production at once, so the North could bully the South just by slamming on the gas. Two instructions came out of it:
+- **The law sets the contracted share**, not the player: Civilian Economy 10%, Early Mobilization 20%, Partial Mobilization 30%, War Economy 40%, Total Mobilization 50%. This amends Q110 and Q112.
+- **The factory counts are targets.** HOI4's factories move toward them gradually: increases slowly, decreases faster, dockyards especially slowly, by at least one factory a month.
+
+**Q114. The isolation laws' shares.** The instruction left out Undisturbed Isolation and Isolation.
+- (a) 5% for both, below Civilian Economy, like the laws' other penalties.
+- (b) 10%, the same as Civilian Economy.
+- (c) Undisturbed Isolation 0%, Isolation 5%.
+
+*Recommend:* (a).
+
+> **Decided 2026-11-14:** (a). The seven laws carry a `manufacturing_contract_share` modifier: 5 / 5 / 10 / 20 / 30 / 40 / 50%.
+
+**Q115. How fast the factories move.** Each month a factory type moves at least one factory, and never past its target. The examples are a switch from Civilian Economy (10%) to War Economy (40%).
+- (a) Close part of the gap: civilian and military factories close 10% of it each month, dockyards 4%, and cuts 25%. Half way in 7 months and 90% in two years; dockyards half way in 17 months; cuts half way in 2.5 months.
+- (b) Grow from what's there: 5% of the current count a month (dockyards 2%), and cuts 20%. Quadrupling takes 28 months (dockyards 70), so big countries grow faster in absolute terms.
+- (c) A fixed pace: each month a type grows by 2% of the base times its split (dockyards half that), and cuts go 4× faster. 10% to 40% takes 15 months (dockyards 30), whatever the gap.
+
+*Recommend:* (a).
+
+> **Decided 2026-11-14:** (a). The rates are `global.manufacturing_growth_rate@<factory type>` (10, 10, 4) and `global.manufacturing_decline_rate` (25).
+
+**Q116. Content's factory rewards (Q111) under the ramp.**
+- (a) They move the target, and the factories follow at the usual pace. A +1 arrives the next month, since the smallest move is one factory.
+- (b) They go straight onto HOI4's factories, and the ramp handles only law and split changes.
+
+*Recommend:* (a).
+
+> **Decided 2026-11-14:** (a).
+
+**Defaults taken without a question** (raise any of them to change it):
+- Startup puts every country's factories straight at their targets; the ramp starts with the first month.
+- The ramp moves toward last month's targets (`*_monthly` runs before `_update`), so a law change starts to move factories a month later. Content and the split buttons change the targets at once.
+- The contract cost is paid on the factories HOI4 has, not on the target.
+- Content's bonuses still count at Civilian Economy's 10% (`global.manufacturing_contract_share_default`, renamed from `_start`), whatever the country's law.

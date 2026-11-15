@@ -206,7 +206,7 @@ The header shows `revenue` and the pie (`create_pie_chart_revenue`, with its slo
 | Procurement | 5 levels | the share of the army's goods bought | `military_production_resources_spending` | Exists |
 | Maintenance and repair | 5 levels | unit upkeep, which buys organisation and morale | `military_spending` | Exists |
 | Personnel | 5 levels, funding | a funding factor on the pay of fielded manpower | `military_payroll_spending` | The cost exists; the funding effect M13 (UQ18) |
-| Factory contracts | read-only; the contracts are set in their popup (UQ9, Q112) | — | `manufacturing_contract_spending`, contracted factories × 100 (Q113) | Exists (M08) |
+| Factory contracts | read-only; the law sets the share and the popup the split (UQ9, Q112, Q114) | — | `manufacturing_contract_spending`, contracted factories in use × 100 (Q113) | Exists (M08) |
 | **Government** | | | | |
 | Patronage | 5 levels | — | — | Later |
 | Intelligence | 5 levels | `intelligence_spending_percentage` exists, with no cost or effect, and its buttons are disabled today | — | M13 |
@@ -392,7 +392,7 @@ The category filter applies to all three lists. Each filter button shows its cat
 |---|---|---|
 | Output, operating profit, capital, employed, under construction, retooling | sums over `sectors` of `sector_revenue@`, `sector_profit@`, `sector_capital@`, `sector_working_employed@` + `sector_middle_employed@`, `sector_construction@` and `sector_retooling@` | Refresh |
 | Retained, profit tax, dividends | `sectors_retained`, `sectors_profit_tax`, `sectors_dividends` | Stored |
-| Manufacturing Base | the factory count, and the civilian, military and naval split, with a popup to set it (UQ9) | M08 |
+| Manufacturing Base | the factory count against its target, the law's contracted share, and the civilian, military and naval split, with a popup to set the split (UQ9, Q114) | M08 |
 | Category filter and shares | `global.building_type@<sector>`: 2 transport, 3 resource, 4 farming, 5 factories, 6 urban; shares from the revenue sums | Stored, Refresh |
 | Sector list | `eco_ui_sectors_list`, from the country's `sectors`, filtered and sorted | Refresh |
 | Investment opportunities | sector icon, state, ROI tier (Exceptional, Good, Fair, Marginal), cost, and the pool that funds it; sorted by tier | M09 |

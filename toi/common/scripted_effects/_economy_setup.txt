@@ -122,11 +122,9 @@ _init_country = {
 	set_variable = { procurement_spending_percentage = 50}
     budget_clamp = yes
 
-    # Manufacturing Base contracts (M08): the % of the base contracted and its split, which only the player changes.
-    # A country that's reset keeps them
+    # Manufacturing Base contracts (M08): their split, which only the player changes. A country that's reset keeps it
     if = {
-        limit = { NOT = { has_variable = manufacturing_contract_share } }
-        set_variable = { manufacturing_contract_share = global.manufacturing_contract_share_start }
+        limit = { NOT = { has_variable = manufacturing_split@token:arms_factory } }
         for_each_loop = {
             array = global.offmap_factory_types
             value = f_token
@@ -249,7 +247,10 @@ _country_fin = {
     # Country
 
     sectors_update = yes # The first month's dividends and profit tax
-    manufacturing_base_update = yes # HOI4's factories, from the start
+    manufacturing_base_update = yes
+    set_temp_variable = { mb_snap_temp = 1 }
+    manufacturing_contracts_monthly = yes # HOI4's factories start at their targets
+    set_temp_variable = { mb_snap_temp = 0 }
 
     if = { # Finalize market details
         limit = {
@@ -1197,7 +1198,13 @@ initialize_country = {
 
         # Manufacturing Base (M08): the size of a country's manufacturing industries, plus content's bonuses (manufacturing_base_update)
         set_variable = { global.manufacturing_contract_cost = 100 } # Monthly cost of each contracted factory (Q113)
-        set_variable = { global.manufacturing_contract_share_start = 10 } # % of the base a country contracts until its player changes it (Q110)
+        set_variable = { global.manufacturing_contract_share_default = 10 } # Civilian Economy's contracted share, %: content's factory bonuses count at it (Q111). The laws set each country's (Q114)
+        # How fast HOI4's factories move to the contracts' targets (manufacturing_contracts_monthly, Q115): the % of the gap a
+        # factory type closes each month when it grows, and when it shrinks. Every move is at least one factory
+        set_variable = { global.manufacturing_growth_rate@token:industrial_complex = 10 }
+        set_variable = { global.manufacturing_growth_rate@token:arms_factory = 10 }
+        set_variable = { global.manufacturing_growth_rate@token:dockyard = 4 }
+        set_variable = { global.manufacturing_decline_rate = 25 }
         # HOI4's factory types, which follow the contracts as offmap buildings, and the % of the contracted factories each gets (Q107)
         clear_array = global.offmap_factory_types
         add_to_array = { global.offmap_factory_types = token:industrial_complex }

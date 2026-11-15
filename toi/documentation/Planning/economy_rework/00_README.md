@@ -18,7 +18,7 @@ Each one is a self-contained piece of work for a fresh session. Do them in order
 | M05 | [Land, agriculture and subsistence](milestones/M05_land_and_subsistence.md) | §10–11, §25 | Q24–Q27, Q63, Q71, Q92–Q95 | Done in the simulator; in-game check to do |
 | M06 | [Natural resources](milestones/M06_resources.md) | §9 | Q28–Q30, Q68, Q96–Q101 | Done in the simulator; in-game check to do |
 | M07 | [Infrastructure](milestones/M07_infrastructure.md) | §8 | Q31, Q102–Q105 | Done in the simulator; in-game check to do |
-| M08 | [Manufacturing Base and HOI4 factories](milestones/M08_manufacturing_base.md) | §12 | Q32–Q33, Q64, Q106–Q113 | Done in the simulator; in-game check to do |
+| M08 | [Manufacturing Base and HOI4 factories](milestones/M08_manufacturing_base.md) | §12 | Q32–Q33, Q64, Q106–Q116 | Done in the simulator; in-game check to do |
 | M09 | [Investment](milestones/M09_investment.md) | §13 | Q34–Q39, Q60 | Not started |
 | M10 | [Companies](milestones/M10_companies.md) | §19 | Q40–Q41, Q66 | Not started |
 | M11 | [Banking, credit and base money](milestones/M11_banking_and_credit.md) | §14–16 | Q42–Q44, Q59, Q65, Q69, Q72 | Not started |
@@ -59,7 +59,8 @@ Q52 to Q54 apply across milestones.
 - **Committed** in `f1fbcedc7`: M04's systems (the PM/AM cache, sector records, the profit split, monthly goods totals by sector and method, the slim state-industry, target utilisation, capacity decay, the national sector figures for the UI). `9612e4cfb` starts the UI rework.
 - **Committed** in `acece860c`: M05 (arable land, land quality, crop eligibility, carrying capacity, half returns past it, rent as a constant, and the peasant basket's home-grown share at base price) and M06 (deposits as state history data, deposit quality, prospecting without finds from nothing, RGOs for natural goods only, and content's `add_resource` calls converted to the economy's wrappers).
 - **Committed** in `4c0daf665`: M07 (the cap on transport supply from population, a shipping price that follows use, ports paid from it and for their local transport, and test railways and ports).
-- **Uncommitted:** M08 (the Manufacturing Base, factory contracts and offmap factories, on-map factories removed and content converted, the military resource scale and the economic mobilisation share).
+- **Committed** in `639e32e9b` and `76855b074`: M08 (the Manufacturing Base, factory contracts and offmap factories, on-map factories removed and content converted, the military resource scale and the economic mobilisation share).
+- **Uncommitted:** M08's playtest follow-ups (the law sets the contracted share, and HOI4's factories ramp toward their targets, Q114–Q116).
 - **Switched off:** investment (`global.eco_investment_enabled = 0`), debt (`global.eco_debt_enabled = 0`: starting debt, interest and bankruptcy), the economic cycle (`global.eco_cycle_enabled = 0`), downsizing and banking. Pops borrow, but without interest until M11.
 - **Known bugs:**
   - Pop investment money disappears until M09 gives it the general pool.

@@ -946,7 +946,7 @@
             }
             divide_variable = { military_production_resources_spending = modifier@bureaucratic_efficiency_factor }
         #
-        # Factory contracts (M08): each factory the state contracts from the Manufacturing Base costs a fixed amount (Q113)
+        # Factory contracts (M08): each contracted factory HOI4 has (not the target it's moving to) costs a fixed amount (Q113)
         set_variable = { manufacturing_contract_spending = { value = manufacturing_contracted multiply = global.manufacturing_contract_cost } }
 
         set_variable = { military_mandatory_spending = manufacturing_contract_spending }
@@ -1530,22 +1530,11 @@
         budget_clamp = yes
         budget_update = yes
     }
-    change_manufacturing_contract_share = {
-        #Scope: Country
-        #Changes the share of the Manufacturing Base the state contracts (M08, Q106), and HOI4's offmap factories with it
-        #INPUT:
-            #percent_change_temp - Points to add, 1.0 = 1% of the base. Kept between 0 and 100
-
-        add_to_variable = { manufacturing_contract_share = percent_change_temp }
-        clamp_variable = { var = manufacturing_contract_share min = 0 max = 100 }
-        manufacturing_base_update = yes
-        budget_update = yes
-    }
     change_manufacturing_split = {
         #Scope: Country
         #Moves points of the contracted factories' split (M08, Q107) to or from one factory type. The military share balances
         #civilian and naval changes, and a military change is balanced by the civilian share, or by the naval share once the
-        #civilian share has run out
+        #civilian share has run out. It changes the targets: HOI4's factories follow month by month (Q115)
         #INPUT:
             #f_token - the factory type: token:industrial_complex, token:arms_factory or token:dockyard
             #percent_change_temp - Points to add to it, 1.0 = 1%
@@ -1577,7 +1566,6 @@
         add_to_variable = { manufacturing_split@var:f_token = percent_change_temp }
         subtract_from_variable = { manufacturing_split@var:balance_token_temp = percent_change_temp }
         manufacturing_base_update = yes
-        budget_update = yes
     }
     change_intelligence_spending = {
         #Scope: Country

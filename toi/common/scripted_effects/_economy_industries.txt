@@ -409,13 +409,13 @@
 		# Country scope. The Manufacturing Base (M08, §12): the size of the country's manufacturing industries (sector_size@ of
 		# the Factories category, global.building_type 5, Q113), plus content's bonuses (add_manufacturing_base): those are kept
 		# in factories in use at the default contracted share (manufacturing_base_bonus), so each is worth
-		# 100 / global.manufacturing_contract_share_start of base (Q111). The state contracts manufacturing_contract_share % of it (Q106, Q110), split by
-		# manufacturing_split@<factory type> (Q107), and HOI4's civilian factories, military factories and dockyards follow as
-		# offmap buildings (Q33). A country without a coastal state gives its naval share to the military. Each contracted
-		# factory costs global.manufacturing_contract_cost a month (spending_update). Runs monthly after sectors_update, at
-		# startup, and when the player changes the contracts
-		# Outputs: manufacturing_base, manufacturing_contracted (factories in use), offmap_factories@<factory type>
-		set_variable = { manufacturing_base = { value = manufacturing_base_bonus multiply = 100 divide = global.manufacturing_contract_share_start } }
+		# 100 / global.manufacturing_contract_share_default of base (Q111). The state contracts its economic mobilisation law's
+		# share of it (the manufacturing_contract_share modifier, Q114), split by manufacturing_split@<factory type> (Q107). A
+		# country without a coastal state gives its naval share to the military. These are targets: HOI4's offmap factories
+		# move toward them each month (manufacturing_contracts_monthly, Q115). Runs monthly after sectors_update, at startup, and
+		# when content or the player changes the base or the split
+		# Outputs: manufacturing_base, manufacturing_target@<factory type>, manufacturing_contracted_target (factories)
+		set_variable = { manufacturing_base = { value = manufacturing_base_bonus multiply = 100 divide = global.manufacturing_contract_share_default } }
 		for_each_loop = {
 			array = sectors
 			value = s_token
@@ -432,7 +432,7 @@
 			set_temp_variable = { mb_landlocked_temp = 0 }
 		}
 
-		set_variable = { manufacturing_contracted = 0 }
+		set_variable = { manufacturing_contracted_target = 0 }
 		for_each_loop = {
 			array = global.offmap_factory_types
 			value = f_token
@@ -452,17 +452,51 @@
 			set_temp_variable = {
 				mb_target_temp = {
 					value = manufacturing_base
-					multiply = manufacturing_contract_share
-					divide = 100
+					multiply = modifier@manufacturing_contract_share
 					multiply = mb_split_temp
 					divide = 100
 				}
 			}
 			round_temp_variable = mb_target_temp
+			set_variable = { manufacturing_target@var:f_token = mb_target_temp }
+			add_to_variable = { manufacturing_contracted_target = mb_target_temp }
+		}
+	}
 
-			# HOI4 only adds or removes offsite buildings, so it gets the change from what this country was last given
-			set_temp_variable = { mb_change_temp = mb_target_temp }
+	manufacturing_contracts_monthly = {
+		# Country scope. Moves HOI4's civilian factories, military factories and dockyards (offmap buildings) toward the targets
+		# manufacturing_base_update set (Q115). Each month a factory type closes global.manufacturing_growth_rate@<factory type> %
+		# of the gap when it grows (dockyards slowest) and global.manufacturing_decline_rate % when it shrinks, by at least one
+		# factory and never past the target. Each factory in use costs global.manufacturing_contract_cost a month (spending_update).
+		# Runs monthly before manufacturing_base_update, and at startup
+		# mb_snap_temp - 1 goes straight to the targets (startup)
+		# Outputs: offmap_factories@<factory type> (what HOI4 has), manufacturing_contracted (factories in use)
+		set_variable = { manufacturing_contracted = 0 }
+		for_each_loop = {
+			array = global.offmap_factory_types
+			value = f_token
+
+			set_temp_variable = { mb_change_temp = manufacturing_target@var:f_token }
 			subtract_from_temp_variable = { mb_change_temp = offmap_factories@var:f_token }
+			if = {
+				limit = { NOT = { check_variable = { mb_snap_temp = 1 } } }
+				if = {
+					limit = { check_variable = { mb_change_temp > 0 } }
+					set_temp_variable = { mb_step_temp = { value = mb_change_temp multiply = global.manufacturing_growth_rate@var:f_token divide = 100 } }
+					round_temp_variable = mb_step_temp
+					clamp_temp_variable = { var = mb_step_temp min = 1 max = mb_change_temp }
+					set_temp_variable = { mb_change_temp = mb_step_temp }
+				}
+				else_if = {
+					limit = { check_variable = { mb_change_temp < 0 } }
+					set_temp_variable = { mb_step_temp = { value = mb_change_temp multiply = global.manufacturing_decline_rate divide = 100 } }
+					round_temp_variable = mb_step_temp
+					clamp_temp_variable = { var = mb_step_temp min = mb_change_temp max = -1 }
+					set_temp_variable = { mb_change_temp = mb_step_temp }
+				}
+			}
+
+			# HOI4 only adds or removes offsite buildings, so it gets the change
 			if = {
 				limit = { NOT = { check_variable = { mb_change_temp = 0 } } }
 				meta_effect = {
@@ -470,9 +504,9 @@
 					TYPE = "[?f_token.GetTokenKey]"
 					CHANGE = "[?mb_change_temp|0]"
 				}
-				set_variable = { offmap_factories@var:f_token = mb_target_temp }
+				add_to_variable = { offmap_factories@var:f_token = mb_change_temp }
 			}
-			add_to_variable = { manufacturing_contracted = mb_target_temp }
+			add_to_variable = { manufacturing_contracted = offmap_factories@var:f_token }
 		}
 	}
 

@@ -1155,15 +1155,16 @@
 
 		#	Adds x_temp factories to the Manufacturing Base (M08), in place of building civilian factories, military factories or
 		#	dockyards, which are offmap now and follow the base. x_temp is the factories in use at the default contracted share,
-		#	so the base grows by x_temp / global.manufacturing_contract_share_start x 100 (Q111): +1 factory adds 10 base at 10%.
+		#	so the base grows by x_temp / global.manufacturing_contract_share_default x 100 (Q111): +1 factory adds 10 base at 10%.
+		#	The contracts' targets change at once, and HOI4's factories follow at the usual pace (Q116).
 		#	A negative x_temp removes base. Use it in country scope, from a state with owner = { }. Works in country history too
 		add_manufacturing_base = {
 			# x_temp - factories
 			set_temp_variable = { x_base_temp = x_temp } # For the tooltip
 			if = {
-				limit = { check_variable = { global.manufacturing_contract_share_start > 0 } } # Not set yet in history
+				limit = { check_variable = { global.manufacturing_contract_share_default > 0 } } # Not set yet in history
 				multiply_temp_variable = { x_base_temp = 100 }
-				divide_temp_variable = { x_base_temp = global.manufacturing_contract_share_start }
+				divide_temp_variable = { x_base_temp = global.manufacturing_contract_share_default }
 			}
 			if = {
 				limit = { check_variable = { x_temp > 0 } }
@@ -1175,8 +1176,8 @@
 			}
 			hidden_effect = {
 				add_to_variable = { manufacturing_base_bonus = x_temp } # In factories, so it works before the economy starts
-				if = { # HOI4's factories change at once, once the economy is running
-					limit = { has_variable = manufacturing_contract_share }
+				if = { # The targets change at once, once the economy is running
+					limit = { has_variable = manufacturing_base }
 					manufacturing_base_update = yes
 				}
 			}
