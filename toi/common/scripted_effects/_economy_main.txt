@@ -28,6 +28,7 @@ _advance_time = {
         #
     }
 
+    money_markets_monthly = yes
     global_economy_update = yes
 
     # Prices move toward the targets the weekly trade tick set, before anyone is paid at them
@@ -37,11 +38,14 @@ _advance_time = {
         investment_headroom_update = yes # How much more of each good the market can take before its price falls below base (Q147)
     }
 
+    # Fix rates and reserves before any borrower settles. Close banks after every country has paid.
+    every_country = { bank_monthly = yes }
     for_each_scope_loop = {
         array = global.econ_order_array
-
         _country_advance_time = yes
     }
+    every_country = { bank_close_monthly = yes }
+    money_shares_update = yes
 }
 _country_advance_time = {
 
@@ -68,6 +72,7 @@ _country_advance_time = {
     national_debt_update = yes
     set_temp_variable = { x_temp = net_budget }
     add_treasury = yes
+    bank_foreign_interest_monthly = yes
 
     if = { limit = { is_ai = yes } ai_budget = yes }
     spending_effects_update = yes
@@ -85,7 +90,7 @@ _country_advance_time = {
     every_controlled_state = {
         r_update_modifiers_state_effects = yes
 
-        bank_reset_month = yes
+        bank_construction_monthly = yes
 
         on_monthly_industries = yes # Construction, retooling & prospecting
         on_monthly_pops = yes # Pop Finances & Growth
@@ -136,7 +141,7 @@ _country_advance_time = {
 
     # 0.1 secs
     budget_update = yes
-	#bank_update = yes - disable until bank system is done
+    bank_update = yes
     national_debt_update = yes
 
     # Statistics - 0.2 to 1.2 secs
@@ -447,6 +452,7 @@ on_monthly_industries = {
         if = {
             limit = {
                 check_variable = { construction@var:om_building > 0 }
+                check_variable = { construction_credit_paused@var:om_building = 0 }
                 OR = { # A sector or company over its borrowing limit pauses what it pays for itself (Q118, Q131)
                     AND = {
                         check_variable = { om_financer_temp = 0 }
@@ -508,6 +514,7 @@ on_monthly_industries = {
         if = {
             limit = {
                 NOT = { check_variable = { retooling_pm@var:om_building = 0 } }
+                check_variable = { retooling_credit_paused@var:om_building = 0 }
                 OR = {
                     NOT = { check_variable = { retooling_financier@var:om_building = 0 } }
                     check_variable = { controller:sector_construction_paused@var:om_building = 0 }
@@ -659,33 +666,31 @@ pops_peasant_job_migration = {
 }
 
 pops_debt_monthly = {
-	# current_pop_token
-	# Pops hold no savings (Q15). For the classes that borrow (global.pops_borrows@, Q59), last month's spending above their
-	# income after investment becomes debt. Its scheduled repayment was part of that spending, and a share of any surplus
-	# (global.pops_debt_surplus_repayment) repays more. The rest of a surplus disappears. The confidence penalties in
-	# pops_update_confidence keep the debt in check, and there's no interest until the bank becomes the creditor in M11.
-	if = {
-		limit = { check_variable = { global.pops_borrows@var:current_pop_token = 1 } }
-		set_temp_variable = {
-			net_money_temp = {
-				value = pops_earnings@var:current_pop_token
-				subtract = pops_investment@var:current_pop_token
-				subtract = pops_spending@var:current_pop_token
-			}
-		}
-		if = {
-			limit = { check_variable = { net_money_temp > 0 } }
-			multiply_temp_variable = { net_money_temp = global.pops_debt_surplus_repayment }
-		}
-		set_variable = {
-			pops_debt@var:current_pop_token = {
-				value = pops_debt@var:current_pop_token
-				subtract = pops_debt_repayment_spending@var:current_pop_token
-				subtract = net_money_temp
-				max = 0
-			}
-		}
-	}
+    # State, current_pop_token. Draw last month's approved spending; pay principal and interest once.
+    if = {
+        limit = { check_variable = { global.pops_borrows@var:current_pop_token = 1 } }
+        set_temp_variable = { p_draw = pops_credit@var:current_pop_token }
+        set_temp_variable = { bank_payment = { value = pops_earnings@var:current_pop_token subtract = pops_investment@var:current_pop_token subtract = pops_spending@var:current_pop_token max = 0 multiply = global.pops_debt_surplus_repayment add = pops_debt_repayment_spending@var:current_pop_token min = pops_debt@var:current_pop_token } }
+        subtract_from_variable = { pops_debt@var:current_pop_token = bank_payment }
+        add_to_variable = { pops_debt@var:current_pop_token = p_draw }
+        set_temp_variable = { p_interest = pops_interest_spending@var:current_pop_token }
+        set_variable = { pops_credit@var:current_pop_token = 0 }
+        owner = {
+            subtract_from_variable = { bank_credit_committed = p_draw }
+            add_to_variable = { bank_loans = p_draw }
+            add_to_variable = { bank_new_lending = p_draw }
+            add_to_variable = { bank_interest_received = p_interest }
+            bank_repay = yes
+        }
+        # An income collapse makes debt beyond two years' income unserviceable (provisional M11 coefficient).
+        set_temp_variable = { p_debt_limit = { value = pops_earnings@var:current_pop_token subtract = pops_income_tax_spending@var:current_pop_token max = 0 multiply = global.bank_pop_debt_months } }
+        if = {
+            limit = { check_variable = { pops_debt@var:current_pop_token > p_debt_limit } }
+            set_temp_variable = { bank_loss = { value = pops_debt@var:current_pop_token subtract = p_debt_limit } }
+            set_variable = { pops_debt@var:current_pop_token = p_debt_limit }
+            owner = { bank_write_off = yes }
+        }
+    }
 }
 pops_wealth_monthly = {
 	# current_pop_token
@@ -693,6 +698,7 @@ pops_wealth_monthly = {
 	# (target - spending) / goods spending, and each whole point of it moves wealth one level, from 1 to 200.
 	set_temp_variable = { pops_wealth_progress_temp = pops_spending_target@var:current_pop_token }
 	subtract_from_temp_variable = { pops_wealth_progress_temp = pops_spending@var:current_pop_token }
+    subtract_from_temp_variable = { pops_wealth_progress_temp = pops_unfunded_spending@var:current_pop_token }
 	multiply_temp_variable = { pops_wealth_progress_temp = global.pops_wealth_speed }
 	divide_temp_variable = { pops_wealth_progress_temp = pops_needs_spending@var:current_pop_token }
 	add_to_temp_variable = { pops_wealth_progress_temp = pops_wealth_progress@var:current_pop_token }

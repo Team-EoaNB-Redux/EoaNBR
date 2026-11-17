@@ -19,7 +19,7 @@
 Money doesn't need closing: it's created and destroyed all the time (Q52).
 
 ## Exists now
-- No money supply, price level or reserves exist. Base money comes from M11.
+- M11 supplies market `base_money`, country `bank_money`, `price_level` fixed at 1, and physical `currency_reserves` initially 0, plus tested minting and market transfers. Money demand, inflation and reserve accumulation are not implemented yet.
 - Valuables have a fixed price of 2× base.
 - Trade value is recorded per good: `trade_value@<good>` is the traded amount × price, less tariffs, and `trade_value` holds the total. There's no split into imports and exports.
 - The politics rework's `monetary_system_tokens` cover no standard, single and dual commodity standards, a mixed standard, fiat and a pegged currency.

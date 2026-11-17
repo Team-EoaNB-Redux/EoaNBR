@@ -31,6 +31,7 @@
 					pops_calculate_taxation = yes
 					pops_calculate_investment = yes
 					pops_calculate_debt_servicing = yes
+					pops_credit_spending_update = yes
 
 					pops_update_confidence = yes
 					pops_calculate_spending_targets = yes
@@ -70,6 +71,7 @@
 		set_variable = { pops_income_tax_spending@var:current_pop_token = p_pops_income_tax_spending }
 		set_variable = { pops_sales_tax_spending@var:current_pop_token = p_pops_sales_tax_spending }
 		set_variable = { pops_debt_repayment_spending@var:current_pop_token = p_pops_debt_repayment_spending }
+		set_variable = { pops_interest_spending@var:current_pop_token = p_pops_interest_spending }
 
 		# Target
 		set_variable = { pops_consumer_confidence@var:current_pop_token = p_pops_consumer_confidence }
@@ -129,6 +131,7 @@
 		set_variable = { pops_income_tax_spending = 0 }
 		set_variable = { pops_sales_tax_spending = 0 }
 		set_variable = { pops_debt_repayment_spending = 0 }
+		set_variable = { pops_interest_spending = 0 }
 	}
 	pops_prepare_contextual_multipliers = {
 		# Consumer Confidence Factor
@@ -182,6 +185,7 @@
 		add_to_variable = { pops_spending = pops_income_tax_spending }
 		add_to_variable = { pops_spending = pops_sales_tax_spending }
 		add_to_variable = { pops_spending = pops_debt_repayment_spending }
+		add_to_variable = { pops_spending = pops_interest_spending }
 
 		# Average wealth of the civilian classes. Soldiers are outside them
 		set_temp_variable = { civilian_workforce_temp = pops_workforce }
@@ -247,7 +251,9 @@
 			limit = { check_variable = { current_pop_token = token:peasants } }
 			set_temp_variable = { market_share_temp = global.peasant_market_interaction }
 		}
+		set_temp_variable = { needs_quote_temp = 1 }
 		get_pop_needs = yes
+		set_temp_variable = { needs_quote_temp = 0 }
 
 		set_temp_variable = { p_pops_needs_spending = needs_spending_temp }
 		set_temp_variable = { p_pops_spending = needs_spending_temp }
@@ -321,17 +327,19 @@
 	pops_calculate_debt_servicing = {
 		# current_pop_token
 		# The classes that borrow repay global.pops_debt_repayment_rate of their debt a month, as part of their spending (Q59).
-		# There's no interest until the bank becomes the creditor in M11
-		set_temp_variable = { p_pops_debt_repayment_spending = pops_debt@var:current_pop_token }
-		multiply_temp_variable = { p_pops_debt_repayment_spending = global.pops_debt_repayment_rate }
+		# M11 adds the owner's bank rate. Servicing is capped at cash income; rationing cuts the goods basket first.
+		set_temp_variable = { p_service_cash = { value = p_pops_earnings subtract = p_pops_income_tax_spending subtract = p_pops_investment max = 0 } }
+		set_temp_variable = { p_pops_interest_spending = { value = pops_debt@var:current_pop_token multiply = owner:bank_interest_rate divide = 1200 min = p_service_cash } }
+		set_temp_variable = { p_pops_debt_repayment_spending = { value = pops_debt@var:current_pop_token multiply = global.pops_debt_repayment_rate min = { value = p_service_cash subtract = p_pops_interest_spending max = 0 } } }
 		add_to_temp_variable = { p_pops_spending = p_pops_debt_repayment_spending }
+		add_to_temp_variable = { p_pops_spending = p_pops_interest_spending }
 	}
 	pops_update_confidence = {
 		# current_pop_token
 		# Consumer confidence (0.2 to 2) sets target spending (Q16). It starts from the country's consumer_confidence_modifier
 		# and falls with the share of earnings that goes on debt repayments, faster once that share passes what pops tolerate.
 		# Classes that can't borrow never aim to spend more than they earn (Q82).
-		set_temp_variable = { debt_service_ratio_temp = p_pops_debt_repayment_spending }
+		set_temp_variable = { debt_service_ratio_temp = { value = p_pops_debt_repayment_spending add = p_pops_interest_spending } }
 		divide_temp_variable = { debt_service_ratio_temp = p_pops_earnings }
 
 		# Base from macro conditions (From 0.2 to 2.0), less the debt-service share
@@ -351,7 +359,7 @@
 		}
 
 		# Interest Rate Shock (every 12% excess interest -> -0.25)
-		set_temp_variable = { temp_interest = bank_interest_rate }
+		set_temp_variable = { temp_interest = owner:bank_interest_rate }
 		subtract_from_temp_variable = { temp_interest = 12 }  # 1% monthly
 		if = {
 			limit = { check_variable = { temp_interest > 0 } }
@@ -370,7 +378,11 @@
 			set_temp_variable = { p_pops_consumer_confidence = 1 }
 		}
 
-		# Clamp 0.2–2
+		if = {
+			limit = { check_variable = { p_credit_ration < 0.99999 } check_variable = { p_pops_consumer_confidence > 1 } }
+			set_temp_variable = { p_pops_consumer_confidence = 1 }
+		}
+		# Clamp 0.2 to 2
 		clamp_temp_variable = {
 			var = p_pops_consumer_confidence
 			min = 0.2
@@ -401,10 +413,19 @@
 		add_to_variable = { pops_income_tax_spending = p_pops_income_tax_spending }
 		add_to_variable = { pops_sales_tax_spending = p_pops_sales_tax_spending }
 		add_to_variable = { pops_debt_repayment_spending = p_pops_debt_repayment_spending }
+		add_to_variable = { pops_interest_spending = p_pops_interest_spending }
 	}
 	pops_clear_inactive_pop_data = {
 		# current_pop_token
-		# A class with nobody left keeps its wealth level, for anyone who joins it later. Its debt is written off
+		# An empty class keeps its wealth. Principal is written off once; release unused credit.
+		set_temp_variable = { bank_loss = pops_debt@var:current_pop_token }
+		set_temp_variable = { p_old_credit = pops_credit@var:current_pop_token }
+		owner = {
+			subtract_from_variable = { bank_credit_committed = p_old_credit }
+			if = { limit = { check_variable = { bank_loss > 0 } } bank_write_off = yes }
+		}
+		set_variable = { pops_credit@var:current_pop_token = 0 }
+		set_variable = { pops_interest_spending@var:current_pop_token = 0 }
 
 		set_variable = { pops_unemployed@var:current_pop_token = 0 }
 		set_variable = { pops_earnings@var:current_pop_token = 0 }
@@ -639,7 +660,7 @@
 
 						set_temp_variable = { replaced_temp = { value = replaced_temp multiply = global.base_price@var:pop_r_token divide = global.base_price@var:replace_token } }
 						set_temp_variable = { market_need_temp = { value = replaced_temp multiply = market_share_temp } }
-						add_to_variable = { pops_need@var:replace_token = market_need_temp }
+						if = { limit = { check_variable = { needs_quote_temp = 0 } } add_to_variable = { pops_need@var:replace_token = market_need_temp } }
 						set_temp_variable = {
 							replaced_temp = {
 								value = controller:price@var:replace_token
@@ -654,7 +675,7 @@
 				}
 
 				set_temp_variable = { market_need_temp = { value = need_temp multiply = market_share_temp } }
-				add_to_variable = { pops_need@var:pop_r_token = market_need_temp }
+				if = { limit = { check_variable = { needs_quote_temp = 0 } } add_to_variable = { pops_need@var:pop_r_token = market_need_temp } }
 				set_temp_variable = {
 					need_temp = {
 						value = controller:price@var:pop_r_token
@@ -672,7 +693,7 @@
 		set_temp_variable = { need_temp = global.pops_need_at_wealth@token:food^wealth_temp }
 		set_temp_variable = { need_temp = { value = need_temp multiply = pop_temp multiply = controller:modifier@pops_food_consumption_factor } }
 		set_temp_variable = { market_need_temp = { value = need_temp multiply = market_share_temp } }
-		add_to_variable = { pops_need@token:food = market_need_temp }
+		if = { limit = { check_variable = { needs_quote_temp = 0 } } add_to_variable = { pops_need@token:food = market_need_temp } }
 		set_temp_variable = {
 			need_temp = {
 				value = controller:price@token:food
@@ -1292,12 +1313,8 @@
 			divide_variable = { national_bank_amount_k = 1000 }
 			multiply_variable = { national_bank_amount_k = 24 }
 			
-			set_variable = { national_bank_amount_lent_k = 0 }
-			for_each_loop = {
-				array = money_lent_country
-				value = borrower_country_temp
-				add_to_variable = { national_bank_amount_lent_k = money_lent_k@var:borrower_country_temp }
-			}
+			# Domestic government bonds stay outside the M11 bank's shared credit market (Q43).
+			set_variable = { national_bank_amount_lent_k = money_lent_k@THIS }
 
 			set_variable = { national_bank_amount_left_k = national_bank_amount_k }
 			subtract_from_variable = { national_bank_amount_left_k = national_bank_amount_lent_k }
@@ -1338,39 +1355,15 @@
 			add_to_temp_variable = { modifier_temp = 1 }
 			multiply_variable = { domestic_interest_rate = modifier_temp }
 
-			set_variable = { foreign_interest_rate = global.default_interest_rate } # TODO - 8.0%
-			add_to_variable = { foreign_interest_rate = global.base_international_interest_rate } # 2.0%
-			if = {
-				limit = {
-					is_great_power = yes
-				}
-				subtract_from_variable = { foreign_interest_rate = 2 }
-			}
-			else_if = {
-				limit = {
-					is_secondary_power = yes
-				}
-				subtract_from_variable = { foreign_interest_rate = 1 }
-			}
-			add_to_variable = { foreign_interest_rate = modifier@interest_rate_modifier }
-			add_to_variable = { foreign_interest_rate = modifier@foreign_interest_rate_modifier }
-
-			set_temp_variable = { modifier_temp = modifier@interest_rate_factor }
-			add_to_temp_variable = { modifier_temp = modifier@foreign_interest_rate_factor }
-			add_to_temp_variable = { modifier_temp = 1 }
-			multiply_variable = { foreign_interest_rate = modifier_temp }
-			
 			if = { # 1st rank GP gets 10% cheaper debt (factor)
 				limit = {
 					check_variable = { score_array_position_var = 1 }
 				}
 				multiply_variable = { domestic_interest_rate = 0.9 }
-				multiply_variable = { foreign_interest_rate = 0.9 }
 			}
 			if = { # Debt switch off: no interest on national debt
 				limit = { check_variable = { global.eco_debt_enabled = 0 } }
 				set_variable = { domestic_interest_rate = 0 }
-				set_variable = { foreign_interest_rate = 0 }
 			}
 		#
 
@@ -1424,9 +1417,8 @@
 		set_temp_variable = { local_debt_payment_temp = debt_to_national_bank_k }
 		multiply_temp_variable = { local_debt_payment_temp = domestic_interest_rate }
 		divide_temp_variable = { local_debt_payment_temp = 1.2 }
-		set_temp_variable = { foreign_debt_payment_temp = debt_to_foreign_countries_k }
-		multiply_temp_variable = { foreign_debt_payment_temp = foreign_interest_rate }
-		divide_temp_variable = { foreign_debt_payment_temp = 1.2 }
+		bank_foreign_interest_update = yes
+		set_temp_variable = { foreign_debt_payment_temp = foreign_debt_interest }
 		set_variable = { national_debt_interest = local_debt_payment_temp }
 		add_to_variable = { national_debt_interest = foreign_debt_payment_temp }
 
@@ -1511,7 +1503,12 @@
 					NOT = { check_variable = { country_temp = THIS } }
 				}
 				var:country_temp = {
-					national_debt_update = yes
+					if = {
+						limit = { check_variable = { debt_default_temp = 1 } }
+						set_temp_variable = { bank_loss = { value = repay_temp_k multiply = 1000 } }
+						bank_write_off = yes
+					}
+					bank_update = yes
 				}
 			}
 		}

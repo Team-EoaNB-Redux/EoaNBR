@@ -7,24 +7,59 @@
 
 #Market Updates
 	join_market = {
+		# Country, x_temp: destination leader (or a member of its market). Leaders bring their whole market.
 		if = {
-			limit = { NOT = { check_variable = { market_leader = x_temp } } }
-			set_variable = { market_leader = x_temp }
-			market_update = yes
+			limit = { country_exists = var:x_temp }
+			set_temp_variable = { jm_new = x_temp }
 			if = {
-				limit = {
-					is_in_array = {
-						array = global.markets
-						value = THIS
+				limit = { NOT = { check_variable = { jm_new = THIS } } }
+				set_temp_variable = { jm_new = jm_new:market_leader }
+			}
+			if = {
+				limit = { NOT = { check_variable = { market_leader = jm_new } } }
+				# Settle earlier automatic membership changes before caching the shares for this move.
+				money_markets_monthly = yes
+				set_temp_variable = { jm_old = market_leader }
+				if = {
+					limit = { check_variable = { market_leader = THIS } }
+					every_country = {
+						limit = { check_variable = { market_leader = jm_old } }
+						set_variable = { market_leader = jm_new }
+					}
+					# A whole-market merger transfers the entire stock, avoiding rounding residue in an inactive issuer.
+					if = {
+						limit = { check_variable = { price_level > 0 } check_variable = { jm_new:price_level > 0 } }
+						set_temp_variable = { jm_money = { value = base_money divide = price_level multiply = jm_new:price_level } }
+						add_to_variable = { jm_new:base_money = jm_money }
+						add_to_variable = { jm_new:currency_reserves = currency_reserves }
+						set_variable = { base_money = 0 }
+						set_variable = { currency_reserves = 0 }
+					}
+					every_country = {
+						limit = { check_variable = { currency_market = jm_old } }
+						set_variable = { currency_market = jm_new }
 					}
 				}
-				remove_from_array = {
-					array = global.markets
-					value = THIS
+				else = { set_variable = { market_leader = jm_new } }
+				if = {
+					limit = { check_variable = { jm_new = THIS } }
+					set_variable = { price_level = { value = currency_price_level max = 0.00001 } }
 				}
+				var:jm_old = {
+					if = { limit = { check_variable = { market_leader = THIS } } market_setup = yes market_update = yes }
+				}
+				var:jm_new = { market_setup = yes market_update = yes }
+				every_country = { money_transfer_market = yes }
+				global_economy_update = yes
+				money_shares_update = yes
 			}
 		}
 		custom_effect_tooltip = join_market_tooltip
+	}
+	leave_market = {
+		# Country. Take this member's GDP share of money and physical valuables into its own market.
+		set_temp_variable = { x_temp = THIS }
+		join_market = yes
 	}
 	market_update = { # The master market update script. Adds up all values from every state up to the market leader 
 		# Scope: Market Leader

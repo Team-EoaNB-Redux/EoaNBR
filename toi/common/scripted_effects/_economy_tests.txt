@@ -25,12 +25,11 @@ finance_tests = {
 
     log = "===== FINANCE TESTS: START ====="
 
-    test_creditworthiness = yes
+    test_bank_credit = yes
     test_investment_appetite = yes
     # test_credit_rating = yes      # TODO once credit_rating_update lands
     # test_borrow_limit = yes       # TODO once borrow_limit_update lands
     # test_inflation = yes          # TODO once inflation_update lands
-    # test_bank_loan_money = yes    # TODO state-transition test per bank_status tier
 
     log = "===== FINANCE TESTS: DONE - [?finance_test_pass] passed, [?finance_test_fail] failed ====="
 }
@@ -68,140 +67,99 @@ assert_temp = {
     set_temp_variable = { assert_tol = 0 }
 }
 
-test_creditworthiness = {
-    # Pure function (calculate_creditworthiness in _economy_banking.txt):
-    #   cw = clamp(-500, 500){ 100 - 5*(debt/income) - 200*(debt_spending/income) }. Pops hold no savings (M03)
-    log = "TEST: calculate_creditworthiness"
-
-    # neutral -> 100
-    log = " - neutral (income=100, no debt) -> 100"
-    set_temp_variable = { income_temp = 100 }
-    set_temp_variable = { debt_temp = 0 }
-    set_temp_variable = { debt_spending_temp = 0 }
-    calculate_creditworthiness = yes
-    set_temp_variable = { assert_expected = 100 }
-    set_temp_variable = { assert_actual = creditworthiness_temp }
-    set_temp_variable = { assert_tol = 0.01 }
+test_bank_credit = {
+    # Reversible stock tests; restore the caller before returning.
+    log = "TEST: bank capacity, lending, repayment, defaults and idempotence"
+    set_temp_variable = { bt_reserves = bank_reserves }
+    set_temp_variable = { bt_capital = bank_capital }
+    set_temp_variable = { bt_loans = bank_loans }
+    set_temp_variable = { bt_credit_committed = bank_credit_committed }
+    set_temp_variable = { bt_defaults = bank_defaults }
+    set_temp_variable = { bt_new_lending = bank_new_lending }
+    set_temp_variable = { bt_repayments = bank_repayments }
+    set_variable = { bank_reserves = 100 }
+    set_variable = { bank_capital = 8 }
+    set_variable = { bank_loans = 0 }
+    set_variable = { bank_credit_committed = 0 }
+    bank_credit_update = yes
+    set_temp_variable = { bt_capacity = bank_credit_capacity }
+    set_temp_variable = { bank_request = 1000 }
+    bank_borrow = yes
+    set_temp_variable = { assert_expected = bt_capacity }
+    set_temp_variable = { assert_actual = bank_borrowed }
     assert_temp = yes
 
-    # debt = income -> 100 - 5*1 = 95
-    log = " - debt=income -> 95"
-    set_temp_variable = { income_temp = 100 }
-    set_temp_variable = { debt_temp = 100 }
-    set_temp_variable = { debt_spending_temp = 0 }
-    calculate_creditworthiness = yes
-    set_temp_variable = { assert_expected = 95 }
-    set_temp_variable = { assert_actual = creditworthiness_temp }
-    set_temp_variable = { assert_tol = 0.01 }
+    set_temp_variable = { assert_expected = 0 }
+    set_temp_variable = { assert_actual = bank_credit_available }
+    assert_temp = yes
+    set_temp_variable = { bank_payment = 20 }
+    bank_repay = yes
+    set_temp_variable = { assert_expected = 20 }
+    set_temp_variable = { assert_actual = bank_credit_available }
+    assert_temp = yes
+    set_temp_variable = { bank_loss = 4 }
+    bank_write_off = yes
+    set_temp_variable = { assert_expected = 4 }
+    set_temp_variable = { assert_actual = bank_capital }
     assert_temp = yes
 
-    # debt_spending = 10% of income -> 100 - 200*0.1 = 80
-    log = " - debt_spending=10% income -> 80"
-    set_temp_variable = { income_temp = 100 }
-    set_temp_variable = { debt_temp = 0 }
-    set_temp_variable = { debt_spending_temp = 10 }
-    calculate_creditworthiness = yes
-    set_temp_variable = { assert_expected = 80 }
-    set_temp_variable = { assert_actual = creditworthiness_temp }
-    set_temp_variable = { assert_tol = 0.01 }
+    set_temp_variable = { assert_expected = 0 }
+    set_temp_variable = { assert_actual = bank_credit_available }
     assert_temp = yes
-
-    # combined: income=100, debt=100, debt_spending=5
-    #   100 - 5*1 - 200*0.05 = 100 - 5 - 10 = 85
-    log = " - combined -> 85"
-    set_temp_variable = { income_temp = 100 }
-    set_temp_variable = { debt_temp = 100 }
-    set_temp_variable = { debt_spending_temp = 5 }
-    calculate_creditworthiness = yes
-    set_temp_variable = { assert_expected = 85 }
-    set_temp_variable = { assert_actual = creditworthiness_temp }
-    set_temp_variable = { assert_tol = 0.01 }
+    bank_credit_update = yes
+    set_temp_variable = { assert_expected = 4 }
+    set_temp_variable = { assert_actual = bank_capital }
     assert_temp = yes
-
-    # clamp low: huge debt_spending -> -500
-    log = " - clamp low -> -500"
-    set_temp_variable = { income_temp = 1 }
-    set_temp_variable = { debt_temp = 0 }
-    set_temp_variable = { debt_spending_temp = 100 }
-    calculate_creditworthiness = yes
-    set_temp_variable = { assert_expected = -500 }
-    set_temp_variable = { assert_actual = creditworthiness_temp }
-    set_temp_variable = { assert_tol = 0.01 }
+    set_temp_variable = { bank_loss = 5 }
+    bank_write_off = yes
+    set_temp_variable = { assert_expected = 1 }
+    set_temp_variable = { assert_actual = bank_crisis }
     assert_temp = yes
+    set_temp_variable = { bank_request = 100 }
+    bank_borrow = yes
+    set_temp_variable = { assert_expected = 0 }
+    set_temp_variable = { assert_actual = bank_borrowed }
+    assert_temp = yes
+    set_variable = { bank_reserves = bt_reserves }
+    set_variable = { bank_capital = bt_capital }
+    set_variable = { bank_loans = bt_loans }
+    set_variable = { bank_credit_committed = bt_credit_committed }
+    set_variable = { bank_defaults = bt_defaults }
+    set_variable = { bank_new_lending = bt_new_lending }
+    set_variable = { bank_repayments = bt_repayments }
+    bank_credit_update = yes
 }
 
 test_investment_appetite = {
-    # Pure function (calculate_investment_appetite in _economy_incentives.txt):
-    #   appetite = 3r/(r+2),  r = top_attractiveness x incentives / 10000
-    log = "TEST: calculate_investment_appetite"
-
-    # reference (attr=100, inc=100) -> r=1 -> 1.0
-    log = " - reference (100 x 100) -> 1.0"
-    set_temp_variable = { top_attractiveness_temp = 100 }
-    set_temp_variable = { incentives_temp = 100 }
-    calculate_investment_appetite = yes
-    set_temp_variable = { assert_expected = 1.0 }
-    set_temp_variable = { assert_actual = investment_appetite_temp }
-    set_temp_variable = { assert_tol = 0.01 }
-    assert_temp = yes
-
-    # low incentives (attr=100, inc=50) -> r=0.5 -> 0.6
-    log = " - low incentives (100 x 50) -> 0.6"
-    set_temp_variable = { top_attractiveness_temp = 100 }
-    set_temp_variable = { incentives_temp = 50 }
-    calculate_investment_appetite = yes
-    set_temp_variable = { assert_expected = 0.6 }
-    set_temp_variable = { assert_actual = investment_appetite_temp }
-    set_temp_variable = { assert_tol = 0.01 }
-    assert_temp = yes
-
-    # high incentives (attr=100, inc=200) -> r=2 -> 1.5
-    log = " - high incentives (100 x 200) -> 1.5"
-    set_temp_variable = { top_attractiveness_temp = 100 }
-    set_temp_variable = { incentives_temp = 200 }
-    calculate_investment_appetite = yes
-    set_temp_variable = { assert_expected = 1.5 }
-    set_temp_variable = { assert_actual = investment_appetite_temp }
-    set_temp_variable = { assert_tol = 0.01 }
-    assert_temp = yes
-
-    # poor opportunity (attr=50, inc=100) -> r=0.5 -> 0.6
-    log = " - poor opportunity (50 x 100) -> 0.6"
-    set_temp_variable = { top_attractiveness_temp = 50 }
-    set_temp_variable = { incentives_temp = 100 }
-    calculate_investment_appetite = yes
-    set_temp_variable = { assert_expected = 0.6 }
-    set_temp_variable = { assert_actual = investment_appetite_temp }
-    set_temp_variable = { assert_tol = 0.01 }
-    assert_temp = yes
-
-    # both high (attr=150, inc=150) -> r=2.25 -> 6.75/4.25 = 1.588
-    log = " - both high (150 x 150) -> 1.588"
-    set_temp_variable = { top_attractiveness_temp = 150 }
-    set_temp_variable = { incentives_temp = 150 }
-    calculate_investment_appetite = yes
-    set_temp_variable = { assert_expected = 1.588 }
-    set_temp_variable = { assert_actual = investment_appetite_temp }
-    set_temp_variable = { assert_tol = 0.01 }
-    assert_temp = yes
-
-    # zero incentives -> 0
-    log = " - zero incentives -> 0"
-    set_temp_variable = { top_attractiveness_temp = 100 }
+    # M09: incentives alone set appetite; ROI assigns projects to tiers separately (Q39).
+    log = "TEST: investment appetite from incentives"
     set_temp_variable = { incentives_temp = 0 }
     calculate_investment_appetite = yes
     set_temp_variable = { assert_expected = 0 }
     set_temp_variable = { assert_actual = investment_appetite_temp }
-    set_temp_variable = { assert_tol = 0.01 }
     assert_temp = yes
-
-    # no opportunities -> 0
-    log = " - no opportunity (attr=0) -> 0"
-    set_temp_variable = { top_attractiveness_temp = 0 }
+    set_temp_variable = { incentives_temp = 50 }
+    calculate_investment_appetite = yes
+    set_temp_variable = { assert_expected = 0.6 }
+    set_temp_variable = { assert_actual = investment_appetite_temp }
+    assert_temp = yes
     set_temp_variable = { incentives_temp = 100 }
     calculate_investment_appetite = yes
-    set_temp_variable = { assert_expected = 0 }
+    set_temp_variable = { assert_expected = 1 }
     set_temp_variable = { assert_actual = investment_appetite_temp }
-    set_temp_variable = { assert_tol = 0.01 }
     assert_temp = yes
+    set_temp_variable = { incentives_temp = 150 }
+    calculate_investment_appetite = yes
+    set_temp_variable = { assert_expected = 1.28571 }
+    set_temp_variable = { assert_actual = investment_appetite_temp }
+    assert_temp = yes
+    set_temp_variable = { incentives_temp = 200 }
+    calculate_investment_appetite = yes
+    set_temp_variable = { assert_expected = 1.5 }
+    set_temp_variable = { assert_actual = investment_appetite_temp }
+    assert_temp = yes
+}
+
+test_temp_effect = {
+	every_country = { set_temp_variable = { m11_owned_debt = 0 } every_owned_state = { limit = { check_variable = { owner = PREV } } for_each_loop = { array = global.pops_array value = m11_pop add_to_temp_variable = { m11_owned_debt = pops_debt@var:m11_pop } } } log = "M11OWNER|[THIS.GetTag]|[?bank_loans_pops]|[?m11_owned_debt]" }
 }

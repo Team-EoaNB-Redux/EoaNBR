@@ -21,7 +21,7 @@ Each one is a self-contained piece of work for a fresh session. Do them in order
 | M08 | [Manufacturing Base and HOI4 factories](milestones/M08_manufacturing_base.md) | §12 | Q32–Q33, Q64, Q106–Q116 | Done; figures checked in-game (July 1857 autosave), screens to check |
 | M09 | [Investment](milestones/M09_investment.md) | §13 | Q34–Q39, Q60, Q117–Q126 | Done; checked in-game (July 1857 autosave) |
 | M10 | [Companies](milestones/M10_companies.md) | §19 | Q40–Q41, Q66, Q127–Q146 | Done in the simulator; in-game check to do |
-| M11 | [Banking, credit and base money](milestones/M11_banking_and_credit.md) | §14–16 | Q42–Q44, Q59, Q65, Q69, Q72 | Not started |
+| M11 | [Banking, credit and base money](milestones/M11_banking_and_credit.md) | §14–16 | Q42–Q44, Q59, Q65, Q69, Q72 | Done; checked in-game (startup, June and July 1857 saves) |
 | M12 | [Money, inflation and currency](milestones/M12_money_and_currency.md) | §16–18 | Q45–Q49, Q67, Q69, Q70 | Not started |
 | M13 | [Government, laws and controls](milestones/M13_government_and_laws.md) | §20–22 | Q50–Q51, Q61 | Not started |
 | M15 | [Shares and capital markets](milestones/M15_companies_completion.md) | §19, §21.3 | Q40, Q66, Q127, Q128, UQ23 | Not started; runs before M14 |
@@ -64,8 +64,9 @@ Q52 to Q54 apply across milestones.
 - **Committed** in `639e32e9b` and `76855b074`: M08 (the Manufacturing Base, factory contracts and offmap factories, on-map factories removed and content converted, the military resource scale and the economic mobilisation share).
 - **Committed** in `619137bcb`: M08's playtest follow-ups (the law sets the contracted share, and HOI4's factories ramp toward their targets, Q114–Q116).
 - **Committed** in `94005e41f`: M09 (opportunities in ROI tiers from sector capital and the general pool, construction bills and sector debt, the government's development fund and infrastructure lines, capacity decay on; the old opportunity system, the buckets prototype and company projects deleted), and the scoring system's O(n²) position search replaced.
-- **Uncommitted:** M10 (companies with their own accounts and with bonuses on their own slices, company investment, debt and failure, founding by incorporation, two startup companies on the test bed), and the split of M15 into M15–M17.
-- **Switched off:** debt (`global.eco_debt_enabled = 0`: starting debt, interest and bankruptcy), the economic cycle (`global.eco_cycle_enabled = 0`) and banking. Pops and sectors borrow, but without interest until M11. Investment is on since M09, and the switch is deleted. Companies borrow too since M10, also without interest.
+- **Implemented:** M10 (companies with their own accounts and with bonuses on their own slices, company investment, debt and failure, founding by incorporation, two startup companies on the test bed), and the split of M15 into M15–M17.
+- **Uncommitted:** M11 (banking, shared credit, base money, creditor losses and central-bank basics), verified in the simulator and in-game (startup, June and July 1857 saves; 13/13 finance checks). Simulator tooling is in its separate repository.
+- **Switched off:** debt (`global.eco_debt_enabled = 0`: starting debt, interest and bankruptcy), the economic cycle (`global.eco_cycle_enabled = 0`) only. Banking is on since M11: pops, sectors, companies, the general pool and foreign governments share each country bank's credit, with interest. Investment is on since M09, and its switch is deleted.
 - **Known bugs:**
   - Pops start in debt: the first three ticks overspend against startup's figures (Q81, accepted until M14).
   - Wages rise 0.5% a month wherever jobs are filled exactly, since utilisation then sits at 1.0, above the stable band (M02, Left over).
@@ -106,3 +107,9 @@ Run them all from the repo. Simulator details are in `redux-eco-sim/CLAUDE.md`.
 - **Tech links set startup PMs.** A state with no starting PM begins on `latest_production_method`.
 - **Strat prefers math expressions,** and temps only when a value is reused. Array reads and trigger blocks are the exceptions.
 - **A load error zeroes every later math expression in its file.** M02 first loaded with everyone a peasant because `_economy_main_rework.txt` had a `log = ""` at line 124 and `_economy_setup.txt` called two effects that don't exist. Both were harmless until M02 put math expressions after them. Check `error.log` for "Errors occurred while reading math expression" after loading. The simulator has reported these as `load_error` since 2026-11-12.
+
+## M11 verification (2026-11-17)
+
+The banking implementation replaces the old disabled bank and includes the companies' and the general pool's debt. Baseline: `redux-eco-sim/runs/m11_base` (M10, 60 months). Final run: `runs/m11_final`, `watches/m11.txt`; controlled foreign-default, confidence-run and systemic-default variants are `m11_final_foreign`, `m11_final_confidence` and `m11_final_systemic`. The milestone file records the implementation and results. Run `python tools/test_m11.py` inside the simulator for integration assertions.
+
+The simulator CLI now accepts repeatable `--inject month:path` effect files for controlled interventions and supports `--dump-json` together with recorded runs. The simulation interpreter is unchanged by M11. The full-mod parser still finds nine pre-existing errors in six unrelated files (characters/CIR, decisions/eoanb_AST_decision, national_focus/iceland, scripted_localisation/XU_dyn_mod_scripted_localisation, units/equipment/ship_hull_screen and history/units/URC_1857-alt); economy files have no new parse/load errors. The actual in-game load and smoke test passed on 2026-11-17: startup, June and July saves, all 13 finance assertions, exact July interest settlement and active-country household ledgers.

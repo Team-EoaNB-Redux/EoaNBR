@@ -52,6 +52,10 @@
 			}
 		}
 
+		if = {
+			limit = { is_capital = yes }
+			add_to_variable = { pops_dividends@token:upper_class = controller:bank_dividends }
+		}
 		special_buildings_update = yes
 
 		for_each_loop = {
@@ -287,6 +291,7 @@
 			set_variable = { sector_maintenance@var:s_token = 0 }
 			set_variable = { sector_transport_demand@var:s_token = 0 }
 			set_variable = { sector_construction@var:s_token = 0 }
+			set_variable = { sector_generic_construction@var:s_token = 0 }
 			set_variable = { sector_retooling@var:s_token = 0 }
 			set_variable = { sector_construction_bill@var:s_token = 0 }
 			set_variable = { sector_construction_remaining@var:s_token = 0 }
@@ -365,6 +370,7 @@
 						add_to_variable = { PREV.sector_construction@var:bu_token = construction@var:bu_token }
 						if = {
 							limit = { check_variable = { construction_financier@var:bu_token = 0 } }
+							add_to_variable = { PREV.sector_generic_construction@var:bu_token = construction@var:bu_token }
 							add_to_variable = { PREV.sector_construction_bill@var:bu_token = construction_cost@var:bu_token }
 							set_temp_variable = { s_bill_temp = { value = construction_cost@var:bu_token multiply = construction_time_left@var:bu_token } }
 							add_to_variable = { PREV.sector_construction_remaining@var:bu_token = s_bill_temp }
@@ -408,12 +414,15 @@
 			array = sectors
 			value = s_token
 
+			set_variable = { sector_interest@var:s_token = { value = sector_debt@var:s_token multiply = bank_interest_rate divide = 1200 } }
 			set_variable = {
 				sector_profit@var:s_token = {
 					value = sector_revenue@var:s_token
 					subtract = sector_inputs@var:s_token
 					subtract = sector_payroll@var:s_token
 					subtract = sector_maintenance@var:s_token
+					subtract = sector_interest@var:s_token
+					subtract = sector_company_interest@var:s_token
 				}
 			}
 			set_variable = { sector_margin@var:s_token = 0 }
@@ -432,8 +441,8 @@
 				limit = { check_variable = { s_after_tax_temp > 0 } }
 				set_variable = { sector_retained@var:s_token = { value = s_after_tax_temp multiply = retained_share_temp } }
 			}
-			else = { # As much of the loss as capital covers. The rest comes out of dividends
-				set_variable = { sector_retained@var:s_token = { value = sector_capital@var:s_token multiply = -1 max = s_after_tax_temp } }
+			else = { # Losses use capital, then bank credit in investment_monthly (M11)
+				set_variable = { sector_retained@var:s_token = s_after_tax_temp }
 			}
 			set_variable = { sector_dividends@var:s_token = { value = s_after_tax_temp subtract = sector_retained@var:s_token } }
 			set_variable = { sector_dividend_per_size@var:s_token = 0 }
@@ -1008,8 +1017,14 @@
 			add_to_temp_variable = { retooling_cost_temp = building_retooling_cost_factor }
 			if = {
 				limit = {
-					check_variable = { retooling_financier@var:iuc_industry = 0 }
-					check_variable = { controller:sector_construction_paused@var:iuc_industry = 1 }
+					check_variable = { bank_quote_construction = 0 }
+					OR = {
+						check_variable = { retooling_credit_paused@var:iuc_industry = 1 }
+						AND = {
+							check_variable = { retooling_financier@var:iuc_industry = 0 }
+							check_variable = { controller:sector_construction_paused@var:iuc_industry = 1 }
+						}
+					}
 				}
 				set_temp_variable = { retooling_cost_temp = 0 }
 			}
@@ -1070,13 +1085,20 @@
 			set_temp_variable = { iuc_financer_temp = construction_financier@var:iuc_industry }
 			if = {
 				limit = {
-					check_variable = { iuc_financer_temp = 0 }
-					check_variable = { controller:sector_construction_paused@var:iuc_industry = 1 }
+					check_variable = { bank_quote_construction = 0 }
+					OR = {
+						check_variable = { construction_credit_paused@var:iuc_industry = 1 }
+						AND = {
+							check_variable = { iuc_financer_temp = 0 }
+							check_variable = { controller:sector_construction_paused@var:iuc_industry = 1 }
+						}
+					}
 				}
 				set_temp_variable = { construction_cost_temp = 0 }
 			}
 			else_if = { # A company over its debt limit pauses its own (Q131)
 				limit = {
+					check_variable = { bank_quote_construction = 0 }
 					check_variable = { iuc_financer_temp > 0 }
 					NOT = { check_variable = { iuc_financer_temp > 10500 } }
 					check_variable = { global.company_construction_paused@var:iuc_financer_temp = 1 }

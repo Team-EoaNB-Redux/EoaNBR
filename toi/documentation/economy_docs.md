@@ -1336,3 +1336,18 @@ A list of modifiers that can be used in ideas and dynamic modifiers. Each of the
 
 ## Variables (Read-Only)
 This is a list of variables that you can use if you want to grab a value from the economy system. Presume that they are read-only because if you change them at all, it could break things.
+## Banking and base money (M11)
+
+These content effects live in `_economy_effects_documentation.txt`. All use country scope. Ordinary money is real 1857 pounds at the economy scale (1,000 = GBP 1M); legacy government debt parameters use 1,000 times that unit.
+
+| Effect | Inputs | Behaviour |
+|---|---|---|
+| `mint_base_money` | `x_temp`: positive nominal quantity | Market leader only. Adds base money and credits the treasury with quantity / `price_level`. P is 1 until M12. Initial seeding is not minting revenue. |
+| `set_policy_rate` | `x_temp`: annual percent | Clamped to 0-30. Changes the bank's policy rate; its lending rate refreshes next month. |
+| `lend_emergency_liquidity` | `x_temp`: real money | Solvent banks only, capped at 25% of performing loans less assistance already outstanding. The market issuer creates base money and bank reserves, without a treasury grant or extra capital. Assistance pays policy-rate interest and repays from excess liquidity, retiring base money. |
+| `recapitalize_bank` | `x_temp`: real money | Moves positive treasury cash into bank capital, capped by that cash. It does not borrow from the failed bank. |
+| `default_debt` | `x_temp`: legacy government debt units; `country_temp`: creditor, or 0 for all | Same selection and caps as `remove_debt`, but writes foreign principal off against creditor bank capital. Use for bankruptcy or repudiation. Use `repay_debt` for treasury-funded repayment. |
+| `join_market` | `x_temp`: country tag | Joins the destination's market. A market leader brings its members and full base stock; a member moves its GDP share. Converts base money at the ratio of price levels. Physical valuables move without currency conversion; country banks and their loans remain in place. |
+| `leave_market` | None | Leaves with the country's GDP share of money and physical valuables, preserving the previous price level. Subject membership still follows the overlord's market. |
+
+`reserve_ratio_modifier` is a fraction: 0.2 means a 20% reserve requirement. `bank_capital_requirement_modifier` adds to the default 0.08 capital requirement. `banking_confidence_modifier` sets the reserve target as a percentage of the country's real base-money share. `bank_update`, `bank_borrow` and the other bank internals are not content APIs. M13 supplies player controls and financial-law coefficients.

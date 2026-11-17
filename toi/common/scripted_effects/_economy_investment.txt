@@ -5,8 +5,8 @@
 #   Sector capital, sector_capital@<sector> (country): what each sector keeps of its profit (sectors_update, scaled by
 #     incentives, Q39), less the share the financial laws send to the general pool (sector_capital_mobility, §13.2).
 #   The general pool, investment_fund (country): that share of retained earnings, pops' investment (pops_investment, Q60),
-#     the government's development fund (development_fund_spending, Q122) and content (add_investment_fund). Foreign
-#     capital and bank credit arrive with M11 and M12.
+#     the government's development fund (development_fund_spending, Q122) and content (add_investment_fund). Bank
+#     credit is live (M11); foreign capital and currency erosion follow in later milestones.
 #   The infrastructure fund, infrastructure_fund (country): the government's infrastructure line, which builds railways
 #     and ports where states are short of them, whatever their ROI (Q122).
 #
@@ -49,7 +49,7 @@
 #     Pool money a sector declines goes to the tier's declined projects in the order found, and what's still left waits
 #     for next month instead of funding a worse tier.
 #   - Construction bills (the goods, over the build time) come out of the reserve, then the sector's capital, then
-#     sector debt (sector_debt@), which pays no interest until M11 (Q118). A sector whose debt is above
+#     sector bank debt (sector_debt@), with interest since M11 (Q118). A sector whose debt is above
 #     global.sector_debt_limit x the value of its plants, built and being built (sector_asset_value@), pauses its
 #     construction (no goods bought, no progress) and starts nothing new. Retained earnings repay debt first.
 #   - Infrastructure is funded whole, in the order found, at full cost from the infrastructure fund.
@@ -272,19 +272,11 @@
 				cache_method_calc = yes
 			}
 
+			bank_sector_assets_update = yes
 			set_variable = { sector_construction_paused@var:s_token = 0 }
 			if = { # The limit is a share of what its plants, built and being built, would cost at its newest methods
 				limit = { check_variable = { sector_debt@var:s_token > 0 } }
-				set_temp_variable = { inv_pm = latest_production_method@var:s_token }
-				set_temp_variable = { inv_am = latest_automation_method@var:s_token }
-				set_variable = {
-					sector_asset_value@var:s_token = {
-						value = method_construction_cost@var:inv_pm
-						add = method_construction_cost@var:inv_am
-						multiply = global.building_base_employees@var:s_token
-						multiply = { value = sector_size@var:s_token add = sector_construction@var:s_token }
-					}
-				}
+				bank_sector_default_monthly = yes
 				set_temp_variable = { inv_limit_temp = { value = sector_asset_value@var:s_token multiply = global.sector_debt_limit } }
 				if = {
 					limit = { check_variable = { sector_debt@var:s_token > inv_limit_temp } }
@@ -979,9 +971,9 @@
 		# 1. Money in. Each sector's retained earnings (sector_retained@, sectors_update) repay its debt, then
 		#    sector_capital_mobility of them goes to the general pool and the rest to its capital. A loss comes out of capital.
 		#    The pool takes pops' investment and the development fund, and the infrastructure fund the infrastructure line.
-		# 2. Construction bills (sector_construction_bill@): the reserve, then capital, then debt (Q118). A sector with
-		#    nothing under way returns what's left of its reserve to its capital. Companies' money goes through their
-		#    treasuries and debt (companies_cash_monthly, M10).
+		# 2. M11 has already paid construction before progress (bank_construction_monthly), including the final bill.
+		#    A sector with nothing under way returns its unused reserve to capital. Interest is in retained earnings;
+		#    operating shortfalls borrow up to collateral and available bank credit. Companies settle the same way.
 		# 3. Each searching sector's best new state joins its tier.
 		# 4. Funding, tier by tier (Q121): the companies' own industries first (companies_fund_tier, Q132), the month's
 		#    founding (company_found_fund, Q137), indivisible projects whole, then expansions, pro rata by sector, from their
@@ -1003,6 +995,8 @@
 					limit = { check_variable = { sector_debt@var:s_token > 0 } }
 					set_temp_variable = { inv_paid_temp = { value = sector_debt@var:s_token min = inv_money_temp } }
 					subtract_from_variable = { sector_debt@var:s_token = inv_paid_temp }
+					set_temp_variable = { bank_payment = inv_paid_temp }
+					bank_repay = yes
 					subtract_from_temp_variable = { inv_money_temp = inv_paid_temp }
 				}
 				set_temp_variable = { inv_paid_temp = { value = inv_money_temp multiply = inv_mobility_temp } }
@@ -1011,17 +1005,8 @@
 			}
 			add_to_variable = { sector_capital@var:s_token = inv_money_temp }
 
-			set_temp_variable = { inv_money_temp = sector_construction_bill@var:s_token }
-			if = {
-				limit = { check_variable = { inv_money_temp > 0 } }
-				set_temp_variable = { inv_paid_temp = { value = sector_construction_reserve@var:s_token min = inv_money_temp max = 0 } }
-				subtract_from_variable = { sector_construction_reserve@var:s_token = inv_paid_temp }
-				subtract_from_temp_variable = { inv_money_temp = inv_paid_temp }
-				set_temp_variable = { inv_paid_temp = { value = sector_capital@var:s_token min = inv_money_temp max = 0 } }
-				subtract_from_variable = { sector_capital@var:s_token = inv_paid_temp }
-				subtract_from_temp_variable = { inv_money_temp = inv_paid_temp }
-				add_to_variable = { sector_debt@var:s_token = inv_money_temp }
-			}
+			bank_sector_cash = yes
+
 			if = {
 				limit = {
 					check_variable = { sector_construction_reserve@var:s_token > 0 }
@@ -1034,6 +1019,7 @@
 		}
 		set_variable = { investment_fund_income = { value = pops_investment add = investment_retained_transfer add = development_fund_spending } }
 		add_to_variable = { investment_fund = investment_fund_income }
+		bank_pool_monthly = yes
 		add_to_variable = { infrastructure_fund = infrastructure_investment_spending }
 		companies_cash_monthly = yes # Companies' retained earnings, losses and bills (M10)
 
@@ -1163,6 +1149,7 @@
 				add_to_temp_variable = { inv_pool_need_temp = sector_tier_value@var:s_token }
 				subtract_from_temp_variable = { inv_pool_need_temp = sector_tier_retained@var:s_token }
 			}
+			bank_pool_credit = yes
 			set_temp_variable = { inv_pool_share_temp = 0 }
 			if = {
 				limit = {
@@ -1241,6 +1228,8 @@
 				add_to_temp_variable = { inv_pool_held_temp = inv_pool_left_temp }
 			}
 		}
+
+		bank_pool_return_unused = yes
 
 		# Infrastructure, whole, in the order found
 		set_temp_variable = { inv_t = 5 }
@@ -1476,7 +1465,7 @@
 						value = method_construction_cost@var:sp_pm
 						add = method_construction_cost@var:sp_am
 						multiply = global.building_base_employees@var:s_token
-						multiply = { value = sector_generic_size@var:s_token add = sector_construction@var:s_token }
+						multiply = { value = sector_generic_size@var:s_token add = sector_generic_construction@var:s_token }
 						multiply = global.capital_reserve_share
 						add = {
 							value = sector_construction_remaining@var:s_token

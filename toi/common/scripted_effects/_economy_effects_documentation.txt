@@ -713,10 +713,19 @@
 
 				if = {
 					limit = {
+						check_variable = { country_temp = THIS }
 						check_variable = { borrow_temp_k > country_temp:national_bank_amount_left_k }
 						check_variable = { ignore_limits_temp = 0 }
 					}
 					set_temp_variable = { borrow_temp_k = country_temp:national_bank_amount_left_k }
+				}
+				if = {
+					limit = {
+						NOT = { check_variable = { country_temp = THIS } }
+						check_variable = { country_temp:bank_initialized = 1 }
+						check_variable = { ignore_limits_temp = 0 }
+					}
+					set_temp_variable = { borrow_temp_k = { value = borrow_temp_k max = 0 min = { value = country_temp:bank_credit_available divide = 1000 } } }
 				}
 				#log = "Borrow Amount: [?borrow_temp_k]K"
 				if = {
@@ -750,7 +759,7 @@
 							NOT = { check_variable = { country_temp = THIS } }
 						}
 						var:country_temp = {
-							national_debt_update = yes
+							bank_update = yes
 						}
 					}
 				}
@@ -1190,3 +1199,43 @@
 		# proj_complete
 	## Population ## cc_40
 ###
+# M11: banking and currency. Country scope; player UI controls arrive with M13.
+mint_base_money = {
+	# x_temp: nominal currency. Only the market leader mints; treasury receives x_temp / P (Q49).
+	if = {
+		limit = { check_variable = { market_leader = THIS } check_variable = { x_temp > 0 } check_variable = { price_level > 0 } }
+		add_to_variable = { base_money = x_temp }
+		add_to_variable = { treasury = { value = x_temp divide = price_level } }
+		money_shares_update = yes
+	}
+}
+set_policy_rate = {
+	# x_temp: annual percent, 0 to 30. Lending rates refresh on the next monthly tick.
+	set_variable = { central_bank_interest_rate = { value = x_temp clamp = { min = 0 max = 30 } } }
+}
+recapitalize_bank = {
+	# x_temp: real money. Limited to positive treasury cash; no circular borrowing from the insolvent bank.
+	set_temp_variable = { recap_temp = { value = x_temp max = 0 min = { value = treasury max = 0 } } }
+	subtract_from_variable = { treasury = recap_temp }
+	add_to_variable = { bank_capital = recap_temp }
+	bank_credit_update = yes
+}
+lend_emergency_liquidity = {
+	# x_temp: real money requested by this country's bank, against performing assets, only while solvent.
+	# Its market's issuer creates base money with no treasury grant. Repayment retires the same money.
+	if = {
+		limit = { check_variable = { bank_capital > 0 } check_variable = { market_leader:price_level > 0 } }
+		set_temp_variable = { liquidity_temp = { value = bank_loans multiply = global.bank_emergency_loan_share subtract = bank_central_bank_loan max = 0 min = { value = x_temp max = 0 } } }
+		add_to_variable = { bank_central_bank_loan = liquidity_temp }
+		add_to_variable = { bank_reserves = liquidity_temp }
+		add_to_variable = { market_leader:base_money = { value = liquidity_temp multiply = market_leader:price_level } }
+		money_shares_update = yes
+		bank_credit_update = yes
+	}
+}
+default_debt = {
+	# x_temp, country_temp: same legacy units and creditor selection as remove_debt. Write-off, not repayment.
+	set_temp_variable = { debt_default_temp = 1 }
+	remove_debt = yes
+	set_temp_variable = { debt_default_temp = 0 }
+}

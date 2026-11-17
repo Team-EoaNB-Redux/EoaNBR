@@ -17,7 +17,7 @@
 #   global.company_name_key@cid - a startup company's name token, or 0 for a generated name (GetCompanyName)
 #   Bonuses (Q130), which history and content set: global.company_throughput_factor@, company_output_factor@,
 #     company_input_factor@
-#   Money: company_treasury@ (its retained earnings), company_debt@ (no interest until M11, Q131)
+#   Money: company_treasury@ (its retained earnings), company_debt@ (bank principal, with interest in company_interest@, M11)
 #   Accounts (companies_update): company_revenue@, company_expenses@, company_profit@, company_profit_tax@,
 #     company_retained@ (negative for a loss), company_dividends@, company_employees@, company_asset_value@,
 #     company_construction_bill@. company_total_size@ is what it holds, wherever it is
@@ -94,6 +94,8 @@
 
 		set_variable = { global.company_treasury@var:cid = 0 }
 		set_variable = { global.company_debt@var:cid = 0 }
+		set_variable = { global.company_interest@var:cid = 0 }
+		set_variable = { global.company_unpaid@var:cid = 0 }
 		set_variable = { global.company_total_size@var:cid = 0 }
 		set_variable = { global.company_revenue@var:cid = 0 }
 		set_variable = { global.company_expenses@var:cid = 0 }
@@ -291,7 +293,7 @@
 
 	# Liquidates a company (Q141). Any scope. Input: company_temp
 	# Its holdings go to the generic owner at no charge (Q40), construction it was paying for stops and what was spent is lost,
-	# its debt is written off (against bank capital from M11), what's left in its treasury goes to its country's general pool,
+	# its debt is written off against bank capital (M11), what's left in its treasury goes to its country's general pool,
 	# and its record and id are freed
 	company_liquidate = {
 		set_temp_variable = { cl_cid = company_temp }
@@ -338,6 +340,8 @@
 		if = {
 			limit = { country_exists = var:cl_owner }
 			var:cl_owner = {
+				set_temp_variable = { bank_loss = global.company_debt@var:cl_cid }
+				bank_write_off = yes
 				remove_from_array = { companies = cl_cid }
 				if = {
 					limit = { check_variable = { insolvent_company = cl_cid } }
@@ -363,6 +367,8 @@
 		clear_variable = global.company_input_factor@var:cl_cid
 		clear_variable = global.company_treasury@var:cl_cid
 		clear_variable = global.company_debt@var:cl_cid
+		clear_variable = global.company_unpaid@var:cl_cid
+		clear_variable = global.company_interest@var:cl_cid
 		clear_variable = global.company_total_size@var:cl_cid
 		clear_variable = global.company_revenue@var:cl_cid
 		clear_variable = global.company_expenses@var:cl_cid
@@ -402,6 +408,10 @@
 			}
 		}
 		subtract_from_variable = { global.company_debt@var:cb_cid = x_temp }
+		set_temp_variable = { bank_payment = x_temp }
+		bank_repay = yes
+		add_to_temp_variable = { x_temp = global.company_unpaid@var:cb_cid }
+		set_variable = { global.company_unpaid@var:cb_cid = 0 }
 		multiply_temp_variable = { x_temp = -1 }
 		add_treasury = yes
 		set_variable = { global.company_bailout_until@var:cb_cid = { value = global.years_passed multiply = 12 add = global.month add = global.company_bailout_cooldown } }
@@ -668,7 +678,7 @@
 				# Debt
 				set_variable = { global.company_construction_paused@var:cm_cid = 0 }
 				if = {
-					limit = { check_variable = { global.company_debt@var:cm_cid > 0 } }
+					limit = { OR = { check_variable = { global.company_debt@var:cm_cid > 0 } check_variable = { global.company_unpaid@var:cm_cid > 0.001 } } }
 					set_temp_variable = { cm_limit_temp = { value = global.company_asset_value@var:cm_cid multiply = global.sector_debt_limit } }
 					if = {
 						limit = { check_variable = { global.company_debt@var:cm_cid > cm_limit_temp } }
@@ -676,7 +686,7 @@
 					}
 					set_temp_variable = { cm_limit_temp = { value = global.company_asset_value@var:cm_cid multiply = global.company_insolvency_limit } }
 					if = {
-						limit = { check_variable = { global.company_debt@var:cm_cid > cm_limit_temp } }
+						limit = { OR = { check_variable = { global.company_debt@var:cm_cid > cm_limit_temp } check_variable = { global.company_unpaid@var:cm_cid > 0.001 } } }
 						if = {
 							limit = { is_ai = yes }
 							add_to_temp_array = { cm_liquidate_temp = cm_cid }
@@ -684,7 +694,7 @@
 						else_if = { # One at a time: the rest wait until the player has answered
 							limit = { check_variable = { insolvent_company = 0 } }
 							set_variable = { insolvent_company = cm_cid }
-							set_variable = { insolvent_company_bailout = { value = cm_limit_temp divide = global.company_insolvency_limit multiply = global.sector_debt_limit multiply = -1 add = global.company_debt@var:cm_cid } }
+							set_variable = { insolvent_company_bailout = { value = cm_limit_temp divide = global.company_insolvency_limit multiply = global.sector_debt_limit multiply = -1 add = global.company_debt@var:cm_cid max = 0 add = global.company_unpaid@var:cm_cid } }
 							set_variable = { insolvent_company_bailout_ok = 0 }
 							if = {
 								limit = { NOT = { check_variable = { cm_now < global.company_bailout_until@var:cm_cid } } }
@@ -754,6 +764,7 @@
 			value = s_token
 			set_variable = { sector_company_size@var:s_token = 0 }
 			set_variable = { sector_company_profit@var:s_token = 0 }
+			set_variable = { sector_company_interest@var:s_token = 0 }
 		}
 
 		for_each_loop = {
@@ -861,6 +872,11 @@
 				}
 			}
 
+			set_variable = { global.company_interest@var:cid = { value = global.company_debt@var:cid multiply = bank_interest_rate divide = 1200 } }
+			add_to_variable = { global.company_expenses@var:cid = global.company_interest@var:cid }
+			set_temp_variable = { cu_focus = global.company_focus@var:cid }
+			add_to_variable = { sector_company_interest@var:cu_focus = global.company_interest@var:cid }
+			subtract_from_variable = { sector_company_profit@var:cu_focus = global.company_interest@var:cid }
 			set_variable = { global.company_profit@var:cid = { value = global.company_revenue@var:cid subtract = global.company_expenses@var:cid } }
 			set_variable = { global.company_profit_tax@var:cid = { value = global.company_profit@var:cid max = 0 multiply = profit_tax_rate_temp } }
 			set_temp_variable = { cu_after_tax_temp = { value = global.company_profit@var:cid subtract = global.company_profit_tax@var:cid } }
@@ -888,18 +904,21 @@
 # INVESTMENT (in investment_monthly) -------------------------------------------
 	# Country scope, in investment_monthly. Each company's month in cash (Q131): retained earnings repay its debt, then go to
 	# its treasury; a loss comes out of the treasury, then becomes debt; and its construction bills (company_construction_bill@)
-	# are paid the same way. No interest until M11
+	# are paid before progress by bank_construction_monthly (M11). Interest is already in retained earnings
 	companies_cash_monthly = {
 		for_each_loop = {
 			array = companies
 			value = cc_cid
-			set_temp_variable = { cc_money_temp = { value = global.company_retained@var:cc_cid subtract = global.company_construction_bill@var:cc_cid } }
+			set_temp_variable = { cc_money_temp = global.company_retained@var:cc_cid }
+			set_temp_variable = { cc_unpaid = 0 }
 			if = {
 				limit = { check_variable = { cc_money_temp > 0 } }
 				if = {
 					limit = { check_variable = { global.company_debt@var:cc_cid > 0 } }
 					set_temp_variable = { cc_paid_temp = { value = global.company_debt@var:cc_cid min = cc_money_temp } }
 					subtract_from_variable = { global.company_debt@var:cc_cid = cc_paid_temp }
+					set_temp_variable = { bank_payment = cc_paid_temp }
+					bank_repay = yes
 					subtract_from_temp_variable = { cc_money_temp = cc_paid_temp }
 				}
 				add_to_variable = { global.company_treasury@var:cc_cid = cc_money_temp }
@@ -908,8 +927,14 @@
 				multiply_temp_variable = { cc_money_temp = -1 } # The shortfall
 				set_temp_variable = { cc_paid_temp = { value = global.company_treasury@var:cc_cid max = 0 min = cc_money_temp } }
 				subtract_from_variable = { global.company_treasury@var:cc_cid = cc_paid_temp }
-				add_to_variable = { global.company_debt@var:cc_cid = { value = cc_money_temp subtract = cc_paid_temp } }
+				set_temp_variable = { cc_unpaid = { value = cc_money_temp subtract = cc_paid_temp } }
+				set_temp_variable = { bank_request = { value = global.company_asset_value@var:cc_cid multiply = global.sector_debt_limit subtract = global.company_debt@var:cc_cid max = 0 min = cc_unpaid } }
+				bank_borrow = yes
+				add_to_variable = { global.company_debt@var:cc_cid = bank_borrowed }
+				subtract_from_temp_variable = { cc_unpaid = bank_borrowed }
+				add_to_variable = { global.company_unpaid@var:cc_cid = cc_unpaid }
 			}
+			add_to_variable = { bank_interest_received = { value = global.company_interest@var:cc_cid subtract = cc_unpaid max = 0 } }
 		}
 	}
 
