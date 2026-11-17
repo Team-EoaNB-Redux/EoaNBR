@@ -21,19 +21,19 @@ country_event = {
 	option = {
 		name = economy.1.o2
 		
-		companies_update = yes
-		
+		sectors_update = yes # Runs companies_update with the sectors' tax rate and retained share
+
 		set_temp_variable = { cid = 1 }
 		log = "Company: [?cid]"
 		log = "- Building Count: [?global.company_holding_industry@var:cid^num]"
 		log = "- Revenue: [?global.company_revenue@var:cid]"
 		log = "- Expenses: [?global.company_expenses@var:cid]"
 		log = "- Profit: [?global.company_profit@var:cid|=]"
-		log = "- Gross Dividends: [?global.company_gross_dividends@var:cid]"
-		log = "- Treasury: [?global.company_treasury@var:cid]"
+		log = "- Tax: [?global.company_profit_tax@var:cid]"
+		log = "- Retained: [?global.company_retained@var:cid|=]"
 		log = "- Dividends: [?global.company_dividends@var:cid]"
-		log = "- Investment Target: [?global.company_target_investment_spending@var:cid]"
-		log = "- Investment Spending: [?global.company_investment_spending@var:cid]"
+		log = "- Treasury: [?global.company_treasury@var:cid]"
+		log = "- Debt: [?global.company_debt@var:cid]"
 	}
 	option = {
 		name = economy.1.o3
@@ -173,5 +173,44 @@ country_event = {
 		name = economy.140.o1
 
 		major_recession_effect = yes
+	}
+}
+
+# A Company Is Insolvent (M10, Q140, Q141): its debt is above global.company_insolvency_limit x its asset value
+# companies_monthly sets insolvent_company, insolvent_company_bailout (the grant) and insolvent_company_bailout_ok
+country_event = {
+	id = economy.200
+	title = economy.200.t
+	desc = economy.200.d
+	picture = GFX_report_event_generic_victorian_economy_6
+
+	is_triggered_only = yes
+
+	# Bail it out
+	option = {
+		name = economy.200.o1
+		trigger = { check_variable = { insolvent_company_bailout_ok = 1 } }
+		custom_effect_tooltip = economy.200.o1.tt
+		hidden_effect = {
+			if = {
+				limit = { has_variable = global.company_hq_state@var:insolvent_company }
+				company_bailout = yes
+			}
+			set_variable = { insolvent_company = 0 }
+		}
+	}
+
+	# Let it fail
+	option = {
+		name = economy.200.o2
+		custom_effect_tooltip = economy.200.o2.tt
+		hidden_effect = {
+			if = {
+				limit = { has_variable = global.company_hq_state@var:insolvent_company }
+				set_temp_variable = { company_temp = insolvent_company }
+				company_liquidate = yes
+			}
+			set_variable = { insolvent_company = 0 }
+		}
 	}
 }

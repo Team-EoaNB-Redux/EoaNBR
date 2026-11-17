@@ -27,10 +27,14 @@ _reset = {
         _init_country = yes
     }
     
+    # Startup companies (M10, Q139): their records first, so the states' init counts their holdings in history
+    companies_startup_setup = yes
+
     # Initialize States
     every_state = {
         _init_state = yes
     }
+    companies_startup_holdings = yes
 
     # Update Markets
     every_country = {
@@ -614,7 +618,6 @@ initialize_country = {
 			set_variable = { global.pops_debt_repayment_rate = 0.00333 } # Share of the debt repaid each month, as part of spending: 4% a year. No interest until M11
 			set_variable = { global.pops_debt_surplus_repayment = 0.5 } # Share of a surplus that repays debt. The rest disappears (Q15)
 
-			set_variable = { global.company_retention_factor = 0.3 } # Fraction of a company's gross dividends retained to its treasury (rest paid to the HQ state's upper class)
             set_variable = { global.pops_unemployment_bleed = 0.2 } #What % of unemployed pops become working class each month
             set_variable = { global.pops_underpaid_start = 0.5 } #What % of a pop's wealth basket's cost will they start to be less inclined to be employed
             set_variable = { global.pops_underpaid_min = 0.3 } #Minimum % of pops willing to be employed
@@ -1160,8 +1163,8 @@ initialize_country = {
         set_variable = { global.industry_margin_weight = 0.2 } # How far each month moves a state-industry's trailing margin toward the month's (industries_monthly)
         # Capacity decay (Q23, Q87, industries_monthly)
         set_variable = { global.industry_decay_margin = -0.05 } # Trailing margin below which a building shrinks
-        set_variable = { global.industry_decay_rate = 0.01 } # Share of its generic size it loses a month
-        set_variable = { global.industry_decay_floor = 0.1 } # Size below which its generic share closes
+        set_variable = { global.industry_decay_rate = 0.01 } # Share of its size it loses a month, every owner alike (Q134)
+        set_variable = { global.industry_decay_floor = 0.1 } # Size below which it closes
         # Investment (M09, §13, _economy_investment.txt)
         set_variable = { global.investment_target_utilisation = 80 } # A sector expands while its target utilisation is above this, toward the capacity it wants (Q120)
         set_variable = { global.investment_min_project = 0.1 } # Smallest expansion worth starting, in levels, and the lowest a sector's minimum for a partly funded one falls to (Q126)
@@ -1188,6 +1191,18 @@ initialize_country = {
         set_variable = { global.investment_search_max = 6 } # ... up to this
         set_variable = { global.investment_new_sector_min_pool = 2000 } # The general pool a country needs before it looks at sectors new to it
         set_variable = { global.government_investment_max = 5 } # Most of GDP, in %, each government investment line can take (change_development_fund, change_infrastructure_investment)
+
+        # Companies (M10, _economy_companies.txt)
+        set_variable = { global.company_throughput_bonus = 0.1 } # A private or public company's throughput bonus in its primary industry, on its own slice (Q130)
+        set_variable = { global.company_found_min_size = 2 } # Levels of generic size a plant needs to seed a company (Q137)
+        set_variable = { global.company_found_share = 0.5 } # Share of the seed's generic size the new company takes (Q137)
+        set_variable = { global.company_found_growth = 1.2 } # A seed's ROI is divided by this for each company the country has, so founding slows as companies multiply (Q137, Q151)
+        set_variable = { global.company_found_industry_penalty = 0.5 } # A seed's ROI is multiplied by this for each company the country already has in its industry (Q144)
+        set_variable = { global.company_insolvency_limit = 1 } # A company is insolvent when its debt is above this x its asset value. Its construction pauses at global.sector_debt_limit (Q131, Q140)
+        set_variable = { global.company_bailout_cooldown = 60 } # Months before a bailed-out company can be bailed out again (Q141)
+        # Market headroom and surplus capital (Q147-Q150)
+        set_variable = { global.capital_reserve_share = 0.1 } # Share of its plants' value a company or a sector's generic owner keeps, beyond its bills to come. The rest is paid out as dividends
+        set_variable = { global.investment_headroom_unlimited = 1000 } # Levels a sector that makes no goods (railways, ports) can build, as far as its market goes
 
         # Infrastructure dependence by global.building_type (0 = no type set: RGOs of factory goods)
         clear_array = global.infrastructure_dependence_by_type

@@ -54,6 +54,17 @@
 #     construction (no goods bought, no progress) and starts nothing new. Retained earnings repay debt first.
 #   - Infrastructure is funded whole, in the order found, at full cost from the infrastructure fund.
 #   What's built belongs to the sector's generic owner (financer 0), whoever paid (Q37).
+#
+# Companies (M10, _economy_companies.txt): in each tier, before the sectors, each company funds its own industry's
+# expansions, new plants and prospects from its treasury, and what it builds is its own (companies_fund_tier, Q132). Then
+# the month's founding, if its seed is in this tier, from the general pool (company_found_fund, Q137). What a company
+# starts is closed to the sectors.
+#
+# Market headroom (Q147, Q148): expansions and new plants, by companies, sectors and the pool, are cut to what the market
+# can still take before a good's price falls below base (investment_headroom_update, investment_sector_headroom). Each
+# country's funding uses it up for the members after it.
+# Surplus capital (Q149, Q150): after the month's funding, a company's treasury and a sector's capital above their reserve
+# go out as dividends (companies_payout_monthly, investment_surplus_payout).
 
 
 	calculate_investment_appetite = {
@@ -102,6 +113,90 @@
 	}
 
 
+# Market headroom (Q147, Q148)
+	investment_headroom_update = {
+		# Market leader scope. Runs once a month, after prices move (_advance_time). investment_headroom@<good>: how much more of
+		# each good the market can take before its price falls below base: demand less supply, trade included (get_price), less
+		# what the construction under way in every member's sectors will make, a level at its sector's newest PM at full
+		# production (investment_level_bundles). Each member's expansions and new plants use it up when they're funded, in rank
+		# order (investment_monthly)
+		for_each_loop = {
+			array = global.resource_token_array
+			value = r_type
+			set_variable = { investment_headroom@var:r_type = { value = demand@var:r_type subtract = supply@var:r_type } }
+		}
+		set_temp_variable = { hr_leader = THIS }
+		for_each_scope_loop = {
+			array = market_countries
+			for_each_loop = {
+				array = sectors
+				value = s_token
+				if = {
+					limit = { check_variable = { sector_construction@var:s_token > 0 } }
+					investment_level_bundles = yes
+					multiply_temp_variable = { hr_bundles = sector_construction@var:s_token }
+					investment_headroom_take = yes
+				}
+			}
+		}
+	}
+	investment_level_bundles = {
+		# Country scope. Input: s_token. Output: hr_bundles, the bundles of base production a level of the sector makes at its
+		# newest PM at full production, before modifiers
+		set_temp_variable = { hr_pm = latest_production_method@var:s_token }
+		set_temp_variable = {
+			hr_bundles = {
+				value = global.pm_output_amount@var:hr_pm
+				multiply = global.building_production_multiplier@var:s_token
+				multiply = global.building_base_employees@var:s_token
+			}
+		}
+	}
+	investment_headroom_take = {
+		# Any scope. Inputs: s_token, hr_bundles (bundles of its base production), hr_leader (the market leader). Takes what
+		# they make of each good off the market's headroom
+		for_each_loop = {
+			array = global.building_base_production@var:s_token
+			value = r_type
+			index = hr_i
+			set_temp_variable = { hr_amount = global.building_base_production_amount@var:s_token^hr_i }
+			multiply_temp_variable = { hr_amount = hr_bundles }
+			subtract_from_variable = { hr_leader:investment_headroom@var:r_type = hr_amount }
+		}
+	}
+	investment_sector_headroom = {
+		# Country scope. Input: s_token. sector_headroom@<sector>: how many levels of it its market can still take this month
+		# before its goods' prices fall below base, from the market leader's investment_headroom@<good>: each good's headroom
+		# over what a level makes of it, weighted by the good's share of a level's value at base prices. A sector that makes no
+		# goods (railways and ports) isn't limited. sector_headroom_used@ counts what this month's funding takes
+		set_variable = { sector_headroom_used@var:s_token = 0 }
+		investment_level_bundles = yes
+		set_temp_variable = { hr_levels_temp = 0 }
+		set_temp_variable = { hr_value_temp = 0 }
+		if = {
+			limit = { check_variable = { hr_bundles > 0 } }
+			for_each_loop = {
+				array = global.building_base_production@var:s_token
+				value = r_type
+				index = hr_i
+				set_temp_variable = { hr_amount = global.building_base_production_amount@var:s_token^hr_i }
+				set_temp_variable = { hr_room_temp = inv_leader:investment_headroom@var:r_type }
+				if = {
+					limit = { check_variable = { hr_amount > 0 } }
+					set_temp_variable = { hr_good_value_temp = { value = hr_amount multiply = global.base_price@var:r_type } }
+					add_to_temp_variable = { hr_levels_temp = { value = hr_room_temp divide = hr_amount divide = hr_bundles multiply = hr_good_value_temp } }
+					add_to_temp_variable = { hr_value_temp = hr_good_value_temp }
+				}
+			}
+		}
+		set_variable = { sector_headroom@var:s_token = global.investment_headroom_unlimited }
+		if = {
+			limit = { check_variable = { hr_value_temp > 0 } }
+			set_variable = { sector_headroom@var:s_token = { value = hr_levels_temp divide = hr_value_temp max = 0 } }
+		}
+	}
+
+
 # Before the state loop
 	investment_prepare = {
 		# Country scope. Runs once a tick, after sectors_monthly
@@ -135,6 +230,18 @@
 
 		clear_array = investment_search
 		clear_array = investment_search_key
+
+		# This month's seed for a new company (company_found_candidate), looked for while the general pool has money (Q137)
+		set_variable = { company_found_tier = 0 }
+		set_variable = { company_found_roi = -1 }
+		set_temp_variable = { inv_found_open = 0 }
+		if = {
+			limit = { check_variable = { investment_fund > 0 } }
+			set_temp_variable = { inv_found_open = 1 }
+		}
+		set_temp_variable = { inv_found_n = companies^num } # Each company the country has makes the next harder to found (Q151)
+		set_temp_variable = { inv_found_pace = { value = global.company_found_growth pow = inv_found_n } }
+
 		set_temp_variable = { inv_search_n = num_controlled_states }
 		set_temp_variable = {
 			inv_search_n = {
@@ -496,10 +603,30 @@
 			limit = { check_variable = { inv_roll_temp < global.investment_upgrade_check_chance } }
 			set_temp_variable = { inv_upgrade_month = 1 }
 		}
+		# A company is founded in a state its country owns (Q135, Q138)
+		set_temp_variable = { inv_found_here = 0 }
+		if = {
+			limit = {
+				check_variable = { inv_found_open = 1 }
+				is_owned_by = var:inv_country
+			}
+			set_temp_variable = { inv_found_here = 1 }
+		}
 		for_each_loop = {
 			array = industries
 			value = bu_token
 			index = inv_ind_i
+			if = { # A seed for a new company (M10, Q137)
+				limit = {
+					check_variable = { inv_found_here = 1 }
+					NOT = { check_variable = { owner_sizes_local@var:bu_token < global.company_found_min_size } }
+					is_sector = yes
+					NOT = { check_variable = { global.building_type@var:bu_token = 2 } }
+					check_variable = { revenue@var:bu_token > 0 }
+					check_variable = { margin@var:bu_token > 0 }
+				}
+				company_found_candidate = yes
+			}
 			if = {
 				limit = {
 					check_variable = { size@var:bu_token > 0 }
@@ -853,12 +980,15 @@
 		#    sector_capital_mobility of them goes to the general pool and the rest to its capital. A loss comes out of capital.
 		#    The pool takes pops' investment and the development fund, and the infrastructure fund the infrastructure line.
 		# 2. Construction bills (sector_construction_bill@): the reserve, then capital, then debt (Q118). A sector with
-		#    nothing under way returns what's left of its reserve to its capital.
+		#    nothing under way returns what's left of its reserve to its capital. Companies' money goes through their
+		#    treasuries and debt (companies_cash_monthly, M10).
 		# 3. Each searching sector's best new state joins its tier.
-		# 4. Funding, tier by tier (Q121): indivisible projects whole, then expansions, pro rata by sector, from their
+		# 4. Funding, tier by tier (Q121): the companies' own industries first (companies_fund_tier, Q132), the month's
+		#    founding (company_found_fund, Q137), indivisible projects whole, then expansions, pro rata by sector, from their
 		#    sector's capital and the general pool. Then infrastructure. What's funded starts.
 		# Outputs: investment_retained_transfer, investment_fund_income, investment_fund_spending (what the pool paid),
-		#   investment_funded_retained (what sector capital paid), investment_funded_pool, investment_projects_started,
+		#   investment_funded_retained (what sector capital paid), investment_funded_pool, investment_funded_companies (what
+		#   companies paid, M10), companies_founded, investment_projects_started,
 		#   investment_opportunities_value (the month's opportunities, at capital cost), sector_opportunity_value@<sector>
 		set_temp_variable = { inv_country = THIS }
 		set_temp_variable = { inv_mobility_temp = { value = global.sector_capital_mobility_base add = modifier@sector_capital_mobility clamp = { min = 0 max = 1 } } }
@@ -905,6 +1035,7 @@
 		set_variable = { investment_fund_income = { value = pops_investment add = investment_retained_transfer add = development_fund_spending } }
 		add_to_variable = { investment_fund = investment_fund_income }
 		add_to_variable = { infrastructure_fund = infrastructure_investment_spending }
+		companies_cash_monthly = yes # Companies' retained earnings, losses and bills (M10)
 
 		# Each searching sector's best new state
 		for_each_loop = {
@@ -926,18 +1057,23 @@
 		set_variable = { investment_fund_spending = 0 }
 		set_variable = { investment_funded_retained = 0 }
 		set_variable = { investment_funded_pool = 0 }
+		set_variable = { investment_funded_companies = 0 }
 		set_variable = { investment_projects_started = 0 }
 		set_variable = { investment_opportunities_value = 0 }
+		set_variable = { companies_founded = 0 }
+		set_temp_variable = { inv_financer_temp = 0 } # Who owns what's started: the generic owner unless a company pays (companies_fund_tier)
 		set_temp_variable = { inv_full_temp = { value = 1 add = global.start_construction_cost_multiplier } }
 		set_temp_variable = { inv_now_temp = { value = global.years_passed multiply = 12 add = global.month } }
 		set_temp_variable = { inv_pool_held_temp = 0 } # Pool money declined in a better tier, waiting for next month
 		set_temp_variable = { inv_second_walk = 0 }
+		set_temp_variable = { inv_leader = market_leader }
 		for_each_loop = {
 			array = sectors
 			value = s_token
 			clear_array = sector_opportunity_value@var:s_token
 			resize_array = { array = sector_opportunity_value@var:s_token value = 0 size = 4 }
 			investment_sector_min = yes
+			investment_sector_headroom = yes
 		}
 		for_each_loop = { # A sector new to the country isn't on its sectors list until it starts building
 			array = investment_search
@@ -945,13 +1081,22 @@
 			clear_array = sector_opportunity_value@var:s_token
 			resize_array = { array = sector_opportunity_value@var:s_token value = 0 size = 4 }
 			investment_sector_min = yes
+			investment_sector_headroom = yes
 		}
 		for_each_loop = {
 			array = global.investment_tier_roi
 			index = inv_ti
 			set_temp_variable = { inv_t = { value = inv_ti add = 1 } }
 
-			# What the tier's expansions would take, per sector. Indivisible projects are funded as they come
+			# Companies first, each in its own industry (M10, Q132), then a new company, if this tier has the month's seed (Q137)
+			companies_fund_tier = yes
+			if = {
+				limit = { check_variable = { company_found_tier = inv_t } }
+				company_found_fund = yes
+			}
+
+			# What the tier's expansions would take, per sector. Indivisible projects are funded as they come. What a company
+			# has started is no longer open
 			clear_array = investment_tier_sectors
 			for_each_loop = {
 				array = investment_states@var:inv_t
@@ -960,19 +1105,40 @@
 				set_temp_variable = { inv_b = investment_industries@var:inv_t^inv_k }
 				set_temp_variable = { inv_cost_temp = inv_state:opportunity_cost@var:inv_b }
 				set_temp_variable = { inv_type_temp = inv_state:opportunity_type@var:inv_b }
+				set_temp_variable = { inv_taken_temp = inv_state:construction@var:inv_b }
+				set_temp_variable = { inv_prospecting_temp = inv_state:prospecting@var:inv_b }
+				add_to_temp_variable = { inv_taken_temp = inv_prospecting_temp }
 				add_to_variable = { sector_opportunity_value@var:inv_b^inv_ti = inv_cost_temp }
 				add_to_variable = { investment_opportunities_value = inv_cost_temp }
 				if = {
-					limit = { check_variable = { inv_type_temp = 1 } }
+					limit = { check_variable = { inv_taken_temp = 0 } }
 					if = {
-						limit = { NOT = { is_in_array = { investment_tier_sectors = inv_b } } }
-						add_to_array = { investment_tier_sectors = inv_b }
-						set_variable = { sector_tier_value@var:inv_b = 0 }
+						limit = { check_variable = { inv_type_temp = 1 } }
+						if = {
+							limit = { NOT = { is_in_array = { investment_tier_sectors = inv_b } } }
+							add_to_array = { investment_tier_sectors = inv_b }
+							set_variable = { sector_tier_value@var:inv_b = 0 }
+							set_variable = { sector_tier_claim@var:inv_b = 0 }
+						}
+						# Only what its market can take (Q148), in the order found
+						set_temp_variable = { inv_size_temp = inv_state:opportunity_size@var:inv_b }
+						set_temp_variable = {
+							inv_room_temp = {
+								value = sector_headroom@var:inv_b
+								subtract = sector_tier_claim@var:inv_b
+								max = 0
+								min = inv_size_temp
+							}
+						}
+						if = {
+							limit = { check_variable = { inv_room_temp > 0 } }
+							add_to_variable = { sector_tier_value@var:inv_b = { value = inv_cost_temp multiply = inv_room_temp divide = inv_size_temp } }
+							add_to_variable = { sector_tier_claim@var:inv_b = inv_room_temp }
+						}
 					}
-					add_to_variable = { sector_tier_value@var:inv_b = inv_cost_temp }
-				}
-				else = {
-					investment_fund_project = yes
+					else = {
+						investment_fund_project = yes
+					}
 				}
 			}
 
@@ -1033,8 +1199,12 @@
 				index = inv_k
 				set_temp_variable = { inv_b = investment_industries@var:inv_t^inv_k }
 				set_temp_variable = { inv_type_temp = inv_state:opportunity_type@var:inv_b }
+				set_temp_variable = { inv_built_temp = inv_state:construction@var:inv_b }
 				if = {
-					limit = { check_variable = { inv_type_temp = 1 } }
+					limit = {
+						check_variable = { inv_type_temp = 1 }
+						check_variable = { inv_built_temp = 0 }
+					}
 					set_temp_variable = { inv_value_temp = { value = sector_tier_retained@var:inv_b add = sector_tier_pooled@var:inv_b } }
 					investment_try_expansion = yes
 				}
@@ -1091,6 +1261,23 @@
 				add_to_variable = { investment_projects_started = 1 }
 			}
 		}
+
+		# What this month's funding took off its market's headroom, for the members that fund after it (Q148)
+		set_temp_variable = { hr_leader = inv_leader }
+		for_each_loop = {
+			array = sectors
+			value = s_token
+			if = {
+				limit = { check_variable = { sector_headroom_used@var:s_token > 0 } }
+				investment_level_bundles = yes
+				multiply_temp_variable = { hr_bundles = sector_headroom_used@var:s_token }
+				investment_headroom_take = yes
+			}
+		}
+
+		# Surplus capital, after the month's funding, goes out as dividends (Q149, Q150)
+		companies_payout_monthly = yes
+		investment_surplus_payout = yes
 	}
 	investment_sector_min = {
 		# Country scope. Input: s_token, inv_now_temp. Sets the sector's minimum for a partly funded project this month (Q126):
@@ -1113,52 +1300,62 @@
 		# Country scope. Input: inv_state, inv_b, inv_value_temp - the money for it, at capital cost (its sector's capital,
 		# sector_tier_retained@, plus the pool's share); inv_second_walk - 1 if the pool's share is inv_pool_left_temp, else
 		# its sector's sector_tier_pooled@
-		# Starts the expansion or new plant if the money funds it whole, or else at least the sector's minimum (Q126).
-		# Sector capital pays the investment cost of as much as it can, and the general pool the rest at full cost, with the
-		# construction cost into the sector's reserve (Q117)
+		# Starts the expansion or new plant if the money funds it whole, or else at least the sector's minimum (Q126), and only
+		# as much of it as its market can still take (sector_headroom@, Q148). Sector capital pays the investment cost of as
+		# much as it can, and the general pool the rest at full cost, with the construction cost into the sector's reserve (Q117)
 		set_temp_variable = { inv_cost_temp = inv_state:opportunity_cost@var:inv_b }
 		set_temp_variable = { inv_size_temp = inv_state:opportunity_size@var:inv_b }
-		set_temp_variable = { inv_value_temp = { value = inv_value_temp min = inv_cost_temp } }
-		set_temp_variable = { x_temp = { value = inv_value_temp divide = inv_cost_temp multiply = inv_size_temp } }
+		set_temp_variable = { inv_room_temp = { value = sector_headroom@var:inv_b max = 0 min = inv_size_temp } }
 		if = {
-			limit = {
-				check_variable = { x_temp > global.investment_min_project }
-				OR = {
-					check_variable = { inv_value_temp = inv_cost_temp }
-					NOT = { check_variable = { x_temp < sector_investment_min@var:inv_b } }
-				}
-			}
-			set_temp_variable = { inv_paid_temp = { value = sector_tier_retained@var:inv_b min = inv_value_temp } }
-			subtract_from_variable = { sector_tier_retained@var:inv_b = inv_paid_temp }
-			subtract_from_temp_variable = { inv_value_temp = inv_paid_temp }
-			multiply_temp_variable = { inv_paid_temp = global.start_construction_cost_multiplier }
-			subtract_from_variable = { sector_capital@var:inv_b = inv_paid_temp }
-			add_to_variable = { investment_funded_retained = inv_paid_temp }
-
+			limit = { check_variable = { inv_room_temp > global.investment_min_project } }
+			set_temp_variable = { inv_cost_temp = { value = inv_cost_temp multiply = inv_room_temp divide = inv_size_temp } }
+			set_temp_variable = { inv_size_temp = inv_room_temp }
+			set_temp_variable = { inv_value_temp = { value = inv_value_temp min = inv_cost_temp } }
+			set_temp_variable = { x_temp = { value = inv_value_temp divide = inv_cost_temp multiply = inv_size_temp } }
 			if = {
-				limit = { check_variable = { inv_second_walk = 1 } }
-				subtract_from_temp_variable = { inv_pool_left_temp = inv_value_temp }
-			}
-			else = {
-				subtract_from_variable = { sector_tier_pooled@var:inv_b = inv_value_temp }
-			}
-			add_to_variable = { sector_construction_reserve@var:inv_b = inv_value_temp }
-			multiply_temp_variable = { inv_value_temp = inv_full_temp }
-			subtract_from_variable = { investment_fund = inv_value_temp }
-			add_to_variable = { investment_fund_spending = inv_value_temp }
-			add_to_variable = { investment_funded_pool = inv_value_temp }
+				limit = {
+					check_variable = { x_temp > global.investment_min_project }
+					OR = {
+						check_variable = { inv_value_temp = inv_cost_temp }
+						NOT = { check_variable = { x_temp < sector_investment_min@var:inv_b } }
+					}
+				}
+				set_temp_variable = { inv_paid_temp = { value = sector_tier_retained@var:inv_b min = inv_value_temp } }
+				subtract_from_variable = { sector_tier_retained@var:inv_b = inv_paid_temp }
+				subtract_from_temp_variable = { inv_value_temp = inv_paid_temp }
+				add_to_variable = { sector_construction_remaining@var:inv_b = inv_paid_temp } # Bills its capital will pay
+				multiply_temp_variable = { inv_paid_temp = global.start_construction_cost_multiplier }
+				subtract_from_variable = { sector_capital@var:inv_b = inv_paid_temp }
+				add_to_variable = { investment_funded_retained = inv_paid_temp }
 
-			set_variable = { sector_last_investment@var:inv_b = inv_now_temp }
-			set_temp_variable = { industry_token = inv_b }
-			var:inv_state = { investment_start_construction = yes }
-			add_to_variable = { investment_projects_started = 1 }
+				if = {
+					limit = { check_variable = { inv_second_walk = 1 } }
+					subtract_from_temp_variable = { inv_pool_left_temp = inv_value_temp }
+				}
+				else = {
+					subtract_from_variable = { sector_tier_pooled@var:inv_b = inv_value_temp }
+				}
+				add_to_variable = { sector_construction_reserve@var:inv_b = inv_value_temp }
+				multiply_temp_variable = { inv_value_temp = inv_full_temp }
+				subtract_from_variable = { investment_fund = inv_value_temp }
+				add_to_variable = { investment_fund_spending = inv_value_temp }
+				add_to_variable = { investment_funded_pool = inv_value_temp }
+
+				subtract_from_variable = { sector_headroom@var:inv_b = x_temp }
+				add_to_variable = { sector_headroom_used@var:inv_b = x_temp }
+				set_variable = { sector_last_investment@var:inv_b = inv_now_temp }
+				set_temp_variable = { industry_token = inv_b }
+				var:inv_state = { investment_start_construction = yes }
+				add_to_variable = { investment_projects_started = 1 }
+			}
 		}
 	}
 	investment_fund_project = {
 		# Country scope. Input: inv_state, inv_b, inv_type_temp, inv_cost_temp - an indivisible opportunity
-		# Funds it whole if the money is there (Q121): an upgrade's investment cost from its sector's capital (Q38); a
-		# prospect's cost from its sector's capital, or else the general pool, less what a better tier declined (Q30, Q126).
-		# Retooling bills come later, like construction's
+		# Funds it whole if the money is there (Q121): an upgrade's investment cost from its sector's capital (Q38), or from
+		# each owner by size if companies hold part of the plant (company_upgrade_shares, Q133); a prospect's cost from its
+		# sector's capital, or else the general pool, less what a better tier declined (Q30, Q126). Retooling bills come
+		# later, like construction's
 		if = {
 			limit = { check_variable = { inv_type_temp = 4 } }
 			set_temp_variable = { inv_need_temp = inv_cost_temp }
@@ -1188,10 +1385,21 @@
 		}
 		else = {
 			set_temp_variable = { inv_need_temp = { value = inv_cost_temp multiply = global.start_construction_cost_multiplier } }
-			if = {
+			set_temp_variable = { inv_funded_temp = 0 }
+			var:inv_state = { set_temp_variable = { inv_owners_temp = owner_companies@var:inv_b^num } }
+			if = { # A plant companies hold part of: each owner pays its share (Q133)
+				limit = { check_variable = { inv_owners_temp > 0 } }
+				company_upgrade_shares = yes
+			}
+			else_if = {
 				limit = { NOT = { check_variable = { sector_capital@var:inv_b < inv_need_temp } } }
 				subtract_from_variable = { sector_capital@var:inv_b = inv_need_temp }
 				add_to_variable = { investment_funded_retained = inv_need_temp }
+				add_to_variable = { sector_construction_remaining@var:inv_b = inv_cost_temp } # Bills its capital will pay
+				set_temp_variable = { inv_funded_temp = 1 }
+			}
+			if = {
+				limit = { check_variable = { inv_funded_temp = 1 } }
 				set_temp_variable = { financer_temp = 0 }
 				set_temp_variable = { industry_token = inv_b }
 				set_temp_variable = { no_cost_temp = 1 }
@@ -1211,10 +1419,10 @@
 		}
 	}
 	investment_start_construction = {
-		# State scope. Input: industry_token, x_temp (levels). Starts its sector's construction, for the generic owner
-		# (financer 0, Q37): investment_monthly has paid the investment cost. A new plant takes its controller's newest
-		# methods. Lighter than construct_x_industries_no_update, since next month's state loop rebuilds the industry arrays
-		# and the construction list
+		# State scope. Input: industry_token, x_temp (levels), inv_financer_temp (0, or the company paying, M10). Starts its
+		# sector's construction, for the generic owner (financer 0, Q37) or the company: investment_monthly has paid the
+		# investment cost. A new plant takes its controller's newest methods. Lighter than construct_x_industries_no_update,
+		# since next month's state loop rebuilds the industry arrays and the construction list
 		if = {
 			limit = { NOT = { is_in_array = { industries = industry_token } } }
 			add_to_array = { industries = industry_token }
@@ -1232,11 +1440,62 @@
 			set_variable = { automation_method@var:industry_token = controller:latest_automation_method@var:industry_token }
 		}
 		add_to_variable = { construction@var:industry_token = x_temp }
-		set_variable = { construction_financier@var:industry_token = 0 }
+		set_variable = { construction_financier@var:industry_token = inv_financer_temp }
 
 		set_temp_variable = { bu_token = industry_token }
 		cache_register_industry = yes
 		set_temp_variable = { iuc_industry = industry_token }
 		industry_update_construction_retooling = yes
 		add_to_variable = { update_state_econ_window = 1 }
+	}
+
+
+# Surplus capital (Q150)
+	investment_surplus_payout = {
+		# Country scope, at the end of investment_monthly. Pays out the generic owner's surplus capital as its sector's dividends:
+		# its capital above a reserve, the bills it still has to pay beyond its construction reserve (sector_construction_remaining@
+		# less sector_construction_reserve@), plus global.capital_reserve_share x the value of its plants, built and being built,
+		# at its newest methods. Each state's upper class gets it next month, by generic size, with the rest of the sector's
+		# dividends. A sector in debt keeps its capital
+		# Outputs: sector_surplus_dividends@<sector>, sectors_surplus_dividends
+		set_variable = { sectors_surplus_dividends = 0 }
+		for_each_loop = {
+			array = sectors
+			value = s_token
+			set_variable = { sector_surplus_dividends@var:s_token = 0 }
+			if = {
+				limit = {
+					check_variable = { sector_capital@var:s_token > 0 }
+					NOT = { check_variable = { sector_debt@var:s_token > 0 } }
+					check_variable = { sector_generic_size@var:s_token > 0 }
+				}
+				set_temp_variable = { sp_pm = latest_production_method@var:s_token }
+				set_temp_variable = { sp_am = latest_automation_method@var:s_token }
+				set_temp_variable = {
+					sp_surplus_temp = {
+						value = method_construction_cost@var:sp_pm
+						add = method_construction_cost@var:sp_am
+						multiply = global.building_base_employees@var:s_token
+						multiply = { value = sector_generic_size@var:s_token add = sector_construction@var:s_token }
+						multiply = global.capital_reserve_share
+						add = {
+							value = sector_construction_remaining@var:s_token
+							subtract = sector_construction_reserve@var:s_token
+							max = 0
+						}
+						multiply = -1
+						add = sector_capital@var:s_token
+					}
+				}
+				if = {
+					limit = { check_variable = { sp_surplus_temp > 0 } }
+					subtract_from_variable = { sector_capital@var:s_token = sp_surplus_temp }
+					set_variable = { sector_surplus_dividends@var:s_token = sp_surplus_temp }
+					add_to_variable = { sector_dividends@var:s_token = sp_surplus_temp }
+					set_variable = { sector_dividend_per_size@var:s_token = { value = sector_dividends@var:s_token divide = sector_generic_size@var:s_token } }
+					add_to_variable = { sectors_dividends = sp_surplus_temp }
+					add_to_variable = { sectors_surplus_dividends = sp_surplus_temp }
+				}
+			}
+		}
 	}

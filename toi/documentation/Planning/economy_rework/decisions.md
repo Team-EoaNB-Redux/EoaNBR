@@ -4,7 +4,7 @@ Questions raised against the new spec, [EOANB_Redux_Economy_Redesign_Updated.md]
 
 When Strat answers, write the answer under the question, mark it **Decided** with the date, and update the milestone file it belongs to. The tuning values the spec leaves to testing (§34) aren't asked here: they get settled in the milestone that builds them.
 
-**Status:** Strat answered Q1–Q54 on 2026-11-12. Where an answer differs from the recommendation, it says "Not as recommended". The answers raised follow-up questions Q55–Q68, which Strat also answered on 2026-11-12. Those raised Q69–Q72, also answered the same day. M02's code reading raised Q73–Q80, and M03's raised Q81–Q84. Strat answered all of them on 2026-11-12. M04's raised Q85–Q91, answered on 2026-11-13. M05's raised Q92–Q95, answered on 2026-11-14. M06's raised Q96–Q101, answered on 2026-11-14. M07's raised Q102–Q105, answered on 2026-11-14. M08's raised Q106–Q113, answered on 2026-11-14. Strat's playtest of M08 raised Q114–Q116, answered the same day. M09's brief and code reading raised Q117–Q124, and its first simulator run Q125, all answered on 2026-11-14.
+**Status:** Strat answered Q1–Q54 on 2026-11-12. Where an answer differs from the recommendation, it says "Not as recommended". The answers raised follow-up questions Q55–Q68, which Strat also answered on 2026-11-12. Those raised Q69–Q72, also answered the same day. M02's code reading raised Q73–Q80, and M03's raised Q81–Q84. Strat answered all of them on 2026-11-12. M04's raised Q85–Q91, answered on 2026-11-13. M05's raised Q92–Q95, answered on 2026-11-14. M06's raised Q96–Q101, answered on 2026-11-14. M07's raised Q102–Q105, answered on 2026-11-14. M08's raised Q106–Q113, answered on 2026-11-14. Strat's playtest of M08 raised Q114–Q116, answered the same day. M09's brief and code reading raised Q117–Q124, and its first simulator run Q125, all answered on 2026-11-14. Strat's playtest raised Q126, answered on 2026-11-15. M10's code reading and Strat's company design document raised Q127–Q143 on 2026-11-16, answered the same day, and the answers raised Q144–Q146, also answered that day. Strat's in-game test of M10 raised Q147–Q150, and their first run Q151, all answered the same day.
 
 ---
 
@@ -1171,3 +1171,266 @@ Reading the code against it raised Q117–Q124, and the first simulator run Q125
 - Only expansions and new plants start the clock again. Upgrades, prospecting and infrastructure are exempt from the minimum and leave the clock alone.
 - Each sector's minimum is set once a month, before funding (`sector_investment_min@`), so a sector can start several projects in the month it invests.
 - Pool money a tier declined also isn't used by a lower tier's prospecting that month.
+
+## Companies follow-ups (raised 2026-11-16, M10)
+
+On 2026-11-16 Strat added [Company_System_Design.md](Company_System_Design.md), the summary of a fuller company design conversation. It's older than the spec, so where it disagrees with the spec, the milestones or the decisions above, they win. Most of it goes beyond M10's minimum, and Strat said M15 can be split. Reading it and the MVP (`_economy_companies.txt`) against M04 and M09 raised Q127–Q143.
+
+The simulator baseline is `redux-eco-sim/runs/m10_base` (`world_1857_eng`, 60 months, `--watch-file watches/m09.txt`). `runs/m09c` no longer compares: the 1857 population fix (`b82b27f17`) changed startup, and ENG's GDP is 4% lower from the first tick.
+
+**Q127. Splitting the companies work after M10.** The design document adds to M15's list: buybacks, creditor equity sold back over 12–36 months, reputation penalties for repeat bankruptcies, mergers and acquisitions that companies start themselves (horizontal, vertical, hostile takeovers), secondary departments unlocked by R&D or a large investment, nationalising a branch, profit repatriation, concessions, lobbying and funding interest groups, and state-issued monopolies. That's too much for one milestone.
+- (a) Keep one M15.
+- (b) Three milestones, all after M13 and before M14:
+  - **M15, shares and capital markets:** shares and the four ownership buckets, equity issuance, valuation and the stock market, bubble risk, buybacks and treasury stock, buying a stake, and reorganisation with creditor equity. It needs M11's bank and M13's insolvency laws.
+  - **M16, company strategy:** behaviour states and complacency, departments, R&D, vertical and horizontal integration, and mergers and acquisitions, which are priced from M15's valuations.
+  - **M17, branches and influence:** branches abroad under the foreign direct investment law, nationalising a branch, repatriation, concessions, lobbying and interest groups, and state-issued monopolies. It also needs the politics rework's interest groups.
+- (c) Two: M15 as in (b), and one milestone for the rest.
+
+*Recommend:* (b). Each builds on the one before.
+
+> **Decided 2026-11-16:** (b).
+
+**Q128. Where the design document differs from the current plan.** Defaults, unless Strat says otherwise:
+1. **Private companies raise capital from "retained earnings only" (§4).** Default: that means no shares, and every company can borrow (spec §2.3 and §19.2, M11). See Q131.
+2. **HQ limits:** §1 allows one HQ per state, §9 one company per industry per state, and the MVP any number. See Q138.
+3. **Behaviour (§8):** "Complacent" is a mode there. The notepad and the UI plan (UQ12) have five behaviour states (rapid growth, monopolisation, expansion, optimisation, crisis management) and complacency as a separate 0–100 figure. Default: the notepad's.
+4. **SOEs and complacency:** §8 has SOEs resist complacency, while the notepad has state backing generate it. Default: the notepad's, with §4's lower SOE efficiency.
+5. **Reorganisation's figures (§11):** a 35–60% valuation hit (the notepad says 25–50%), 15–40% of non-core assets sold, and 20–50% of the equity to creditors. Default: starting ranges, tuned in M15.
+6. **Who holds private shares (§2):** the general pool and the HQ state's upper class. This answers M15's first open question. Default: yes.
+7. **The foreign investment law (§7):** four levels, with exclusive economic zones as a decision. The politics rework's `foreign_direct_investment_tokens` has five, ending in `law_foreign_concessions`. Default: the code's five, with concessions standing for the chartered zones.
+8. **Mergers (§13):** companies merge and acquire on their own from 1857. M15's file leaves mergers to content (Q51), but Q51 was about the player's controls. Default: company-driven mergers and acquisitions go in M16 (Q127), and the player's force-merger and block-merger controls stay content.
+
+*Recommend:* these defaults.
+
+> **Decided 2026-11-16:** the defaults, except the second, not as recommended: keep the MVP's rule. Any number of companies may have their HQ in one state, and a country may have several companies in one industry, though founding discourages that (Q144). Strat limited it in the design document for architectural reasons that the MVP showed weren't real. On the sixth, the MVP already pays a company's dividends to its HQ state's upper class. On the seventh, concessions came after the design document, since nothing let a foreign power hold concessions, where its companies may dominate local ones.
+
+**Q129. A company's own accounts.** Today a company is paid its size's share of its sector's dividends, after the sector has kept its retained share, and keeps 30% of that (`global.company_retention_factor`). So it never sees its own profit or pays its own tax, its slice's retained earnings become the generic owner's capital, and a bonus of its own would be averaged across the sector.
+- (a) Each owner keeps its own accounts. A company's revenue, inputs, payroll and maintenance are its holdings' shares of each state-industry's figures, at its own bonuses (Q130), so it feels the local wage, Infrastructure Efficiency and quality where it works (§19). The generic owner's accounts are the sector's less its companies'. A company pays corporate tax on a positive profit (Q86), keeps a retained share in its treasury, and pays the rest to its HQ state's upper class. A loss comes out of its treasury, then becomes debt (Q131). None of its retained earnings go to the general pool through `sector_capital_mobility`.
+- (b) Keep the MVP's share of sector dividends.
+
+The retained share would be the sectors' (`global.sector_retained_share`, 0.3, scaled by incentives, Q39) until M16's behaviour states set it per company.
+
+*Recommend:* (a), at the sectors' 0.3. A company then differs from the generic owner by its bonuses, by keeping all of its capital, and by its debt, which is §19.1's competition.
+
+> **Decided 2026-11-16:** (a). Strat: each industry's output and inputs reach the country level, each company applies its own bonuses to its own share, and the industry's actual figures are recombined from its owners'. It's as if each owner had its own copy of the industry in the state, all sharing one workforce.
+
+**Q130. Company bonuses before departments and R&D.** Each plant has one PM and AM (Q19), so a company can only earn more than the generic owner through bonuses. Departments and R&D come in M16, and M10's own goal has market share following from compounding profit.
+- (a) Every company gets a base bonus in its primary industry, `global.company_throughput_bonus` (say +10% throughput), on its own slice. History and content can give a company more, through its own throughput, output and input factors, which R&D will raise later.
+- (b) Only what history and content give each company.
+- (c) No bonuses in M10, only the plumbing, tested with a debug bonus.
+
+In each case a plant's output and inputs scale by its owners' bonuses, weighted by size, and each owner's revenue and inputs are its own slice at its own bonus. Payroll and maintenance follow size, as now.
+
+*Recommend:* (a). Without one, a company is only a pile of capital, and the test companies couldn't gain share.
+
+> **Decided 2026-11-16:** (a). In Strat's tests before the rework, companies bought out whole sectors even without bonuses, but they should have an advantage.
+
+**Q131. Company debt before M11.** Sectors borrow without interest for construction bills, up to `global.sector_debt_limit` (0.5) × the value of their plants, and then pause their construction (Q118). Their operating losses come out of capital, then dividends. If companies couldn't borrow, as the design document's "retained earnings only" could be read (Q128), nothing could make one fail before M11.
+- (a) The sectors' rule, and an operating loss beyond the treasury also becomes debt. M11 makes the bank the creditor and adds interest.
+- (b) No company borrowing until M11. Construction pauses when the treasury runs out, and losses beyond it come out of the HQ's dividends.
+- (c) (a), with a higher limit for companies.
+
+*Recommend:* (a). Debt from losses is what makes a company fail (Q140), and a shared limit keeps companies and sectors comparable until M11 prices the risk.
+
+> **Decided 2026-11-16:** (a).
+
+**Q132. What a company invests in, and with whose money.** M09 funds each tier from sector capital and the general pool, and everything built belongs to the generic owner. A start the company pays for sets it as financer, so the new size becomes its holding.
+- **What:** (a) any expansion, new plant or prospect in its primary industry, anywhere in the country, including a generic or shared plant, where the new size becomes the company's slice; (b) only plants it already holds, and new plants; (c) only plants it holds.
+- **When:** in each tier, companies fund before the sector's capital and the general pool, oldest company first. Q126's minimum applies to each company, with its own clock.
+- **Money:** its treasury pays the investment cost (25%), and the construction bills come from the treasury, then debt (Q131), as with a sector's own reinvestment (Q117). The general pool doesn't put money into an existing company until M15's equity issuance. Founding (Q136) is the one time it does.
+
+*Recommend:* (a), first in each tier, with that money. Companies then take the best opportunities in their industry, which is how a well-run one gains share. Since a state-industry has only one project at a time (§13.5), they crowd out the generic owner where they're active.
+
+> **Decided 2026-11-16:** (a).
+
+**Q133. Upgrading a shared plant.** A plant has one PM and AM (Q19), so an upgrade upgrades every owner's slice, and the MVP left open who pays. `retool_industry_no_update` also still reads the old financer convention, where a company was below 0.
+- (a) Pro rata: each owner pays its share of the retooling cost from its own capital (sector capital for the generic owner, the treasury for a company), and the upgrade goes ahead only if every owner can pay (Q121's all-or-nothing rule).
+- (b) The largest owner decides, and pays it all.
+- (c) Pro rata, with the largest owner covering what a smaller one can't.
+
+*Recommend:* (a). Nobody pays for another owner's slice.
+
+> **Decided 2026-11-16:** (a).
+
+**Q134. When a company's capacity shrinks.** Decay reaches only the generic share ("companies decide for their own"), but nothing decides, so a company's loss-making plants never shrink. Every other removal (content's `remove_x_industries`, the generic share's decay, conquest) takes size without touching `owner_sizes@`, so holdings can add up to more than the plant. That's the MVP's known gap.
+- (a) Decay reaches every owner's share alike, by the plant's trailing margin. Any other removal comes out of the generic share first, then out of the companies pro rata.
+- (b) Companies never decay until M16's optimisation behaviour closes plants. Other removals as in (a).
+- (c) Every removal, decay included, comes out of all owners pro rata.
+
+*Recommend:* (a). §3.1 says company capacity "may" follow company decisions. Until M16 gives them any, the same decay stops a failing company from keeping dead capacity forever.
+
+> **Decided 2026-11-16:** (a).
+
+**Q135. A state changing hands.** Today a company keeps drawing its share of an occupier's sector dividends, and nothing moves its holding when the state is ceded. With Q129's accounts, the occupier's sector would also count the company's slice, so the same profit would count twice.
+- (a) A holding works for its company only while the company's country controls the state. Otherwise its share counts with the controller's generic owner, and if the country no longer owns the state at all, the holding passes to the new owner's generic owner. A lost HQ moves to the capital, and a company left with no holdings is liquidated (Q141).
+- (b) Holdings stay the company's wherever they end up, as foreign assets.
+- (c) As (a), but occupation alone doesn't suspend a holding. Only a change of owner moves it.
+
+*Recommend:* (a). Holdings abroad wait for branches (M17), under the foreign investment law.
+
+> **Decided 2026-11-16:** (a).
+
+**Q136. What founding creates (Q41).** The old founding was a national opportunity: the investment fund bought a slice of a profitable local plant at its asset value and paid itself back, so only the investment cost left the fund. M09 changed two things. The general pool no longer owns anything: what it funds belongs to the generic owner, whose dividends go to each state's upper class. And opportunities are state-industries in tiers by ROI.
+- (a) **Incorporation.** The owners of a profitable generic plant form a company. Part of the plant's generic share becomes the company's holding at no charge, since its owners take the company in exchange, and its dividends still go to an upper class, now the HQ state's. The general pool subscribes the company's starting capital, which goes into its treasury for its first expansions. Until M15's shares give the pool its part, all the company's dividends go to the HQ state. This is how the design document and the notepad describe founding ("a profitable industry of decent size").
+- (b) **Greenfield.** When the general pool funds a new plant (in a new state, or an industry new to the country), it's built for a new company instead of the generic owner, as with a company formed to build a mill or a line. §13.3 lists company investment among greenfield's sources.
+- (c) Both.
+
+*Recommend:* (a). Both of Strat's sources describe it, and it takes no money out of the economy: the pool's money becomes the company's capital. (b) can come later if new industries stay generic.
+
+> **Decided 2026-11-16:** (a).
+
+**Q137. Choosing and pacing foundings.** Under Q136 (a), proposed defaults:
+- **Seed:** a state-industry in the top two tiers by its own ROI last month, with at least `global.company_found_min_size` (say 2) levels of generic size, in a state with no company of that industry (Q138). The company takes half of the plant's generic share. Railways and ports can't be seeds: M09 leaves them to the infrastructure fund, because investment can't price their pay.
+- **Starting capital:** the full cost of 1 level of its industry, enough for a first expansion, × 1.2 for each company the country already has (the old progressive cost), so a country founds companies ever more rarely.
+
+Where it's funded:
+- (a) As an indivisible opportunity in the seed's tier, funded whole from the general pool like prospecting (Q121), at most one per country per month.
+- (b) Only from pool money left over after every tier.
+- (c) A yearly check, outside the tiers.
+
+*Recommend:* (a), with the defaults. Founding then competes with expansions for the pool on the same ROI scale, as the old design intended.
+
+> **Decided 2026-11-16:** (a), with the defaults, except that a state may already have a company of the industry (Q128, Q144). Q151 later replaced the starting capital with the new company's reserve, and moved the 1.2 growth per company to the seed's ROI.
+
+**Q138. Where a company is headquartered.** Its dividends go to its HQ state's upper class.
+- (a) The seed plant's state, with at most one company per industry per HQ state (§9).
+- (b) The country's financial hub, the state with the most industry and the richest upper class, separate from the seed. This was Strat's choice in June 2026, so that a Lancashire mill company could be headquartered in London. It needs another limit, since §9's would allow about one company per industry per country.
+- (c) One HQ per state, of any industry (§1).
+
+*Recommend:* (a). §9's limit works as written, and a founding moves no dividends between states until the company grows elsewhere.
+
+> **Decided 2026-11-16:** the seed plant's state, as in (a), but without §9's limit (Q128): founding discourages a second company in an industry instead (Q144). Strat first chose (b), the financial hub, then changed it the same day, thinking of modern multinationals: a company is headquartered where it was founded, and grows from there.
+
+**Q139. Startup companies (Q41).** The notepad sets them up in one place, with fixed ids, and gives them holdings in state history (`add_to_array = { owner_companies@token:railway = 1 }` and `owner_sizes@`).
+- **Where:** (a) a `companies_startup_setup` effect in `_economy_companies.txt`, run at startup before the sectors' first accounts, which also builds each company's list of holdings from state history; (b) a new definitions file, `_economy_definitions_companies.txt`, like the industries' (a new file needs Strat's say-so).
+- **Test bed:** two British companies, in the `# >>> rework test industries` blocks. A textile company holds one of Lancashire's two textile mill levels (132, for example Horrockses, Miller & Co. of Preston), and a coal company holds Wales's coal (122, for example Thomas Powell's steam-coal collieries). Both sectors grow in the baseline. A railway company would be more typical, but it couldn't grow through the tiers (Q137). The 1857 roster waits for M14.
+- **Names:** a startup company keeps its own name key (`global.company_name_key@`), and a founded one gets a generated name (`full_company_name`), as the MVP's localisation already does.
+
+*Recommend:* (a), and those two.
+
+> **Decided 2026-11-16:** (a), and those two companies, headquartered where they really were (Q146).
+
+**Q140. When a company is insolvent.**
+- (a) When its debt is above `global.company_insolvency_limit` (say 1.0) × its asset value, twice the 0.5 at which its construction pauses. Past the pause limit, debt grows only through losses, and a loss-making plant's asset value falls (never below a quarter of its build cost, `industry_asset_value_calc`), so only a company that keeps losing gets there.
+- (b) After 6 months in a row with debt above the pause limit and an operating loss.
+- (c) As soon as its debt passes the pause limit.
+
+*Recommend:* (a). It's one comparison a month, and a profitable company paying off a big build can't trip it.
+
+> **Decided 2026-11-16:** (a).
+
+**Q141. Liquidation and the bailout (Q66).** Proposed:
+- **Notice:** when a player's company becomes insolvent, an event offers a bailout or liquidation. An AI country always liquidates, until M13 gives it a policy (Q51).
+- **Bailout:** the treasury pays the company's debt down to the pause limit, as a grant, since a state stake needs M15's shares. A company that's been bailed out can't be bailed out again for 5 years: the design document's rule on repeat bankruptcies, in its simplest form.
+- **Liquidation:** its holdings go to the generic owner at no charge (Q40). Construction it was paying for stops, and what was spent is lost. Its debt is written off (against bank capital from M11). Anything left in its treasury goes to the general pool, and its record and id are freed.
+
+The alternatives: a bailout that pays all the debt, and liquidated construction passing to the generic owner with the rest of its bills.
+
+*Recommend:* as proposed.
+
+> **Decided 2026-11-16:** as proposed.
+
+**Q142. Company types in M10.** The MVP has private, public and state-owned tokens. Shares come with M15, and nationalisation and the "Found new SOE" button with M13. The UI plan puts a State enterprises budget line in M10: dividends on state-owned capacity (Q37).
+- (a) Private and state-owned companies. A state-owned company pays its dividends to its government's treasury, on the State enterprises line, and gets no base bonus (Q130), for §4's lower efficiency. Only history and content create them: 1857 had state railways in Belgium, Prussia and Russia, and Prussia's state mines. A public company works like a private one until M15 gives it shares.
+- (b) Private only. The other two wait for M13 and M15.
+
+*Recommend:* (a).
+
+> **Decided 2026-11-16:** (a).
+
+**Q143. M10's screens.** The UI plan gives M10 Macro → Companies, the company detail, owners in the state-industry detail, and Global → Companies. None of the new economy window exists yet (U0, the frame, isn't built), and M04's UI rework is on hold.
+- (a) Systems only. A console report, `effect eco_company_report = yes`, beside M09's `eco_investment_report`, and the old company list in `population_economy_window` kept working with the new figures. The Companies tab comes with the UI rework.
+- (b) M10 builds U0 and the Companies tab.
+- (c) A temporary companies window.
+
+*Recommend:* (a), as M09 did with its screen (Q124).
+
+> **Decided 2026-11-16:** (a).
+
+## Companies answers follow-ups (raised 2026-11-16, M10)
+
+Strat's answers to Q128 and Q138 dropped §9's limit of one company per industry per HQ state, and left three details open. Strat then changed Q138 from the financial hub to the seed's state, which made Q145 moot.
+
+**Q144. Discouraging a second company in an industry (Q128).** A country may have several companies in one industry, but founding should discourage it.
+- (a) Halve the founding's ROI once for each company the country already has in that industry, before it's placed in a tier. Founding needs one of the top two tiers (above 10%), so a second company needs a seed earning over 20%, and a third one over 40%.
+- (b) Double the starting capital for each company already in the industry.
+- (c) A second company needs an Exceptional seed, and an industry has at most two.
+
+*Recommend:* (a).
+
+> **Decided 2026-11-16:** (a).
+
+**Q145. The financial hub (Q138).** Which state a founded company is headquartered in. *Superseded the same day: Strat changed Q138 to the seed's state, so there's no hub.*
+- (a) The owned state whose upper class earns the most (`pops_earnings@token:upper_class`: wages, rent and dividends), at each founding.
+- (b) June 2026's formula: total industry size plus earnings per upper-class pop, which adds unlike units.
+- (c) Always the capital.
+
+*Recommend:* (a).
+
+> **Decided 2026-11-16:** (a).
+
+**Q146. The startup companies' HQs (Q139).**
+- (a) Where they really were, set in history: Horrockses, Miller & Co. in Lancashire (132, Preston), Thomas Powell's collieries in Wales (122).
+- (b) The financial hub, like founded companies.
+
+*Recommend:* (a).
+
+> **Decided 2026-11-16:** (a).
+
+## Market headroom and surplus capital (raised 2026-11-16, after M10)
+
+Strat, after M10's first in-game test (2026-11-16): "There might need to be another control on investment (both company and nation) such that it can approximate how much additional investment it can do until prices dip below 0%. Spending above that is restricted. Surplus treasuries that can't go anywhere should be dumped into dividends. That's usually how IRL companies work. Even private companies (should just go to their HQ state's upper class)." M10's results showed both: the urban centres and the USA's tooling workshops overbuilt on borrowed money, and company treasuries and sector capital piled up where their industry couldn't grow.
+
+**Q147. What "below 0%" means.** A good's target price is its base price × (demand / supply)², between 0.25× and 4× (`get_price`), and the market screen shows each price as a percentage above or below base.
+- (a) The price falling below base: supply passing demand, trade included.
+- (b) The new capacity's margin falling below 0.
+- (c) The target price falling below the actual price.
+
+*Recommend:* (a).
+
+> **Decided 2026-11-16:** (a).
+
+**Q148. Whose headroom limits whom.**
+- (a) Market-wide and shared: the market's demand less its supply, less the output of construction under way anywhere in the market. Each country's funding uses it up, in rank order. It limits expansions and new plants by sectors, the general pool and companies. Upgrades and prospecting are exempt.
+- (b) Per country: its own production against its own demand.
+- (c) Market-wide, split between members by GDP.
+
+*Recommend:* (a).
+
+> **Decided 2026-11-16:** (a).
+
+**Q149. When a company's treasury is surplus.** Surplus is paid out as dividends: to the HQ state's upper class, or to the government for a state-owned company, whatever the company's type.
+- (a) Above a reserve: what its construction under way still has to pay, plus 10% of its asset value. Each month, after the month's funding, anything above that is paid out.
+- (b) The same reserve, with 10% of the excess paid out each month.
+- (c) Money not invested within 12 months.
+
+*Recommend:* (a).
+
+> **Decided 2026-11-16:** (a).
+
+**Q150. Beyond companies.**
+- (a) Sector capital too: the generic owner's capital above the same reserve goes out as the sector's dividends, by size.
+- (b) Companies only.
+- (c) Sectors, and the general pool's surplus back to the classes that invested it.
+
+*Recommend:* (a).
+
+> **Decided 2026-11-16:** (a).
+
+**Defaults taken without a question** (raise any of them to change it):
+- A level's output is its newest PM's base output at full production, before modifiers (`pm_output_amount` × `building_production_multiplier` × base employees). Construction under way counts at that rate.
+- A sector that makes several goods gets the value-weighted mean of its goods' headroom, in levels, weighted by each good's amount at base price.
+- The headroom is worked out once a month, after prices move, on the market leader (`investment_headroom@<good>`), and each country turns it into levels for its sectors (`sector_headroom@<sector>`) when it funds.
+- Railways and ports aren't limited: the infrastructure fund builds them where states are short of transport (Q122).
+- The reserve share is `global.capital_reserve_share` (0.1). A sector's asset value is its plants, built and being built, at its newest methods, as for its debt limit (Q118).
+- The reserve counts the bills still to come: each project's monthly bill × its months left, and the full cost of what was started this month. A company or sector in debt pays nothing out.
+- A founding also needs a level of headroom in the seed's sector.
+
+**Q151. Founded companies' idle capital.** With Q149, a founded company that can't grow pays its starting capital out. Britain's new iron and coal companies hold mines whose deposits are all worked, so the general pool's capital (a level's full cost × 1.2 per company the country has, Q137) sat unused and then went to their HQ states' upper classes all at once: payouts of £1.2–1.7M in a month.
+- (a) Only a plant with an expansion or a prospect of its own that month can seed a company.
+- (b) Keep it: capital a company can't use goes to its HQ's upper class.
+- (c) Keep any profitable seed, but start the company with only its reserve (10% of the value of the holding it takes), so there's little to pay out.
+
+*Recommend:* (a).
+
+> **Decided 2026-11-16:** (c), not as recommended. This replaces Q137's starting capital. Default taken: the 1.2 growth per company the country has moves from the starting capital to the seed's ROI, which is divided by `global.company_found_growth` (1.2) for each company the country has, beside Q144's halving per company in the industry, so founding still slows as companies multiply.

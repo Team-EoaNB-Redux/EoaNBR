@@ -20,6 +20,7 @@ _advance_time = {
         }
 
         create_econ_order_array = yes
+        companies_cleanup = yes # Liquidates the companies of countries that no longer exist (M10)
 
         #Reset
             set_variable = { global.highest_state_gdp = 0 }
@@ -33,6 +34,7 @@ _advance_time = {
     for_each_scope_loop = {
         array = global.markets
         market_prices_monthly = yes
+        investment_headroom_update = yes # How much more of each good the market can take before its price falls below base (Q147)
     }
 
     for_each_scope_loop = {
@@ -77,6 +79,7 @@ _country_advance_time = {
     r_update_modifiers_country_effects = yes
     bureaucracy_and_manpower_update = yes # Bureaucratic jobs and active manpower for the states below
     sectors_monthly = yes # National sectors: target utilisation steps
+    companies_monthly = yes # Companies: lost holdings, HQs, the debt pause, insolvency (M10)
     investment_prepare = yes # Clears last month's opportunities, pauses sectors over their debt limit, picks the greenfield search (M09)
     #buildings_update_base_latest_vals = yes
     every_controlled_state = {
@@ -107,17 +110,10 @@ _country_advance_time = {
     }
     national_market_states_update = yes # The goods its industries and pops make and use, which the market reads until next month
 
-    # National sectors: this month's accounts and dividends
+    # National sectors and companies: this month's accounts and dividends (companies_update runs inside sectors_update)
     sectors_update = yes
     manufacturing_contracts_monthly = yes # HOI4's offmap factories move toward last month's targets (M08)
     manufacturing_base_update = yes # The Manufacturing Base and its contracts' targets (M08)
-
-    # Companies (MVP)
-    # _monthly accrues last tick's retained earnings to treasuries; _update then recomputes P&L + the dividend
-    # payout/retained from this tick's (freshly updated) building finances, consumed next tick by the pull in
-    # industries_update and by next month's companies_monthly. Same one-tick lag as local dividends.
-    companies_monthly = yes
-    companies_update = yes
 
     ## UPDATING EVERYTHING ##
     update_country_pop_stats = yes
@@ -447,12 +443,20 @@ on_monthly_industries = {
         array = industries
         value = om_building
 
+        set_temp_variable = { om_financer_temp = construction_financier@var:om_building }
         if = {
             limit = {
                 check_variable = { construction@var:om_building > 0 }
-                OR = { # A sector over its borrowing limit pauses what it pays for itself (Q118)
-                    NOT = { check_variable = { construction_financier@var:om_building = 0 } }
-                    check_variable = { controller:sector_construction_paused@var:om_building = 0 }
+                OR = { # A sector or company over its borrowing limit pauses what it pays for itself (Q118, Q131)
+                    AND = {
+                        check_variable = { om_financer_temp = 0 }
+                        check_variable = { controller:sector_construction_paused@var:om_building = 0 }
+                    }
+                    check_variable = { om_financer_temp > 10500 }
+                    AND = {
+                        check_variable = { om_financer_temp > 0 }
+                        check_variable = { global.company_construction_paused@var:om_financer_temp = 0 }
+                    }
                 }
             }
             set_temp_variable = { const_speed = construction@var:om_building }
@@ -486,6 +490,15 @@ on_monthly_industries = {
 					set_temp_variable = { potential_temp = 0 }
 					set_temp_variable = { r_token = om_building }
 					add_rgo_internal = yes
+                }
+                if = { # A company's project is done, and the new size is its holding (M10)
+                    limit = {
+                        check_variable = { om_financer_temp > 0 }
+                        NOT = { check_variable = { om_financer_temp > 10500 } }
+                    }
+                    set_temp_variable = { company_temp = om_financer_temp }
+                    set_temp_variable = { industry_token = om_building }
+                    company_project_remove = yes
                 }
 
                 set_variable = { construction_financier@var:om_building = 0 }

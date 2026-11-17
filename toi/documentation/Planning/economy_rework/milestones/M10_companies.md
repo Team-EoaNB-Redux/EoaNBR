@@ -1,25 +1,46 @@
 # M10: Companies
 
-**Spec:** §2.3, §19. **Depends on:** M04, M09. **Questions:** Q19, Q40, Q41, Q66, all decided. **Status:** not started.
+**Spec:** §2.3, §19. **Depends on:** M04, M09. **Questions:** Q19, Q40, Q41, Q66, and Q127–Q151, decided 2026-11-16. **Status:** done in the simulator (2026-11-16), and its figures match Strat's July 1857 autosave; the market headroom and surplus payouts (Q147–Q151) came after that save and are checked in the simulator only. Baseline: `redux-eco-sim/runs/m10_base`; results: `runs/m10` (before Q147–Q151), `runs/m10b` (after).
+
+Strat's [Company_System_Design.md](../Company_System_Design.md) (2026-11-16) is older than the spec, which wins where they differ (Q128). Most of it belongs to M15–M17, which split the old M15 (Q127).
 
 ## Goal
-A company is a permanent, cached national entity layered over state industries. It owns shares of state industries. Each industry keeps one PM/AM pair (Q19), and the company's bonuses apply to its own slice, which is computed once at the national level and passed back to the states by ownership share. Its accounts are kept nationally: output, inputs, payroll, revenue, operating profit, debt service and retained earnings. Companies compete on productivity, leverage and where they sit, and they can grow or fail. Each country's generic owner is just another ownership entity.
+A company is a permanent national entity layered over state industries. It owns slices of state industries. Each industry keeps one PM/AM pair and one workforce (Q19), and each company applies its own bonuses to its own slice: the plant is its owners' slices recombined, as if each owner had its own copy of the industry sharing the workforce (Q129). Its accounts are kept nationally: revenue, inputs, payroll, maintenance, profit, tax, retained earnings, dividends, debt. Companies compete on productivity, leverage and where they sit, and they can grow or fail. Each country's generic owner is just another ownership entity, whose accounts are its sectors' less its companies'.
 
-## Exists now
-- **MVP** (`_economy_companies.txt`): company records stored globally and keyed by id, holdings per state and building, dividends pulled to the HQ state, and a split between `companies_monthly` and `companies_update`. It was never finished, and the original full plans aren't available.
-- **Founding and company projects** were scored with the old investment opportunities, and M09 deleted them with that system (Q123). Company capital (`global.company_treasury@`) accumulates, but nothing spends it. Company investment can fund through M09's opportunity lists (`investment_states@<tier>`, `investment_industries@<tier>`). `investment_start_construction` sets financer 0, the generic owner; a company-funded start would set the company's id instead.
-- **Gaps** in the memory notes: holdings aren't reconciled when an industry shrinks, a state changing hands isn't handled, and the old upgrade financer convention is still in use.
-- **Failure plan:** Strat's notepad (`toi/documentation/Strats_notepad_while_hes_at_uni.txt`, "Failing Companies") describes Chapter 11 reorganisation, Chapter 7 liquidation and player bailouts. The politics rework has insolvency laws (`insolvency_law_tokens`).
-- No companies exist in play.
+## Built
+1. **Owner slices** (Q40, Q129). `company_owner_mix_calc` recombines a plant's owners: the generic owner's multipliers are 1, and a company's are its bonuses. `industry_production_update` scales the plant's output and inputs by the mix, so the goods reach the country's totals as before. `companies_update` (inside `sectors_update`) gives each company its holdings' share: revenue and inputs by its share of the output and inputs, payroll and maintenance by size. `sectors_update` takes the companies off the sector to get the generic owner's size and profit (`sector_generic_size@`, `sector_generic_profit@`), which pay its tax, retained earnings and dividends.
+2. **Bonuses** (Q130): `global.company_throughput_bonus` (+10%) in a private or public company's primary industry, plus its own throughput, output and input factors (`global.company_*_factor@`), which history and content set.
+3. **Money** (Q129, Q131): corporate tax on a positive profit, the sectors' retained share kept in the company's treasury, and the rest paid to its HQ state's upper class. A loss, and construction bills, come out of the treasury and then become debt, without interest until M11 (`companies_cash_monthly`). Construction pauses above `global.sector_debt_limit` × the company's asset value.
+4. **Investment** (Q132, Q133): in each tier, before the sectors, each company, oldest first, funds the expansions, new plants and prospects in its industry in its country's states, with its own Q126 minimum (`companies_fund_tier`). What it builds becomes its holding. An upgrade to a plant companies share is paid pro rata, and goes ahead only if every owner can pay.
+5. **Shrinking** (Q134): capacity decay reaches every owner alike. Any other loss of size comes out of the generic share first, then the companies pro rata (`industry_owners_shrink`).
+6. **Changing hands** (Q135): a holding counts for its company only while its country controls the state; otherwise it counts with the controller's generic owner. A holding in a state its country no longer owns passes to the new owner's generic owner, a lost HQ moves to the capital, and a company with no holdings is liquidated (`companies_monthly`, `companies_cleanup`).
+7. **Founding** (Q136–Q138, Q144, Q151): incorporation. Each month the best seed is a plant in the top two tiers by its own ROI, with at least `global.company_found_min_size` levels of generic size, its ROI halved for each company the country already has in that industry and divided by 1.2 for each company it has (`global.company_found_growth`). The founding is funded whole from the general pool, in the seed's tier, if the seed's market has room for a level more: the new company's reserve, 10% of the value of its holding, which becomes its treasury. The company is headquartered in the seed's state and takes half of the seed's generic share. Railways and ports can't seed.
+8. **Startup companies** (Q139, Q146): `companies_startup_setup` defines Horrockses, Miller & Co. (1, textile mill, Lancashire) and Powell's Steam Coal (2, coal, Wales). State history gives their holdings (`owner_companies@`, `owner_sizes@` in the rework test blocks), and `companies_startup_holdings` lists them.
+9. **Failure** (Q140, Q141): insolvent when debt is above `global.company_insolvency_limit` × asset value. The player gets economy.200: a bailout pays the debt down to the pause limit as a grant, once per 5 years, or the company is liquidated. An AI country liquidates. Liquidation sends the holdings to the generic owner, stops its construction, writes off its debt and sends its treasury to the general pool.
+10. **Types** (Q142): a state-owned company gets no base bonus and pays its dividends to the treasury (`state_enterprise_revenue`, counted in other revenue until the UI rework gives it a line). A public company works like a private one until M15.
+11. **Screens** (Q143): the console report `effect eco_company_report = yes`, and the old company list in `population_economy_window`, whose tooltip shows the new accounts.
+12. The old gaps are fixed: holdings follow a shrinking plant, a state changing hands is handled, and retooling uses the financer convention (a company is 1–10000).
+13. **Market headroom** (Q147, Q148, after Strat's in-game test): each month, after prices move, each market leader works out `investment_headroom@<good>`, how much more of each good its market can take before the price falls below base: demand less supply, less what the construction under way in every member's sectors will make. Each country turns it into levels for its sectors (`sector_headroom@`, value-weighted over a sector's goods), and expansions and new plants, by companies, sectors and the general pool, are cut to it as they're funded. What a country funds comes off the market's headroom for the members after it. Upgrades, prospecting and railways and ports aren't limited.
+14. **Surplus capital** (Q149, Q150): after the month's funding, a company's treasury above its reserve, what its construction and retooling still have to pay plus `global.capital_reserve_share` (10%) × its asset value, is paid out as dividends to its HQ state's upper class (or the government's revenue for a state-owned company). The generic owner's sector capital above the same reserve goes out as the sector's dividends, by size. Nothing is paid out while in debt.
 
-## Build
-1. **Companies as owner slices** in the M04 owner-slice code, alongside the generic owner (Q40).
-2. **Bonuses:** company bonuses apply where the company owns capacity. Market share follows from compounding profit.
-3. **Investment:** companies invest from retained earnings through the M09 tiers.
-4. **Founding** (Q41): startup companies first, then dynamic founding from the general pool.
-5. **Failure** (Q40, Q66): liquidation and the player bailout. In liquidation, capacity goes back to the generic owner, and loans are written off (against bank capital once M11 exists). Reorganisation (Chapter 11) waits for [M15](M15_companies_completion.md), which builds shares.
-6. Fix the gaps listed above.
+## Results before Q147–Q151 (simulator, `runs/m10` against `runs/m10_base`, 60 months)
+- Generic and company accounts sum to the sector totals: textile 65.6 + 57.1 = 122.7, coal 116.3 + 78.4 = 194.7 at startup.
+- Horrockses' slice earns about 15% more than the generic half of the same mill. It ran into debt (141 at most) in the textile slump of 1858 and paid it off, and built 0.1 levels of a new mill in the Scottish Highlands.
+- Powell's grew from 3 to 3.8 levels, all in Lancashire, since Wales has no deposits left. Its treasury piles up (1,802 at the end), as sector capital did in M09.
+- Britain founded four companies (urban centre, two iron, coal), and the USA thirteen. The urban centre company and the USA's tooling company overbuilt their industries on borrowed money, and the tooling company is paused at its debt limit.
+- An AI company pushed past the insolvency limit is liquidated: its holdings return to the generic owner, its three coal projects stop, and its treasury goes to the general pool. A player company raises economy.200, and its bailout pays the debt down to half the asset value through `add_treasury`, borrowing when the treasury is empty.
+- ENG's GDP is 2.7% higher after 60 months; ticks cost 0.3% more ops.
 
-## Done when
-- A startup company on the test bed earns, keeps earnings, expands, and can fail.
-- Generic and company accounts sum to the sector totals.
+## Strat's July 1857 autosave (month 2, 2026-11-16, before Q147–Q151)
+- No load errors in economy files; `error.log`'s zeroed math expressions are still only the politics file's (`_internal_politics_effects.txt:1893`).
+- Holdings, the owner mix (1.05 in Lancashire), generic sizes and the USA's first company (coal, 14 of Pennsylvania's 28 levels) match the simulator exactly. Company revenue and profit are within 5% (Powell's within 1%), and ENG's GDP is 1.2% lower in-game.
+
+## Results after Q147–Q151 (`runs/m10b` against `runs/m10_base`, 60 months)
+- Britain's urban centres stop at 7.3 levels instead of 10.2 and work at 100% (the baseline's sat at 12%).
+- Powell's pays its surplus out (about £50k a month) and holds about £0.3M instead of £1.8M. Coal's sector capital holds about £0.1M instead of £2.4M.
+- Founding slows: Britain founds 5 companies and the USA 7, and no month's company dividends pass £0.7M (they reached £3.8M before Q151).
+- Britain's GDP over the last year averages 12.7% above the baseline, with most sectors smaller: fewer urban centres keep services above base, and the paid-out capital is spent. A balance question for M14. Ticks cost 0.4% more ops.
+
+## Not checked yet
+- In-game: a load, the company list's tooltip, the insolvency event, and `error.log`.
+- A state changing hands, which the simulator can't do (no `transfer_state`).

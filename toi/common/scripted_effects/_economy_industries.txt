@@ -17,13 +17,19 @@
 					}
 				}
 
-				# The incorporated share is collected by companies in companies_update. owner_sizes is empty for unincorporated
-				# industries, so the generic owner holds the whole size
+				# The generic share, owner_sizes_local@: the size less what the controller's companies hold, which they account for
+				# (companies_update). A company of another country's holding counts with it (Q135). owner_companies@ is empty for
+				# unincorporated industries, so the generic owner holds the whole size
 				set_temp_variable = { incorporated_size_temp = 0 }
 				for_each_loop = {
-					array = owner_sizes@var:bu_token
-					value = owner_size_temp
-					add_to_temp_variable = { incorporated_size_temp = owner_size_temp }
+					array = owner_companies@var:bu_token
+					value = iu_cid
+					index = iu_i
+					set_temp_variable = { iu_owner_temp = global.company_owner@var:iu_cid }
+					if = {
+						limit = { is_controlled_by = var:iu_owner_temp }
+						add_to_temp_variable = { incorporated_size_temp = owner_sizes@var:bu_token^iu_i }
+					}
 				}
 				set_variable = { owner_sizes_local@var:bu_token = { value = size@var:bu_token subtract = incorporated_size_temp max = 0 } }
 
@@ -37,11 +43,13 @@
 			}
 		}
 
-		for_each_loop = {
+		for_each_loop = { # The dividends of the companies headquartered here, from last month's accounts. A state-owned company pays its government (Q142)
 			array = company_hqs
 			value = cid
-			# Add company dividends
-			add_to_variable = { pops_dividends@token:upper_class = global.company_dividends@var:cid }
+			if = {
+				limit = { NOT = { check_variable = { global.company_type@var:cid = token:company_type_soe } } }
+				add_to_variable = { pops_dividends@token:upper_class = global.company_dividends@var:cid }
+			}
 		}
 
 		special_buildings_update = yes
@@ -143,9 +151,9 @@
 		#   toward last month's (profit over revenue). It sets the local shift in utilisation (industry_utilisation_calc) and
 		#   capacity decay. It's 0 until the industry first earns revenue, and then starts at that month's margin.
 		# - Capacity decay (Q23, Q87): a building whose trailing margin is below global.industry_decay_margin loses
-		#   global.industry_decay_rate of its generic owner's size a month (companies decide for their own), and the generic
-		#   share closes once the building is below global.industry_decay_floor. RGOs follow their deposits, and railways and
-		#   ports aren't paid for what they carry until Q31, so neither decays
+		#   global.industry_decay_rate of its size a month, every owner alike (Q134), and closes once it's below
+		#   global.industry_decay_floor. RGOs follow their deposits, and railways and ports aren't paid for what they carry until
+		#   Q31, so neither decays
 		clear_temp_array = decay_tokens_temp # Collected first, since closing a building changes the state's arrays
 		for_each_loop = {
 			array = industries
@@ -182,7 +190,7 @@
 					limit = {
 						check_variable = { margin@var:bu_token < global.industry_decay_margin }
 						check_variable = { construction@var:bu_token = 0 }
-						check_variable = { owner_sizes_local@var:bu_token > 0 }
+						check_variable = { size@var:bu_token > 0 }
 						check_variable = { global.building_rgo@var:bu_token = 0 }
 						NOT = { check_variable = { global.building_type@var:bu_token = 2 } }
 					}
@@ -194,15 +202,16 @@
 			array = decay_tokens_temp
 			value = decay_token
 			set_temp_variable = { industry_token = decay_token }
-			set_temp_variable = { x_temp = { value = owner_sizes_local@var:decay_token multiply = global.industry_decay_rate multiply = -1 } }
+			set_temp_variable = { x_temp = { value = size@var:decay_token multiply = global.industry_decay_rate multiply = -1 } }
 			if = {
 				limit = { check_variable = { size@var:decay_token < global.industry_decay_floor } }
-				set_temp_variable = { x_temp = { value = owner_sizes_local@var:decay_token multiply = -1 } }
+				set_temp_variable = { x_temp = { value = size@var:decay_token multiply = -1 } }
 			}
 			set_temp_variable = { financer_temp = 0 }
 			set_temp_variable = { production_method_temp = production_method@var:decay_token }
 			set_temp_variable = { automation_method_temp = automation_method@var:decay_token }
 			set_temp_variable = { skip_update_temp = 1 } # The state loop updates it later this month
+			set_temp_variable = { owners_pro_rata_temp = 1 }
 			add_x_industry_internal = yes
 			set_temp_variable = { skip_update_temp = 0 }
 		}
@@ -240,8 +249,9 @@
 		}
 	}
 	sectors_update = {
-		# Country scope. Each sector's national figures for the month, from its state-industries (industries_update):
-		#   sector_size@, sector_generic_size@ (less what companies hold)
+		# Country scope. Each sector's national figures for the month, from its state-industries (industries_update), all owners
+		# together:
+		#   sector_size@
 		#   sector_working_jobs@, sector_middle_jobs@, sector_working_employed@, sector_middle_employed@ (K workers)
 		#   sector_revenue@, sector_inputs@, sector_payroll@, sector_maintenance@
 		#   sector_profit@ (operating profit) and sector_margin@ (profit / revenue)
@@ -249,21 +259,24 @@
 		#   Railways and ports: sector_industrial_capacity@, sector_shipping_capacity@, and sector_transport_revenue@ (what
 		#     they're paid for transport at each state's rate and for shipping at the shipping price, part of sector_revenue@)
 		#   sector_construction@ (size being built), sector_retooling@ (size retooling)
-		#   sector_construction_bill@ - this month's goods bills for the construction and retooling the sector pays for
-		#     (financer 0), which investment_monthly charges (M09, Q117, Q118)
+		#   sector_construction_bill@ - this month's goods bills for the construction and retooling the generic owner pays for
+		#     (financer 0; a retooling plant's companies pay their share, Q133), which investment_monthly charges (M09, Q117, Q118)
+		#   sector_construction_remaining@ - what those bills will add up to by the time they finish (the month's bill x the
+		#     months left), which the generic owner keeps in reserve (investment_surplus_payout, Q150)
 		#   RGOs: sector_known_deposits@ (found, worked or not), sector_potential_deposits@ (not found yet)
-		# Profit pays corporate tax when it's positive (Q86), then the sector keeps global.sector_retained_share of what's left,
-		# scaled by investment appetite (incentives, Q39), and pays the rest as dividends. A loss comes out of the sector's
-		# capital first, then out of dividends, which go negative (Q22). Sectors don't borrow until M11.
+		# Then the companies' accounts (companies_update, M10). The generic owner's are the sector's less theirs (Q129):
+		#   sector_generic_size@ and sector_generic_profit@. Its profit pays corporate tax when it's positive (Q86), then the
+		# sector keeps global.sector_retained_share of what's left, scaled by investment appetite (incentives, Q39), and pays the
+		# rest as dividends. A loss comes out of the sector's capital first, then out of dividends, which go negative (Q22).
 		# Each state's upper class is paid sector_dividend_per_size@ on the generic size there, next month (industries_update).
 		# sector_states@<sector> lists its five biggest states by size, biggest first. The method mix is
 		# national_market_states_update's (sector_pm_size@, sector_am_size@).
-		# Outputs: sector_*@<sector>, and the country totals sectors_profit_tax, sectors_retained and sectors_dividends
+		# Outputs: sector_*@<sector>, and the generic owner's country totals sectors_profit_tax, sectors_retained and
+		#   sectors_dividends
 		for_each_loop = {
 			array = sectors
 			value = s_token
 			set_variable = { sector_size@var:s_token = 0 }
-			set_variable = { sector_generic_size@var:s_token = 0 }
 			set_variable = { sector_working_jobs@var:s_token = 0 }
 			set_variable = { sector_middle_jobs@var:s_token = 0 }
 			set_variable = { sector_working_employed@var:s_token = 0 }
@@ -276,6 +289,7 @@
 			set_variable = { sector_construction@var:s_token = 0 }
 			set_variable = { sector_retooling@var:s_token = 0 }
 			set_variable = { sector_construction_bill@var:s_token = 0 }
+			set_variable = { sector_construction_remaining@var:s_token = 0 }
 			if = {
 				limit = { check_variable = { global.building_type@var:s_token = 2 } }
 				set_variable = { sector_industrial_capacity@var:s_token = 0 }
@@ -299,7 +313,6 @@
 					if = {
 						limit = { check_variable = { size@var:bu_token > 0 } }
 						add_to_variable = { PREV.sector_size@var:bu_token = size@var:bu_token }
-						add_to_variable = { PREV.sector_generic_size@var:bu_token = owner_sizes_local@var:bu_token }
 						add_to_variable = { PREV.sector_working_jobs@var:bu_token = working_jobs@var:bu_token }
 						add_to_variable = { PREV.sector_middle_jobs@var:bu_token = middle_jobs@var:bu_token }
 						add_to_variable = { PREV.sector_working_employed@var:bu_token = working_employed@var:bu_token }
@@ -353,6 +366,8 @@
 						if = {
 							limit = { check_variable = { construction_financier@var:bu_token = 0 } }
 							add_to_variable = { PREV.sector_construction_bill@var:bu_token = construction_cost@var:bu_token }
+							set_temp_variable = { s_bill_temp = { value = construction_cost@var:bu_token multiply = construction_time_left@var:bu_token } }
+							add_to_variable = { PREV.sector_construction_remaining@var:bu_token = s_bill_temp }
 						}
 					}
 					if = {
@@ -360,7 +375,14 @@
 							NOT = { check_variable = { retooling_pm@var:bu_token = 0 } }
 							check_variable = { retooling_financier@var:bu_token = 0 }
 						}
-						add_to_variable = { PREV.sector_construction_bill@var:bu_token = retooling_cost@var:bu_token }
+						set_temp_variable = { s_bill_temp = retooling_cost@var:bu_token }
+						if = { # The plant's companies pay their share (Q133, companies_update)
+							limit = { check_variable = { owner_sizes_local@var:bu_token < size@var:bu_token } }
+							set_temp_variable = { s_bill_temp = { value = retooling_cost@var:bu_token multiply = owner_sizes_local@var:bu_token divide = size@var:bu_token } }
+						}
+						add_to_variable = { PREV.sector_construction_bill@var:bu_token = s_bill_temp }
+						multiply_temp_variable = { s_bill_temp = retooling_time_left@var:bu_token }
+						add_to_variable = { PREV.sector_construction_remaining@var:bu_token = s_bill_temp }
 					}
 
 					if = {
@@ -376,6 +398,8 @@
 		set_temp_variable = { incentives_temp = modifier@incentives_modifier }
 		calculate_investment_appetite = yes
 		set_temp_variable = { retained_share_temp = { value = global.sector_retained_share multiply = investment_appetite_temp min = 0.8 } }
+
+		companies_update = yes # The companies' accounts, which come off the generic owner's (sector_company_size@, sector_company_profit@)
 
 		set_variable = { sectors_profit_tax = 0 }
 		set_variable = { sectors_retained = 0 }
@@ -398,8 +422,12 @@
 				set_variable = { sector_margin@var:s_token = { value = sector_profit@var:s_token divide = sector_revenue@var:s_token } }
 			}
 
-			set_variable = { sector_profit_tax@var:s_token = { value = sector_profit@var:s_token max = 0 multiply = profit_tax_rate_temp } }
-			set_temp_variable = { s_after_tax_temp = { value = sector_profit@var:s_token subtract = sector_profit_tax@var:s_token } }
+			# The generic owner's share
+			set_variable = { sector_generic_size@var:s_token = { value = sector_size@var:s_token subtract = sector_company_size@var:s_token max = 0 } }
+			set_variable = { sector_generic_profit@var:s_token = { value = sector_profit@var:s_token subtract = sector_company_profit@var:s_token } }
+
+			set_variable = { sector_profit_tax@var:s_token = { value = sector_generic_profit@var:s_token max = 0 multiply = profit_tax_rate_temp } }
+			set_temp_variable = { s_after_tax_temp = { value = sector_generic_profit@var:s_token subtract = sector_profit_tax@var:s_token } }
 			if = {
 				limit = { check_variable = { s_after_tax_temp > 0 } }
 				set_variable = { sector_retained@var:s_token = { value = s_after_tax_temp multiply = retained_share_temp } }
@@ -410,8 +438,8 @@
 			set_variable = { sector_dividends@var:s_token = { value = s_after_tax_temp subtract = sector_retained@var:s_token } }
 			set_variable = { sector_dividend_per_size@var:s_token = 0 }
 			if = {
-				limit = { check_variable = { sector_size@var:s_token > 0 } }
-				set_variable = { sector_dividend_per_size@var:s_token = { value = sector_dividends@var:s_token divide = sector_size@var:s_token } }
+				limit = { check_variable = { sector_generic_size@var:s_token > 0 } }
+				set_variable = { sector_dividend_per_size@var:s_token = { value = sector_dividends@var:s_token divide = sector_generic_size@var:s_token } }
 			}
 
 			add_to_variable = { sectors_profit_tax = sector_profit_tax@var:s_token }
@@ -676,6 +704,14 @@
 		}
 		set_temp_variable = { i_output_modifier = { value = 1 add = controller:industry_output_factor@var:bu_token multiply = i_common_modifier } }
 		set_temp_variable = { i_input_modifier = { value = 1 add = controller:industry_input_factor@var:bu_token multiply = i_common_modifier } }
+
+		# Each company applies its bonuses to its own slice, and the plant is its owners' slices recombined (Q129, Q130)
+		if = {
+			limit = { check_variable = { owner_companies@var:bu_token^num > 0 } }
+			company_owner_mix_calc = yes
+			multiply_temp_variable = { i_output_modifier = owner_output_mix@var:bu_token }
+			multiply_temp_variable = { i_input_modifier = owner_input_mix@var:bu_token }
+		}
 
 		# Final Production Modifier
 		set_temp_variable = { i_final_prod_modifier = { value = i_size multiply = production_percentage@var:bu_token divide = 100 } }
@@ -1031,10 +1067,19 @@
 
 			set_temp_variable = { construction_cost_temp = 1 }
 			add_to_temp_variable = { construction_cost_temp = industry_construction_cost_factor }
+			set_temp_variable = { iuc_financer_temp = construction_financier@var:iuc_industry }
 			if = {
 				limit = {
-					check_variable = { construction_financier@var:iuc_industry = 0 }
+					check_variable = { iuc_financer_temp = 0 }
 					check_variable = { controller:sector_construction_paused@var:iuc_industry = 1 }
+				}
+				set_temp_variable = { construction_cost_temp = 0 }
+			}
+			else_if = { # A company over its debt limit pauses its own (Q131)
+				limit = {
+					check_variable = { iuc_financer_temp > 0 }
+					NOT = { check_variable = { iuc_financer_temp > 10500 } }
+					check_variable = { global.company_construction_paused@var:iuc_financer_temp = 1 }
 				}
 				set_temp_variable = { construction_cost_temp = 0 }
 			}
@@ -1443,9 +1488,10 @@
 		# production_method_temp - if relevant
 		# automation_method_temp - if relevant
 		# skip_update_temp - 1 in the state loop before employment_update, which works out its jobs and accounts anyway
+		# owners_pro_rata_temp - 1 if a loss of size reaches every owner alike (capacity decay, Q134). Cleared after
 
+		set_temp_variable = { shrink_old_size_temp = size@var:industry_token }
 		add_to_variable = { size@var:industry_token = x_temp }
-		add_to_variable = { owner_sizes_local@var:industry_token = x_temp }
 		if = { limit = { check_variable = { size@var:industry_token < 0 } } set_variable = { size@var:industry_token = 0 } }
 			
 		if = { # Remove if it's size 0
@@ -1483,27 +1529,40 @@
 			}
 		}
 
-		# Corporation-financed change: attribute the size delta to the funding company.
-		# Positive x_temp = the company gains that size; negative = it sheds it.
+		# Ownership. Size a company pays for becomes its holding. A company's loss comes out of its own holding first, and any
+		# other loss out of the generic share first, then the companies pro rata (Q134)
+		set_temp_variable = { ax_company_temp = 0 }
 		if = {
 			limit = {
 				check_variable = { financer_temp > 0 }
 				NOT = { check_variable = { financer_temp > 10500 } }
 			}
-			set_temp_variable = { company_temp = financer_temp }
+			set_temp_variable = { ax_company_temp = financer_temp }
+		}
+		if = {
+			limit = {
+				check_variable = { x_temp > 0 }
+				check_variable = { ax_company_temp > 0 }
+			}
+			set_temp_variable = { company_temp = ax_company_temp }
 			set_temp_variable = { holding_state_temp = THIS }
 			set_temp_variable = { holding_building_temp = industry_token }
+			set_temp_variable = { holding_size_temp = x_temp }
+			company_add_holding = yes
+		}
+		else_if = {
+			limit = { check_variable = { x_temp < 0 } }
 			if = {
-				limit = { check_variable = { x_temp > 0 } }
-				set_temp_variable = { holding_size_temp = x_temp }
-				company_add_holding = yes
-			}
-			else = {
-				set_temp_variable = { holding_size_temp = x_temp }
-				multiply_temp_variable = { holding_size_temp = -1 }
+				limit = { check_variable = { ax_company_temp > 0 } }
+				set_temp_variable = { company_temp = ax_company_temp }
+				set_temp_variable = { holding_state_temp = THIS }
+				set_temp_variable = { holding_building_temp = industry_token }
+				set_temp_variable = { holding_size_temp = { value = x_temp multiply = -1 } }
 				company_remove_holding = yes
 			}
+			industry_owners_shrink = yes
 		}
+		set_temp_variable = { owners_pro_rata_temp = 0 }
 	}
 
 	#	Changes an RGO's deposits. Assumes everything is set correctly. Also works with subtraction
@@ -1540,6 +1599,7 @@
 			set_variable = { deposit_quality@var:r_token = 1 }
 		}
 
+		set_temp_variable = { shrink_old_size_temp = size@var:r_token }
 		add_to_variable = { size@var:r_token = deposit_temp }
 		add_to_variable = { known_deposits@var:r_token = known_temp }
 		add_to_variable = { potential_deposits@var:r_token = potential_temp }
@@ -1551,34 +1611,38 @@
 			set_variable = { known_deposits@var:r_token = size@var:r_token }
 		}
 
-		# Ownership follows the change in size (deposit_temp), as in add_x_industry_internal
+		# Ownership follows the change in size (deposit_temp), as in add_x_industry_internal (Q134)
+		set_temp_variable = { ax_company_temp = 0 }
 		if = {
-			limit = { NOT = { check_variable = { deposit_temp = 0 } } }
-
-			# Local ownership tracks the active-size delta.
-			add_to_variable = { owner_sizes_local@var:r_token = deposit_temp }
-			if = { limit = { check_variable = { owner_sizes_local@var:r_token < 0 } } set_variable = { owner_sizes_local@var:r_token = 0 } }
-
-			# Corporation-financed change: attribute the size delta to the funding company (same as add_x_industry_internal).
+			limit = {
+				check_variable = { financer_temp > 0 }
+				NOT = { check_variable = { financer_temp > 10500 } }
+			}
+			set_temp_variable = { ax_company_temp = financer_temp }
+		}
+		if = {
+			limit = {
+				check_variable = { deposit_temp > 0 }
+				check_variable = { ax_company_temp > 0 }
+			}
+			set_temp_variable = { company_temp = ax_company_temp }
+			set_temp_variable = { holding_state_temp = THIS }
+			set_temp_variable = { holding_building_temp = r_token }
+			set_temp_variable = { holding_size_temp = deposit_temp }
+			company_add_holding = yes
+		}
+		else_if = {
+			limit = { check_variable = { deposit_temp < 0 } }
 			if = {
-				limit = {
-					check_variable = { financer_temp > 0 }
-					NOT = { check_variable = { financer_temp > 10500 } }
-				}
-				set_temp_variable = { company_temp = financer_temp }
+				limit = { check_variable = { ax_company_temp > 0 } }
+				set_temp_variable = { company_temp = ax_company_temp }
 				set_temp_variable = { holding_state_temp = THIS }
 				set_temp_variable = { holding_building_temp = r_token }
-				if = {
-					limit = { check_variable = { deposit_temp > 0 } }
-					set_temp_variable = { holding_size_temp = deposit_temp }
-					company_add_holding = yes
-				}
-				else = {
-					set_temp_variable = { holding_size_temp = deposit_temp }
-					multiply_temp_variable = { holding_size_temp = -1 }
-					company_remove_holding = yes
-				}
+				set_temp_variable = { holding_size_temp = { value = deposit_temp multiply = -1 } }
+				company_remove_holding = yes
 			}
+			set_temp_variable = { industry_token = r_token }
+			industry_owners_shrink = yes
 		}
 		set_temp_variable = { deposit_temp = 0 }
 		set_temp_variable = { known_temp = 0 }
@@ -1815,15 +1879,16 @@
 				}
 				if = {
 					limit = {
-						check_variable = { financer_temp > 0 } #Government
+						check_variable = { financer_temp > 10500 } #Government
 					}
 					country_exists = var:financer_temp
 
 				}
 				else_if = {
 					limit = {
-						check_variable = { financer_temp < 0 } #Corporation
+						check_variable = { financer_temp > 0 } #Corporation
 					}
+					has_variable = global.company_hq_state@var:financer_temp
 				}
 				else = { #Local
 
@@ -1866,15 +1931,16 @@
 				multiply_temp_variable = { initial_cost_temp = size@var:industry_token }
 				if = {
 					limit = {
-						check_variable = { financer_temp < 0 } #Corporation
-					}
-				}
-				else_if = {
-					limit = {
-						check_variable = { financer_temp > 0 } #Government
+						check_variable = { financer_temp > 10500 } #Government (country scope)
 					}
 					divide_temp_variable = { initial_cost_temp = financer_temp:modifier@government_investment_efficiency_factor }
 					subtract_from_variable = { financer_temp:treasury = initial_cost_temp }
+				}
+				else_if = {
+					limit = {
+						check_variable = { financer_temp > 0 } #Corporation (company id 1..10000)
+					}
+					subtract_from_variable = { global.company_treasury@var:financer_temp = initial_cost_temp }
 				}
 				else = { #Local
 					subtract_from_variable = { controller:investment_fund = initial_cost_temp }

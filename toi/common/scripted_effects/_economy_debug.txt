@@ -199,6 +199,36 @@ eco_investment_report = {
 		set_temp_variable = { report_2_temp = sector_opportunity_value@var:s_token^1 }
 		set_temp_variable = { report_3_temp = sector_opportunity_value@var:s_token^2 }
 		set_temp_variable = { report_4_temp = sector_opportunity_value@var:s_token^3 }
-		log = "  [?s_token.GetTokenKey]: size [?sector_size@var:s_token|1], target [?sector_utilisation@var:s_token|0]%, capital [?sector_capital@var:s_token|0], reserve [?sector_construction_reserve@var:s_token|0], debt [?sector_debt@var:s_token|0] (paused [?sector_construction_paused@var:s_token|0]), building [?sector_construction@var:s_token|1], minimum [?sector_investment_min@var:s_token|1] | Exceptional [?report_1_temp|0] Good [?report_2_temp|0] Fair [?report_3_temp|0] Marginal [?report_4_temp|0]"
+		log = "  [?s_token.GetTokenKey]: size [?sector_size@var:s_token|1], target [?sector_utilisation@var:s_token|0]%, capital [?sector_capital@var:s_token|0], reserve [?sector_construction_reserve@var:s_token|0], debt [?sector_debt@var:s_token|0] (paused [?sector_construction_paused@var:s_token|0]), building [?sector_construction@var:s_token|1], minimum [?sector_investment_min@var:s_token|1], headroom [?sector_headroom@var:s_token|2] levels, surplus paid [?sector_surplus_dividends@var:s_token|0] | Exceptional [?report_1_temp|0] Good [?report_2_temp|0] Fair [?report_3_temp|0] Marginal [?report_4_temp|0]"
+	}
+}
+eco_company_report = {
+	# Country scope: effect eco_company_report = yes. Logs each of the country's companies (M10), and how much of each sector
+	# its companies and its generic owner hold and earn
+	set_temp_variable = { report_count_temp = companies^num }
+	log = "[THIS.GetTag] companies: [?report_count_temp|0], tax [?companies_profit_tax|0], dividends [?companies_dividends|0], state enterprises [?state_enterprise_revenue|0], founded this month [?companies_founded|0], funded this month [?investment_funded_companies|0]"
+	for_each_loop = {
+		array = companies
+		value = cid
+		set_temp_variable = { report_hq_temp = global.company_hq_state@var:cid }
+		set_temp_variable = { report_focus_temp = global.company_focus@var:cid }
+		set_temp_variable = { report_projects_temp = global.company_project_state@var:cid^num }
+		log = "  [?cid|0] [?report_focus_temp.GetTokenKey] (HQ [?report_hq_temp.GetName]): size [?global.company_total_size@var:cid|2], value [?global.company_asset_value@var:cid|0], revenue [?global.company_revenue@var:cid|0], expenses [?global.company_expenses@var:cid|0], profit [?global.company_profit@var:cid|0], tax [?global.company_profit_tax@var:cid|0], retained [?global.company_retained@var:cid|0], dividends [?global.company_dividends@var:cid|0] (surplus [?global.company_surplus_dividends@var:cid|0]) | treasury [?global.company_treasury@var:cid|0], debt [?global.company_debt@var:cid|0] (paused [?global.company_construction_paused@var:cid|0]), bills [?global.company_construction_bill@var:cid|0], projects [?report_projects_temp|0], minimum [?global.company_investment_min@var:cid|1]"
+		for_each_loop = {
+			array = global.company_holding_state@var:cid
+			value = report_state_temp
+			index = report_i
+			set_temp_variable = { report_b_temp = global.company_holding_industry@var:cid^report_i }
+			set_temp_variable = { report_size_temp = global.company_holding_size@var:cid^report_i }
+			log = "    holds [?report_size_temp|2] of [?report_b_temp.GetTokenKey] in [?report_state_temp.GetName]"
+		}
+	}
+	for_each_loop = {
+		array = sectors
+		value = s_token
+		if = {
+			limit = { check_variable = { sector_company_size@var:s_token > 0 } }
+			log = "  [?s_token.GetTokenKey]: size [?sector_size@var:s_token|2], companies [?sector_company_size@var:s_token|2] earning [?sector_company_profit@var:s_token|0], generic [?sector_generic_size@var:s_token|2] earning [?sector_generic_profit@var:s_token|0]"
+		}
 	}
 }
