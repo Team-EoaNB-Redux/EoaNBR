@@ -147,6 +147,10 @@
 					}
 				}
 			}
+            if = { limit = { has_variable = sector_target@var:s_token check_variable = { modifier@eco_utilisation_control_disabled = 0 } }
+                set_variable = { sector_utilisation@var:s_token = sector_target@var:s_token }
+            }
+
 		}
 	}
 	industries_monthly = {
@@ -1078,6 +1082,7 @@
 			# Modifiers
 			set_temp_variable = { construction_speed_temp = 1 }
 			add_to_temp_variable = { construction_speed_temp = industry_construction_speed_factor }
+            if = { limit = { check_variable = { construction_financier@var:iuc_industry = controller } } multiply_temp_variable = { construction_speed_temp = controller:construction_effect } }
 			divide_variable = { construction_time_left@var:iuc_industry = construction_speed_temp }
 
 			set_temp_variable = { construction_cost_temp = 1 }
@@ -1455,7 +1460,7 @@
 		# State scope. Monthly floating wage: base_wage *= (1 + labor_pressure), clamped to +/-wage_change_cap.
 		# labor_pressure is piecewise on labor_utilization (jobs/workforce): rises >high, sticky-falls <low, flat between.
 		# Uses LAST tick's labor_utilization (employment_update runs later in the monthly flow) - deliberate one-tick lag.
-		# (Inflation pressure to be added here once the money-supply system provides a real inflation rate.)
+		# currency_monthly has already revalued base_wage; only labour adjustment belongs here.
 		if = {
 			limit = { check_variable = { industrial_workforce > 0 } }
 

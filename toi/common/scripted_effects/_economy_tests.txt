@@ -29,7 +29,7 @@ finance_tests = {
     test_investment_appetite = yes
     # test_credit_rating = yes      # TODO once credit_rating_update lands
     # test_borrow_limit = yes       # TODO once borrow_limit_update lands
-    # test_inflation = yes          # TODO once inflation_update lands
+    test_currency = yes
 
     log = "===== FINANCE TESTS: DONE - [?finance_test_pass] passed, [?finance_test_fail] failed ====="
 }
@@ -162,4 +162,82 @@ test_investment_appetite = {
 
 test_temp_effect = {
 	every_country = { set_temp_variable = { m11_owned_debt = 0 } every_owned_state = { limit = { check_variable = { owner = PREV } } for_each_loop = { array = global.pops_array value = m11_pop add_to_temp_variable = { m11_owned_debt = pops_debt@var:m11_pop } } } log = "M11OWNER|[THIS.GetTag]|[?bank_loans_pops]|[?m11_owned_debt]" }
+}
+
+test_currency = {
+    # Reversible market calculation probe. No accounts, banks or shared currency clocks advance.
+    log = "TEST: currency equilibrium, inflation and zero GDP"
+    set_temp_variable = { ct_0 = money_market_gdp }
+    set_temp_variable = { ct_1 = currency_bank_money }
+    set_temp_variable = { ct_2 = base_money }
+    set_temp_variable = { ct_3 = price_level }
+    set_temp_variable = { ct_4 = exchange_rate }
+    set_temp_variable = { ct_5 = currency_demand_multiplier }
+    set_temp_variable = { ct_6 = currency_reserves }
+    set_temp_variable = { ct_7 = trade_balance }
+    set_temp_variable = { ct_8 = currency_backing }
+    set_temp_variable = { ct_9 = currency_mint_effectiveness }
+    set_temp_variable = { ct_10 = currency_exchange_sensitivity }
+    set_temp_variable = { ct_11 = currency_unfunded_settlement }
+    set_temp_variable = { ct_12 = currency_reserve_value }
+    set_temp_variable = { ct_13 = currency_real_money }
+    set_temp_variable = { ct_14 = currency_old_price_level }
+    set_temp_variable = { ct_15 = currency_old_exchange_rate }
+    set_temp_variable = { ct_16 = currency_target_ratio }
+    set_temp_variable = { ct_17 = currency_monthly_inflation }
+    set_temp_variable = { ct_18 = currency_erosion }
+    set_temp_variable = { ct_19 = currency_reserve_adequacy }
+    set_temp_variable = { ct_20 = currency_exchange_target }
+    set_temp_variable = { ct_21 = currency_stability_penalty }
+    set_variable = { money_market_gdp = 100 }
+    set_variable = { currency_bank_money = 100 }
+    set_variable = { base_money = 1100 }
+    set_variable = { price_level = 1 }
+    set_variable = { exchange_rate = 1 }
+    set_variable = { currency_demand_multiplier = 12 }
+    set_variable = { currency_reserves = 0 }
+    set_variable = { trade_balance = 0 }
+    currency_market_monthly = yes
+    set_temp_variable = { assert_actual = price_level }
+    set_temp_variable = { assert_expected = 1 }
+    set_temp_variable = { assert_tol = 0.0001 }
+    assert_temp = yes
+    set_variable = { base_money = 1700 }
+    currency_market_monthly = yes
+    set_temp_variable = { assert_actual = price_level }
+    set_temp_variable = { assert_expected = 1.05 }
+    assert_temp = yes
+    set_temp_variable = { assert_actual = currency_erosion }
+    set_temp_variable = { assert_expected = 0.95238 }
+    assert_temp = yes
+    set_variable = { money_market_gdp = 0 }
+    currency_market_monthly = yes
+    set_temp_variable = { assert_actual = price_level }
+    set_temp_variable = { assert_expected = 1.05 }
+    assert_temp = yes
+    set_temp_variable = { assert_actual = currency_monthly_inflation }
+    set_temp_variable = { assert_expected = 0 }
+    assert_temp = yes
+    set_variable = { money_market_gdp = ct_0 }
+    set_variable = { currency_bank_money = ct_1 }
+    set_variable = { base_money = ct_2 }
+    set_variable = { price_level = ct_3 }
+    set_variable = { exchange_rate = ct_4 }
+    set_variable = { currency_demand_multiplier = ct_5 }
+    set_variable = { currency_reserves = ct_6 }
+    set_variable = { trade_balance = ct_7 }
+    set_variable = { currency_backing = ct_8 }
+    set_variable = { currency_mint_effectiveness = ct_9 }
+    set_variable = { currency_exchange_sensitivity = ct_10 }
+    set_variable = { currency_unfunded_settlement = ct_11 }
+    set_variable = { currency_reserve_value = ct_12 }
+    set_variable = { currency_real_money = ct_13 }
+    set_variable = { currency_old_price_level = ct_14 }
+    set_variable = { currency_old_exchange_rate = ct_15 }
+    set_variable = { currency_target_ratio = ct_16 }
+    set_variable = { currency_monthly_inflation = ct_17 }
+    set_variable = { currency_erosion = ct_18 }
+    set_variable = { currency_reserve_adequacy = ct_19 }
+    set_variable = { currency_exchange_target = ct_20 }
+    set_variable = { currency_stability_penalty = ct_21 }
 }

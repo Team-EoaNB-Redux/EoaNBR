@@ -80,6 +80,7 @@ _reset = {
 
     # Country Finalization
     every_country = {
+        government_construction_update = yes
         _country_fin = yes
     }
 
@@ -90,13 +91,17 @@ _reset = {
         country_update_trade_display = yes
     }
 
+    every_country = { government_budget_commit = yes }
     money_startup = yes
     set_temp_variable = { prices_snap_temp = 0 }
 }
 _init_country = {
+    government_agency_update = yes
+    budget_clamp = yes
     # Country
 
     # For certain eco things
+    set_variable = { exchange_rate = 1 }
     set_variable = { controller = THIS }
     set_variable = { owner = THIS }
 
@@ -110,6 +115,7 @@ _init_country = {
     # Adds necessary country-level dynamic modifiers
     add_dynamic_modifier = { modifier = resource_trade }
     add_dynamic_modifier = { modifier = budgetary_spending }
+    add_dynamic_modifier = { modifier = currency_inflation }
 
     # Updates country-wide eco modifiers
     r_update_modifiers_country_effects = yes
@@ -1712,7 +1718,6 @@ for_each_loop = {
         clear_array = global.non_tradeable_resources
         add_to_array = { global.non_tradeable_resources = token:services }
         add_to_array = { global.non_tradeable_resources = token:electricity }
-        add_to_array = { global.non_tradeable_resources = token:valuables }
         add_to_array = { global.non_tradeable_resources = token:entertainment }
     }
 #
@@ -2121,6 +2126,7 @@ for_each_loop = {
 
     country_eco_setup = {
         # For certain eco things
+        if = { limit = { NOT = { has_variable = exchange_rate } } set_variable = { exchange_rate = 1 } }
         set_variable = { controller = THIS }
         set_variable = { owner = THIS }
 
@@ -2130,6 +2136,7 @@ for_each_loop = {
         # Adds necessary country-level dynamic modifiers
         add_dynamic_modifier = { modifier = resource_trade }
         add_dynamic_modifier = { modifier = budgetary_spending }
+        add_dynamic_modifier = { modifier = currency_inflation }
 
         # Budget
         if = { limit = { NOT = { has_variable = sales_tax_percentage } } set_variable = { sales_tax_percentage = 50 } }

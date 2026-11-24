@@ -1336,18 +1336,45 @@ A list of modifiers that can be used in ideas and dynamic modifiers. Each of the
 
 ## Variables (Read-Only)
 This is a list of variables that you can use if you want to grab a value from the economy system. Presume that they are read-only because if you change them at all, it could break things.
-## Banking and base money (M11)
+## Banking, base money and currency (M11–M12)
 
 These content effects live in `_economy_effects_documentation.txt`. All use country scope. Ordinary money is real 1857 pounds at the economy scale (1,000 = GBP 1M); legacy government debt parameters use 1,000 times that unit.
 
 | Effect | Inputs | Behaviour |
 |---|---|---|
-| `mint_base_money` | `x_temp`: positive nominal quantity | Market leader only. Adds base money and credits the treasury with quantity / `price_level`. P is 1 until M12. Initial seeding is not minting revenue. |
+| `mint_base_money` | `x_temp`: requested positive nominal quantity; output `minted_temp`: actual nominal issuance | Market leader only. Law effectiveness scales the request; commodity backing caps issuance. Adds actual base money and credits treasury with actual / `price_level`. Initial seeding is not minting revenue. |
 | `set_policy_rate` | `x_temp`: annual percent | Clamped to 0-30. Changes the bank's policy rate; its lending rate refreshes next month. |
 | `lend_emergency_liquidity` | `x_temp`: real money | Solvent banks only, capped at 25% of performing loans less assistance already outstanding. The market issuer creates base money and bank reserves, without a treasury grant or extra capital. Assistance pays policy-rate interest and repays from excess liquidity, retiring base money. |
 | `recapitalize_bank` | `x_temp`: real money | Moves positive treasury cash into bank capital, capped by that cash. It does not borrow from the failed bank. |
 | `default_debt` | `x_temp`: legacy government debt units; `country_temp`: creditor, or 0 for all | Same selection and caps as `remove_debt`, but writes foreign principal off against creditor bank capital. Use for bankruptcy or repudiation. Use `repay_debt` for treasury-funded repayment. |
 | `join_market` | `x_temp`: country tag | Joins the destination's market. A market leader brings its members and full base stock; a member moves its GDP share. Converts base money at the ratio of price levels. Physical valuables move without currency conversion; country banks and their loans remain in place. |
-| `leave_market` | None | Leaves with the country's GDP share of money and physical valuables, preserving the previous price level. Subject membership still follows the overlord's market. |
+| `leave_market` | None | Leaves with the country's GDP share of money and physical valuables, preserving the previous price level and exchange rate (including P < 1). Subject membership still follows the overlord's market. |
 
-`reserve_ratio_modifier` is a fraction: 0.2 means a 20% reserve requirement. `bank_capital_requirement_modifier` adds to the default 0.08 capital requirement. `banking_confidence_modifier` sets the reserve target as a percentage of the country's real base-money share. `bank_update`, `bank_borrow` and the other bank internals are not content APIs. M13 supplies player controls and financial-law coefficients.
+`reserve_ratio_modifier` is a fraction: 0.2 means a 20% reserve requirement. `bank_capital_requirement_modifier` adds to the default 0.08 capital requirement. `banking_confidence_modifier` sets the reserve target as a percentage of the country's real base-money share. `bank_update`, `bank_borrow` and the other bank internals are not content APIs. M12 supplies monetary-law coefficients; M13 supplies player controls and other financial-law coefficients.
+
+
+M12 debt amounts remain borrower-real legacy `_k` units at the content API. The creditor's `money_lent_k@borrower` is in creditor-real units; it need not equal `debt_to_bank_k@creditor`. `add_debt`, `borrow_money`, repayment/removal, `default_debt` and `inherit_debt` convert using structural exchange rates. Foreign principal erodes with creditor inflation, not borrower inflation. Directly editing just one ledger is unsupported.
+
+`currency_backing_requirement` is an absolute fraction; `currency_mint_effectiveness_factor` adds to 1; `currency_exchange_sensitivity_modifier` adds to 0.25. The market leader's modifiers govern its whole currency. Emergency liquidity keeps its separate M11 collateral cap. `currency_monthly` and its helpers are internals, not content APIs. Market wrappers preserve monetary pressure and do not apply an inflation haircut on joining.
+
+For validation, `effect finance_tests = yes` includes five reversible currency checks; `effect eco_currency_report = yes` reports the current issuer, price level, exchange rate, reserves, trade and foreign ledgers without recomputing them.
+
+
+## M13 government controls
+
+All effects below run in country scope. They enforce law restrictions; none changes a law. Budget changes are forecasts until the monthly financial commitment. Do not call `government_budget_commit` or `government_transfers_monthly` from content.
+
+| Effect | Temp inputs | Behaviour |
+|---|---|---|
+| `set_budget_adjustment` | `line_temp`, `level_temp` | Set a 0–4 adjustment and refresh the forecast. |
+| `set_good_tariff` | `good_temp`, `level_temp`, `export_temp` | A definition good, level 0–4, and 0 import / 1 export. |
+| `toggle_sales_tax_good` | `good_temp` | Toggle exemption for one good. Defaults to all goods taxable. |
+| `toggle_sector_subsidy` | `sector_temp` | Toggle one industry's subsidy eligibility. Laws can prevent payment. |
+| `set_sector_target` | `sector_temp`, `x_temp` | Utilisation 0–100; negative clears the override. Law-restricted. |
+| `set_policy_rate` | `x_temp` | Annual percent 0–30; law-restricted. |
+| `set_reserve_requirement` | `x_temp` | Fraction .01–1; law-restricted, refreshes lending capacity. |
+| `mint_base_money` | `x_temp` | Nominal issuance request; returns `minted_temp`, respecting law/backing limits. |
+
+Line ids: 0 income tax, 1 asset tax, 2 corporate tax, 3 sales tax, 4 operations, 5 procurement, 6 maintenance, 7 personnel, 8 patronage, 9 intelligence, 10 bureaucracy, 11 construction, 12 law/order, 13 education, 14 healthcare, 15 welfare, 16 public works, 17 research, 18 infrastructure, 19 sector subsidies, 20 development fund.
+
+The legacy `change_*` budget effects now use the sign of `percent_change_temp` to move one adjustment, with no click PP fee. Legacy general tariff changes move every good one step. For exact settings, use the wrappers above. Endpoint modifier names, units and defaults are documented in the M13 milestone and `budget_clamp`; never infer pounds-per-person from a per-thousand coefficient.

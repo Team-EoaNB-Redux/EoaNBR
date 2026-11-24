@@ -1017,7 +1017,7 @@
 				set_variable = { sector_construction_reserve@var:s_token = 0 }
 			}
 		}
-		set_variable = { investment_fund_income = { value = pops_investment add = investment_retained_transfer add = development_fund_spending } }
+		set_variable = { investment_fund_income = { value = pops_investment add = investment_retained_transfer add = development_fund_due } }
 		add_to_variable = { investment_fund = investment_fund_income }
 		bank_pool_monthly = yes
 		add_to_variable = { infrastructure_fund = infrastructure_investment_spending }
@@ -1301,12 +1301,15 @@
 			set_temp_variable = { inv_size_temp = inv_room_temp }
 			set_temp_variable = { inv_value_temp = { value = inv_value_temp min = inv_cost_temp } }
 			set_temp_variable = { x_temp = { value = inv_value_temp divide = inv_cost_temp multiply = inv_size_temp } }
+			# Five-decimal division can leave a fully allocated project one raw level below its minimum.
+			# Tolerate that residue in admission only; charge and build the actual funded amount.
+			set_temp_variable = { inv_min_check_temp = { value = x_temp add = 0.0001 } }
 			if = {
 				limit = {
 					check_variable = { x_temp > global.investment_min_project }
 					OR = {
 						check_variable = { inv_value_temp = inv_cost_temp }
-						NOT = { check_variable = { x_temp < sector_investment_min@var:inv_b } }
+						NOT = { check_variable = { inv_min_check_temp < sector_investment_min@var:inv_b } }
 					}
 				}
 				set_temp_variable = { inv_paid_temp = { value = sector_tier_retained@var:inv_b min = inv_value_temp } }

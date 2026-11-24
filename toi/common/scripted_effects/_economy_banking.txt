@@ -5,6 +5,11 @@
 
 banking_global_setup = {
     set_variable = { global.base_money_gdp_months = 12 }
+    set_variable = { global.currency_price_speed = 0.10 }
+    set_variable = { global.currency_price_dead_band = 0.001 }
+    set_variable = { global.currency_inflation_cap = 0.05 }
+    set_variable = { global.currency_exchange_speed = 0.10 }
+    set_variable = { global.currency_reserve_months = 3 }
     set_variable = { global.bank_initial_capital_months = 2 }
     set_variable = { global.bank_capital_requirement = 0.08 }
     set_variable = { global.bank_reserve_requirement = 0.2 }
@@ -26,12 +31,21 @@ banking_global_setup = {
 
 money_startup = {
     # All GDPs and markets exist. Initial money is a stock, not treasury revenue.
+    set_variable = { global.currency_last_month = -1 }
     every_country = {
         set_variable = { price_level = 1 }
         set_variable = { base_money = 0 }
         set_variable = { currency_reserves = 0 }
         set_variable = { currency_market = market_leader }
         set_variable = { currency_price_level = 1 }
+        set_variable = { exchange_rate = 1 }
+        set_variable = { currency_exchange_target = 1 }
+        set_variable = { currency_monthly_inflation = 0 }
+        set_variable = { currency_stability_penalty = 0 }
+        set_variable = { currency_exchange_rate = 1 }
+        set_variable = { currency_erosion = 1 }
+        set_variable = { currency_target_ratio = 1 }
+        set_variable = { currency_previous_ratio = 1 }
     }
     every_country = {
         if = {
@@ -42,7 +56,14 @@ money_startup = {
     money_shares_update = yes
     every_country = { bank_init = yes }
     every_state = { pops_update = yes }
-    every_country = { update_country_pop_stats = yes national_market_states_update = yes }
+    every_country = { update_country_pop_stats = yes national_market_states_update = yes bank_update = yes }
+    currency_inputs_update = yes
+    every_country = {
+        limit = { check_variable = { market_leader = THIS } }
+        currency_demand_calibrate = yes
+    }
+    currency_flows_update = yes
+    money_shares_update = yes
 }
 
 money_shares_update = {
@@ -72,6 +93,8 @@ money_shares_update = {
             set_variable = { bank_base_money_share = { value = market_leader:base_money divide = market_leader:price_level subtract = market_leader:money_market_emergency max = 0 divide = market_leader:money_market_gdp multiply = gdp_amount max = 0 } }
         }
         set_variable = { currency_price_level = market_leader:price_level }
+        set_variable = { currency_exchange_rate = market_leader:exchange_rate }
+        set_variable = { currency_previous_ratio = market_leader:currency_target_ratio }
     }
 }
 
@@ -87,8 +110,16 @@ money_transfer_market = {
         set_temp_variable = { money_new = market_leader }
         if = {
             limit = { NOT = { check_variable = { money_new:price_level > 0 } } }
-            set_variable = { money_new:price_level = { value = currency_price_level max = 1 } }
+            set_variable = { money_new:price_level = { value = currency_price_level max = 0.01 } }
         }
+        if = {
+            limit = { check_variable = { money_new = THIS } }
+            set_variable = { price_level = { value = currency_price_level max = 0.01 } }
+            set_variable = { exchange_rate = { value = currency_exchange_rate max = 0.25 } }
+            set_variable = { currency_erosion = 1 }
+        }
+        set_variable = { money_old:currency_membership_dirty = 1 }
+        set_variable = { money_new:currency_membership_dirty = 1 }
         set_temp_variable = { money_move = { value = base_money_share max = 0 min = money_old:base_money } }
         subtract_from_variable = { money_old:base_money = money_move }
         if = {
@@ -108,6 +139,7 @@ money_markets_monthly = {
         market_leader_check = yes
         money_transfer_market = yes
     }
+    currency_membership_update = yes
     money_shares_update = yes
 }
 
@@ -171,6 +203,7 @@ bank_credit_update = {
         set_variable = { bank_reserve_requirement = global.bank_reserve_requirement }
     }
     set_variable = { bank_capital_requirement = { value = global.bank_capital_requirement add = modifier@bank_capital_requirement_modifier clamp = { min = 0.01 max = 1 } } }
+    if = { limit = { has_variable = reserve_requirement_target check_variable = { modifier@eco_reserve_control_disabled = 0 } } set_variable = { bank_reserve_requirement = reserve_requirement_target } }
     set_variable = { bank_credit_capacity = { value = bank_reserves max = 0 divide = bank_reserve_requirement min = { value = bank_capital max = 0 divide = bank_capital_requirement } } }
     set_variable = { bank_credit_available = { value = bank_credit_capacity subtract = bank_loans subtract = bank_credit_committed max = 0 } }
     set_variable = { bank_money = bank_loans }
@@ -281,6 +314,7 @@ bank_foreign_interest_update = {
                 set_variable = { foreign_interest_rate@var:fi_creditor = { value = fi_creditor:bank_interest_rate add = credit_rating_interest add = modifier@foreign_interest_rate_modifier multiply = { value = 1 add = modifier@foreign_interest_rate_factor max = 0 } max = 0 } }
             }
             set_variable = { foreign_interest@var:fi_creditor = { value = debt_to_bank_k@var:fi_creditor multiply = foreign_interest_rate@var:fi_creditor divide = 1.2 } }
+            set_variable = { foreign_interest_creditor@var:fi_creditor = { value = foreign_interest@var:fi_creditor multiply = { value = market_leader:exchange_rate max = 0.25 } divide = { value = fi_creditor:market_leader:exchange_rate max = 0.25 } } }
             add_to_variable = { foreign_debt_interest = foreign_interest@var:fi_creditor }
         }
     }
@@ -298,7 +332,7 @@ bank_foreign_interest_monthly = {
         value = fi_creditor
         if = {
             limit = { NOT = { check_variable = { fi_creditor = THIS } } }
-            add_to_variable = { fi_creditor:bank_interest_received = foreign_interest@var:fi_creditor }
+            add_to_variable = { fi_creditor:bank_interest_received = foreign_interest_creditor@var:fi_creditor }
         }
     }
 }
@@ -551,7 +585,7 @@ pops_credit_spending_update = {
             check_variable = { owner:bank_initialized = 1 }
         }
         set_temp_variable = { p_credit_wanted = { value = p_pops_spending add = p_pops_investment subtract = p_pops_earnings max = 0 } }
-        set_temp_variable = { p_credit_room = { value = p_pops_earnings subtract = p_pops_income_tax_spending max = 0 multiply = global.bank_pop_debt_months subtract = pops_debt@var:current_pop_token max = 0 } }
+        set_temp_variable = { p_credit_room = { value = p_pops_earnings subtract = p_pops_income_tax_spending subtract = p_pops_asset_tax_spending max = 0 multiply = global.bank_pop_debt_months subtract = pops_debt@var:current_pop_token max = 0 } }
         set_temp_variable = { p_new_credit = { value = owner:bank_credit_available add = p_old_credit max = 0 min = p_credit_wanted min = p_credit_room } }
         set_temp_variable = { p_unfunded = { value = p_credit_wanted subtract = p_new_credit max = 0 } }
         set_temp_variable = { p_goods_cost = { value = p_pops_needs_spending add = p_pops_sales_tax_spending } }
@@ -597,5 +631,250 @@ bank_sector_default_monthly = {
         set_temp_variable = { bank_loss = { value = sector_debt@var:s_token subtract = bs_principal max = 0 } }
         set_variable = { sector_debt@var:s_token = bs_principal }
         bank_write_off = yes
+    }
+}
+
+# M12. Base money alone is nominal; all accounts and loan records remain real.
+# Update effects are safe to repeat. Only currency_monthly advances the currency clock.
+currency_policy_update = {
+    set_variable = { currency_backing = { value = modifier@currency_backing_requirement max = 0 } }
+    set_variable = { currency_mint_effectiveness = { value = 1 add = modifier@currency_mint_effectiveness_factor clamp = { min = 0 max = 1 } } }
+    set_variable = { currency_exchange_sensitivity = { value = 0.25 add = modifier@currency_exchange_sensitivity_modifier clamp = { min = 0 max = 0.75 } } }
+}
+
+currency_inputs_update = {
+    every_country = {
+        set_variable = { money_market_gdp = 0 }
+        set_variable = { currency_bank_money = 0 }
+    }
+    every_country = {
+        limit = { NOT = { check_variable = { market_leader = 0 } } }
+        add_to_variable = { market_leader:money_market_gdp = { value = gdp_amount max = 0 } }
+        add_to_variable = { market_leader:currency_bank_money = { value = bank_money max = 0 } }
+    }
+}
+
+currency_demand_calibrate = {
+    # Market leader. Preserve target_ratio when membership changes; startup sets it to 1.
+    set_variable = { currency_real_money = { value = base_money divide = { value = price_level max = 0.01 } add = currency_bank_money } }
+    set_variable = { currency_demand_multiplier = global.base_money_gdp_months }
+    if = {
+        limit = { check_variable = { money_market_gdp > 0 } check_variable = { price_level > 0 } }
+        set_variable = { currency_demand_multiplier = { value = base_money divide = price_level divide = money_market_gdp add = { value = currency_bank_money divide = money_market_gdp } divide = { value = currency_target_ratio max = 0.00001 } max = 0.00001 } }
+    }
+}
+
+currency_membership_update = {
+    # Shares and previous ratios still describe the old currencies. Rebase only changed markets.
+    every_country = { set_variable = { currency_merge_weight = 0 } set_variable = { currency_merge_pressure = 0 } }
+    every_country = {
+        limit = { NOT = { check_variable = { market_leader = 0 } } }
+        set_temp_variable = { cm_weight = { value = base_money_share divide = { value = currency_price_level max = 0.01 } add = bank_money max = 0 } }
+        add_to_variable = { market_leader:currency_merge_weight = cm_weight }
+    }
+    every_country = {
+        limit = { check_variable = { market_leader:currency_merge_weight > 0 } }
+        set_temp_variable = { cm_weight = { value = base_money_share divide = { value = currency_price_level max = 0.01 } add = bank_money max = 0 divide = market_leader:currency_merge_weight multiply = { value = currency_previous_ratio max = 0.00001 } } }
+        add_to_variable = { market_leader:currency_merge_pressure = cm_weight }
+    }
+    currency_foreign_update = yes
+    every_country = { bank_update = yes }
+    currency_inputs_update = yes
+    every_country = {
+        limit = { check_variable = { currency_membership_dirty = 1 } }
+        if = {
+            limit = { check_variable = { market_leader = THIS } }
+            set_variable = { currency_target_ratio = { value = currency_merge_pressure max = 0.00001 } }
+            if = { limit = { NOT = { check_variable = { currency_merge_weight > 0 } } } set_variable = { currency_target_ratio = 1 } }
+            currency_demand_calibrate = yes
+        }
+        set_variable = { currency_membership_dirty = 0 }
+    }
+}
+
+currency_flows_update = {
+    # Global, after every country has produced. Keep the mining flow by member for market transfers.
+    every_country = { set_variable = { currency_mining_flow = states_production@token:valuables } }
+}
+
+currency_market_monthly = {
+    # Market leader. Inputs are last month's GDP, performing loans and trade quantities.
+    currency_policy_update = yes
+    set_temp_variable = { currency_reserve_change = 0 }
+    for_each_scope_loop = {
+        array = market_countries
+        add_to_temp_variable = { currency_reserve_change = currency_mining_flow }
+    }
+    if = {
+        limit = { check_variable = { price@token:valuables > 0 } }
+        add_to_temp_variable = { currency_reserve_change = { value = trade_balance divide = price@token:valuables } }
+    }
+    set_variable = { currency_unfunded_settlement = { value = currency_reserves add = currency_reserve_change min = 0 multiply = -1 } }
+    set_variable = { currency_reserves = { value = currency_reserves add = currency_reserve_change max = 0 } }
+    set_variable = { currency_reserve_value = { value = currency_reserves multiply = price@token:valuables } }
+    set_variable = { currency_real_money = { value = base_money divide = { value = price_level max = 0.01 } add = currency_bank_money } }
+    set_variable = { currency_old_price_level = price_level }
+    set_variable = { currency_old_exchange_rate = exchange_rate }
+    set_variable = { currency_target_ratio = 1 }
+    set_variable = { currency_monthly_inflation = 0 }
+    set_variable = { currency_erosion = 1 }
+    if = {
+        limit = { check_variable = { money_market_gdp > 0 } }
+        if = { limit = { NOT = { check_variable = { currency_demand_multiplier > 0 } } } currency_demand_calibrate = yes }
+        set_variable = { currency_target_ratio = { value = base_money divide = { value = price_level max = 0.01 } divide = money_market_gdp add = { value = currency_bank_money divide = money_market_gdp } divide = currency_demand_multiplier } }
+        set_temp_variable = { currency_gap = { value = currency_target_ratio subtract = 1 } }
+        set_temp_variable = { currency_gap_abs = currency_gap }
+        if = { limit = { check_variable = { currency_gap_abs < 0 } } multiply_temp_variable = { currency_gap_abs = -1 } }
+        if = {
+            limit = { check_variable = { currency_gap_abs > global.currency_price_dead_band } }
+            set_variable = { currency_monthly_inflation = { value = currency_gap multiply = global.currency_price_speed clamp = { min = -0.05 max = global.currency_inflation_cap } } }
+        }
+        set_variable = { price_level = { value = currency_monthly_inflation add = 1 multiply = price_level clamp = { min = 0.01 max = 100 } } }
+        set_variable = { currency_monthly_inflation = { value = price_level divide = currency_old_price_level subtract = 1 } }
+        set_variable = { currency_erosion = { value = currency_old_price_level divide = price_level } }
+        set_variable = { currency_reserve_adequacy = { value = currency_reserve_value divide = money_market_gdp divide = global.currency_reserve_months clamp = { min = 0 max = 10 } } }
+        set_variable = { currency_exchange_target = { value = currency_reserve_adequacy subtract = 1 divide = { value = currency_reserve_adequacy add = 1 } multiply = currency_exchange_sensitivity add = 1 clamp = { min = 0.25 max = 4 } } }
+        set_variable = { exchange_rate = { value = currency_exchange_target subtract = exchange_rate multiply = global.currency_exchange_speed add = exchange_rate clamp = { min = 0.25 max = 4 } } }
+    }
+    set_variable = { currency_stability_penalty = { value = currency_monthly_inflation subtract = 0.01 max = 0 multiply = 2 min = 0.20 multiply = -1 } }
+}
+
+currency_foreign_update = {
+    # Creditor-real assets are authoritative. Revalue borrower mirrors, without advancing inflation.
+    every_country = {
+        for_each_loop = {
+            array = money_lent_country
+            value = currency_debtor
+            if = {
+                limit = { NOT = { check_variable = { currency_debtor = THIS } } }
+                set_variable = { currency_debtor:debt_to_bank_k@THIS = { value = money_lent_k@var:currency_debtor multiply = { value = market_leader:exchange_rate max = 0.25 } divide = { value = currency_debtor:market_leader:exchange_rate max = 0.25 } } }
+            }
+        }
+    }
+}
+
+currency_monthly = {
+    # Global, before prices and banks open. A refresh or a second call cannot settle twice.
+    set_temp_variable = { currency_month = { value = global.years_passed multiply = 12 add = global.month } }
+    if = {
+        limit = { NOT = { check_variable = { global.currency_last_month = currency_month } } }
+        set_variable = { global.currency_last_month = currency_month }
+        every_country = { bank_update = yes }
+        currency_inputs_update = yes
+        every_country = {
+            limit = { check_variable = { market_leader = THIS } }
+            currency_market_monthly = yes
+        }
+        every_country = {
+            limit = { NOT = { check_variable = { market_leader = 0 } } }
+            currency_country_revalue = yes
+        }
+        every_state = { currency_state_revalue = yes }
+        currency_foreign_update = yes
+        every_country = { bank_update = yes }
+        money_shares_update = yes
+    }
+}
+
+currency_country_revalue = {
+    set_temp_variable = { currency_factor = market_leader:currency_erosion }
+    multiply_variable = { treasury = currency_factor }
+    multiply_variable = { investment_fund = currency_factor }
+    multiply_variable = { infrastructure_fund = currency_factor }
+    multiply_variable = { investment_fund_debt = currency_factor }
+    multiply_variable = { bank_reserves = currency_factor }
+    multiply_variable = { bank_capital = currency_factor }
+    multiply_variable = { bank_central_bank_loan = currency_factor }
+    multiply_variable = { bank_interest_received = currency_factor }
+    multiply_variable = { bank_dividends = currency_factor }
+    multiply_variable = { net_budget = currency_factor }
+    multiply_variable = { government_primary_balance_due = currency_factor }
+    multiply_variable = { development_fund_due = currency_factor }
+    multiply_variable = { patronage_per_head = currency_factor }
+    multiply_variable = { welfare_per_head = currency_factor }
+    multiply_variable = { tax_average_income = currency_factor }
+    multiply_variable = { owned_capital_per_upper_pop = currency_factor }
+    # national_debt_update rebuilds the budget before settlement. Revalue its deferred cash inputs,
+    # while debt interest is freshly quoted from the revalued principal and this month's bank rates.
+    multiply_variable = { revenue = currency_factor }
+    multiply_variable = { administration_spending = currency_factor }
+    multiply_variable = { military_mandatory_spending = currency_factor }
+    multiply_variable = { order_and_intel_spending = currency_factor }
+    multiply_variable = { social_spending = currency_factor }
+    multiply_variable = { other_spending = currency_factor }
+    multiply_variable = { discretionary_spending = currency_factor }
+    multiply_variable = { trade_subsidy = currency_factor }
+    multiply_variable = { debt_to_bank_k@THIS = currency_factor }
+    set_variable = { money_lent_k@THIS = debt_to_bank_k@THIS }
+    for_each_loop = {
+        array = sectors
+        value = currency_sector
+        multiply_variable = { sector_capital@var:currency_sector = currency_factor }
+        multiply_variable = { sector_government_grant@var:currency_sector = currency_factor }
+        multiply_variable = { sector_government_grant_due@var:currency_sector = currency_factor }
+        multiply_variable = { sector_construction_reserve@var:currency_sector = currency_factor }
+        multiply_variable = { sector_debt@var:currency_sector = currency_factor }
+        multiply_variable = { sector_dividend_per_size@var:currency_sector = currency_factor }
+    }
+    for_each_loop = {
+        array = companies
+        value = currency_company
+        multiply_variable = { global.company_treasury@var:currency_company = currency_factor }
+        multiply_variable = { global.company_debt@var:currency_company = currency_factor }
+        multiply_variable = { global.company_unpaid@var:currency_company = currency_factor }
+        multiply_variable = { company_government_grant_due@var:currency_company = currency_factor }
+        multiply_variable = { global.company_dividends@var:currency_company = currency_factor }
+    }
+    for_each_loop = {
+        array = money_lent_country
+        value = currency_debtor
+        if = {
+            limit = { NOT = { check_variable = { currency_debtor = THIS } } }
+            multiply_variable = { money_lent_k@var:currency_debtor = currency_factor }
+        }
+    }
+    # Foreign quotes are pending claims in the creditor's currency, converted at settlement.
+    for_each_loop = {
+        array = debt_to_bank_country
+        value = currency_creditor
+        if = {
+            limit = { NOT = { check_variable = { currency_creditor = THIS } } }
+            set_temp_variable = { currency_quote = foreign_interest@var:currency_creditor }
+            set_variable = { foreign_interest@var:currency_creditor = { value = foreign_interest_creditor@var:currency_creditor multiply = currency_creditor:market_leader:currency_erosion multiply = { value = currency_creditor:market_leader:exchange_rate max = 0.25 } divide = { value = market_leader:exchange_rate max = 0.25 } } }
+            # net_budget was eroded domestically; substitute the creditor-denominated charge.
+            add_to_variable = { net_budget = { value = currency_quote multiply = currency_factor subtract = foreign_interest@var:currency_creditor } }
+            multiply_variable = { foreign_interest_creditor@var:currency_creditor = currency_creditor:market_leader:currency_erosion }
+        }
+    }
+    set_variable = { currency_stability_penalty = market_leader:currency_stability_penalty }
+}
+
+currency_state_revalue = {
+    if = {
+        limit = { check_variable = { controller:market_leader:currency_erosion > 0 } }
+        multiply_variable = { base_wage = controller:market_leader:currency_erosion }
+    }
+    if = {
+        limit = { check_variable = { owner:market_leader:currency_erosion > 0 } }
+        set_temp_variable = { currency_factor = owner:market_leader:currency_erosion }
+        for_each_loop = {
+            array = global.pops_array
+            value = currency_pop
+            multiply_variable = { pops_debt@var:currency_pop = currency_factor }
+            multiply_variable = { pops_credit@var:currency_pop = currency_factor }
+            multiply_variable = { pops_earnings@var:currency_pop = currency_factor }
+            multiply_variable = { pops_investment@var:currency_pop = currency_factor }
+            multiply_variable = { pops_spending@var:currency_pop = currency_factor }
+            multiply_variable = { pops_needs_spending@var:currency_pop = currency_factor }
+            multiply_variable = { pops_income_tax_spending@var:currency_pop = currency_factor }
+            multiply_variable = { pops_asset_tax_spending@var:currency_pop = currency_factor }
+            multiply_variable = { pops_welfare@var:currency_pop = currency_factor }
+            multiply_variable = { pops_patronage@var:currency_pop = currency_factor }
+            multiply_variable = { pops_sales_tax_spending@var:currency_pop = currency_factor }
+            multiply_variable = { pops_debt_repayment_spending@var:currency_pop = currency_factor }
+            multiply_variable = { pops_interest_spending@var:currency_pop = currency_factor }
+            multiply_variable = { pops_spending_target@var:currency_pop = currency_factor }
+            multiply_variable = { pops_unfunded_spending@var:currency_pop = currency_factor }
+        }
     }
 }

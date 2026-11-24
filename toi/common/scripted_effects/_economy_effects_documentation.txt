@@ -725,7 +725,7 @@
 						check_variable = { country_temp:bank_initialized = 1 }
 						check_variable = { ignore_limits_temp = 0 }
 					}
-					set_temp_variable = { borrow_temp_k = { value = borrow_temp_k max = 0 min = { value = country_temp:bank_credit_available divide = 1000 } } }
+					set_temp_variable = { borrow_temp_k = { value = borrow_temp_k max = 0 min = { value = country_temp:bank_credit_available divide = 1000 multiply = { value = country_temp:market_leader:exchange_rate max = 0.25 } divide = { value = market_leader:exchange_rate max = 0.25 } } } }
 				}
 				#log = "Borrow Amount: [?borrow_temp_k]K"
 				if = {
@@ -736,6 +736,11 @@
 					set_temp_variable = { borrow_temp = 0 }
 				}
 				else = {
+                    set_temp_variable = { borrow_creditor_k = borrow_temp_k }
+                    if = {
+                        limit = { NOT = { check_variable = { country_temp = THIS } } }
+                        set_temp_variable = { borrow_creditor_k = { value = borrow_temp_k multiply = { value = market_leader:exchange_rate max = 0.25 } divide = { value = country_temp:market_leader:exchange_rate max = 0.25 } } }
+                    }
 					set_temp_variable = { borrow_temp = borrow_temp_k }
 					multiply_temp_variable = { borrow_temp = 1000 }
 					if = {
@@ -743,13 +748,13 @@
 							is_in_array = { array = debt_to_bank_country value = country_temp }
 						}
 						add_to_variable = { debt_to_bank_k@var:country_temp = borrow_temp_k }
-						add_to_variable = { country_temp:money_lent_k@THIS = borrow_temp_k }
+						add_to_variable = { country_temp:money_lent_k@THIS = borrow_creditor_k }
 					}
 					else = {
 						add_to_array = { debt_to_bank_country = country_temp }
 						set_variable = { debt_to_bank_k@var:country_temp = borrow_temp_k }
 						add_to_array = { country_temp:money_lent_country = THIS }
-						set_variable = { country_temp:money_lent_k@THIS = borrow_temp_k }
+						set_variable = { country_temp:money_lent_k@THIS = borrow_creditor_k }
 					}
 					#log = "Debt to Bank K ([THIS.GetName]): [?debt_to_bank_k@var:country_temp]K"
 					#log = "Money Lent K ([?country_temp.GetName]): [?country_temp:money_lent_k@THIS]K"
@@ -937,7 +942,7 @@
 					else = {
 						set_temp_variable = { country_temp = debtor_temp }
 					}
-					set_temp_variable = { x_temp = inheritee_temp:debt_to_bank_k@var:debtor_temp }
+                    set_temp_variable = { x_temp = { value = inheritee_temp:debt_to_bank_k@var:debtor_temp multiply = { value = inheritee_temp:market_leader:exchange_rate max = 0.25 } divide = { value = market_leader:exchange_rate max = 0.25 } } }
 					multiply_temp_variable = { x_temp = portion_temp }
 					set_temp_variable = { ignore_limits_temp = 1 }
 					add_debt = yes
@@ -1201,17 +1206,25 @@
 ###
 # M11: banking and currency. Country scope; player UI controls arrive with M13.
 mint_base_money = {
-	# x_temp: nominal currency. Only the market leader mints; treasury receives x_temp / P (Q49).
-	if = {
-		limit = { check_variable = { market_leader = THIS } check_variable = { x_temp > 0 } check_variable = { price_level > 0 } }
-		add_to_variable = { base_money = x_temp }
-		add_to_variable = { treasury = { value = x_temp divide = price_level } }
-		money_shares_update = yes
-	}
+    # x_temp: requested nominal issuance. Output: minted_temp, actual nominal issuance after law limits.
+    set_temp_variable = { minted_temp = 0 }
+    if = {
+        limit = { check_variable = { modifier@eco_minting_disabled = 0 } check_variable = { market_leader = THIS } check_variable = { x_temp > 0 } check_variable = { price_level > 0 } }
+        currency_policy_update = yes
+        set_temp_variable = { minted_temp = { value = x_temp multiply = currency_mint_effectiveness } }
+        if = {
+            limit = { check_variable = { currency_backing > 0 } }
+            set_temp_variable = { mint_headroom = { value = currency_reserves multiply = price@token:valuables divide = currency_backing subtract = { value = base_money divide = price_level } max = 0 } }
+            set_temp_variable = { minted_temp = { value = minted_temp divide = price_level min = mint_headroom multiply = price_level } }
+        }
+        add_to_variable = { base_money = minted_temp }
+        add_to_variable = { treasury = { value = minted_temp divide = price_level } }
+        money_shares_update = yes
+    }
 }
 set_policy_rate = {
 	# x_temp: annual percent, 0 to 30. Lending rates refresh on the next monthly tick.
-	set_variable = { central_bank_interest_rate = { value = x_temp clamp = { min = 0 max = 30 } } }
+	if = { limit = { check_variable = { modifier@eco_policy_rate_disabled = 0 } } set_variable = { central_bank_interest_rate = { value = x_temp clamp = { min = 0 max = 30 } } } }
 }
 recapitalize_bank = {
 	# x_temp: real money. Limited to positive treasury cash; no circular borrowing from the insolvent bank.

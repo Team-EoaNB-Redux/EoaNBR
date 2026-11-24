@@ -29,6 +29,16 @@
 					pops_calculate_earnings = yes
 					pops_calculate_needs_spending = yes
 					pops_calculate_taxation = yes
+                    set_variable = { pops_welfare@var:current_pop_token = 0 }
+                    set_variable = { pops_patronage@var:current_pop_token = 0 }
+                    if = { limit = { OR = { check_variable = { current_pop_token = token:peasants } check_variable = { current_pop_token = token:working_class } } }
+                        set_variable = { pops_welfare@var:current_pop_token = { value = p_pops multiply = controller:welfare_per_head } }
+                        add_to_temp_variable = { p_pops_earnings = pops_welfare@var:current_pop_token }
+                    }
+                    if = { limit = { check_variable = { current_pop_token = token:upper_class } }
+                        set_variable = { pops_patronage@var:current_pop_token = { value = p_pops multiply = controller:patronage_per_head } }
+                        add_to_temp_variable = { p_pops_earnings = pops_patronage@var:current_pop_token }
+                    }
 					pops_calculate_investment = yes
 					pops_calculate_debt_servicing = yes
 					pops_credit_spending_update = yes
@@ -78,6 +88,22 @@
 		set_variable = { pops_spending_target@var:current_pop_token = p_pops_spending_target }
 	}
 	pops_commit_slaves = {
+    set_variable = { pops_income_tax_spending@var:current_pop_token = { value = 0 } }
+    set_variable = { pops_sales_tax_spending@var:current_pop_token = { value = 0 } }
+
+    set_variable = { pops_welfare@var:current_pop_token = { value = 0 } }
+    set_variable = { pops_patronage@var:current_pop_token = { value = 0 } }
+    set_variable = { pops_asset_tax_spending@var:current_pop_token = { value = 0 } }
+
+    set_variable = { tax_income_base@var:current_pop_token = { value = 0 } }
+    set_variable = { tax_heads_base@var:current_pop_token = { value = 0 } }
+    set_variable = { tax_low_base@var:current_pop_token = { value = 0 } }
+    set_variable = { tax_middle_base@var:current_pop_token = { value = 0 } }
+    set_variable = { tax_high_base@var:current_pop_token = { value = 0 } }
+    set_variable = { tax_land_base@var:current_pop_token = { value = 0 } }
+    set_variable = { tax_property_base@var:current_pop_token = { value = 0 } }
+    set_variable = { tax_yield_base@var:current_pop_token = { value = 0 } }
+    set_variable = { tax_capital_base@var:current_pop_token = { value = 0 } }
 		set_variable = { pops@var:current_pop_token = p_pops }
 		set_variable = { pops_percentage@var:current_pop_token = p_pops_percentage }
 		set_variable = { pops_unemployed@var:current_pop_token = p_pops_unemployed }
@@ -262,37 +288,37 @@
 		set_temp_variable = { p_pops_col = needs_spending_temp }
 		divide_temp_variable = { p_pops_col = p_pops_workforce }
 	}
-	pops_calculate_taxation = {
-		# current_pop_token
-		# Every tax a class pays is part of its spending: income tax on gross earnings and sales tax on goods. Corporate tax is
-		# paid by the sectors, out of profit (sectors_update)
 
-		# Income Tax
-		set_temp_variable = { avg_earnings_temp = p_pops_earnings }
-		divide_temp_variable = { avg_earnings_temp = p_pops }
-		set_temp_variable = { p_pops_income_tax_spending = p_pops_earnings }
-		if = {
-			limit = {
-				check_variable = { avg_earnings_temp < lower_earnings_limit }
-			}
-			multiply_temp_variable = { p_pops_income_tax_spending = lower_income_multiplier }
-		}
-		else_if = {
-			limit = {
-				check_variable = { avg_earnings_temp < upper_earnings_limit }
-			}
-			multiply_temp_variable = { p_pops_income_tax_spending = middle_income_multiplier }
-		}
-		else = {
-			multiply_temp_variable = { p_pops_income_tax_spending = upper_income_multiplier }
-		}
-		add_to_temp_variable = { p_pops_spending = p_pops_income_tax_spending }
+pops_calculate_taxation = {
+    # State/class context. Keep bases for the national monthly cache and use the same formula on both sides.
+    set_variable = { tax_income_base@var:current_pop_token = { value = p_pops_earnings } }
+    set_variable = { tax_heads_base@var:current_pop_token = { value = p_pops } }
+    set_temp_variable = { tax_band_head = { value = controller:tax_average_income max = 0 } }
+    set_variable = { tax_low_base@var:current_pop_token = { value = p_pops multiply = tax_band_head min = p_pops_earnings } }
+    set_variable = { tax_middle_base@var:current_pop_token = { value = p_pops_earnings subtract = tax_low_base@var:current_pop_token max = 0 min = { value = controller:income_band_multiple subtract = 1 multiply = tax_band_head multiply = p_pops } } }
+    set_variable = { tax_high_base@var:current_pop_token = { value = p_pops_earnings subtract = tax_low_base@var:current_pop_token subtract = tax_middle_base@var:current_pop_token max = 0 } }
+    set_variable = { tax_property_base@var:current_pop_token = { value = pops_wealth@var:current_pop_token multiply = p_pops multiply = 0.1 } }
+    set_variable = { tax_capital_base@var:current_pop_token = 0 }
+    if = { limit = { check_variable = { current_pop_token = token:upper_class } } set_variable = { tax_capital_base@var:current_pop_token = { value = p_pops multiply = controller:owned_capital_per_upper_pop } } }
+    set_variable = { tax_land_base@var:current_pop_token = { value = 0 } }
+    set_variable = { tax_yield_base@var:current_pop_token = { value = 0 } }
+    if = { limit = { check_variable = { current_pop_token = token:peasants } }
+    set_variable = { tax_land_base@var:current_pop_token = { value = size@token:subsistence_farm multiply = land_quality multiply = 0.5 } }
+    set_variable = { tax_yield_base@var:current_pop_token = { value = expenses_payroll@token:subsistence_farm } }
+    }
+    else_if = { limit = { check_variable = { current_pop_token = token:upper_class } }
+    set_variable = { tax_land_base@var:current_pop_token = { value = arable_land subtract = arable_land_available add = { value = size@token:subsistence_farm multiply = 0.5 } max = 0 multiply = land_quality } }
+    }
+    set_temp_variable = { p_pops_income_tax_spending = { value = p_pops_earnings multiply = controller:income_tax_rate@var:current_pop_token add = { value = p_pops multiply = controller:income_tax_per_head } add = { value = tax_low_base@var:current_pop_token multiply = controller:income_tax_low_rate } add = { value = tax_middle_base@var:current_pop_token multiply = controller:income_tax_middle_rate } add = { value = tax_high_base@var:current_pop_token multiply = controller:income_tax_high_rate } } }
+    set_temp_variable = { p_pops_asset_tax_spending = { value = tax_land_base@var:current_pop_token multiply = controller:asset_tax_land_rate add = { value = tax_property_base@var:current_pop_token multiply = controller:asset_tax_property_rate } add = { value = tax_yield_base@var:current_pop_token multiply = controller:asset_tax_yield_rate } add = { value = tax_capital_base@var:current_pop_token multiply = controller:asset_tax_capital_rate } } }
+    set_variable = { pops_asset_tax_spending@var:current_pop_token = { value = p_pops_asset_tax_spending } }
+    add_to_temp_variable = { p_pops_spending = p_pops_income_tax_spending }
+    add_to_temp_variable = { p_pops_spending = p_pops_asset_tax_spending }
+    set_temp_variable = { p_pops_sales_tax_spending = { value = needs_tax_temp } }
+    add_to_temp_variable = { p_pops_spending = p_pops_sales_tax_spending }
 
-		#Sales Tax
-		set_temp_variable = { p_pops_sales_tax_spending = p_pops_needs_spending }
-		multiply_temp_variable = { p_pops_sales_tax_spending = sales_tax_multiplier }
-		add_to_temp_variable = { p_pops_spending = p_pops_sales_tax_spending }
-	}
+}
+
 	pops_calculate_investment = {
 		# current_pop_token
 		# The middle and upper classes put a share of their after-tax income into the general investment pool (Q36, Q60):
@@ -318,6 +344,7 @@
 					multiply = {
 						value = p_pops_earnings
 						subtract = p_pops_income_tax_spending
+                    subtract = p_pops_asset_tax_spending
 						max = 0
 					}
 				}
@@ -328,7 +355,8 @@
 		# current_pop_token
 		# The classes that borrow repay global.pops_debt_repayment_rate of their debt a month, as part of their spending (Q59).
 		# M11 adds the owner's bank rate. Servicing is capped at cash income; rationing cuts the goods basket first.
-		set_temp_variable = { p_service_cash = { value = p_pops_earnings subtract = p_pops_income_tax_spending subtract = p_pops_investment max = 0 } }
+		set_temp_variable = { p_service_cash = { value = p_pops_earnings subtract = p_pops_income_tax_spending
+                    subtract = p_pops_asset_tax_spending subtract = p_pops_investment max = 0 } }
 		set_temp_variable = { p_pops_interest_spending = { value = pops_debt@var:current_pop_token multiply = owner:bank_interest_rate divide = 1200 min = p_service_cash } }
 		set_temp_variable = { p_pops_debt_repayment_spending = { value = pops_debt@var:current_pop_token multiply = global.pops_debt_repayment_rate min = { value = p_service_cash subtract = p_pops_interest_spending max = 0 } } }
 		add_to_temp_variable = { p_pops_spending = p_pops_debt_repayment_spending }
@@ -416,6 +444,28 @@
 		add_to_variable = { pops_interest_spending = p_pops_interest_spending }
 	}
 	pops_clear_inactive_pop_data = {
+    set_variable = { pops_welfare@var:current_pop_token = { value = 0 } }
+    set_variable = { pops_patronage@var:current_pop_token = { value = 0 } }
+    set_variable = { pops_asset_tax_spending@var:current_pop_token = { value = 0 } }
+
+    set_variable = { tax_income_base@var:current_pop_token = { value = 0 } }
+
+    set_variable = { tax_heads_base@var:current_pop_token = { value = 0 } }
+
+    set_variable = { tax_low_base@var:current_pop_token = { value = 0 } }
+
+    set_variable = { tax_middle_base@var:current_pop_token = { value = 0 } }
+
+    set_variable = { tax_high_base@var:current_pop_token = { value = 0 } }
+
+    set_variable = { tax_land_base@var:current_pop_token = { value = 0 } }
+
+    set_variable = { tax_property_base@var:current_pop_token = { value = 0 } }
+
+    set_variable = { tax_yield_base@var:current_pop_token = { value = 0 } }
+
+    set_variable = { tax_capital_base@var:current_pop_token = { value = 0 } }
+
 		# current_pop_token
 		# An empty class keeps its wealth. Principal is written off once; release unused credit.
 		set_temp_variable = { bank_loss = pops_debt@var:current_pop_token }
@@ -626,6 +676,7 @@
 		#	needs_spending_temp
 
 		set_temp_variable = { needs_spending_temp = 0 }
+        set_temp_variable = { needs_tax_temp = 0 }
 		for_each_loop = {
 			array = global.pop_needs_resources
 			value = pop_r_token
@@ -661,6 +712,7 @@
 						set_temp_variable = { replaced_temp = { value = replaced_temp multiply = global.base_price@var:pop_r_token divide = global.base_price@var:replace_token } }
 						set_temp_variable = { market_need_temp = { value = replaced_temp multiply = market_share_temp } }
 						if = { limit = { check_variable = { needs_quote_temp = 0 } } add_to_variable = { pops_need@var:replace_token = market_need_temp } }
+        if = { limit = { NOT = { check_variable = { controller:sales_tax_exempt@var:replace_token = 1 } } } add_to_temp_variable = { needs_tax_temp = { value = market_need_temp multiply = controller:price@var:replace_token multiply = controller:sales_tax_percentage_actual divide = 100 } } }
 						set_temp_variable = {
 							replaced_temp = {
 								value = controller:price@var:replace_token
@@ -676,6 +728,7 @@
 
 				set_temp_variable = { market_need_temp = { value = need_temp multiply = market_share_temp } }
 				if = { limit = { check_variable = { needs_quote_temp = 0 } } add_to_variable = { pops_need@var:pop_r_token = market_need_temp } }
+        if = { limit = { NOT = { check_variable = { controller:sales_tax_exempt@var:pop_r_token = 1 } } } add_to_temp_variable = { needs_tax_temp = { value = market_need_temp multiply = controller:price@var:pop_r_token multiply = controller:sales_tax_percentage_actual divide = 100 } } }
 				set_temp_variable = {
 					need_temp = {
 						value = controller:price@var:pop_r_token
@@ -694,6 +747,7 @@
 		set_temp_variable = { need_temp = { value = need_temp multiply = pop_temp multiply = controller:modifier@pops_food_consumption_factor } }
 		set_temp_variable = { market_need_temp = { value = need_temp multiply = market_share_temp } }
 		if = { limit = { check_variable = { needs_quote_temp = 0 } } add_to_variable = { pops_need@token:food = market_need_temp } }
+        if = { limit = { NOT = { check_variable = { controller:sales_tax_exempt@token:food = 1 } } } add_to_temp_variable = { needs_tax_temp = { value = market_need_temp multiply = controller:price@token:food multiply = controller:sales_tax_percentage_actual divide = 100 } } }
 		set_temp_variable = {
 			need_temp = {
 				value = controller:price@token:food
@@ -794,7 +848,7 @@
 		# per head of population that pops_active_manpower_monthly draws from the states.
 		# Bureaucratic jobs (Q13, Q58): population x global.bureaucrats_per_pop x (1 + bureaucratic_strain_factor), with
 		# non-core states at global.bureaucrats_non_core_weight. The capital adds senior jobs for the upper class.
-		set_temp_variable = { bureaucrats_per_pop_temp = { value = 1 add = modifier@bureaucratic_strain_factor multiply = global.bureaucrats_per_pop } }
+		set_temp_variable = { bureaucrats_per_pop_temp = { value = 1 add = modifier@bureaucratic_strain_factor add = government_programme_strain multiply = global.bureaucrats_per_pop multiply = { value = bureaucracy_effect max = 0.1 } } }
 		set_temp_variable = { population_temp = 0 }
 		set_variable = { bureaucratic_jobs_required = 0 }
 		every_controlled_state = {
@@ -818,6 +872,9 @@
 			}
 		}
 
+		# Funding sets recruitment targets, not the amount of administration the population needs.
+		# Cutting recruitment must not make a short bureaucracy appear fully staffed.
+		set_variable = { bureaucratic_jobs_required = { value = bureaucratic_jobs_required divide = { value = bureaucracy_effect max = 0.1 } } }
 		# Active manpower (Q14): HOI4's fielded and training manpower. The deployment queue is counted in people, not thousands
 		set_variable = { active_manpower_k = deployed_army_manpower_k }
 		add_to_variable = { active_manpower_k = deployed_navy_manpower_k }
@@ -902,6 +959,11 @@
 		}
 	}
 	pops_qualifications_monthly = {
+    # Education moves literacy, schooling and education slowly, once per monthly tick.
+    set_variable = { pops_literacy_percentage = { value = pops_literacy_percentage add = { value = controller:budget_literacy_gain max = 0 } clamp = { min = 0 max = 100 } } }
+    set_variable = { pops_schooling_percentage = { value = pops_schooling_percentage add = { value = controller:budget_schooling_gain max = 0 } clamp = { min = 0 max = 100 } } }
+    set_variable = { pops_education_percentage = { value = pops_education_percentage add = { value = controller:budget_education_gain max = 0 } clamp = { min = 0 max = 100 } } }
+
 		# State scope. Advances the state's qualifications stock, in K qualified people (Q57). The middle and upper classes
 		# need global.qualifications_need@<class> per head, and pops_balance moves people up only into what's free.
 		# Gains a month per K pops, from Strat's notepad: (literacy - 10%) x 0.3, (schooling - 5%) x 0.5, education x 0.3,
@@ -925,7 +987,8 @@
 				}
 			}
 
-			set_temp_variable = { qualifications_gain_temp = 0 }
+			multiply_temp_variable = { qualifications_base_temp = { value = 1 add = { value = controller:budget_qualification_gain } } }
+            set_temp_variable = { qualifications_gain_temp = 0 }
 			for_each_loop = {
 				array = global.pops_array
 				value = pop_token
@@ -983,11 +1046,27 @@
 	}
 
 	update_country_pop_stats = {
+    set_variable = { household_income_tax_due = { value = 0 } }
+    set_variable = { household_asset_tax_due = { value = 0 } }
+    set_variable = { household_sales_tax_due = { value = 0 } }
+    set_variable = { household_welfare_due = { value = 0 } }
+    set_variable = { household_patronage_due = { value = 0 } }
+
 		for_each_loop = {
 			array = global.pops_array
 			value = pop_token
 
 			set_variable = { pops@var:pop_token = 0 }
+    set_variable = { tax_income_base@var:pop_token = { value = 0 } }
+    set_variable = { tax_heads_base@var:pop_token = { value = 0 } }
+    set_variable = { tax_low_base@var:pop_token = { value = 0 } }
+    set_variable = { tax_middle_base@var:pop_token = { value = 0 } }
+    set_variable = { tax_high_base@var:pop_token = { value = 0 } }
+    set_variable = { tax_land_base@var:pop_token = { value = 0 } }
+    set_variable = { tax_property_base@var:pop_token = { value = 0 } }
+    set_variable = { tax_yield_base@var:pop_token = { value = 0 } }
+    set_variable = { tax_capital_base@var:pop_token = { value = 0 } }
+
 			set_variable = { pops_workforce@var:pop_token = 0 }
 			set_variable = { pops_employed@var:pop_token = 0 }
 			set_variable = { pops_unemployed@var:pop_token = 0 }
@@ -1023,6 +1102,22 @@
 				value = pop_token
 
 				add_to_variable = { PREV.pops@var:pop_token = pops@var:pop_token }
+                add_to_variable = { PREV.household_income_tax_due = pops_income_tax_spending@var:pop_token }
+                add_to_variable = { PREV.household_asset_tax_due = pops_asset_tax_spending@var:pop_token }
+                add_to_variable = { PREV.household_sales_tax_due = pops_sales_tax_spending@var:pop_token }
+                add_to_variable = { PREV.household_welfare_due = pops_welfare@var:pop_token }
+                add_to_variable = { PREV.household_patronage_due = pops_patronage@var:pop_token }
+
+                add_to_variable = { PREV.tax_income_base@var:pop_token = tax_income_base@var:pop_token }
+                add_to_variable = { PREV.tax_heads_base@var:pop_token = tax_heads_base@var:pop_token }
+                add_to_variable = { PREV.tax_low_base@var:pop_token = tax_low_base@var:pop_token }
+                add_to_variable = { PREV.tax_middle_base@var:pop_token = tax_middle_base@var:pop_token }
+                add_to_variable = { PREV.tax_high_base@var:pop_token = tax_high_base@var:pop_token }
+                add_to_variable = { PREV.tax_land_base@var:pop_token = tax_land_base@var:pop_token }
+                add_to_variable = { PREV.tax_property_base@var:pop_token = tax_property_base@var:pop_token }
+                add_to_variable = { PREV.tax_yield_base@var:pop_token = tax_yield_base@var:pop_token }
+                add_to_variable = { PREV.tax_capital_base@var:pop_token = tax_capital_base@var:pop_token }
+
 				add_to_variable = { PREV.pops_workforce@var:pop_token = pops_workforce@var:pop_token }
 				add_to_variable = { PREV.pops_employed@var:pop_token = pops_employed@var:pop_token }
 				add_to_variable = { PREV.pops_unemployed@var:pop_token = pops_unemployed@var:pop_token }
@@ -1105,7 +1200,23 @@
 			divide_variable = { administrative_capacity = bureaucratic_jobs_required }
 			clamp_variable = { var = administrative_capacity min = 0 max = 1 }
 		}
-	}
+	    set_variable = { welfare_eligible_heads = { value = pops@token:peasants add = pops@token:working_class } }
+    # Upper-class asset ownership proxy before M15's shareholder records: real private business assets and cash,
+    # net of business debt, distributed across the country's upper-class households. SOEs belong to the treasury.
+    set_temp_variable = { private_capital = 0 }
+    for_each_loop = { array = sectors value = asset_sector index = asset_sector_index
+        add_to_temp_variable = { private_capital = { value = sector_asset_value@var:asset_sector add = sector_capital@var:asset_sector subtract = sector_debt@var:asset_sector max = 0 } }
+    }
+    for_each_loop = { array = companies value = asset_company index = asset_company_index
+        if = { limit = { NOT = { check_variable = { global.company_type@var:asset_company = token:company_type_soe } } }
+            add_to_temp_variable = { private_capital = { value = global.company_asset_value@var:asset_company add = global.company_treasury@var:asset_company subtract = global.company_debt@var:asset_company max = 0 } }
+        }
+    }
+    set_variable = { owned_capital_per_upper_pop = 0 }
+    if = { limit = { check_variable = { pops@token:upper_class > 0 } }
+        set_variable = { owned_capital_per_upper_pop = { value = private_capital divide = pops@token:upper_class } }
+    }
+}
 
 
 	create_pie_chart_pop_type = {
@@ -1473,6 +1584,7 @@
 			}
 			set_temp_variable = { repay_temp_k = debt_to_bank_k@var:country_temp }
 		}
+        set_temp_variable = { repay_creditor_k = { value = repay_temp_k max = 0 multiply = { value = market_leader:exchange_rate max = 0.25 } divide = { value = country_temp:market_leader:exchange_rate max = 0.25 } min = country_temp:money_lent_k@THIS } }
 		#log = "Repay Amount: [?repay_temp_k]K"
 		
 		if = {
@@ -1487,7 +1599,7 @@
 					check_variable = { repay_temp_k < debt_to_bank_k@var:country_temp }
 				}
 				subtract_from_variable = { debt_to_bank_k@var:country_temp = repay_temp_k }
-				subtract_from_variable = { country_temp:money_lent_k@THIS = repay_temp_k }
+				subtract_from_variable = { country_temp:money_lent_k@THIS = repay_creditor_k }
 			}
 			else = {
 				remove_from_array = { array = debt_to_bank_country value = country_temp }
@@ -1505,7 +1617,7 @@
 				var:country_temp = {
 					if = {
 						limit = { check_variable = { debt_default_temp = 1 } }
-						set_temp_variable = { bank_loss = { value = repay_temp_k multiply = 1000 } }
+						set_temp_variable = { bank_loss = { value = repay_creditor_k multiply = 1000 } }
 						bank_write_off = yes
 					}
 					bank_update = yes

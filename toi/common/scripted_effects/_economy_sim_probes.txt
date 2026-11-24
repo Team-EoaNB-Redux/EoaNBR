@@ -409,3 +409,17 @@ eco_sim_pm_audit_line = {
 	}
 	log = "EOPM|[?eosim_b.GetTokenKey]|[?eosim_m.GetTokenKey]|[?eosim_rev]|[?eosim_in]|[?global.pm_workforce_working@var:eosim_m]|[?global.pm_workforce_middle@var:eosim_m]|[?global.pm_industrial_capacity_use@var:eosim_m]|[?global.pm_industrial_capacity@var:eosim_m]|[?global.pm_shipping_capacity@var:eosim_m]|[?global.pm_construction_value@var:eosim_m]|[?global.pm_construction_duration@var:eosim_m]"
 }
+
+
+eco_currency_report = {
+    # Country scope, read-only. Run after a tick; compare current-code saves, not console recomputes.
+    log = "M12|[THIS.GetTag]|issuer=[?market_leader.GetTag]|P=[?market_leader:price_level]|inflation=[?market_leader:currency_monthly_inflation]|erosion=[?market_leader:currency_erosion]|exchange=[?market_leader:exchange_rate]"
+    log = "M12|[THIS.GetTag]|base_nominal=[?market_leader:base_money]|real_money=[?market_leader:currency_real_money]|demand_multiplier=[?market_leader:currency_demand_multiplier]|target_ratio=[?market_leader:currency_target_ratio]"
+    log = "M12|[THIS.GetTag]|valuables=[?market_leader:currency_reserves]|mining=[?currency_mining_flow]|imports=[?market_leader:import_value]|exports=[?market_leader:export_value]|balance=[?market_leader:trade_balance]|unfunded=[?market_leader:currency_unfunded_settlement]"
+    log = "M12|[THIS.GetTag]|treasury=[?treasury]|capital=[?bank_capital]|reserves=[?bank_reserves]|loans=[?bank_loans]|commitments=[?bank_credit_committed]"
+    for_each_loop = {
+        array = debt_to_bank_country
+        value = currency_report_creditor
+        log = "M12DEBT|[THIS.GetTag]|[?currency_report_creditor.GetTag]|borrower_k=[?debt_to_bank_k@var:currency_report_creditor]|creditor_k=[?currency_report_creditor:money_lent_k@THIS]|interest=[?foreign_interest@var:currency_report_creditor]|creditor_interest=[?foreign_interest_creditor@var:currency_report_creditor]"
+    }
+}

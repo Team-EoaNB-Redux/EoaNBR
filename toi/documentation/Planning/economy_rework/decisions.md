@@ -1434,3 +1434,20 @@ Strat, after M10's first in-game test (2026-11-16): "There might need to be anot
 *Recommend:* (a).
 
 > **Decided 2026-11-16:** (c), not as recommended. This replaces Q137's starting capital. Default taken: the 1.2 growth per company the country has moves from the starting capital to the seed's ROI, which is divided by `global.company_found_growth` (1.2) for each company the country has, beside Q144's halving per company in the industry, so founding still slows as companies multiply.
+
+
+## M12 implementation decisions (2026-11-17)
+
+Strat approved the complete M12 implementation plan after resolving these follow-ups:
+
+- **Starting equilibrium:** P = 1 is the calibrated starting condition, not an automatic accommodation target. Lending, defaults, GDP and issuance may subsequently cause inflation or deflation.
+- **Q52/Q67 cash coverage:** inflation revalues all stored cash and financial claims, including company treasuries, sector retained capital, investment funds and construction cash reserves. Pending monetary settlements must remain consistent; physical assets and historical statistics do not scale.
+- **Q47 revised:** mined valuables automatically add physical currency reserves, without government purchases or treasury spending. They remain ordinary goods too, including mine revenue, consumption and trade. The reserve addition is an explicit abstraction; remove the old fixed price and trade exclusion.
+- **Q46 exception:** retain M11's nominal `base_money` issuance counter and nominal minting input. Divide by P at every real-money boundary. All ordinary money values remain real.
+- **Provisional coefficients:** the agent may select conservative implementation values, with historical tuning left to M14. The approved numerical table and formulas are recorded in the M12 milestone. The absent-law fallback is no standard; the pegged token supplies coefficients without a bilateral peg controller.
+- **Validation:** use a fresh M12 baseline and controlled simulator interventions. In-game completion requires new startup and two-month saves, and must remain explicitly pending if those are unavailable.
+
+
+## M13 clarification from Strat (2026-11-17; implemented 2026-11-18)
+
+Income taxes need independent free-class rates, a per-head component and marginal income slices, with a disabling modifier. Asset taxation distinguishes land use, property/wealth, peasant yield and owned capital. Corporate taxes apply to sector/company profits. Sales taxes and tariffs are selected per good with nationally cached bases. Tax-level laws multiply taxes by .25/.5/1/2/3 independently of the five adjustment buttons. Higher adjustments carry convex ongoing PP costs, weighted more heavily for taxes. Spending laws provide separate lower/upper cost and benefit modifiers; buttons interpolate between them. Universal Healthcare's example is £100–£180 per thousand people and +30%–+120% growth. Operations' daily combat sampling and maintenance stockpile decay are explicitly deferred. Bureaucracy recruits staff; patronage gives PP; public works speeds construction. The M13 milestone distinguishes these decisions from provisional implementation coefficients and ownership proxies.
