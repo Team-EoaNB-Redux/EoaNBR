@@ -1,4 +1,4 @@
-﻿
+
 # Budget Update
     budget_update = {
         hidden_effect = {
@@ -347,8 +347,8 @@ budget_clamp = {
 
 }
 
-    taxes_update = {
-        #Country Scope
+taxes_update = {
+	#Country Scope
 
         set_temp_variable = { corruption_temp = modifier@corruption_factor }
         if = {
@@ -365,27 +365,50 @@ budget_clamp = {
         }
 
         # Monthly cached free-class bases; the household formula is the same linear combination.
-    set_variable = { income_tax_revenue = { value = 0 } }
-    set_variable = { asset_tax_revenue = { value = 0 } }
-    for_each_loop = { array = global.pops_array value = tax_class index = tax_class_index
-        if = { limit = { NOT = { check_variable = { tax_class = token:slaves } } }
-    set_variable = { income_tax_revenue@var:tax_class = { value = tax_income_base@var:tax_class multiply = income_tax_rate@var:tax_class add = { value = tax_heads_base@var:tax_class multiply = income_tax_per_head } add = { value = tax_low_base@var:tax_class multiply = income_tax_low_rate } add = { value = tax_middle_base@var:tax_class multiply = income_tax_middle_rate } add = { value = tax_high_base@var:tax_class multiply = income_tax_high_rate } } }
-    set_variable = { asset_tax_revenue@var:tax_class = { value = tax_land_base@var:tax_class multiply = asset_tax_land_rate add = { value = tax_property_base@var:tax_class multiply = asset_tax_property_rate } add = { value = tax_yield_base@var:tax_class multiply = asset_tax_yield_rate } add = { value = tax_capital_base@var:tax_class multiply = asset_tax_capital_rate } } }
-        add_to_variable = { income_tax_revenue = income_tax_revenue@var:tax_class }
-        add_to_variable = { asset_tax_revenue = asset_tax_revenue@var:tax_class }
-    } }
-    set_variable = { sales_tax_revenue = { value = 0 } }
-    for_each_loop = { array = global.resource_token_array value = tax_good index = tax_good_index
-        if = { limit = { NOT = { check_variable = { sales_tax_exempt@var:tax_good = 1 } } }
-            add_to_variable = { sales_tax_revenue = { value = household_goods@var:tax_good multiply = price@var:tax_good multiply = sales_tax_percentage_actual divide = 100 } }
-        }
-    }
-    set_variable = { income_tax_corruption = { value = income_tax_revenue multiply = corruption_temp } }
-    set_variable = { sales_tax_corruption = { value = sales_tax_revenue multiply = corruption_temp } }
-    set_variable = { asset_tax_corruption = { value = asset_tax_revenue multiply = corruption_temp } }
-    subtract_from_variable = { income_tax_revenue = income_tax_corruption }
-    subtract_from_variable = { sales_tax_revenue = sales_tax_corruption }
-    subtract_from_variable = { asset_tax_revenue = asset_tax_corruption }
+		set_variable = { income_tax_revenue = 0 }
+		set_variable = { asset_tax_revenue = 0 }
+		for_each_loop = { 
+			array = global.pops_array value = tax_class index = tax_class_index
+			if = { 
+				limit = { NOT = { check_variable = { tax_class = token:slaves } } }
+				set_variable = { income_tax_revenue@var:tax_class = { 
+					value = tax_income_base@var:tax_class 
+					multiply = income_tax_rate@var:tax_class 
+					add = { value = tax_heads_base@var:tax_class multiply = income_tax_per_head } 
+					add = { value = tax_low_base@var:tax_class multiply = income_tax_low_rate } 
+					add = { value = tax_middle_base@var:tax_class multiply = income_tax_middle_rate } 
+					add = { value = tax_high_base@var:tax_class multiply = income_tax_high_rate } } 
+				}
+				set_variable = { asset_tax_revenue@var:tax_class = { 
+					value = tax_land_base@var:tax_class 
+					multiply = asset_tax_land_rate 
+					add = { value = tax_property_base@var:tax_class multiply = asset_tax_property_rate } 
+					add = { value = tax_yield_base@var:tax_class multiply = asset_tax_yield_rate } 
+					add = { value = tax_capital_base@var:tax_class multiply = asset_tax_capital_rate } 
+				}}
+				add_to_variable = { income_tax_revenue = income_tax_revenue@var:tax_class }
+				add_to_variable = { asset_tax_revenue = asset_tax_revenue@var:tax_class }
+			} 
+		}
+		set_variable = { sales_tax_revenue = { value = 0 } }
+		for_each_loop = { array = global.resource_token_array value = tax_good index = tax_good_index
+			if = { 
+				limit = { NOT = { check_variable = { sales_tax_exempt@var:tax_good = 1 } } }
+				add_to_variable = { sales_tax_revenue = { 
+					value = household_goods@var:tax_good 
+					multiply = price@var:tax_good 
+					multiply = sales_tax_percentage_actual 
+					divide = 100 
+				}}
+			}
+		}
+		sales_tax_goods_menu_update = yes
+		set_variable = { income_tax_corruption = { value = income_tax_revenue multiply = corruption_temp } }
+		set_variable = { sales_tax_corruption = { value = sales_tax_revenue multiply = corruption_temp } }
+		set_variable = { asset_tax_corruption = { value = asset_tax_revenue multiply = corruption_temp } }
+		subtract_from_variable = { income_tax_revenue = income_tax_corruption }
+		subtract_from_variable = { sales_tax_revenue = sales_tax_corruption }
+		subtract_from_variable = { asset_tax_revenue = asset_tax_corruption }
         #Corporate. The sectors' generic owners and the companies pay it on their positive operating profit (sectors_update, Q86)
             set_variable = { corporate_tax_revenue = 0 }
             for_each_loop = { array = sectors value = tax_sector index = tax_sector_index
@@ -989,6 +1012,52 @@ change_industrial_subsidy = {
     }
 #
 
+update_sales_tax_goods_selection = {
+	if = {
+		limit = {
+			is_ai = no # AI need not apply to UI changes
+		}
+		clear_array = sales_tax_goods
+		for_each_loop = {
+			array = global.pop_needs_resources
+			value = good
+
+			if = {
+				limit = {
+					check_variable = { sales_tax_exempt@var:good = 0 }
+				}
+				add_to_array = { sales_tax_goods = good }
+			}
+		}
+	}
+}
+
+sales_tax_goods_menu_update = {
+	# Country scope. The sales tax menu's figures: what each good raises at the current rate, after corruption,
+	# whether it's taxed or not, so an exempt good shows what taxing it would bring in. Players with the menu open only
+	# Output: sales_tax_good_revenue@<good>
+	if = {
+		limit = {
+			is_ai = no
+			has_country_flag = sales_tax_goods_menu_open
+		}
+		set_temp_variable = { sales_tax_kept_temp = { value = 1 subtract = modifier@corruption_factor clamp = { min = 0 max = 1 } } }
+		for_each_loop = {
+			array = global.pop_needs_resources
+			value = menu_good
+			index = menu_good_index
+
+			set_variable = { sales_tax_good_revenue@var:menu_good = {
+				value = household_goods@var:menu_good
+				multiply = price@var:menu_good
+				multiply = sales_tax_percentage_actual
+				divide = 100
+				multiply = sales_tax_kept_temp
+			}}
+		}
+	}
+}
+
 # M13 controls. Country scope. Level inputs are 0..4; selected good/sector must be a definition token.
 budget_selection_update = {
     # Country scope. Snapshot selected keyed values for localisation after a control or picker changes.
@@ -1064,6 +1133,7 @@ toggle_sales_tax_good = {
     if = { limit = { is_in_array = { array = global.resource_token_array value = good_temp } }
         set_variable = { sales_tax_exempt@var:good_temp = { value = 1 subtract = sales_tax_exempt@var:good_temp } }
         budget_update = yes
+		update_sales_tax_goods_selection = yes
     }
 }
 toggle_sector_subsidy = {
